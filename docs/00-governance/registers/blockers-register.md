@@ -471,6 +471,13 @@ L-4 ("Linhas afetadas... GCS-07 — e, por GCS-07, a RULE-GCS inteira, via gate
 sedativo fail-closed"). Escrito por escriba de governança; nenhum mérito
 decidido aqui.
 
+**Nota (2026-08-15, GDEC-0008 item 6):** o titular comissionou AGORA uma ordem
+de serviço nova ao lado AMH para esta classe —
+`docs/08-interoperability/amh-data/ordens-de-servico-amh-2026-08-15.md`,
+ordens comissionadas em 2026-08-15 (perfil `MedicationAdministration` para
+infusão de vasoativos e sedativos). O bloqueador permanece **OPEN** até a
+ordem ser executada e aceita pelo lado AMH.
+
 ## BLK-0013 — Cobertura jurídica/ética de pesquisa com participantes humanos não coberta por `DEC-G0-03` (pt-BR — conteúdo novo, 2026-08-15)
 
 ```yaml
@@ -512,6 +519,16 @@ links: [RISK-0008, BLK-0004]
 profissionais e exposição incidental a dado de paciente — VAL-0041, hoje sem
 titular"). Escrito por escriba de governança; nenhum mérito decidido aqui.
 
+**Nota (2026-08-15, GDEC-0008 itens 1 e 3):** o titular decidiu comissionar
+AGORA todo o kit de pesquisa G1 (instrumentos, protocolo, baseline K-10) —
+item 3 — e estendeu o escopo do parecer jurídico já encomendado pela OS-16
+para cobrir esta pesquisa com participantes humanos — item 1. O trabalho de
+papel (elaboração de instrumentos, protocolo, recrutamento) prossegue agora;
+o campo (contato com sítio, participante, medição de baseline perecível)
+permanece **gateado** até a cobertura ética/jurídica ser efetivamente
+entregue via o mesmo engajamento da OS-16 (BLK-0014). Bloqueador permanece
+**OPEN** até essa entrega.
+
 ## BLK-0014 — OS-16 — pedido de parecer redigido, NÃO ENVIADO; destinatário jurídico não definido (pt-BR — conteúdo novo, 2026-08-15)
 
 ```yaml
@@ -551,6 +568,16 @@ links: [BLK-0004]
 ("O que este pedido não faz", item 6: "Não foi enviado"). Escrito por
 escriba de governança; nenhum mérito decidido aqui.
 
+**Nota — parcialmente resolvido (2026-08-15, GDEC-0008 item 1):** o titular
+DECIDIU o destinatário — **conselho jurídico interno da organização** — e
+AMPLIOU o escopo da consulta para cobrir a cobertura ética da pesquisa G1
+(BLK-0013). O envio físico do pedido e a nomeação do(a) jurista específico(a)
+dentro do conselho jurídico interno permanecem **pendentes de ato do
+titular**. Status permanece **OPEN**, agora qualificado como
+**parcialmente resolvido**: destinatário institucional decidido; envio e
+nome individual ainda não ocorreram — o prazo externo ainda não começou a
+contar.
+
 ## BLK-0015 — Contrato v1 — dono AMH não nomeado (critério 6 da OS-19 insatisfazível pela minuta) (pt-BR — conteúdo novo, 2026-08-15)
 
 ```yaml
@@ -583,6 +610,12 @@ ponto N-1 (§8, "Dono AMH do contrato | AMH nomeia o dono produtor (critério
 "NÃO satisfazível pela minuta — só a AMH nomeia (N-1). Registrado, não
 contornado"). Escrito por escriba de governança; nenhum mérito decidido
 aqui.
+
+**Nota (2026-08-15, GDEC-0008 item 5):** as emendas N-11..N-14 do contrato v1
+(`contract-v1/memoria-de-desenho.md` §8.1) foram **RATIFICADAS** pelo
+titular. A nomeação do dono AMH (N-1, este bloqueador) **não** foi afetada
+por essa ratificação e permanece pendente — critério 6 da OS-19 continua
+insatisfeito. Status permanece **OPEN**.
 
 ## BLK-0016 — Contrato de ordem clínica sem dono (pt-BR — conteúdo novo, ciclo 2, 2026-08-15)
 
@@ -624,6 +657,14 @@ nem pergunta aberta. Precisa de dono nomeado") e §1 (quadro de orientação,
 linha L-6: "quem age: titular precisa nomear"). Linhas afetadas citadas na
 fonte: NEWS2-G, NEWS2-D3, SOFA-D3, GCS-D3. Escrito por escriba de governança;
 nenhum mérito decidido aqui.
+
+**Nota (2026-08-15, GDEC-0008 item 6):** o titular comissionou AGORA uma
+ordem de serviço/pergunta nova ao lado AMH para esta classe —
+`docs/08-interoperability/amh-data/ordens-de-servico-amh-2026-08-15.md`,
+ordens comissionadas em 2026-08-15 (contrato de ordem clínica; primeiros
+consumidores: atribuição de escala SpO2 Scale-2 e ordem de limitação
+terapêutica/objetivos de cuidado). O bloqueador permanece **OPEN** até
+resposta do lado AMH.
 
 ## BLK-0017 — SAF-0042 ausente — defeito de análise declarado de HAZ-0045 (pt-BR — conteúdo novo, ciclo 2, 2026-08-15)
 
@@ -686,7 +727,7 @@ Escrito por escriba de governança; nenhum mérito decidido aqui.
 | BLK-0011 | Branch protection for `main` not configured | G0 | AUTH-SECURITY + repo admin | EXECUTADO |
 | BLK-0012 | Classe D — ausência de profile `MedicationAdministration` na IG AMH | G2 | AUTH-DATA-PLATFORM | OPEN |
 | BLK-0013 | Cobertura jurídica/ética de pesquisa com participantes humanos não coberta por `DEC-G0-03` | G1 | rodaquino-OMNI | OPEN |
-| BLK-0014 | OS-16 — pedido de parecer redigido, NÃO ENVIADO; destinatário jurídico não definido | G6, G8 | rodaquino-OMNI | OPEN |
+| BLK-0014 | OS-16 — pedido de parecer redigido, NÃO ENVIADO; destinatário jurídico não definido | G6, G8 | rodaquino-OMNI | OPEN — parcialmente resolvido (GDEC-0008 item 1) |
 | BLK-0015 | Contrato v1 — dono AMH não nomeado (critério 6 da OS-19 insatisfazível pela minuta) | G3 | rodaquino-OMNI (lado AMH) | OPEN |
 | BLK-0016 | Contrato de ordem clínica sem dono | G2 | AUTH-DATA-PLATFORM / titular | OPEN |
 | BLK-0017 | SAF-0042 ausente — defeito de análise declarado de HAZ-0045 | G6 | AUTH-CLINSAFETY | OPEN — verificar hazard-log/safety-requirements (em resolução paralela) |

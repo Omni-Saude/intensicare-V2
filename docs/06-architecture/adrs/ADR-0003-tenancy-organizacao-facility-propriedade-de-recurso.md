@@ -1,7 +1,7 @@
 ---
 id: ADR-0003
 title: Grão de tenant da V2, hierarquia organização/facility/unidade/leito e modelo de propriedade de recurso
-status: proposed
+status: accepted (2026-08-15, GDEC-0008)
 status_history:
   - status: not-started
     date: 2026-08-14
@@ -15,14 +15,19 @@ status_history:
       (AQ-4, AQ-6) como contorno, o grão AMH pós-ADR-041 como fato externo e as regras
       permanentes da política de identidade (IDP-03/04/05/06/08/09). Opções e drivers
       apenas; NENHUMA decisão é registrada e nenhum agente pode registrá-la.
+  - status: accepted (2026-08-15, GDEC-0008)
+    date: 2026-08-15
+    by: rodaquino-OMNI (titular) — transcrito por escriba de decisão-transcrição de ADR
+    note: >
+      Aceito por escrito pelo titular na sessão de decisão GDEC-0008 (item 4;
+      `docs/00-governance/registers/decision-register.md`), na opção recomendada —
+      grão A (raiz de CNPJ 1:1) + enforcement E-c (defesa em profundidade). Ver §5.0.
+      Nenhum agente decidiu — transcrição de decisão já tomada.
 date: 2026-08-15
-owner: >
-  UNASSIGNED — VALIDATION REQUIRED (candidatos por decision-rights.md §2:
-  AUTH-DATA-PLATFORM — detido por rodaquino-OMNI via DEC-G0-04 — e AUTH-SECURITY,
-  interinamente rodaquino-OMNI via DEC-G0-02; a confirmação como dono é ato humano)
+owner: rodaquino-OMNI — AUTH-DATA-PLATFORM (DEC-G0-04) e AUTH-SECURITY interino (DEC-G0-02); ADR aceito por escrito em GDEC-0008 item 4
 approvers:
-  - UNASSIGNED — VALIDATION REQUIRED   # role: AUTH-DATA-PLATFORM (DEC-G0-04)
-  - UNASSIGNED — VALIDATION REQUIRED   # role: AUTH-SECURITY (fase de desenho, DEC-G0-02)
+  - rodaquino-OMNI — AUTH-DATA-PLATFORM (DEC-G0-04); aceito em GDEC-0008 item 4
+  - rodaquino-OMNI — AUTH-SECURITY interino (fase de desenho, DEC-G0-02); aceito em GDEC-0008 item 4
 decision_deadline: >
   UNSET — VALIDATION REQUIRED. Restrição de ordem: este ADR deve ser aceito antes do
   desenho físico de qualquer armazenamento com dado multi-tenant e antes do Gate G6
@@ -77,17 +82,20 @@ provenance:
     disco e dos documentos de identidade/domínio do ciclo 0-1. Este ADR não reverificou
     nenhum artefato AMH; linhas de origem AMH são SOURCE por citação.
   confidence: medium
-  owner: UNASSIGNED — VALIDATION REQUIRED
-  validation_status: VALIDATION REQUIRED
+  owner: rodaquino-OMNI
+  validation_status: >
+    N/A — ADR aceito pelo titular (GDEC-0008 item 4), na opção recomendada. As
+    condições de §5.1 seguem VALIDATION REQUIRED conforme registradas.
 ---
 
 # ADR-0003 — Grão de tenant da V2, hierarquia organização/facility/unidade/leito e modelo de propriedade de recurso
 
-> **Status: `proposed`. Este documento apresenta opções, drivers, restrições decididas
-> pelo titular e condições de aceitação. NÃO registra decisão sobre o grão de tenant da
-> V2 nem sobre o mecanismo de enforcement.** As restrições DECIDED citadas em §2.4 são
-> decisões do titular de 2026-08-15 incorporadas como contorno — elas limitam o espaço
-> de opções, mas não escolhem entre as opções remanescentes.
+> **Status: `accepted (2026-08-15, GDEC-0008)`.** O titular aceitou este ADR por
+> escrito na sessão de decisão GDEC-0008 (item 4), na opção recomendada — grão A
+> (raiz de CNPJ 1:1) e enforcement E-c (defesa em profundidade). Ver §5.0. As
+> restrições DECIDED citadas em §2.4 permanecem o contorno que fundamenta a escolha.
+> **Aceito não significa implantado nem verificado** — as condições de §5.1 continuam
+> a governar a operacionalização.
 
 ---
 
@@ -340,23 +348,41 @@ autoridade, e a *seleção de tecnologia* que a viabiliza permanece futura.
 
 ## 5. Decisão e escopo
 
-> **NENHUMA DECISÃO ESTÁ REGISTRADA.** Este ADR apresenta opções e drivers. Preencher
-> esta seção é reservado à autoridade decisora nomeada no front matter
-> (`AUTH-DATA-PLATFORM` + `AUTH-SECURITY`; para o que toca o grão da fronteira, em
-> conjunto com `AUTH-AMH-OWNER` — papéis detidos por rodaquino-OMNI via DEC-G0-04 e
-> DEC-G0-02, cuja confirmação como aprovadores deste ADR é ato do titular).
+> **DECISÃO REGISTRADA (GDEC-0008, 2026-08-15).** O titular aceitou este ADR na
+> opção recomendada — ver §5.0.
 
-Na aceitação, esta seção deve declarar: a opção de grão (§4.1) e a classe de
-enforcement (§4.2) escolhidas; o escopo preciso (módulos, tenants, ambientes); o que
-explicitamente **não** vincula (em particular, que a seleção de tecnologia de
-armazenamento permanece futura); data e fundamentação.
+### 5.0 Decisão (GDEC-0008, 2026-08-15)
+
+> **decided_by:** rodaquino-OMNI (titular; `AUTH-DATA-PLATFORM` + `AUTH-SECURITY`
+> interino, DEC-G0-04/DEC-G0-02; papéis interinos GDEC-0004).
+>
+> **Opção de grão aceita (§4.1):** **Opção A — tenant V2 = tenant AMH (raiz de CNPJ,
+> 12 pós-ADR-041), espelhado 1:1**, pinada da IG 1.1.0; a hierarquia
+> `Organization → Facility → CareUnit → Bed` vive dentro do tenant como estrutura
+> clínico-operacional (A3), não como fronteira de isolamento.
+>
+> **Classe de enforcement aceita (§4.2):** **E-c — defesa em profundidade**
+> (aplicação obrigatória + política no armazenamento onde a tecnologia ratificada
+> suportar + suíte adversarial contínua afirmando impossibilidade em todas as
+> superfícies de DOM-0001). A seleção de tecnologia concreta que viabiliza a camada
+> de armazenamento permanece futura (ADR de plataforma de dados), sem herança.
+>
+> **Escopo:** aplica-se a todo módulo, tenant e ambiente da V2. Não vincula: seleção
+> de banco, extensão, broker ou nuvem (§3 regra 14); grão fino intra-tenant além do
+> já registrado como estrutura clínico-operacional; o mecanismo concreto de
+> autorização (ADR-0016), que consome este modelo de propriedade.
+>
+> **rationale:** conforme sessão de decisão GDEC-0008.
+>
+> **supersessão:** rege-se pelos próprios gatilhos de revisita desta ADR (§8.2,
+> T1–T6) — nenhum gatilho adicional é criado por esta transcrição.
 
 ### 5.1 Condições que devem ser satisfeitas antes da aceitação
 
 | # | Condição | Dono | Evidência que a fecha | Estado |
 |---|---|---|---|---|
-| C1 | Direção do ADR-0001 conhecida (a fronteira determina se o grão AMH é consumido direta ou indiretamente). | titular | ADR-0001 aceito, ou aceitação conjunta | ABERTA |
-| C2 | Reconciliação com o ADR-0004: o grão aceito aqui deve ser compatível com a chave `(PSR, encontro)` e com o escopo `{amh_tenant, legal_entity}` do PSR (nota 5 do `adr-index.md` §7 exige exatamente esta reconciliação). | autoridade decisora | Declaração de compatibilidade na aceitação de ambos | ABERTA |
+| C1 | Direção do ADR-0001 conhecida (a fronteira determina se o grão AMH é consumido direta ou indiretamente). | titular | ADR-0001 aceito, ou aceitação conjunta | **FECHADA** — DECISÃO (GDEC-0008): ADR-0001 aceito na mesma sessão (item 4), formulação "V2 SEMPRE consome dados da AMH" |
+| C2 | Reconciliação com o ADR-0004: o grão aceito aqui deve ser compatível com a chave `(PSR, encontro)` e com o escopo `{amh_tenant, legal_entity}` do PSR (nota 5 do `adr-index.md` §7 exige exatamente esta reconciliação). | autoridade decisora | Declaração de compatibilidade na aceitação de ambos | **FECHADA** — DECISÃO (GDEC-0008): compatibilidade declarada — o grão A coincide com o escopo `{amh_tenant, legal_entity}` do PSR (E3); ADR-0004 aceito na mesma sessão (item 4) |
 | C3 | Enumeração de 12 tenants pinável: IG 1.1.0 publicada com CodeSystem/ValueSet corrigido (OS-03/OS-05), ou registro explícito de que a V2 opera com enumeração transcrita provisória até lá. | AMH (OS-03/OS-05) | Pacote publicado com digest, ou registro da provisoriedade | ABERTA (E11) |
 | C4 | Tabela `tenant → legal_entity` (OS-10) disponível — ou sintética equivalente para dev, registrada como tal. | AMH / owner cadastral | Tabela legível por máquina | ABERTA (E10) |
 | C5 | Nome do tenant piloto decidido pelo titular (ata §8 item 8). | rodaquino-OMNI | Registro da decisão | ABERTA |
@@ -433,9 +459,10 @@ Como nenhuma opção foi escolhida, estas são consequências **da existência d
 
 ### 8.3 Kill switch / rollback
 
-Enquanto `proposed`, não há mecanismo a desligar. Restrições vigentes que funcionam como
-controle: (i) nenhum armazenamento multi-tenant é criado antes da aceitação — criá-lo
-seria decidir por omissão; (ii) desenvolvimento só com dados sintéticos (DEC-G0-03), de
+Aceito, porém não implantado: não há mecanismo a desligar ainda. Restrições vigentes
+que funcionam como controle: (i) nenhum armazenamento multi-tenant foi criado antes
+da aceitação — criá-lo antes teria sido decidir por omissão; (ii) desenvolvimento só
+com dados sintéticos (DEC-G0-03), de
 modo que nenhum erro de escopo alcança dado real; (iii) na aceitação, o modelo deve
 definir o kill switch operacional: como um tenant é **suspenso** (fail-closed, com
 estado clínico visível como degradado — DOM-0007) sem afetar os demais, por quem e em

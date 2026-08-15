@@ -1,7 +1,7 @@
 ---
 id: ADR-0009
 title: Máquina de estados de alerta/item de trabalho — concorrência, idempotência, auditoria e timers de escalada
-status: proposed
+status: accepted (2026-08-15, GDEC-0008)
 status_history:
   - status: not-started
     date: 2026-08-14
@@ -16,14 +16,20 @@ status_history:
       contrário); duas divergências candidatas são registradas em §4.3 para
       correção do diagrama SE a opção recomendada for aceita. NENHUMA decisão
       é registrada e nenhum agente pode registrá-la.
+  - status: accepted (2026-08-15, GDEC-0008)
+    date: 2026-08-15
+    by: rodaquino-OMNI (titular) — transcrito por escriba de decisão-transcrição de ADR
+    note: >
+      Aceito por escrito pelo titular na sessão de decisão GDEC-0008 (item 4;
+      `docs/00-governance/registers/decision-register.md`), nas opções recomendadas
+      — Q1-A (máquina única de WorkItem + entrega paralela) e Q2-A (concorrência
+      otimista) — e na minuta W1–W12 de §5.2. Ver §5.0. Nenhum agente decidiu —
+      transcrição de decisão já tomada.
 date: 2026-08-15
-owner: >
-  UNASSIGNED — VALIDATION REQUIRED (candidatos por adr-index.md §3:
-  AUTH-CLINSAFETY — rodaquino-OMNI via GDEC-0003 — e AUTH-UX; a confirmação como
-  dono é ato humano, não deste autor)
+owner: rodaquino-OMNI — AUTH-CLINSAFETY (GDEC-0003); ADR aceito por escrito em GDEC-0008 item 4
 approvers:
-  - UNASSIGNED — VALIDATION REQUIRED   # role: AUTH-CLINSAFETY (semântica de supressão, escalada, override, reabertura)
-  - UNASSIGNED — VALIDATION REQUIRED   # role: AUTH-UX (visibilidade dos estados em toda superfície; prompt §11)
+  - rodaquino-OMNI — AUTH-CLINSAFETY (semântica de supressão, escalada, override, reabertura, GDEC-0003); aceito em GDEC-0008 item 4
+  - UNASSIGNED — VALIDATION REQUIRED   # role: AUTH-UX (visibilidade dos estados em toda superfície; prompt §11) — não fechado por esta aceitação; ver C3
 decision_deadline: >
   UNSET — VALIDATION REQUIRED. Restrição de ordem: o Gate G4 lista este ADR
   entre os que precisam estar resolvidos (adr-index.md §5); a fatia vertical G7
@@ -79,17 +85,23 @@ provenance:
     reasoned-from — estados e transições derivados do glossário §5, do prompt §11 e
     do diagrama candidato do ciclo 1; nenhuma semântica clínica nova é criada.
   confidence: medium
-  owner: UNASSIGNED — VALIDATION REQUIRED
-  validation_status: VALIDATION REQUIRED
+  owner: rodaquino-OMNI
+  validation_status: >
+    N/A — ADR aceito pelo titular (GDEC-0008 item 4) nas cláusulas clínicas, nas
+    opções recomendadas. As condições de §5.1 (C3 validação de fatores humanos,
+    C4 vocabulário pt-BR) seguem VALIDATION REQUIRED conforme registradas.
 ---
 
 # ADR-0009 — Máquina de estados de alerta/item de trabalho: concorrência, idempotência, auditoria e timers de escalada
 
-> **Status: `proposed`. Este documento apresenta opções, drivers e uma minuta
-> normativa proposta (§5.2). NÃO registra decisão.** Duas restrições do prompt
-> não são alternativas em avaliação: a regra §3-7 (ausência jamais vira no-fire
-> silencioso — DOM-0004) e a regra §3-15 (a autoridade de decisão clínica
-> permanece com humanos responsáveis). Elas vinculam toda opção abaixo.
+> **Status: `accepted (2026-08-15, GDEC-0008)`.** O titular aceitou este ADR por
+> escrito na sessão de decisão GDEC-0008 (item 4), nas opções recomendadas — Q1-A
+> (máquina única de WorkItem) e Q2-A (concorrência otimista) — e na minuta W1–W12
+> de §5.2. Ver §5.0. Duas restrições do prompt não são alternativas em avaliação: a
+> regra §3-7 (ausência jamais vira no-fire silencioso — DOM-0004) e a regra §3-15 (a
+> autoridade de decisão clínica permanece com humanos responsáveis). **Aceito não
+> significa implantado nem verificado** — as condições de §5.1 continuam a governar
+> a operacionalização.
 
 ---
 
@@ -431,24 +443,39 @@ Reaberto, supressão jamais silenciosa, auditoria na mesma transação) é
 
 ## 5. Decisão e escopo
 
-> **NENHUMA DECISÃO ESTÁ REGISTRADA.** Este ADR apresenta opções, drivers e a
-> minuta §5.2. Preencher esta seção é reservado à autoridade decisora nomeada no
-> front matter. A minuta abaixo é o que a aceitação **vincularia** — nada dela
-> vige antes.
+> **DECISÃO REGISTRADA (GDEC-0008, 2026-08-15).** O titular aceitou este ADR nas
+> opções recomendadas, incluindo a minuta §5.2 integral — ver §5.0.
+
+### 5.0 Decisão (GDEC-0008, 2026-08-15)
+
+> **decided_by:** rodaquino-OMNI (titular; `AUTH-CLINSAFETY`, GDEC-0003).
+>
+> **Opções aceitas:** **Q1-A** (§4, Q1) — uma máquina única de `WorkItem` com os
+> oito estados do §11, entrega como dimensão paralela, `Alert` como fato imutável
+> associado — e **Q2-A** (§4, Q2) — concorrência otimista com token de versão
+> obrigatório, conflito → falha explícita com estado corrente. A **minuta W1–W12 de
+> §5.2 é aceita integralmente**, incluindo as correções candidatas DIV-1..3 de §4.3
+> ao diagrama `maquina-estados-alerta-acao-humana.md` (o diagrama passa a seguir
+> este ADR).
+>
+> **rationale:** conforme sessão de decisão GDEC-0008.
+>
+> **supersessão:** rege-se pelos próprios gatilhos de revisita desta ADR (§8.2,
+> T1–T6) — nenhum gatilho adicional é criado por esta transcrição.
 
 ### 5.1 Condições que devem ser satisfeitas antes da aceitação
 
 | # | Condição | Dono | Evidência que a fecha | Estado |
 |---|---|---|---|---|
-| C1 | ADR-0010 (backbone) com direção registrada — W6 (auditoria+evento na mesma transação) pressupõe publicação transacional. | autoridade do ADR-0010 | ADR-0010 aceito ou direção registrada | ABERTA (0010 `proposed` na mesma data) |
-| C2 | Reconciliação declarada com o texto aceito do ADR-0008 (N6/N7): a maquinaria daqui implementa a reconciliação de alerta superseded e a regra "severidade só legível com status permitido". | autoridade deste ADR | Nota de reconciliação na aceitação | ABERTA |
-| C3 | Validação de fatores humanos H1/H2/H3 executada, OU aceitação registrando explicitamente decisão estrutural com validação de usuário pendente como condição de G4. | AUTH-UX + especialista de fatores humanos | Registro de validação com cenários críticos simulados | ABERTA |
-| C4 | Vocabulário pt-BR dos estados ratificado via processo do ADR-0029 (aceito) — nomes exibidos jamais tranquilizadores para estados não terminais. | AUTH-CLINSAFETY + AUTH-UX | Glossário normativo atualizado | ABERTA |
+| C1 | ADR-0010 (backbone) com direção registrada — W6 (auditoria+evento na mesma transação) pressupõe publicação transacional. | autoridade do ADR-0010 | ADR-0010 aceito ou direção registrada | **FECHADA** — DECISÃO (GDEC-0008): ADR-0010 aceito na mesma sessão (item 4) |
+| C2 | Reconciliação declarada com o texto aceito do ADR-0008 (N6/N7): a maquinaria daqui implementa a reconciliação de alerta superseded e a regra "severidade só legível com status permitido". | autoridade deste ADR | Nota de reconciliação na aceitação | **FECHADA** — DECISÃO (GDEC-0008): compatibilidade declarada — W9 implementa N6, W12/severidade respeita N7 (E10) |
+| C3 | Validação de fatores humanos H1/H2/H3 executada, OU aceitação registrando explicitamente decisão estrutural com validação de usuário pendente como condição de G4. | AUTH-UX + especialista de fatores humanos | Registro de validação com cenários críticos simulados | **PARCIALMENTE FECHADA** — DECISÃO (GDEC-0008): opção recomendada aceita com a estrutura decidida; validação de usuário permanece pendente como condição de G4 (cláusula "OU" desta condição) |
+| C4 | Vocabulário pt-BR dos estados ratificado via processo do ADR-0029 (aceito) — nomes exibidos jamais tranquilizadores para estados não terminais. | AUTH-CLINSAFETY + AUTH-UX | Glossário normativo atualizado | ABERTA — genuinamente pendente do processo do ADR-0029 |
 | C5 | Política clínica de quem pode suprimir/fechar em cenários HAZ-0044 (paliativo/limitação terapêutica) registrada pelo titular clínico — a estrutura daqui a comporta, não a substitui. | AUTH-CLINSAFETY | Registro clínico de política | ABERTA |
 
-### 5.2 Minuta normativa proposta (PROPOSAL — o que a aceitação vincularia)
+### 5.2 Minuta normativa proposta (DECISÃO — GDEC-0008: minuta W1–W12 aceita integralmente)
 
-Cláusulas marcadas ◆ têm consequência clínica direta e exigem AUTH-CLINSAFETY.
+Cláusulas marcadas ◆ têm consequência clínica direta e permanecem sob AUTH-CLINSAFETY.
 
 **W1 — Estados nucleares.** ◆ O `WorkItem` tem exatamente os estados
 `não-atribuído | atribuído | reconhecido | escalado | sobreposto | resolvido |
@@ -658,7 +685,8 @@ ligados a QAS; **nenhum alvo numérico inventado** (timers VALIDATION REQUIRED);
 oito linhas transversais presentes; reversibilidade, gatilhos e kill/rollback
 presentes; validação com IDs reais verificados; supersessão declarada; **nenhuma
 tecnologia selecionada**; nenhuma aprovação fabricada; nenhum dono nomeado;
-autoridade clínica humana preservada em toda cláusula (W12). **Nota da janela
-concorrente:** `adr-index.md` NÃO foi atualizado por este autor — linha de índice
-no handoff; correções DIV-1..3 do diagrama registradas para o fluxo próprio, não
-executadas aqui.
+autoridade clínica humana preservada em toda cláusula (W12). **Nota da aceitação
+(GDEC-0008, 2026-08-15):** `adr-index.md` atualizado na mesma mudança da
+transcrição de decisão; correções DIV-1..3 do diagrama seguem registradas para o
+fluxo próprio de edição daquele documento, não executadas aqui (fora do escopo de
+escrita desta transcrição).

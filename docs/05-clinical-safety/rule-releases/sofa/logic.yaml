@@ -149,8 +149,8 @@ inputs:
     expiry: PT4H
     missing_dose_with_agent_active: >-
       DECISÃO DERIVADA (GDEC-0007, princípio 2 — escalar-nunca-tranquilizar;
-      aplicação da lógica de OQ-5 (b)) — sujeita a confirmação do revisor na
-      próxima revisão: tabulated agent present with missing/unusable dose ->
+      aplicação da lógica de OQ-5 (b)) — CONFIRMADA pelo titular em 2026-08-15
+      (GDEC-0008 item 4): tabulated agent present with missing/unusable dose ->
       component FLOORS at the minimum band agent presence alone guarantees in
       Vincent 1996 (dobutamine 2; dopamine 2; norepinephrine 3; epinephrine 3),
       mandatory flag dose_missing_agent_presence_floor ("dose ausente — piso por

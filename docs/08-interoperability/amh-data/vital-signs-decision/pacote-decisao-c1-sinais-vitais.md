@@ -1,8 +1,8 @@
 ---
 doc_id: AMH-C1-VITAL-SIGNS-DECISION-PACKAGE
 title: Pacote de decisão C-1 — sinais vitais AMH×IntensiCare
-status: PROPOSAL
-label: PROPOSAL
+status: PROPOSAL — decisão do titular registrada 2026-08-15 (GDEC-0008 item 2); ver "Registro da decisão" abaixo. Este pacote permanece material de apoio, não autoridade de decisão.
+label: PROPOSAL — decisão do titular registrada 2026-08-15 (GDEC-0008 item 2)
 owner: UNASSIGNED — VALIDATION REQUIRED
 decisor_designado: rodaquino-OMNI (CEO e acionista principal de OMNI e AMH; autoridade do lado AMH registrada em DEC-G0-04)
 approver_role: AUTH-PRODUCT + AUTH-DATA-PLATFORM (docs/00-governance/authority-model.md)
@@ -46,6 +46,49 @@ superseded_by: null
 > **Este documento não decide nada.** Ele é o material de apoio para que
 > **rodaquino-OMNI** decida a contradição **C-1** em uma sessão. Todo o conteúdo é
 > **PROPOSAL**; a recomendação de §5 é uma recomendação, não uma escolha.
+
+---
+
+## Registro da decisão (transcrição — GDEC-0008 item 2, 2026-08-15)
+
+**Nota de escriba.** O titular decidiu C-1 em sessão de 2026-08-15, **após** a redação
+deste pacote. Esta seção é transcrição da decisão, feita por escriba, não uma nova
+análise — o corpo do documento (§1–§8, abaixo) permanece **inalterado** como registro
+histórico do material de apoio que sustentou a decisão. Transcrição-mestre:
+`docs/00-governance/registers/decision-register.md` **GDEC-0008**, item 2.
+
+> **DECISÃO (GDEC-0008 item 2, 2026-08-15):** opção **O3** adotada, com
+> **RE-PONDERAÇÃO AUTOMÁTICA para O1-first** se a sonda "tabela de vitais do Tasy já
+> povoada no Bronze" for positiva (sem novo ciclo de decisão); ordem de execução zero
+> = a sonda. **Interpretação de composição registrada (sujeita a confirmação):** a
+> trilha de monitores da O3 é capacidade de ingestão **DO LADO AMH** — a V2 sempre
+> consome da AMH (ADR-0001, GDEC-0008 item 4); nunca ingestão direta na V2.
+
+Decidido por **rodaquino-OMNI** (titular; autoridade dos dois lados, DEC-G0-04), em
+sessão de 2026-08-15. O orquestrador/escriba não decidiu nada aqui.
+
+**Leitura desta decisão contra o corpo do pacote (não alterado):**
+
+- A opção decidida é **O3** (híbrido com critério de corte), a mesma recomendada em
+  §5. O escopo da face **D-c** (estreito × amplo) não consta explicitamente da
+  decisão transcrita e permanece em aberto, salvo indicação em contrário no próprio
+  `GDEC-0008`.
+- O gatilho de re-ponderação corresponde ao gatilho **S-1** de §7 ("o titular
+  responde Q1.1 afirmativamente, ou nomeia uma fonte estruturada de vitais já
+  presente no Bronze"): o titular converteu esse gatilho em **execução automática**
+  — se a sonda for positiva, a via passa a O1-first sem exigir nova sessão de
+  decisão. A sonda em si é a **ordem de execução zero**, comissionada como ordem de
+  serviço nova (ver `../ordens-de-servico-amh-2026-08-15.md`, seção de ordens
+  comissionadas em 2026-08-15).
+- A **interpretação de composição** declara que, mesmo sob O3, a "trilha curta de
+  monitores" descrita em §4/O2 não é lida como via de ingestão direta na V2: é
+  capacidade a ser implementada **do lado AMH**, preservando o ponto único de
+  ingresso decidido em ADR-0001/GDEC-0008 item 4. Esta leitura está marcada
+  **sujeita a confirmação** pelo próprio titular (ver `decision-register.md`
+  GDEC-0008, `supersession_rule`, item 4) — não é lida aqui como resolvida em
+  definitivo, e §4/O2 e §4/O3 deste pacote (texto original) continuam a descrever a
+  trilha de monitores em termos gerais, anteriores a esta interpretação.
+- Nenhuma outra questão numerada de §6 (D-b, D-d, QD-2..QD-13) consta desta decisão.
 
 ---
 

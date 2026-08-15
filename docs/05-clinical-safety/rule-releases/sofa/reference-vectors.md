@@ -97,7 +97,7 @@ pathway_id: CAND-0003            # SOFA, per candidate-inventory.md
 rule_version:
   bundle: "RULE-SOFA"
   version: "0.2.0"
-  content_hash: "c13b22b3e9fada466a160fe0b263435fb809dff95cc3061d257fe90645a75a24"  # logic.yaml 0.2.0 (GDEC-0007 + derived missing-dose floor), unsigned working hash
+  content_hash: "44d140f58488cbcb75ebd6b508dbfd9b374bc429181b236967f498fe38e5eb76"  # logic.yaml 0.2.0 (GDEC-0007 + derived missing-dose floor), unsigned working hash
   status: draft
 context:
   tenant_id: "synthetic-tenant-0001"
@@ -402,7 +402,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
   superseded_by: CRV-SOFA-0340
   retirement_note: >
     DECISÃO DERIVADA (GDEC-0007, princípio 2 — escalar-nunca-tranquilizar; aplicação da
-    lógica de OQ-5 (b)), sujeita a confirmação do revisor na próxima revisão: agente
+    lógica de OQ-5 (b)), CONFIRMADA pelo titular em 2026-08-15 (GDEC-0008 item 4): agente
     tabelado presente com dose ausente → piso pelo mínimo que a presença do agente
     garante em Vincent 1996, não not_evaluated (que tranquilizava um paciente em
     noradrenalina abaixo do piso do agente não tabelado). Ver CRV-SOFA-0340/0341
@@ -689,7 +689,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
     expected_evaluation_status: valid
     mandatory_disclosure: "dose de noradrenalina ausente — piso 3 pela presença do agente; dose necessária para distinguir banda 3 de 4"
     outcome: {fires: false, no_fire_reason: criteria_not_met}
-  note: "DECISÃO DERIVADA (GDEC-0007, princípio 2; aplicação da lógica de OQ-5 (b)) — sujeita a confirmação do revisor na próxima revisão. Distinção vs legado D-10 (rejeitado): o legado afirmava o tier exato 3 sem marcador, sub-escorando 4s verdadeiros como se fosse conclusão completa; o piso declara-se limite inferior com divulgação obrigatória e nunca rebaixa um escore por dose disponível."
+  note: "DECISÃO DERIVADA (GDEC-0007, princípio 2; aplicação da lógica de OQ-5 (b)) — CONFIRMADA pelo titular em 2026-08-15 (GDEC-0008 item 4). Distinção vs legado D-10 (rejeitado): o legado afirmava o tier exato 3 sem marcador, sub-escorando 4s verdadeiros como se fosse conclusão completa; o piso declara-se limite inferior com divulgação obrigatória e nunca rebaixa um escore por dose disponível."
 
 - vector_id: CRV-SOFA-0341
   title: "Dopamine active, dose MISSING — cardiovascular FLOOR 2 flagged (DECISÃO DERIVADA, GDEC-0007 princípio 2)"

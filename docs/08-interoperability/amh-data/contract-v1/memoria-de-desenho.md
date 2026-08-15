@@ -1,7 +1,7 @@
 ---
 doc_id: AMH-CONTRACT-V1-MEMORIA-DE-DESENHO
 title: Minuta do contrato AMH×IntensiCare v1 — memória de desenho
-status: PROPOSAL
+status: PROPOSAL — emendas N-11..N-14 (§8.1) RATIFICADAS via GDEC-0008 item 5 (2026-08-15); demais pontos de negociação (N-1..N-10, §8) permanecem PROPOSAL; dono AMH (N-1) ainda não nomeado — BLK-0015 permanece OPEN
 owner: UNASSIGNED — VALIDATION REQUIRED
 collector: steward de publicação de contrato AMH×IntensiCare
 source: >
@@ -19,7 +19,17 @@ last_updated: 2026-08-15
 
 # Memória de desenho — minuta do contrato AMH×IntensiCare v1
 
-**Status: PROPOSAL.** Este documento explica **por que cada seção da minuta existe**, qual
+**Nota de escriba, acrescentada 2026-08-15 (mesmo dia, após ratificação):** os quatro
+pontos de negociação **N-11..N-14** de §8.1 abaixo foram **RATIFICADOS** pelo titular
+em sessão — `docs/00-governance/registers/decision-register.md` **GDEC-0008**, item 5
+("Ratificar as emendas N-11..N-14 do contrato v1"). A ratificação é de **emenda
+compatível** (campos opcionais novos ao envelope mínimo, per o próprio texto de cada
+ponto em §8.1) — não é aceitação do contrato nem nomeação de dono AMH. O critério 6 da
+OS-19 (dono AMH nomeado, `producer.owner`) **continua não satisfeito**:
+`docs/00-governance/registers/blockers-register.md` **BLK-0015** permanece **OPEN**.
+Ver §8.1 para o texto ratificado de cada ponto.
+
+**Status: PROPOSAL** (salvo N-11..N-14, RATIFICADAS — ver nota acima). Este documento explica **por que cada seção da minuta existe**, qual
 decisão do titular (AQ-n) ou requisito do prompt (§7.5) a sustenta, o que foi
 **deliberadamente minimizado** frente ao envelope Maezo e por quê, quais alternativas foram
 rejeitadas, e quais pontos permanecem **abertos para negociação com a AMH**.
@@ -153,14 +163,26 @@ exigirá evidência de camada 2/4 que hoje não existe.
 | **N-9** | **Valores de SLO** | AMH declara E mede disponibilidade, frescor, latência de eventos e de `resolve` (OS-17 crit. 3; OS-18 crit. 5) | manifesto `slos` |
 | **N-10** | **Tenant piloto** | Decisão do titular, adiada para a redação do contrato (AQ-6 item 4; ata §8 pendência 8) | AQ-6 |
 
-### 8.1 Pontos N-11..N-14 — acrescentados pela análise adversarial do ciclo 2 (PROPOSAL)
+### 8.1 Pontos N-11..N-14 — RATIFICADOS (GDEC-0008 item 5, 2026-08-15)
 
-**Todos os quatro pontos abaixo são PROPOSAL.** Nenhum decide, nenhum altera N-1..N-10, e
-nenhum é ato desta minuta — são achados da modelagem de ameaças do ciclo 2
+**RATIFICADOS pelo titular** em sessão de 2026-08-15 —
+`docs/00-governance/registers/decision-register.md` **GDEC-0008**, item 5: *"Emendas
+N-11..N-14 do contrato v1 RATIFICADAS agora (emenda compatível); nomeação do dono AMH
+(BLK-0015) permanece aberta."* A ratificação cobre exatamente o que cada ponto já
+propunha como **emenda compatível hoje** (campos opcionais novos ao envelope mínimo —
+ver coluna "O que precisa acontecer" de cada linha); nenhuma das quatro se torna
+obrigatória por esta ratificação, e nenhuma altera N-1..N-10. Os quatro pontos foram
+achados da modelagem de ameaças do ciclo 2
 (`docs/11-security-privacy-compliance/threat-model.md` §12) e da matriz de conformidade
 (`docs/08-interoperability/conformance/contract-v1/mapeamento-semantico.md`) sobre a
-superfície que esta minuta já desenha, transcritos aqui como pontos de negociação novos por
-instrução de integração — não cunhados por este documento.
+superfície que esta minuta já desenha, transcritos aqui como pontos de negociação — não
+cunhados por este documento.
+
+**O que a ratificação NÃO faz:** não nomeia o dono AMH do contrato (N-1) — critério 6
+da OS-19 continua não satisfeito pela minuta;
+`docs/00-governance/registers/blockers-register.md` **BLK-0015** permanece **OPEN**.
+Não aceita o contrato, não escolhe transporte, não publica a IG. A minuta ainda não é
+o pacote de contrato AMH (OS-19) — é o insumo V2 para ele.
 
 | # | Ponto | O que precisa acontecer | Referência |
 |---|---|---|---|

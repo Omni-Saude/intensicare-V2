@@ -201,6 +201,32 @@ ciclo_2_orquestrador_de_entrega_2026_08_15:
     segurança segue M0; nada foi decidido por agente; camadas 2/3/4 seguem sem
     evidência (só dev existe na AMH).
 
+sessao_de_decisao_gdec_0008_2026_08_15:
+  registro_mestre: docs/00-governance/registers/decision-register.md (GDEC-0008; próximo livre GDEC-0009)
+  decisoes: >-
+    (1) OS-16 → conselho jurídico interno (envio físico + nome do jurista pendentes);
+    (2) C-1 = O3 com re-ponderação automática O1-first se sonda Bronze positiva;
+    (3) G1 comissionado integralmente (campo gateado em ética via OS-16);
+    (4) ADR-0004 aceito + ata contra-assinada; ADR-0001 aceito ("V2 sempre consome
+    da AMH; nunca ingestão direta" — interpretação de composição: trilha de
+    monitores da O3 é ingestão DO LADO AMH, sujeita a confirmação);
+    ADR-0003/0005/0009/0010/0011 aceitos nas opções recomendadas; ADR-0006
+    permanece proposed; pisos derivados de vasopressor CONFIRMADOS;
+    (5) N-11..N-14 ratificadas (dono AMH pendente — BLK-0015);
+    (6) novas OS/Q11+ abertas p/ MedicationAdministration (BLK-0012) e ordem
+    clínica (BLK-0016); (7) GDEC-0001/0002 ratificados; merge seguro do PR p/
+    main + higiene de branches executados nesta sessão;
+    (8) tradução retroativa EN→pt-BR = SIM, em tranches (tranche 1:
+    ADR-0027/0028; backlog: corpus forense EN, ADR-0001/0002, índice).
+  pendencias_pos_sessao:
+    - "Envio físico do pedido OS-16 + nome do jurista interno (ato do titular)"
+    - "Confirmação da interpretação de composição O3×ADR-0001 (ingestão de monitores no lado AMH)"
+    - "Nomeação do dono AMH do contrato v1 (BLK-0015)"
+    - "Execução das OS novas (sonda Bronze; MedicationAdministration; ordem clínica) — lado AMH"
+    - "Tranches 2+ da tradução retroativa (corpus forense; ADR-0001/0002; adr-index)"
+    - "ADR-0006 (fonte de verdade operacional×analítica) — decisão pendente"
+    - "Atualização de traceability-policy.md §1.1 com prefixos ratificados (GDEC-0002)"
+
 rules_for_any_resuming_agent:
   - Read docs/00-governance/evidence-notation.md before writing anything; front-matter is CI-enforced
   - Never name an owner, mark DECIDED, accept a risk, or resolve a contradiction — humans do that

@@ -610,4 +610,200 @@ OS-07 levanta a questão dos recursos já gravados com URL de profile incorreta,
 
 ---
 
+## 11. Ordens de serviço comissionadas em 2026-08-15 (GDEC-0008)
+
+As três ordens abaixo foram **comissionadas** pelo titular (rodaquino-OMNI) em sessão
+de 2026-08-15, registradas em
+`docs/00-governance/registers/decision-register.md` **GDEC-0008** — OS-22 pelo item 2
+("primeira pergunta da sessão: existe tabela de vitais do Tasy já no Bronze?"); OS-23 e
+OS-24 pelo item 6 ("Abrir AGORA as novas OS/perguntas Q11+ ao lado AMH para
+`MedicationAdministration` (BLK-0012) e contrato de ordem clínica (BLK-0016)"). Mesma
+disciplina epistêmica de §0.4 acima: **DECIDIDO** refere-se exclusivamente à decisão do
+titular de comissionar o trabalho; o conteúdo técnico de cada ordem é **PROPOSAL**, a
+executar e aceitar por quem o lado AMH designar. Nenhum agente decidiu nada aqui.
+
+Owner de todas as três: **lado AMH — rodaquino-OMNI (autoridade AMH, DEC-G0-04)**.
+Status: **ABERTA**.
+
+---
+
+### OS-22 — Sonda: tabela de vitais do Tasy já povoada no Bronze? (GDEC-0008 item 2 — ordem de execução zero)
+
+**O quê.** Verificar, no lago Bronze da AMH, se já existe uma tabela de origem Tasy com
+sinais vitais estruturados (não `EVOLUCAO_PACIENTE`/texto livre — ver
+`vital-signs-decision/pacote-decisao-c1-sinais-vitais.md` §2.4, E-5) já ingerida e
+povoada, ainda que não mapeada para FHIR. Esta é a **primeira** pergunta a responder da
+sessão de decisão de C-1 e a **ordem de execução zero**: seu resultado dispara,
+**automaticamente e sem novo ciclo de decisão**, a re-ponderação de C-1 para O1-first
+(GDEC-0008 item 2; gatilho S-1 do pacote de decisão, §7).
+
+**Evidência que motiva a sonda.** OBSERVADO (dossiê) —
+`vital-signs-decision/pacote-decisao-c1-sinais-vitais.md` §2.6 e §5.3: busca por código
+e por caminho no commit pinado `0a07a6f1` não encontrou nenhuma fonte de vitais
+nomeada (`sinais_vitais`, `saturacao`, `frequencia_cardiaca`, `pressao_arterial`,
+`vital_signs` → 0 resultados cada). **O repositório não nomeia a fonte — o titular pode
+saber o que há no lago que o repositório não documenta** (§5.3: *"o repositório não a
+nomeia, mas o titular sabe o que há no lago"*).
+
+**Deliverable — exatamente o que a sonda precisa responder:**
+1. **Nome(s) da(s) tabela(s)** no Bronze (schema.tabela), se existir(em) mais de uma
+   fonte candidata (por exemplo, monitor multiparamétrico, prontuário estruturado,
+   registro de enfermagem).
+2. **Contagem de linhas** por tabela e, se possível, por tenant.
+3. **Inventário de colunas e unidades**: quais parâmetros (FR, SpO2, PAS/PAD, FC,
+   temperatura, outros) têm coluna própria estruturada (não texto livre), e em qual
+   unidade bruta a fonte grava o valor — necessário para avaliar conformidade UCUM
+   antes de qualquer mapeamento.
+4. **Cobertura de datas**: janela temporal coberta (`data mínima` – `data máxima`), e se
+   a ingestão está corrente ou parada (equivalente ao que o caminho laboratorial já
+   registra como "aguardando ingestão desde 2026-07-24").
+5. **Declaração negativa explícita**, se aplicável: se nenhuma tabela existir, dizer
+   isso é uma resposta válida e encerra a sonda sem acionar a re-ponderação.
+
+**Critério de aceitação.**
+1. Resposta às cinco perguntas do deliverable, citável por caminho/tabela — não por
+   memória ou afirmação sem fonte.
+2. Se **positiva**: a resposta é suficiente, por si, para a V2 tratar C-1 como
+   re-ponderada para O1-first (GDEC-0008 item 2) — nenhuma nova sessão de decisão é
+   necessária; o pacote de decisão C-1 é atualizado por escriba na sequência
+   (`vital-signs-decision/`, gatilho S-1).
+3. Se **negativa**: registrada como tal, sem re-ponderação; C-1 permanece em O3 híbrido
+   como decidido.
+4. Nenhum dado de paciente é lido ou citado nesta sonda — apenas metadados de schema
+   (nomes de tabela/coluna, contagens, cobertura de datas). Nenhum dado real é
+   necessário para responder às cinco perguntas.
+
+**Dependências.** Nenhuma técnica — é por isso que é a ordem de execução zero.
+
+**Bloqueador V2 que libera.** Nenhum `BLK-*` diretamente; determina a via de C-1
+(O1-first vs. O3 híbrido como decidido) sem exigir novo ciclo de decisão do titular.
+
+---
+
+### OS-23 — Profile `MedicationAdministration` + fonte povoada para infusão vasoativa e sedativa (BLK-0012)
+
+**O quê.** Autorar, publicar (na IG, junto de uma futura versão) e identificar/ingerir a
+fonte povoada de um profile FHIR `MedicationAdministration` cobrindo (a) infusão de
+agente vasoativo — identidade do agente, **taxa de dose titulada** em µg/kg/min,
+horário de início e término, via de administração; e (b) infusão sedativa — contexto de
+exposição (agente, início/término, status ativo/inativo) suficiente para o **gate de
+sedação** de GCS e SOFA.
+
+**Por que agora (consumidores nomeados, não genéricos).**
+- **RULE-SOFA-0100 §4.4** (Cardiovascular/SOFA-CV): insumo #9, "taxa de dose do
+  vasoativo" — hoje **sem profile `MedicationAdministration` na IG** (E-3 do pacote de
+  decisão C-1); a componente CV do SOFA fica no piso de presença do agente, nunca no
+  tier titulado, sem esta classe.
+- **ADR-0028** (política de confundimento sedação/avaliação neurológica): a política
+  fail-closed de RASS/GCS — "RASS ≤−3 com sedação ativa OU desconhecida →
+  confundido/não avaliado" (GDEC-0007, prioridade 1) — exige **saber se há exposição
+  sedativa ativa**. Sem esta classe, o estado de exposição sedativa é sempre
+  **desconhecido**, e a política fail-closed do próprio ADR-0028 força o resultado a
+  confundido/não avaliado mesmo quando RASS foi medido e é ≥ −2 — o gate nunca abre.
+- **BLK-0012** (`docs/00-governance/registers/blockers-register.md`): sete candidatos do
+  portfólio (SOFA, sepse, estabilidade hemodinâmica, sedação, profilaxia,
+  antimicrobiano, delirium) e a **RULE-GCS inteira** (via GCS-07, gate sedativo
+  fail-closed) permanecem bloqueados por esta lacuna de classe, independentemente de
+  qualquer decisão de C-1.
+
+**Deliverable.**
+1. `StructureDefinition` de `MedicationAdministration` (ou dois profiles, se a AMH
+   preferir separar vasoativo de sedativo), com `medication` vinculado a ATC/RxNorm
+   candidatos já citados em `rule-releases/sofa/specification.md` (C01CA03, C01CA24,
+   C01CA04, C01CA07 e sinônimos), `dosage.rateQuantity` em µg/kg/min (ou taxa bruta +
+   peso separado, com política de conversão declarada), `effectivePeriod` (início/fim),
+   e `route` (via de administração).
+2. Fonte de origem identificada (tabela Tasy ou outra) que carregue taxa **titulada**,
+   não apenas prescrição/dispensação (`MedicationRequest`/`MedicationDispense` já
+   existem e **não bastam** — dispensação ≠ administração titulada, per
+   `impacto-no-portfolio.md` §1, classe D).
+3. Ingestão no Bronze, mapeador no produtor de registro, e povoamento **medido** por
+   tenant — mesmo padrão de honestidade de medição exigido pela OS-08 (não "está no
+   código", e sim "está em N% das linhas").
+
+**Critério de aceitação.**
+1. Profile publica `dosage.rateQuantity` com UCUM e vínculo de código ao vocabulário
+   ATC/RxNorm pinado (dono do pino: arquiteto de terminologia, fora desta ordem).
+2. Amostra representativa da saída valida contra o profile, com resultado registrado —
+   não por leitura de código (mesmo padrão da OS-08 crit. 1).
+3. Declarado explicitamente se a fonte cobre infusão vasoativa, sedativa, ou ambas —
+   parcial é uma resposta válida, desde que seja **dita**, não descoberta.
+4. Condição de aceitação escrita **antes** de qualquer entrega: taxa chega como
+   `valueQuantity`/`rateQuantity` com UCUM e código do vocabulário pinado, ou não conta
+   como desbloqueio — mesma mitigação já registrada para C-1 (QD-11, "repetir a C-4 com
+   outra roupa").
+
+**Dependências.** Nenhuma técnica externa a este item; independe de C-1 e de OS-22.
+
+**Bloqueador V2 que libera.** `BLK-0012` — parcial ou integralmente, conforme cobertura
+declarada no critério de aceitação item 3.
+
+---
+
+### OS-24 — Contrato de ordem clínica (não-`Observation`) — primeiros consumidores: escala SpO2 e limitação terapêutica (BLK-0016)
+
+**O quê.** Definir, do lado AMH, um contrato de **ordem/flag clínico atribuível** —
+distinto de `Observation` — para contexto clínico que não é uma medida, mas uma decisão
+de cuidado registrada com autor, horário e indicação. Nenhuma correção de profile
+`Observation`, sob qualquer leitura de C-1 (escopo estreito ou amplo), alcança esta
+classe.
+
+**Primeiros consumidores nomeados (não genéricos).**
+1. **Atribuição de escala-alvo de SpO2 (NEWS2 Scale-2)** — `RULE-NEWS2 §3.2` ("Governed
+   input"): a linha G da tabela de insumos do NEWS2 já declara explicitamente que este é
+   "**um recurso de ordem/flag, não uma `Observation`**", com **Scale-1 como default
+   seguro** documentado na fonte na ausência de atribuição. O contrato precisa expor
+   quem atribuiu, quando, com qual indicação, e como a atribuição é
+   revogada/reconfirmada (cadência de reconfirmação já é ponto sinalizado em
+   `specification.md` linha ~594).
+2. **Ordem de limitação terapêutica / objetivos de cuidado** — consumida por
+   `RULE-SOFA` e `RULE-NEWS2` (supressão de escalonamento) e sinalizada em `RULE-GCS`;
+   é o controle candidato de **HAZ-0044** (`hazard-log.md`: "a pathway generates an
+   escalation work item for a patient under palliative care, a treatment-limitation
+   order, or other documented goals-of-care restriction... technically correct by the
+   rule and clinically wrong for this patient"). Sem este contrato, o sistema não tem
+   como saber que uma escalada é clinicamente errada para aquele paciente
+   especificamente.
+
+**Perguntas Q11+ ao lado AMH (candidatas ao quadro de**
+`open-questions-for-amh-owners.md`**, a integrar por quem o titular designar):**
+
+| # | Pergunta |
+|---|---|
+| **Q11** | Existe, em qualquer camada do Tasy ou da plataforma AMH, um registro estruturado de atribuição de escala-alvo de SpO2 (ou equivalente clínico) — com autor, horário e indicação — ou essa decisão hoje só existe em prontuário de texto livre? |
+| **Q12** | Existe registro estruturado de ordem de limitação terapêutica / diretiva de cuidado (ex.: "não reanimar", "conforto", "objetivos de cuidado paliativo") no Tasy? Em qual tabela, e com qual granularidade (por encontro? por episódio? reversível?) |
+| **Q13** | Se essas ordens existem estruturadas no Tasy, elas chegam a algum canal de exportação hoje (FHIR, batch, ou outro), ou estão inteiramente fora do escopo dos pipelines já mapeados por este dossiê (`bronze_to_fhir.py`, schemas/fhir-profiles/)? |
+| **Q14** | Qual é o modelo de revogação/expiração dessas ordens na fonte — uma ordem de limitação terapêutica é reafirmada periodicamente, ou permanece vigente até cancelamento explícito? A V2 precisa desta semântica para não tratar silêncio como ausência de restrição nem como restrição permanente indevida. |
+| **Q15** | Existe, hoje, qualquer mecanismo (manual ou sistêmico) pelo qual uma decisão de escala de SpO2 ou de limitação terapêutica seja comunicada a um sistema externo à AMH? Se sim, qual, e pode servir de precedente para este contrato? |
+
+**Deliverable.** Não é um profile FHIR `Observation` — é uma definição de recurso de
+**ordem/flag** (por exemplo, `ServiceRequest`, `Flag`, ou `Consent`/`Provenance` para o
+componente de limitação terapêutica — a escolha de recurso FHIR é do lado AMH, com
+critérios de atribuição, revogação e proveniência declarados) mais a identificação de
+onde a fonte já vive no Tasy (se viver) e como alcança a plataforma.
+
+**Critério de aceitação.**
+1. Respostas a Q11-Q15, cada uma citável por caminho/tabela quando aplicável, ou
+   declaração negativa explícita quando a fonte não existir.
+2. Se a fonte existir: contrato de recurso definido, com autor, horário, indicação e
+   modelo de revogação declarados para os dois consumidores nomeados.
+3. Se a fonte não existir: registrado como tal — ausência documentada não é lida como
+   afirmação de existência futura, mesma disciplina do restante deste dossiê.
+4. Nenhuma escolha de recurso FHIR é presumida por esta ordem; a AMH propõe, a V2
+   avalia contra RULE-NEWS2 §3.2 e o controle candidato de HAZ-0044.
+
+**Dependências.** Nenhuma técnica externa; independe de OS-22 e OS-23.
+
+**Bloqueador V2 que libera.** `BLK-0016` — parcial ou integralmente, conforme cobertura
+declarada no critério de aceitação item 3.
+
+---
+
+*Ordens OS-22..OS-24 comissionadas por decisão do titular (GDEC-0008, itens 2 e 6,
+2026-08-15) e redigidas por escriba de governança. Nenhum agente decidiu mérito
+clínico, técnico ou de produto nesta seção. Nada foi escrito no repositório AMH. Sem
+PHI, credenciais, tokens ou identificadores reais.*
+
+---
+
 *Preparado pelo arquiteto de compatibilidade AMH-dados. As resoluções AQ-1..AQ-6 são DECIDIDAS por rodaquino-OMNI em 2026-08-15; as ordens de serviço derivadas são PROPOSTAS. Nada foi escrito no repositório AMH. Sem PHI, credenciais ou tokens.*
