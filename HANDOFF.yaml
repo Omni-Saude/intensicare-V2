@@ -1,0 +1,77 @@
+# =============================================================================
+# IntensiCare V2 — SESSION HANDOFF (continuity record)
+# =============================================================================
+# Purpose: guarantee any future session (human or agent) can resume exactly
+# where cycle 0 stopped, without re-deriving state or fabricating authority.
+# Epistemic labels per docs/00-governance/evidence-notation.md.
+# This file records state; it decides nothing. No PHI, no credentials.
+# =============================================================================
+
+handoff_version: 1
+written_at_utc: "2026-08-15"
+written_by: delivery orchestrator (cycle 0)
+governing_directive: INTENSICARE_V2_ORCHESTRATOR_PROMPT.md
+full_cycle_report: docs/15-release-evidence/cycle-0-first-cycle-report.md
+
+repository_state:
+  branch: cycle-0/spark-foundation
+  base_branch: main            # untouched at cb35521
+  cycle_0_commit: 4f35eba      # 66 files; stubs + this handoff follow in a second commit
+  pushed: false                # local only; push/PR requires user instruction
+  ci_gates:                    # both BLOCKING, both green at handoff time
+    - python3 scripts/check_doc_conventions.py
+    - python3 scripts/check_forbidden_content.py
+  branch_protection: NOT CONFIGURED (BLK-0011; settings in docs/14-devsecops-and-delivery/branch-protection-request.md)
+
+pinned_evidence:               # re-verify before relying on any of it
+  amh_repository: Omni-Saude/amh-data-platform (private; license NOASSERTION -> BLK-0010)
+  amh_execution_commit: 0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116
+  amh_commit_was_main_head_at: "2026-08-14"   # OBSERVED no-drift at pin time; MUST re-pin next session (ASM-0002)
+  maezo_manifest_producer_commit: 09a0a282e69f49aa9c6944b25afb35eee65fcc9c
+  contracts_lock_draft: docs/08-interoperability/amh-data/contracts.lock.draft.yaml  # DRAFT — NOT ACCEPTED
+  access_method: gh CLI OAuth as rodaquino-OMNI (read-only)   # NOT the GitHub App the prompt names -> BLK-0009
+  legacy_repository: /Users/familia/intensicare (READ-ONLY, never modify)
+  legacy_assessment_caution: >-
+    INTENSICARE_TECHNICAL_ASSESSMENT.md is an UNTRACKED working-tree file —
+    not commit-pinned; hash before citing; line numbers drift silently.
+
+gates_status:
+  G0_authority_access: OPEN — 11 blockers (docs/00-governance/registers/blockers-register.md)
+  G1_intended_use: OPEN — 42 blocking items (docs/02-users-and-workflows/g1-validation-backlog.md)
+  G2_pathway_portfolio: OPEN — 0 candidates pass hard gates; method blocked on ratified weights
+  G3_amh_compatibility: OPEN — finding = "integration candidate; not demonstrated compatible";
+    production-like condition currently unsatisfiable by anyone (AMH has only dev)
+  G4_to_G8: NOT APPROACHED
+  decided_anything: false      # zero DECIDED statuses repo-wide; all owners UNASSIGNED
+
+key_findings_to_not_relearn:
+  - Vital-sign exclusion in AMH is STRUCTURAL (Observation profile pattern-fixes category=laboratory)
+  - AMH Observation "unblocking" plan emits free text violating its own LOINC/UCUM profile (contradiction C-4)
+  - Authentication contradiction is THREE-way (CapabilityStatement/HAPI README/in-tree authorizer)
+  - Identity conflict is SIX-way (ADR-006/039/041/043/042-AMH-020b/FHIR-IG); live producer emits
+    zero mandated FHIR extensions, zero consent logic, CPF in clear -> interim policy IDP-01..12 fail-closed
+  - Actionable-pathway count today = 0 (9 candidates, 0/99 hard-gate passes; no gate weakened)
+  - HAZ-0043 (S4/L4) is the one hazard whose enabling condition is TRUE TODAY
+  - Six of eight AMH-compatibility unblocks require AMH-owner action, not V2 engineering
+
+next_actions_in_dependency_order:
+  1_human_G0: name 8 decision owners; revalidate GitHub App; resolve AMH license/IP; apply branch protection
+  2_amh_owners: answer AQ-1..AQ-6 (identity-adjudication/), 10 contract questions, contradictions C-1..C-4
+  3_G1_research: commission user-research plan; capture pre-deployment baselines
+    (G2-VAL-0025, VAL-0035 — PERMANENTLY LOST after go-live)
+  4_then: ADR-0001 boundary decision cycle -> AMH×IntensiCare manifest negotiation -> G7 vertical slice
+
+open_integration_items:
+  - ADR drafts carry unresolved "REQ:" placeholders until docs/04-product-requirements/ is populated (post-G1)
+  - Prefix extensions THR/CRV/QAS/IDP/IDN + document-local sets await ratification
+    (traceability-policy.md §1.1, GDEC-0002)
+  - 16-validation-backlog centralize-vs-distribute layout needs an ADR
+    (docs/16-validation-backlog/README.md is the interim index)
+  - 8 of the 10 required diagrams (prompt §19) not yet authored
+
+rules_for_any_resuming_agent:
+  - Read docs/00-governance/evidence-notation.md before writing anything; front-matter is CI-enforced
+  - Never name an owner, mark DECIDED, accept a risk, or resolve a contradiction — humans do that
+  - Never modify the legacy or AMH repositories; AMH reads only at a freshly re-pinned commit
+  - Specialists get narrow remits with disjoint write scopes (prompt §4); no generic agents
+  - Stop at human gates and record precise unblock requests rather than proceed
