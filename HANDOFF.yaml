@@ -171,6 +171,36 @@ ciclo_1_conteudo_clinico_2026_08_15:
     de autoria de agentes e PODE ser aprovado pelo revisor nomeado; um segundo
     revisor humano só é necessário para conteúdo que o titular vier a editar.
 
+ciclo_2_orquestrador_de_entrega_2026_08_15:
+  autor: orquestrador de entrega (ciclo 2) — 14 despachos de especialistas em 4 ondas, escopos disjuntos, roteamento de modelos §0.5
+  relatorio: docs/15-release-evidence/cycle-2-delivery-orchestrator-report.md   # leitura obrigatória na retomada
+  commits: [493d0bd]   # + commit de fechamento desta sessão; janela clínica commitada pelo próprio dono em 3530295 (GDEC-0007)
+  re_pin_amh: "0a07a6f1 re-verificado 2026-08-15 SEM deriva (EVID-0012; ASM-0002 satisfeita para a sessão)"
+  entregas_principais:
+    - "OS-16: minuta de parecer LGPD + pedido pronto (lgpd-os16/) — NÃO ENVIADO; destinatário indefinido (BLK-0014)"
+    - "G1: kit comissionável (g1-kit/, 43 itens) + protocolo de baselines perecíveis; campo bloqueado por ética de pesquisa humana (BLK-0013); janela perecível ABERTA (K-10 comissionado, RISK-0008)"
+    - "C-1: pacote de decisão (vital-signs-decision/) — escopo ampliado a toda Observation não-laboratorial; 2ª lacuna MedicationAdministration bloqueia RULE-GCS inteira (BLK-0012)"
+    - "Contrato v1: minuta completa (contract-v1/) + harness §7.6 (conformance/contract-v1/, 22 cenários) + emendas N-11..N-14 (prova de origem, token de continuidade, alcance de reassignment, tempo/qualidade)"
+    - "ADRs: 0001 rev., 0003/0005/0006/0009/0010/0011 novos, 0004 completado — 8 proposed/under-review; adr-index = 16 redigidos"
+    - "§19: 10/10 diagramas; §7.2: matriz 47 linhas — 47/47 inelegivel_hoje, fontes evidenciadas = 0"
+    - "Segurança: +16 THR (5 P0) +9 SEC; HAZ-0045/0046/0047 + SAF-0042 (triângulo fechado com SEC-0057); gate de conteúdo agora detecta PSR real"
+  ids_novos: "EVID-0012..0016; ASM-0004..0011; BLK-0012..0017; RISK-0008..0011; HAZ-0045..0047; SAF-0042; THR-0068..0083; SEC-0051..0059; GDEC: nenhum por agente"
+  fila_de_decisao_do_titular:   # relatório §8 — ordem de alavancagem, cada item pronto para sessão única
+    1: "Enviar pedido de parecer OS-16 + nomear destinatário jurídico (BLK-0014) — único prazo externo"
+    2: "Decidir C-1 (recomendação O3; 1ª pergunta: há tabela de vitais do Tasy no Bronze?)"
+    3: "Comissionar pesquisa G1 + destravar ética (BLK-0013) — baselines perecíveis"
+    4: "Revisar 8 ADRs propostos + contra-assinar ata AQ-1..6 + fechar N-8 (5×6 eventos)"
+    5: "Ratificar N-11..N-14 do contrato v1 + nomear dono AMH (BLK-0015)"
+    6: "Dar dono a MedicationAdministration (BLK-0012) e ordem clínica (BLK-0016)"
+  reconciliacoes_do_ciclo_1_fechadas_neste_ciclo:
+    - "Colisão CRV resolvida: forma composta CRV-<REGRA>-NNNN (traceability-policy §3.1; faixas SOFA 03xx / NEWS2 01xx / GCS 02xx)"
+    - "branch-protection-request.md reconciliado com DEC-G0-09 — proteção real verificada via API (OBSERVADO)"
+  honestidade_obrigatoria: >-
+    Achado de compatibilidade inalterado: candidato a integração; Observation
+    AMH segue não consumível; contagem acionável do portfólio segue 0; caso de
+    segurança segue M0; nada foi decidido por agente; camadas 2/3/4 seguem sem
+    evidência (só dev existe na AMH).
+
 rules_for_any_resuming_agent:
   - Read docs/00-governance/evidence-notation.md before writing anything; front-matter is CI-enforced
   - Never name an owner, mark DECIDED, accept a risk, or resolve a contradiction — humans do that

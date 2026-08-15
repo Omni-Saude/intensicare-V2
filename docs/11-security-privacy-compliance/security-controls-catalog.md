@@ -7,6 +7,12 @@ statement: >
   is status PROPOSAL and implementation status NOT-IMPLEMENTED. Nothing in this catalog
   exists, is configured, is verified, or is accepted. A control statement is a claim about
   what V2 must do; it is not evidence that V2 does it, and it is not a compliance claim.
+  EXTENSAO DO CICLO 1 (secao 15, em pt-BR por DEC-G0-10, 2026-08-15): nove controles
+  adicionais (SEC-0051..SEC-0059) derivados de THR-0068..THR-0083 (threat-model.md §12),
+  cobrindo a lane de eventos de ciclo de vida de identidade, resolve(ref, as_of), o PSR
+  como pseudonimo (nao anonimato), a contaminacao cross-PJ a montante (R-a5, apenas
+  deteccao compensatoria), fixtures e drift de contrato. Total: 59 controles, TODOS
+  PROPOSAL e NOT-IMPLEMENTED. As secoes 0-14 permanecem sem reescrita.
 provenance:
   source_repo: intensicare-V2
   path_or_url: docs/11-security-privacy-compliance/security-controls-catalog.md
@@ -24,6 +30,19 @@ provenance:
   confidence: medium
   owner: UNASSIGNED — VALIDATION REQUIRED
   validation_status: VALIDATION REQUIRED
+extension_ciclo_1:
+  section: "15 (SEC-0051..SEC-0059)"
+  date_collected: 2026-08-15
+  collector: especialista em modelo de ameacas de saude (ciclo 1)
+  language: pt-BR (DEC-G0-10)
+  derived_from: threat-model.md §12 (THR-0068..THR-0083)
+  source_surface: docs/08-interoperability/amh-data/contract-v1/ — status DRAFT/PROPOSAL, pinned false
+  also_read: docs/11-security-privacy-compliance/lgpd-os16/minuta-parecer-os-16.md (§1.3 P-PSR-1; §3.6 R-a3/R-a5/R-a7); docs/06-architecture/adrs/ADR-0004-identidade-paciente-encontro-mpi.md
+  transformation: derivacao de controles candidatos; nenhum controle implementado, configurado ou verificado
+  confidence: medium
+  owner: UNASSIGNED — VALIDATION REQUIRED
+  validation_status: VALIDATION REQUIRED
+  acceptance: nenhuma — aceitacao pertence a AUTH-SECURITY (BLK-0003) e, para controles de privacidade, a AUTH-PRIVACY-LEGAL (BLK-0004)
 links:
   requirements: [SAF-0007, SAF-0008, SAF-0009, SAF-0023, SAF-0026, SAF-0027, SAF-0030, SAF-0036, SAF-0037]
   hazards: [HAZ-0003, HAZ-0013, HAZ-0014, HAZ-0028, HAZ-0029, HAZ-0034]
@@ -935,3 +954,380 @@ SEC barriers is owed before G6.
    before G7 and G8.
 7. **SEC-0001 inherits `SAF-0009`'s blocked status.** The AMH tenant/MPI contradiction means
    the definition of "verified tenant context" at TB-05 is not yet knowable.
+
+---
+
+## 15. Extensão do ciclo 1 — controles para a superfície do contrato AMH×IntensiCare v1
+
+> **Nota de idioma.** As seções 0–14 acima foram redigidas em inglês no ciclo 0 e
+> **permanecem sem reescrita**. Esta seção 15 é redigida em **pt-BR** conforme `DEC-G0-10`,
+> seguindo o precedente de `docs/08-interoperability/amh-data/open-questions-for-amh-owners.md`.
+> Nenhum controle anterior foi alterado, renumerado ou removido.
+
+**Escopo.** Nove controles candidatos — **SEC-0051..SEC-0059** — derivados exclusivamente das
+ameaças **THR-0068..THR-0083** (`threat-model.md` §12), que modelam a superfície nova da minuta
+do contrato v1. Onde um controle existente já basta, esta seção **o referencia** em vez de
+duplicá-lo; onde um controle novo **estende** um existente, o texto diz exatamente o que ele
+acrescenta e por quê.
+
+**O cabeçalho do documento aplica-se sem exceção:** cada controle abaixo é
+`Status = PROPOSAL` · `Implementation = NOT-IMPLEMENTED` · `Verification = NOT PERFORMED` ·
+`Owner = UNASSIGNED — VALIDATION REQUIRED`. Escrever um controle não é implementá-lo. Nenhum
+`TST` é cunhado. Nenhum risco é aceito nesta seção.
+
+**Uma restrição que atravessa os nove (INFERÊNCIA, de `contract-manifest.draft.yaml`
+`transport.escolhido: null` e do estado `PROPOSAL` da minuta):** vários destes controles **não
+são implementáveis unilateralmente pela V2** — dependem de campos que o envelope proposto não
+tem, ou de garantias que só a AMH pode declarar e medir. Onde isso ocorre, o controle traz o
+campo **"Depende de negociação"**, e a coisa honesta a fazer é levá-lo à negociação **agora**,
+enquanto uma emenda é compatível, e não depois, quando será mudança **major** com janela de
+depreciação.
+
+### 15.1 Controles novos
+
+#### SEC-0051 — Autenticidade e integridade de origem verificáveis por evento de identidade
+Todo evento de ciclo de vida de identidade DEVE trazer **prova verificável de origem e de
+integridade**, ligando ao menos `event_id`, `event_type` + versão, as duas refs, `occurred_at`,
+`amh_tenant`/`legal_entity` e a **versão/digest do contrato que o produziu**. A verificação DEVE
+ocorrer **antes** de o evento alterar qualquer estado de identidade na V2. Falha de verificação
+DEVE **falhar fechada** e enviar o evento à quarentena (`SEC-0026`) — nunca "aplicar mesmo
+assim", nunca aplicar e alertar depois. O direito de publicar na lane DEVE ser escopado por
+produtor; a V2 NÃO DEVE aceitar evento de identidade por nenhum caminho que não o canal
+declarado no contrato.
+- **Ameaças:** THR-0068, THR-0069, THR-0071, THR-0073, THR-0083
+- **Tipo:** `PREV` + `DET`
+- **Estende:** `SEC-0022` (proveniência autenticada em eventos internos e envelopes ingeridos).
+  **O que acrescenta:** SEC-0022 governa o stream **interno** da V2, onde a V2 controla produtor
+  e transporte. Aqui o produtor é **outra pessoa jurídica**, o transporte é `null`, e o objeto do
+  evento não é um fato clínico — é **a chave de todos os fatos clínicos**. A consequência de
+  aceitar um evento forjado não é um dado errado: é uma **identidade** errada.
+- **Base:** OBSERVADO — `memoria-de-desenho.md` §5 exclui deliberadamente `payload_hash` e
+  `contract_manifest_digest` do envelope mínimo; `contract-manifest.draft.yaml`
+  `transport.escolhido: null`. SOURCE `PROMPT:476`, `PROMPT:724`
+- **Verificação:** teste de rejeição de evento forjado; teste de rejeição de evento com prova
+  de origem ausente; teste negativo provando que **não existe** caminho de ingestão alternativo
+  para eventos de identidade; teste de que a falha de verificação não altera estado.
+  **TST: UNASSIGNED**
+- **Depende de negociação:** o envelope proposto **não tem** campo de assinatura nem de digest.
+  Acrescentá-los é **emenda compatível** hoje (campo opcional novo). Sem eles, a autenticidade
+  fica inteiramente a cargo do transporte — que ainda não foi escolhido (ADR de fronteira, N-3).
+- **Status:** PROPOSAL · NOT-IMPLEMENTED
+
+#### SEC-0052 — Continuidade da lane de identidade: detecção de lacuna e reconciliação replay ⇔ `resolve`
+A V2 DEVE tratar **a ausência de eventos como um estado observável**, não como silêncio normal.
+Exige-se: (a) um **sinal de continuidade** por sujeito e por lane — sequência, marca-d'água ou
+heartbeat declarado pelo produtor — de modo que uma lacuna seja **detectável**, com alarme
+operacional visível ao operador clínico; (b) **reconciliação periódica** afirmando a
+equivalência da cláusula §3 (estado derivado dos eventos com `occurred_at <= t` ≡ resposta de
+`resolve(ref, as_of=t)`) sobre amostra de refs, incluindo obrigatoriamente refs com transição
+recente; (c) divergência ou lacuna DEVE produzir **degradação visível** (`SEC-0049`) e
+suspensão da reatribuição automática — **nunca** continuar em silêncio; (d) o atraso da lane
+DEVE ser medido como SLI contra a latência que a AMH declarar (hoje `VALIDATION_REQUIRED`).
+- **Ameaças:** THR-0069, THR-0070, THR-0071, THR-0073, THR-0074, THR-0080 (detecção parcial),
+  THR-0083
+- **Tipo:** `DET` + `ASSUR`
+- **Complementa:** `SEC-0034` (reconciliação de entrega: "gerado ≠ exibido") — mesmo princípio,
+  aplicado à identidade: **"emitido ≠ aplicado"**. Complementa `SEC-0049` e `SEC-0021`.
+- **Base:** OBSERVADO — o envelope mínimo não carrega sequência, marca-d'água nem heartbeat;
+  `identity_lifecycle.latencia: VALIDATION_REQUIRED`. A equivalência replay ⇔ `resolve` é
+  requisito vinculante da cláusula (OS-17 critério 5) e, portanto, é **testável como controle
+  de runtime**, não apenas como teste de aceitação.
+- **Verificação:** injeção de lacuna em ambiente de teste com asserção de que o alarme dispara
+  dentro de um limite declarado; teste de reconciliação com divergência plantada; teste de que
+  a reconciliação **falha** quando a lane está parada (um reconciliador que passa com lane
+  morta é um gate que valida zero casos — `SEC-0040`). **TST: UNASSIGNED**
+- **Depende de negociação:** o token de continuidade **não existe** no envelope proposto.
+  **Ponto de negociação a propor** junto com SEC-0051.
+- **Status:** PROPOSAL · NOT-IMPLEMENTED
+
+#### SEC-0053 — Propagação verificável do tombstone de erasure, com prova de aplicação
+Ao receber `identity.erasure.v1`, a V2 DEVE executar uma transição de estado **declarada e
+testável** que alcance **todas** as cópias em que a ref aparece — armazenamento operacional,
+projeções, caches (incluindo o cache de `resolve`), índices de busca, filas e quarentenas,
+exports emitidos e telemetria ainda dentro da retenção — e DEVE registrar **prova de
+aplicação** (o quê, onde, quando), auditável sem PHI. A V2 NÃO DEVE continuar a apresentar,
+avaliar ou alertar sobre o sujeito como ativo após a aplicação. Um evento `erasure` cuja
+aplicação não possa ser comprovada em toda a superfície DEVE gerar **incidente de privacidade**
+(`SEC-0035`), não um aviso de log.
+- **Ameaças:** THR-0072, THR-0075, THR-0077
+- **Tipo:** `PREV` + `GOV` + `DET`
+- **Complementa:** `SEC-0020` (deleção segura e export controlado) e o mapa de cópias de
+  `privacy-data-map.md` §4.1 — SEC-0053 é o **gatilho por evento** que torna aquele alcance
+  exercitável, em vez de declarado.
+- **Base:** cláusula §1 tipo 6 e §4.1 (`retired`, ref nunca deletada nem reutilizada);
+  `minuta-parecer-os-16.md` §1.3 (o PSR é pseudonimização; a informação adicional está do lado
+  AMH).
+- **Bloqueado em (e isto é o essencial):** **o que "aplicar" significa juridicamente para um
+  registro clínico é determinação de `AUTH-PRIVACY-LEGAL` (`BLK-0004`, UNASSIGNED)** — eliminar,
+  bloquear, ou reter sob obrigação clínica/regulatória e de auditoria. O PSR é a chave de todo
+  fato clínico: apagá-lo destruiria o registro e a trilha de auditoria. **Nenhum agente decide
+  isto, e este controle não o presume.** O controle especifica a *mecânica* (alcance, prova,
+  auditoria); a *política* é ato humano nomeado.
+- **Verificação:** teste de alcance da transição em cada cópia declarada no mapa de dados;
+  asserção de que nenhuma superfície de leitura apresenta o sujeito como ativo após aplicação;
+  teste de que a prova de aplicação é gerada e é imutável. **TST: UNASSIGNED**
+- **Status:** PROPOSAL · NOT-IMPLEMENTED
+
+#### SEC-0054 — `resolve(ref, as_of)` como dependência clínica governada: fail-closed, cache correto, sem oráculo
+Quatro exigências, todas verificáveis:
+1. **Integridade e semântica da resposta.** A resposta DEVE ser autenticada e íntegra, e DEVE
+   ser rejeitada se não afirmar explicitamente o `as_of` a que corresponde. Uma resposta que
+   degrade para "resolução atual" DEVE ser tratada como **erro**, jamais consumida. Ausência de
+   resposta, resposta ambígua ou `as_of` fora da janela DEVEM produzir `not_evaluated`
+   explícito (`DOM-0004`, `SAF-0002`) — nunca suposição, nunca última resolução conhecida.
+2. **Cache.** A chave de cache DEVE incluir `(ref, as_of, amh_tenant, legal_entity, versão de
+   contrato)`. Respostas para `as_of` **passado** são imutáveis e podem ser cacheadas;
+   `as_of = agora` NÃO DEVE ser cacheado como se fosse imutável. **Não DEVE haver cache negativo
+   persistente** de `nao-mintada-em-as_of`. Todo cache DEVE ser invalidado ao chegar evento de
+   identidade que toque a ref.
+3. **Anti-oráculo.** Limites de taxa e cotas por chamador **e por finalidade**; forma e tempo de
+   resposta **uniformes** entre "desconhecida", "fora de escopo" e "não mintada em `as_of`" na
+   medida em que a semântica clínica permitir; auditoria de toda chamada (quem, quando, qual
+   ref, qual `as_of`) **sem PHI**; alerta sobre padrões de acesso com forma de enumeração
+   (`SEC-0033`). O sinal `status: retired` DEVE ser tratado como **metadado sensível** e sua
+   exposição restringida ao mínimo necessário à decisão clínica.
+4. **Não reexposição.** A V2 NÃO DEVE expor `resolve` — direta ou transitivamente, por rota de
+   BFF, ferramenta MCP, export ou relatório — como consulta de propósito geral. Toda chamada
+   DEVE carregar tenant, entidade legal, propósito-de-uso (`tratamento`) e contexto profissional
+   **do chamador**, não apenas a identidade de carga de trabalho da V2 (`SEC-0006`).
+- **Ameaças:** THR-0073, THR-0074, THR-0075, THR-0076
+- **Tipo:** `PREV` + `DET`
+- **Complementa:** `SEC-0006` (identidade de carga de trabalho distinta da de usuário),
+  `SEC-0050` (limites de taxa), `SEC-0033` (detecção de anomalia), `SEC-0019` (cache limpo),
+  `SEC-0041` (ferramentas MCP tipadas e estreitas). **O que acrescenta:** trata `resolve` como o
+  que ele é — uma **dependência de correção clínica** cuja resposta errada é indistinguível de
+  uma resposta certa para quem a consome.
+- **Base:** cláusula §4.1 (fail-closed declarado; `as_of` pré-minting; `retired`) e §4.2
+  (determinismo, autorização, auditoria); `slos.resolve_latency_e_limites: VALIDATION_REQUIRED`.
+- **Verificação:** teste de rejeição de resposta sem `as_of` afirmado; teste de degradação
+  (resposta "atual" apresentada a uma consulta com `as_of` passado DEVE falhar); testes de chave
+  de cache incluindo colisão cross-escopo e invalidação por evento; campanha de enumeração
+  adversarial medindo o que um chamador autenticado consegue inferir; teste de que nenhuma
+  ferramenta MCP ou rota de BFF alcança `resolve` sem contexto de chamador. **TST: UNASSIGNED**
+- **Depende de:** ADR 14 (MCP), ADR 15/16 (identidade e autorização), ADR de fronteira
+  (transporte); e dos limites de uso que a AMH ainda não declarou.
+- **Status:** PROPOSAL · NOT-IMPLEMENTED
+
+#### SEC-0055 — O PSR é dado pessoal sensível em todo artefato, e é tratado como identificador
+1. **Rotulagem.** Nenhum artefato da V2 — documento, esquema, painel, export, comentário de
+   código ou mensagem de agente — PODE descrever dado chaveado por PSR como "anonimizado",
+   "desidentificado" ou "não pessoal". Dado chaveado por PSR é **dado pessoal sensível**
+   (`minuta-parecer-os-16.md` §1.3, PROPOSTA **P-PSR-1**).
+2. **Sinks.** O PSR NÃO DEVE aparecer em logs de aplicação, traces, rótulos/cardinalidade de
+   métrica, corpos de erro, tickets, capturas de tela, prompts de modelo, argumentos ou
+   resultados de ferramenta MCP, ou mensagens entre agentes. Onde uma correlação técnica for
+   necessária, DEVE ser usado um identificador **derivado por request e não reversível pelo
+   destinatário do log**, nunca o PSR.
+3. **Redação por padrão, não por lista de campos.** A redação DEVE reconhecer o **formato** do
+   PSR (`amh:psr:v1:…`), porque um filtro baseado em lista de campos clínicos não filtra a
+   **chave** — e é precisamente a chave que abre todo o registro.
+4. **Exports.** Todo export chaveado por PSR é export de dado pessoal e segue `SEC-0016` e
+   `SEC-0020`, com finalidade declarada. Não existe export "seguro por ser pseudonimizado".
+- **Ameaças:** THR-0077, THR-0078, THR-0079, THR-0075
+- **Tipo:** `PREV` + `GOV`
+- **Complementa:** `SEC-0015` (redação de PHI em telemetria), `SEC-0016` (minimização),
+  `SEC-0017` (dado sintético fora de produção), `SEC-0046` (nada de PHI a provedor de modelo).
+  **O que acrescenta:** os controles existentes foram escritos contra PHI **reconhecível**. O
+  PSR é opaco, e opacidade é exatamente o que faz um revisor humano concluir que ele "pode ir
+  para o log".
+- **Base:** SOURCE — `minuta-parecer-os-16.md` §1.3 (art. 5º III e XI; art. 12; art. 13 §4º
+  aplicável apenas "para os efeitos deste artigo"; a pseudonimização é medida de segurança e
+  minimização — arts. 6º VII e VIII, 46 — **não é base legal e não é isenção**). OBSERVADO —
+  `scripts/check_forbidden_content.py` reconhece credenciais, CPF **formatado**, e-mail e
+  canários; **não há padrão para `amh:psr:v1:`**.
+- **PROPOSAL ao dono do gate de conteúdo proibido (não executada aqui):** acrescentar padrão de
+  detecção para `amh:psr:v1:` fora dos caminhos do pacote de contrato. **Este catálogo não
+  altera scripts** — a mudança é ato do dono daquele gate.
+- **Verificação:** testes de redação com strings em formato de PSR em cada sink; asserção de
+  cardinalidade de métrica proibindo rótulo por sujeito; varredura periódica de logs e artefatos
+  de CI por formato de PSR; revisão documental afirmando que nenhum artefato descreve dado
+  chaveado por PSR como não pessoal. **TST: UNASSIGNED**
+- **Bloqueado em:** a qualificação jurídica final é `AUTH-PRIVACY-LEGAL` (`BLK-0004`). O
+  controle adota a posição **mais protetiva** enquanto o parecer não existir — o que é a única
+  postura defensável, não uma antecipação da decisão.
+- **Status:** PROPOSAL · NOT-IMPLEMENTED
+
+#### SEC-0056 — Separação técnica, não convencional, entre refs sintéticas e refs de produção
+Caminhos de produção DEVEM **rejeitar, fail-closed**, qualquer ref que não seja um
+`amh:psr:v1:<uuidv4>` bem formado — em particular DEVEM rejeitar o marcador sintético — e
+caminhos não-produtivos DEVEM rejeitar refs mintadas em produção. A separação DEVE ser
+imposta por **validação de formato + fronteira de ambiente**, ambas falhando fechadas, e **NÃO
+DEVE depender do marcador de nome**: `SYNTH` é convenção legível, não separação técnica.
+Nenhum componente da V2 PODE mintar um PSR (ADR-0004 D-06); uma ref que apareça sem ter sido
+recebida da AMH DEVE ser tratada como defeito de integridade, não como sujeito novo.
+- **Ameaças:** THR-0079, THR-0081, THR-0078
+- **Tipo:** `PREV`
+- **Complementa:** `SEC-0017` (dado sintético fora de produção) — **o que acrescenta** é o
+  sentido **inverso**, que SEC-0017 não cobre: dado **sintético entrando em produção**. Numa
+  camada de identidade, esse sentido é o mais perigoso dos dois, porque cria um sujeito clínico
+  que a fonte jamais reconhecerá.
+- **Base:** `subject.formato: "amh:psr:v1:<uuidv4>"` e `ambiente_de_desenvolvimento` (marcador
+  `SYNTH`) no manifesto draft; `DEC-G0-03` (apenas dado sintético até ratificação jurídica);
+  ADR-0004 D-06.
+- **Verificação:** teste negativo por ambiente, nos dois sentidos; teste de validação de formato
+  com UUID malformado, marcador sintético e ref de comprimento/forma inesperados; asserção de
+  que nenhum caminho de código constrói um PSR. **TST: UNASSIGNED**
+- **Status:** PROPOSAL · NOT-IMPLEMENTED
+
+#### SEC-0057 — Telemetria de anomalia de identidade como detecção compensatória (R-a5)
+**Controle explicitamente compensatório e explicitamente insuficiente.** A V2 DEVERIA medir e
+alertar sobre anomalias com forma de identidade, observáveis **sem** manter nenhuma estrutura de
+correspondência cross-PJ e **sem** identificadores de fonte:
+- mudança brusca do perfil demográfico/clínico transportado no encontro para uma mesma ref
+  (faixa etária, sexo, tipo sanguíneo quando presente, degrau de peso/altura fisiologicamente
+  implausível);
+- `merge`/`alias` que unifica refs cujas histórias de encontro **se sobrepõem no tempo** em
+  unidades ou estabelecimentos distintos;
+- taxa de eventos de identidade por tenant, por tipo e por janela fora de limites declarados —
+  incluindo o caso "nenhum evento", que é o sinal de THR-0070;
+- descontinuidade fisiologicamente implausível na série de fatos de uma ref após uma transição
+  de identidade;
+- `resolve` que muda de resposta para o **mesmo** `(ref, as_of)` entre duas chamadas — violação
+  direta do determinismo exigido pela cláusula §4.2.
+
+A resposta ao alarme DEVE ser **revisão clínica humana + suspensão da reatribuição automática**.
+A V2 NÃO DEVE desfazer merge, resolver duplicata nem inferir identidade — isso é capacidade AMH
+e permanece proibida à V2 (`IDP-04`, `IDP-09`; ADR-0004 §5.2.1).
+
+- **Ameaças:** THR-0080 (detecção **parcial**), THR-0068, THR-0071, THR-0073
+- **Tipo:** `DET` — **e somente `DET`**
+- **Estende:** `SEC-0033` (monitoração e detecção de anomalia em padrões de acesso). **O que
+  acrescenta:** SEC-0033 observa **acesso**; SEC-0057 observa **identidade**, e existe porque a
+  ameaça que ele endereça não tem barreira preventiva do lado da V2.
+- **Base:** SOURCE — `minuta-parecer-os-16.md` §3.6 **R-a5** (contaminação silenciosa da V2) e
+  **R-a3** (falso-positivo cross-PJ = dano de privacidade **e** perigo clínico simultâneos);
+  `threat-model.md` §12.3.4.
+- **Limites declarados — leia-os antes de citar este controle:**
+  1. **Não previne nada.** Detecta *depois* que a atribuição errada entrou.
+  2. **Não detecta o caso difícil.** Um falso-positivo entre dois pacientes de perfil
+     demográfico e clínico semelhante — que é o caso em que o par errado é *mais* provável —
+     passa invisível.
+  3. **Taxa de falso-positivo desconhecida e não medida.** Em UTI, alarme com FP alto produz
+     fadiga de alarme, que é ela própria um perigo registrado (`HAZ-0016`). Calibrar exige dados
+     que não existem.
+  4. **Não transfere a propriedade do controle preventivo para dentro da V2.** O controle
+     preventivo pertence à governança do índice do ADR-043 e ao parecer jurídico da OS-16.
+  5. **Restrição de desenho vinculante:** este controle **NÃO PODE** persistir, derivar ou
+     inferir correspondência entre sujeitos de PJs distintas — isso violaria `SEC-0010` e
+     recriaria, dentro da V2, exatamente a estrutura que AQ-4 mantém fora. Que a implementação
+     respeita esta restrição é `VALIDATION REQUIRED` por revisor independente.
+- **Verificação:** detecção com anomalias plantadas em dados sintéticos; medição da taxa de
+  falso-positivo antes de qualquer ativação de alarme clínico; asserção arquitetural de que
+  nenhuma estrutura cross-PJ é criada ou persistida; teste de que o alarme **não** dispara
+  reatribuição automática. **TST: UNASSIGNED**
+- **Depende de:** ADR-0004 D-02 (o índice cross-PJ segue *gated* no parecer DPO/jurídico) e da
+  nomeação humana do dono de THR-0080.
+- **Status:** PROPOSAL · NOT-IMPLEMENTED
+
+#### SEC-0058 — Conformidade de contrato verificada por fixtures: bloqueante, anti-permissiva e independente
+O validador consumidor da V2 DEVE aceitar **todas** as fixtures `valid` e **rejeitar cada**
+fixture `invalid` **pelo motivo declarado** — não apenas rejeitá-la. A suíte DEVE **falhar** se:
+qualquer fixture inválida for aceita; qualquer invariante do envelope não tiver ao menos uma
+fixture negativa; o conjunto de fixtures divergir do digest do esquema publicado; ou a suíte
+executar **zero** casos. O comportamento de *tolerant reader* DEVE ser implementado nas **duas
+metades**, com teste para cada uma: campos **adicionais** desconhecidos ignorados **e** campos
+**obrigatórios** ausentes rejeitados. Tipo `identity.*` desconhecido DEVE ser tratado como
+**erro fail-closed**, nunca como campo adicional tolerável — enquanto a divergência 5 × 6 tipos
+(ponto N-8) não estiver fechada, tolerar um tipo desconhecido é ignorar silenciosamente uma
+reatribuição de fatos. A suíte DEVE ser bloqueante (`SEC-0040`) e, onde a independência for
+alcançável, as fixtures não DEVEM ser mantidas pela mesma parte que mantém o parser
+(princípio de `SEC-0031`).
+- **Ameaças:** THR-0081, THR-0082, THR-0069, THR-0072
+- **Tipo:** `ASSUR` + `DET` + `PREV`
+- **Complementa:** `SEC-0026` (validar e pôr em quarentena; nunca coagir), `SEC-0040` (todo gate
+  bloqueia; gate que valida zero casos FALHA), `SEC-0031` (raiz de confiança independente para
+  artefatos de verificação).
+- **Base:** OBSERVADO — dez fixtures (6 válidas + 4 inválidas) com `sha256: null`; invariante 6
+  (tolerant reader) tem duas metades e só uma delas é o caminho natural de um desserializador;
+  divergência N-8 registrada em `memoria-de-desenho.md` §8.
+- **Verificação:** meta-teste que **muta o validador** para aceitar cada fixture inválida e
+  exige que a suíte fique vermelha (teste de mutação — `PROMPT:793` já o exige para políticas de
+  autorização; o mesmo raciocínio se aplica aqui); asserção de contagem de casos > 0; verificação
+  de digest do conjunto de fixtures contra o esquema publicado. **TST: UNASSIGNED**
+- **Status:** PROPOSAL · NOT-IMPLEMENTED
+
+#### SEC-0059 — Pin por digest do contrato, verificado a cada consumo, com falha fechada
+A V2 DEVE pinar o manifesto publicado **por digest criptográfico** em `contracts.lock`, DEVE
+verificar o digest do manifesto e do esquema efetivamente em uso **na inicialização e a cada
+mudança**, e DEVE **falhar fechada** em divergência — nunca prosseguir com aviso. A versão e o
+digest do contrato DEVEM ser registrados na proveniência de **cada** registro de avaliação
+(`DOM-0002`), para que duas avaliações separadas por um drift sejam **comparáveis com o motivo
+explícito**. A ausência de referência de contrato **por mensagem** (excluída do envelope mínimo
+por desenho) é **limitação declarada — não aceita**: enquanto persistir, uma mensagem já
+consumida não é atribuível a uma versão de contrato, e a única compensação disponível é a
+verificação no arranque, que **não cobre** uma mudança ocorrida entre dois arranques.
+- **Ameaças:** THR-0083, THR-0082, THR-0068
+- **Tipo:** `PREV` + `DET`
+- **Estende:** `SEC-0025` (pinagem de terminologia e perfis com verificação de digest). **O que
+  acrescenta:** SEC-0025 pina o **vocabulário clínico**; SEC-0059 pina o **contrato de identidade
+  e de tempo**, cuja mudança silenciosa não altera um valor — altera **o significado de uma ref
+  e de um instante**. Complementa `SEC-0038` (assinatura de artefato e deploy por digest).
+- **Base:** OBSERVADO — `manifest_sha256: null`, `ig_dependency.package_digest: null`,
+  `pinned: false`, `aceito: false`; `compatibility_policy` manda o consumidor **rejeitar** pacote
+  divergente do manifesto — o que exige exatamente este controle para ser executável.
+- **Verificação:** teste negativo com manifesto adulterado provando falha de arranque; asserção
+  de que nenhuma avaliação persiste sem versão+digest de contrato na proveniência; verificação
+  periódica do digest publicado contra o pin. **TST: UNASSIGNED**
+- **Depende de negociação:** referência de contrato por mensagem é **emenda compatível** (campo
+  opcional novo) e deve ser levada à negociação enquanto ainda o é.
+- **Status:** PROPOSAL · NOT-IMPLEMENTED
+
+### 15.2 Cobertura ameaça → controle da extensão
+
+Complementa o §13 sem alterá-lo. Cada ameaça nova tem ao menos um controle candidato; cada
+controle novo traça para ao menos uma ameaça nova.
+
+| THR | Controles candidatos |
+|---|---|
+| THR-0068 evento de identidade forjado | SEC-0051, SEC-0022, SEC-0002, SEC-0032, SEC-0059 |
+| THR-0069 replay/duplicata sob chave do produtor | SEC-0021, SEC-0051, SEC-0052, SEC-0058 |
+| THR-0070 evento perdido — merge não aplicado | SEC-0052, SEC-0049, SEC-0026, SEC-0023 |
+| THR-0071 fora de ordem através de cadeia de refs | SEC-0052, SEC-0021, SEC-0024, SEC-0051 |
+| THR-0072 tombstone de erasure não aplicado | SEC-0053, SEC-0020, SEC-0032, SEC-0052 |
+| THR-0073 `resolve` adulterado / "atual como então" | SEC-0054, SEC-0011, SEC-0051, SEC-0024 |
+| THR-0074 cache de `resolve` envenenado/mal chaveado | SEC-0054, SEC-0009, SEC-0019, SEC-0052 |
+| THR-0075 `resolve` como oráculo de enumeração | SEC-0054, SEC-0033, SEC-0050, SEC-0016, SEC-0032 |
+| THR-0076 deputado confuso sobre `resolve` | SEC-0006, SEC-0054, SEC-0001, SEC-0003, SEC-0041 |
+| THR-0077 re-identificação por correlação sobre PSR | SEC-0055, SEC-0016, SEC-0020, SEC-0010, SEC-0033 |
+| THR-0078 PSR em logs/traces/fixtures/prompts | SEC-0055, SEC-0015, SEC-0016, SEC-0046, SEC-0017 |
+| THR-0079 fronteira sintético ↔ produção do PSR | SEC-0056, SEC-0017, SEC-0026, SEC-0055 |
+| THR-0080 contaminação cross-PJ a montante (R-a5) | **nenhum preventivo na V2**; SEC-0057 (compensatório, `DET`), SEC-0026, SEC-0032, SEC-0049, SEC-0035 |
+| THR-0081 fixture inválida aceita por parser permissivo | SEC-0058, SEC-0026, SEC-0040, SEC-0016 |
+| THR-0082 dessincronia fixture × esquema como "conformidade" | SEC-0058, SEC-0059, SEC-0031, SEC-0040 |
+| THR-0083 drift de contrato sem verificação de digest | SEC-0059, SEC-0025, SEC-0038, SEC-0051, SEC-0052 |
+
+### 15.3 Aviso de causa comum, específico desta extensão
+
+**INFERÊNCIA (da tabela §15.2, aplicando o mesmo raciocínio do §13.1).** Três concentrações
+merecem registro:
+
+1. **THR-0080 não tem barreira preventiva alguma do lado da V2.** É a única linha deste catálogo
+   cuja coluna de controle começa com "nenhum". `safety-requirements.md` §I proíbe que um perigo
+   S4/S5 dependa de barreira única — aqui não há sequer uma barreira preventiva. A resposta
+   correta não é escrever mais controles: é **nomear o dono humano** e tratar a operação com o
+   índice ligado como decisão gateada.
+2. **SEC-0051 e SEC-0052 dependem de campos que o envelope proposto não tem.** Enquanto a
+   negociação não os acrescentar, cinco ameaças (THR-0068, THR-0069, THR-0070, THR-0071,
+   THR-0083) repousam sobre controles **que a V2 não pode implementar sozinha**. Isso é um
+   estado de dependência externa, não um plano de mitigação.
+3. **SEC-0058 é a raiz comum de toda a evidência de fronteira.** Se a suíte de fixtures não for
+   bloqueante e anti-permissiva, THR-0081 e THR-0082 se realizam **juntos** e desligam, de uma
+   vez, a verificação de todos os demais controles desta seção — o mesmo padrão que o §13.1 já
+   registrou para `SEC-0040`.
+
+Uma análise de independência de barreiras que cubra `SAF`, `SEC` **e** estas dependências
+externas é devida antes do G6 — agora com um item novo: **barreiras cujo dono está fora da
+organização que responde pelo produto.**
+
+### 15.4 O que esta extensão NÃO estabelece
+
+Aplicam-se, sem exceção, os sete itens do §14. Acrescentam-se três, específicos desta seção:
+
+8. **Nenhum dos nove controles é implementável hoje**, e três deles (SEC-0051, SEC-0052,
+   SEC-0059 na parte de referência por mensagem) **não são implementáveis pela V2 em nenhum
+   momento sem emenda ao contrato**. Registrar a dependência não a resolve.
+9. **SEC-0057 não fecha THR-0080, e nada nesta seção deve ser citado como se fechasse.** Ele é
+   detecção parcial de uma ameaça cujo controle preventivo pertence a outra organização.
+10. **Nenhuma posição jurídica é tomada.** SEC-0053 e SEC-0055 adotam a postura mais protetiva
+    enquanto `AUTH-PRIVACY-LEGAL` (`BLK-0004`) não existir; isso é prudência de engenharia, não
+    determinação legal, e não antecipa o parecer da OS-16.

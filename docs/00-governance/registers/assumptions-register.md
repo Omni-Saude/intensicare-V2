@@ -333,6 +333,146 @@ assumption in this register may be silently treated as fact — see
   - `validation_status`: VALIDATION REQUIRED
 - **Links:** `registers/risk-register.md` `RISK-0010`.
 
+## ASM-0009 — Tipo de evento `identity.*` desconhecido é erro fail-closed enquanto N-8 não fechar (pt-BR — conteúdo novo, ciclo 2, 2026-08-15)
+
+- **Label:** INFERENCE (reasoned from `threat-model.md` §12.8 item 12, combinada com
+  `memoria-de-desenho.md` N-8/ASM-0006)
+- **Statement:** Enquanto a divergência de 5×6 tipos de evento de identidade
+  (ponto N-8 da minuta de contrato; ver `ASM-0006`) não for fechada pelo
+  titular, um consumidor que trate qualquer tipo de evento `identity.*`
+  **desconhecido** sob a regra de tolerant reader (ignorar campo adicional
+  desconhecido) corre o risco concreto de **ignorar silenciosamente uma
+  reatribuição de fatos** — o mesmo mecanismo de dano de THR-0070 (perda
+  silenciosa de evento de identidade), por outra porta. A posição adotada
+  por esta análise: enquanto N-8 não fechar, tipo `identity.*` desconhecido
+  **nunca** é campo adicional tolerável — é **erro fail-closed**, sempre.
+  Isto não é uma decisão do titular; é a leitura defensiva assumida por esta
+  análise até que N-8 seja resolvido.
+- **Why it matters:** a regra de tolerant reader (invariante 6 do envelope,
+  `memoria-de-desenho.md` §4) existe precisamente para permitir campos novos
+  sem quebrar o consumidor — mas aplicada sem distinção a **tipos de evento**
+  inteiros, ela converte a incerteza sobre `identity.reassignment.v1` (ainda
+  não confirmado pelo titular) num modo de falha silencioso indistinguível de
+  operação normal.
+- **Validation required:** confirmação do titular sobre os cinco ou seis
+  tipos (N-8/`ASM-0006`) fecha esta assunção; até lá, qualquer implementação
+  do consumidor deve tratar tipo `identity.*` desconhecido como erro
+  fail-closed, não como campo tolerável.
+- **Owner:** UNASSIGNED — VALIDATION REQUIRED (`AUTH-DATA-PLATFORM`, conjuntamente com rodaquino-OMNI como titular da ata)
+- **Provenance:**
+  - `source_repo`: intensicare-V2
+  - `path_or_url`: "docs/11-security-privacy-compliance/threat-model.md; docs/08-interoperability/amh-data/contract-v1/memoria-de-desenho.md"
+  - `commit_sha_or_version`: "working tree não commitado sobre cycle-1/clinical-content @ 3530295 (threat-model.md modificado por sessão paralela nesta mesma janela)"
+  - `section_or_lines`: "threat-model.md §12 (extensão do ciclo 1), §12.8 item 12; memoria-de-desenho.md §8 ponto N-8"
+  - `date_collected`: "2026-08-15"
+  - `collector`: governance-and-traceability steward (ciclo 2; consolidação de achado já registrado em threat-model.md, nenhuma medição nova)
+  - `transformation`: "transcrição quase verbatim (SOURCE) do item 12 de threat-model.md §12.8, ligada à assunção já registrada ASM-0006"
+  - `confidence`: high
+  - `validation_status`: VALIDATION REQUIRED
+- **Links:** `registers/assumptions-register.md` `ASM-0006`; `registers/blockers-register.md` `BLK-0015`.
+
+## ASM-0010 — `L` de HAZ-0045 e HAZ-0043 são triagem, não estimativa (pt-BR — conteúdo novo, ciclo 2, 2026-08-15)
+
+- **Label:** VALIDATION REQUIRED (nuance sobre a natureza de um valor já registrado, não um novo achado de fato)
+- **Statement:** Os valores de verossimilhança (`L`) atribuídos a **HAZ-0045**
+  (`L3`) e **HAZ-0043** (`L4`) no hazard-log são **triagem qualitativa**, não
+  **estimativa medida**. Para HAZ-0045, o próprio hazard-log declara: "a taxa
+  de falso-positivo é propriedade do limiar de correspondência a montante, e
+  não está medida em nenhum documento lido. L3 é, portanto, triagem e não
+  estimativa: se a taxa vier a ser medida, este valor deve ser refeito para
+  cima ou para baixo conforme a medida, por dono nomeado." Para HAZ-0043, o
+  hazard-log declara equivalentemente que a direção plausível do `L` é "para
+  cima, não para baixo", porque a extensão de camada 4 (canal em lote × janela
+  de 1h do NEWS2) "está inteiramente não medida" e que "reavaliar `L` é ato de
+  dono nomeado e é VALIDATION REQUIRED antes do G2." **Caminho de validação
+  para os dois:** medição de taxa de falso-positivo do índice cross-PJ da AMH
+  (HAZ-0045) e medição de latência/frescor de camada 4 do canal FHIR da AMH
+  (HAZ-0043) — nenhuma das duas é possível sem ambiente semelhante a produção
+  (RISK-0004; L-14 de `lacunas-e-proximas-evidencias.md`).
+- **Why it matters:** um `L` de triagem lido como estimativa medida
+  subestimaria silenciosamente o risco residual apresentado a qualquer
+  aceitação de Gate G2/G6 — nos dois casos o próprio registro de origem já
+  avisa que a direção mais provável de correção é para cima, não para baixo.
+- **Validation required:** dono nomeado (`AUTH-CLINSAFETY`) deve refazer `L`
+  de HAZ-0045 e HAZ-0043 quando a medição correspondente existir; nenhum dos
+  dois valores pode ser tratado como estimativa final antes disso.
+- **Owner:** UNASSIGNED — VALIDATION REQUIRED (`AUTH-CLINSAFETY`)
+- **Provenance:**
+  - `source_repo`: intensicare-V2
+  - `path_or_url`: docs/05-clinical-safety/hazard-log.md
+  - `commit_sha_or_version`: "working tree não commitado sobre cycle-1/clinical-content @ 3530295 (hazard-log.md modificado por sessão paralela nesta mesma janela)"
+  - `section_or_lines`: "HAZ-0045 nota (iii) de probabilidade; HAZ-0043 §4 ('Efeito sobre S/L de HAZ-0043 — declarado, não escondido')"
+  - `date_collected`: "2026-08-15"
+  - `collector`: governance-and-traceability steward (ciclo 2; consolidação de duas notas de triagem já registradas no hazard-log, nenhuma medição nova)
+  - `transformation`: "consolidação (INFERENCE) de duas advertências de triagem independentes, já textuais no hazard-log, em uma única entrada de registro"
+  - `confidence`: high
+  - `validation_status`: VALIDATION REQUIRED
+- **Links:** `registers/blockers-register.md` `BLK-0017`; `registers/risk-register.md` `RISK-0011`, `RISK-0009`.
+
+## ASM-0011 — Premissas A1-A4 dos ADRs 0006/0009/0010/0011 (consolidado) (pt-BR — conteúdo novo, ciclo 2, 2026-08-15)
+
+- **Label:** INFERENCE / PROPOSAL (premissas §2.2 dos próprios ADRs, ainda `proposed`)
+- **Statement:** Consolida as premissas registradas na seção "2.2 Premissas" dos
+  quatro ADRs de runtime/entrega minted 2026-08-15, ainda `proposed`, cada uma
+  com dono `UNASSIGNED — VALIDATION REQUIRED` no próprio ADR: **ADR-0006**
+  (A1–A4) — o portfólio aprovado (G2) exigirá ao menos uma via com necessidade
+  de frescor confrontável com medição de lane, invalidada se G2 aprovar
+  portfólio exclusivamente de vias sem sensibilidade a frescor; a lane
+  analítica AMH continuará existindo e acessível para leitura de
+  reconciliação sob qualquer opção de fronteira do ADR-0001, invalidada por
+  decisão de fronteira que exclua acesso analítico; a retenção da lane
+  operacional V2 é suficiente para replay do laço sem depender da retenção
+  AMH, invalidada por política de retenção V2 que exija expurgo antes do
+  horizonte de replay exigido; divergência entre lanes é mensurável por
+  amostragem/checksum sem mover PHI além do mínimo, invalidada por evidência
+  de que a comparação exija replicação integral de PHI. **ADR-0009** (A1–A4)
+  — o par Alert(fato)×WorkItem(acionável) sobrevive à validação de usuário,
+  invalidado por validação mostrando que a agregação N:1 confunde mais do que
+  ajuda; toda transição é expressável como comando discreto com chave de
+  idempotência, invalidada por fluxo de UI que exija transação de longa
+  duração; timers de escalada podem ser duráveis re-armáveis a partir do
+  estado persistido, invalidada por restrição de plataforma que impeça timers
+  duráveis; o volume de ações concorrentes reais sobre o mesmo item é baixo,
+  invalidada por medição em uso real mostrando contenção alta. **ADR-0010**
+  (A1–A4) — o armazenamento operacional da V2 será de classe transacional com
+  ACID local, invalidada por decisão futura de plataforma sem transação
+  local; o volume interno de eventos é o de uma plataforma de UTI por tenant,
+  não telemetria de alta frequência, invalidada por portfólio G2 exigindo
+  ingestão de forma de onda no backbone interno; consumidores internos
+  toleram redelivery e deduplicam por `idempotency_key`, invalidada por
+  consumidor que não possa deduplicar; uma janela de replay finita e
+  declarada é suficiente, invalidada por exigência regulatória de replay
+  integral pelo log. **ADR-0011** (A1–A4) — a decisão de autorização por push
+  pode ser avaliada com custo aceitável via cache de decisão com invalidação
+  imposta pelo servidor, invalidada por medição futura mostrando custo
+  proibitivo mesmo com cache bem invalidado; o conjunto de superfícies do §9.2
+  cobre as projeções iniciais, invalidada por portfólio exigindo superfície
+  que não caiba no contrato de projeção; o polling de reconciliação serve de
+  caminho de verdade de recuperação para toda superfície, invalidada por
+  superfície cuja semântica exija push exclusivo; clientes toleram
+  desconexão explícita com instrução de reconciliar, invalidada por validação
+  de usuário mostrando que desconexão explícita em cenário crítico é
+  inaceitável.
+- **Why it matters:** cada premissa, se invalidada, muda materialmente o
+  espaço de opções do ADR correspondente; nenhuma tem dono nomeado hoje, e os
+  próprios ADRs instruem que sejam registradas aqui, não cunhadas neles —
+  mesmo padrão de `ASM-0008` para os ADRs de fronteira/modelo canônico.
+- **Validation required:** o dono nomeado de cada ADR (na aceitação) deve
+  confirmar ou refutar cada premissa listada; nenhuma pode ser tratada como
+  fato até essa confirmação.
+- **Owner:** UNASSIGNED — VALIDATION REQUIRED (`AUTH-DATA-PLATFORM` / `AUTH-PRODUCT` / `AUTH-CLINSAFETY` conforme candidato de cada ADR, um por ADR na aceitação)
+- **Provenance:**
+  - `source_repo`: intensicare-V2
+  - `path_or_url`: "docs/06-architecture/adrs/ADR-0006-fonte-de-verdade-operacional-analitica-e-reconciliacao.md; docs/06-architecture/adrs/ADR-0009-maquina-de-estados-alerta-item-de-trabalho.md; docs/06-architecture/adrs/ADR-0010-backbone-transacao-outbox-eventos-garantias-de-entrega.md; docs/06-architecture/adrs/ADR-0011-projecoes-de-leitura-e-entrega-tempo-real-autorizada.md"
+  - `commit_sha_or_version`: n/a (working tree, branch cycle-1/clinical-content)
+  - `section_or_lines`: "ADR-0006 §2.2; ADR-0009 §2.2; ADR-0010 §2.2; ADR-0011 §2.2 (todas rotuladas 'Premissas')"
+  - `date_collected`: "2026-08-15"
+  - `collector`: governance-and-traceability steward (consolidação direta dos quatro ADRs; nenhum ID `ASM` cunhado nos ADRs, per instrução explícita de cada um)
+  - `transformation`: consolidação (INFERENCE) de dezesseis premissas individuais (quatro por ADR) em uma única entrada de registro
+  - `confidence`: high
+  - `validation_status`: VALIDATION REQUIRED
+- **Links:** `registers/assumptions-register.md` `ASM-0008`.
+
 ## Index
 
 | ID | Assumption (short) | Type | Validation status | Owner |
@@ -345,3 +485,6 @@ assumption in this register may be silently treated as fact — see
 | ASM-0006 | Divergência 5×6 tipos de evento de identidade, ata × OS-17 | INFERENCE | VALIDATION REQUIRED | UNASSIGNED |
 | ASM-0007 | B4a/B4b e o gatilho de perecibilidade | PROPOSAL | VALIDATION REQUIRED | UNASSIGNED |
 | ASM-0008 | Premissas A1-A6 dos ADRs 0001/0003/0005 (consolidado) | INFERENCE/PROPOSAL | VALIDATION REQUIRED | UNASSIGNED |
+| ASM-0009 | Tipo de evento `identity.*` desconhecido é erro fail-closed enquanto N-8 não fechar | INFERENCE | VALIDATION REQUIRED | UNASSIGNED |
+| ASM-0010 | `L` de HAZ-0045 e HAZ-0043 são triagem, não estimativa | VALIDATION REQUIRED | VALIDATION REQUIRED | UNASSIGNED |
+| ASM-0011 | Premissas A1-A4 dos ADRs 0006/0009/0010/0011 (consolidado) | INFERENCE/PROPOSAL | VALIDATION REQUIRED | UNASSIGNED |

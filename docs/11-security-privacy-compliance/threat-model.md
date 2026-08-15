@@ -9,6 +9,12 @@ statement: >
   abuse cases. Every threat is status OPEN, owner UNASSIGNED, priority PROPOSAL. No
   control named here is implemented. No finding here is closed, accepted, or verified.
   This document makes no compliance claim of any kind.
+  EXTENSAO DO CICLO 1 (secao 12, em pt-BR por DEC-G0-10, 2026-08-15): dezesseis ameacas
+  adicionais (THR-0068..THR-0083) sobre a superficie nova introduzida pela minuta do
+  contrato v1 AMHxIntensiCare — lane de eventos de ciclo de vida de identidade,
+  resolve(ref, as_of), PSR como pseudonimo, contaminacao cross-PJ a montante (R-a5),
+  fixtures/dados sinteticos e drift de contrato. Total: 83 ameacas, TODAS OPEN, nenhuma
+  aceita. As secoes 0-11 permanecem sem reescrita.
 provenance:
   source_repo: intensicare-V2
   path_or_url: docs/11-security-privacy-compliance/threat-model.md
@@ -25,6 +31,18 @@ provenance:
   confidence: medium
   owner: UNASSIGNED — VALIDATION REQUIRED
   validation_status: VALIDATION REQUIRED
+extension_ciclo_1:
+  section: "12 (THR-0068..THR-0083)"
+  date_collected: 2026-08-15
+  collector: especialista em modelo de ameacas de saude (ciclo 1)
+  language: pt-BR (DEC-G0-10)
+  source_surface: docs/08-interoperability/amh-data/contract-v1/ (manifesto draft, clausula de ciclo de vida de identidade, fixtures, memoria de desenho) — status DRAFT/PROPOSAL, pinned false
+  also_read: docs/11-security-privacy-compliance/lgpd-os16/minuta-parecer-os-16.md (§1.3 P-PSR-1; §3.6 R-a3/R-a5/R-a7); docs/06-architecture/adrs/ADR-0004-identidade-paciente-encontro-mpi.md (§5.1 D-04..D-08, §5.2); docs/05-clinical-safety/hazard-log.md (verificacao de IDs HAZ)
+  transformation: threat modelling anticipatorio sobre a superficie nova; nenhum ambiente, endpoint ou artefato executavel foi testado (nenhum existe)
+  confidence: medium
+  owner: UNASSIGNED — VALIDATION REQUIRED
+  validation_status: VALIDATION REQUIRED
+  acceptance: nenhuma — aceitacao pertence a AUTH-SECURITY (BLK-0003), UNASSIGNED
 links:
   requirements: [SAF-0001, SAF-0037, SEC-0001, SEC-0050]
   hazards: [HAZ-0003, HAZ-0013, HAZ-0014, HAZ-0028, HAZ-0029, HAZ-0034]
@@ -669,3 +687,266 @@ threat. This demonstrates coverage **of that list** — not coverage of all thre
 8. **Boundaries deliberately unmodelled** (§2.3) need owners before they can be scheduled.
 9. **This model has had no independent review.** `PROMPT:201` requires the verifier not be
    the implementer; here, the author is an agent and no human has read it.
+
+---
+
+## 12. Extensão do ciclo 1 — a superfície do contrato AMH×IntensiCare v1 (minuta)
+
+> **Nota de idioma.** As seções 0–11 acima foram redigidas em inglês no ciclo 0 e
+> **permanecem sem reescrita**. Esta seção 12 é redigida em **pt-BR** conforme a política
+> de idioma `DEC-G0-10`, seguindo o precedente já exercido em
+> `docs/08-interoperability/amh-data/open-questions-for-amh-owners.md` §pt-BR. Nenhum
+> conteúdo anterior foi alterado, renumerado ou removido.
+
+**Escopo desta extensão.** Modela **apenas** a superfície nova introduzida pela minuta do
+contrato v1 — `docs/08-interoperability/amh-data/contract-v1/` (manifesto draft, cláusula de
+ciclo de vida de identidade, fixtures, memória de desenho), publicada em 2026-08-15 e
+**posterior** ao modelo do ciclo 0. Não re-modela nada que as §§4.A–4.M já cobrem: onde uma
+ameaça existente já cobre o caso, esta seção **referencia** em vez de duplicar (§12.2).
+
+**Estado epistêmico, sem mudança.** Todas as declarações do §8 continuam valendo para as
+ameaças novas: **nenhuma está fechada, aceita, mitigada ou verificada**; nenhum `SEC` citado
+está implementado; nada aqui é declaração de conformidade. Nenhum risco é aceito nesta seção —
+aceitação pertence a `AUTH-SECURITY`, que segue `UNASSIGNED` (`BLK-0003`).
+
+### 12.1 O que é a superfície nova, e por que ela é uma superfície
+
+**OBSERVADO** (leitura de `contract-v1/contract-manifest.draft.yaml`,
+`eventos-ciclo-de-vida-identidade.md`, `memoria-de-desenho.md` e `fixtures/README.md`, todos
+em 2026-08-15, estado `DRAFT`/`PROPOSAL`, `pinned: false`, `aceito: false`): a minuta acrescenta
+à fronteira **TB-05** (V2 ↔ plataforma AMH-data) dois canais que o modelo do ciclo 0 não
+conhecia, e um identificador que passa a chavear todo fato clínico da V2.
+
+| Canal / artefato | O que atravessa | Por que muda o modelo de ameaças |
+|---|---|---|
+| **Canal E — lane de eventos de ciclo de vida de identidade** (6 tipos `identity.*.v1`) | Envelope mínimo de 11 campos; transições de ref (`subject_ref_antiga` → `subject_ref_nova`) | É a primeira lane em que a AMH **empurra** mutações de estado para a V2. Entrega `at-least-once`, ordenação **apenas por sujeito**, transporte **não escolhido**. A lane não altera dado clínico — altera **a chave de todo dado clínico** |
+| **Canal R — operação `resolve(ref, as_of)`** | `ref` opaca + instante; resposta com resolução vigente naquele instante e cadeia de alias | É uma **dependência síncrona de correção clínica**: sem ela o replay determinístico (`DOM-0003`) não é reproduzível. É também uma operação de consulta sobre um espaço de identificadores — logo, um possível oráculo |
+| **PSR (`portable_subject_ref`)** | `amh:psr:v1:<uuidv4>`, estável em `{amh_tenant, legal_entity}` | Passa a ser **a chave de todo fato clínico persistido** (ADR-0004 D-04/D-05, `(PSR, encontro)`). **É pseudonimização, não anonimização** — `lgpd-os16/minuta-parecer-os-16.md` §1.3, PROPOSTA **P-PSR-1** |
+| **Artefatos de contrato** (manifesto, esquema, 10 fixtures) | Definição executável da fronteira | São **artefatos de verificação** que entram no caminho do Gate G3. Todo digest está `null`; `pinned: false` |
+
+**Decisão deliberada de não cunhar `TB-13`/`TB-14`.** Os dois canais são, pela definição do
+§2, o mesmo cruzamento de autoridade que TB-05 já nomeia (duas pessoas jurídicas, dois
+cadências de release, a V2 como consumidora sem autoridade sobre os controles da AMH). Criar
+fronteiras novas fragmentaria a análise sem acrescentar assimetria de confiança. As linhas
+abaixo trazem `TB-05` na coluna `TB` e **nomeiam o canal no texto do caminho**. Onde o
+transporte escolhido for um broker, `TB-04` também incide — registrado por linha.
+
+**A superfície é `PROPOSAL` e ainda negociável — e é exatamente por isso que ela é modelada
+agora.** Quatro das ameaças abaixo (THR-0068, THR-0071, THR-0083 e, em parte, THR-0070)
+apontam **lacunas no envelope proposto**, não defeitos de implementação. Corrigi-las custa uma
+emenda compatível hoje e uma mudança **major** com janela de depreciação depois.
+
+### 12.2 Verificação antes de cunhar: o que o ciclo 0 já cobre
+
+**INFERÊNCIA** (comparação linha a linha das §§4.A–4.M contra as seis superfícies do pacote de
+tarefa). Nenhuma ameaça nova foi cunhada onde uma existente já basta; onde a ameaça nova
+existe, a coluna "incremento" declara **o que exatamente ela acrescenta**.
+
+| Caso do pacote | THR existente mais próximo | Basta? | Incremento que justifica a entrada nova |
+|---|---|---|---|
+| Evento forjado/injetado | **THR-0015** (injeção no stream interno, TB-04) | **Não** | THR-0015 é sobre o stream **interno** da V2. O canal E vem de **outra pessoa jurídica**, com transporte indefinido, e seu envelope mínimo **não tem campo de assinatura nem digest de manifesto** (excluídos em `memoria-de-desenho.md` §5) → **THR-0068** |
+| Replay / duplicata | **THR-0011** (replay sem idempotência), **THR-0013** (reordenação) | **Parcialmente** | A `idempotency_key` é **campo do envelope, fornecido pelo produtor** — não é chave canônica derivada pela V2, que é o que `SEC-0021` exige. A idempotência vira **dependência de confiança no produtor** → **THR-0069**; e a ordenação prometida é só *por sujeito*, enquanto um `merge` é um fato sobre **um par** → **THR-0071** |
+| Merge não aplicado | **THR-0048** (merge/unmerge a montante, fatos não re-associados) | **Não** | THR-0048 pressupõe que o evento **chegou**. O caso novo é o evento que **nunca chega** e cuja ausência é indetectável: o envelope não tem número de sequência, marca-d'água nem heartbeat → **THR-0070** |
+| Tombstone de erasure não aplicado | *(nenhum)* | **Não** | Nenhuma ameaça do ciclo 0 trata **retenção indevida após exercício de direito de eliminação a montante**. THR-0008 é sobre correção clínica perdida; THR-0028/THR-0033 são sobre **vazamento**, não sobre reter o que deveria ter sido retirado → **THR-0072** |
+| `resolve` adulterado/stale, cache envenenado | **THR-0007** (stale), **THR-0019** (colisão de cache) | **Parcialmente** | O objeto agora é a **resolução de identidade**, não um valor clínico; e a degradação específica é "responder o **agora** quando foi pedido o **então**", que nenhuma linha existente descreve → **THR-0073**, **THR-0074** |
+| Oráculo de enumeração | **THR-0017** (inferência cross-tenant por canal lateral) | **Não** | THR-0017 é sobre existência de **registros** de outro tenant. Aqui o canal lateral revela **fatos sobre o ciclo de vida da identidade** — inclusive que uma ref foi `retired`, isto é, que **um titular exerceu direito de eliminação** → **THR-0075** |
+| Deputado confuso | **THR-0026** (padrão genérico), **THR-0063** (em MCP) | **Não** | A instância nova tem o *downstream* **fora da V2 e fora da OMNI**: quem decide autorização é a AMH, e o portão de finalidade (`tratamento` + contexto profissional, AQ-3) precisa **viajar** com a chamada → **THR-0076** |
+| PSR — re-identificação, logs, sintético↔produção | **THR-0020** (V2 como índice cross-PJ), **THR-0028/0029/0030** (PHI em sinks), **THR-0017** | **Não** | THR-0020 exige estrutura **cross-PJ**; a re-identificação por quase-identificadores acontece **dentro de um tenant** (THR-0077). O PSR é opaco e por isso **escapa** de defesas desenhadas para PHI óbvio, inclusive do gate de conteúdo proibido deste repositório (THR-0078). E a fronteira sintético↔produção tem, aqui, um sentido novo — **ref sintética aceita em produção** (THR-0079) |
+| Contaminação cross-PJ a montante (R-a5) | **THR-0003** (junção por igualdade de identificador) | **Não** | Em THR-0003 **a V2 faz a junção errada**. Em R-a5 a V2 **cumpre o contrato corretamente** e ainda assim recebe o par errado: o controle preventivo tem dono **fora da V2** → **THR-0080** |
+| Fixtures / dessincronia | **THR-0055** (gate que valida zero casos), **THR-0056** (artefato de verificação adulterado) | **Parcialmente** | THR-0055/0056 são do TB-09/TB-12 (cadeia de build e de conteúdo clínico). O caso novo é a **regra de tolerant reader implementada pela metade** na fronteira de dados (THR-0081) e a suíte de conformidade que atesta um esquema que ninguém consome (THR-0082) |
+| Drift de contrato | **THR-0047** (drift de terminologia/perfil), **THR-0051** (substituição de artefato) | **Não** | THR-0047 é drift de **vocabulário clínico**; THR-0051 é da cadeia de build. Este é o drift do **contrato de identidade e de tempo**, cuja âncora única — `manifest_sha256` — está `null` e cujo envelope **exclui por desenho** a referência de manifesto por mensagem → **THR-0083** |
+
+### 12.3 Catálogo — THR-0068..THR-0083
+
+Todas as linhas: `Status = OPEN`, `Owner = UNASSIGNED — VALIDATION REQUIRED`,
+`Priority = PROPOSAL`. As bandas P0/P1/P2 são as do §3, sem redefinição. `HAZ` cita apenas
+identificadores **verificados em** `docs/05-clinical-safety/hazard-log.md` na leitura de
+2026-08-15; nenhum `HAZ` novo é cunhado aqui (§12.5 propõe alargamentos ao dono daquele
+documento).
+
+#### 12.3.1 Canal E — consumo de eventos de ciclo de vida de identidade
+
+| THR | TB | Classe | Ator | Caminho | Impacto e via de dano clínico | HAZ | SEC candidatos | Pri |
+|---|---|---|---|---|---|---|---|---|
+| **THR-0068** | TB-05 (canal E), TB-04 | S, T | `EXT`, `AUTH`, `INS` | **Evento de identidade forjado.** Uma parte capaz de publicar na lane — ou de se passar pela AMH sobre um transporte ainda não escolhido — emite um `identity.merge.v1` ou `identity.alias.v1` fabricado. **OBSERVADO:** o envelope mínimo de 11 campos não carrega assinatura de produtor, digest de payload nem digest de manifesto (excluídos deliberadamente em `memoria-de-desenho.md` §5), portanto a autenticidade de origem depende **inteiramente** do transporte, que a minuta declara `null` | Um merge fabricado une duas pessoas distintas na visão da V2: a partir dele, o score é computado sobre valores de dois pacientes e o alerta é emitido sobre o paciente errado. Um `erasure` fabricado retira uma ref viva — negação de serviço **na camada de identidade**, com o paciente saindo da vigilância sem que nada falhe | HAZ-0001, HAZ-0003, HAZ-0027 | SEC-0051, SEC-0022, SEC-0002, SEC-0032, SEC-0059 | **P0** |
+| **THR-0069** | TB-05 (canal E), TB-04 | T, S | `AUTH`, `SYS`, `EXT` | **Replay e duplicata sob chave de idempotência fornecida pelo produtor.** A dedup é por `idempotency_key`, que é **campo do envelope**. Um produtor defeituoso que reutilize a chave entre fatos distintos faz a V2 **descartar um fato real**; um replay de um `restore` antigo, após um `merge` mais novo, reintroduz uma aresta já superada. `SEC-0021` exige chave canônica derivada pela V2 — aqui não há material para derivá-la, porque o envelope **é** a carga | Estado de identidade reconstruído diverge do estado real sem erro visível. Um fato de identidade descartado por colisão de chave é indistinguível de um fato que nunca ocorreu — precedente exato do sistema legado, cuja chave derivada do paciente fazia mensagens distintas serem tomadas por replays e descartadas (§4.C, THR-0011) | HAZ-0009, HAZ-0027 | SEC-0021, SEC-0051, SEC-0052, SEC-0058 | **P1** |
+| **THR-0070** | TB-05 (canal E), TB-04 | D, T | `SYS` | **Evento perdido — merge nunca aplicado.** Entrega `at-least-once` protege contra perda **no transporte declarado**, não contra: consumidor que confirma antes de persistir, quarentena que engole a mensagem, janela de retenção do produtor menor que a indisponibilidade do consumidor, ou filtro de escopo mal configurado. **OBSERVADO:** o envelope mínimo **não tem** número de sequência, marca-d'água nem heartbeat, e a lane não declara latência (`VALIDATION_REQUIRED`) — logo **não existe sinal de lacuna**. Sem adversário | Fatos clínicos continuam sendo chaveados por uma ref que o produtor já considera superada: **a história do paciente fica partida em duas** e o clínico julga estabilidade que o registro completo contradiz. A equivalência replay ⇔ `resolve` (§3 da cláusula), que é o critério de aceitação do Gate G3, quebra **em silêncio**. Numa janela de indisponibilidade, atinge **todos** os sujeitos que transicionaram nela — por isso P0, e não P1 | HAZ-0012, HAZ-0027, HAZ-0025 | SEC-0052, SEC-0049, SEC-0026, SEC-0023 | **P0** |
+| **THR-0071** | TB-05 (canal E), TB-04 | T | `SYS` | **Fora de ordem através de uma cadeia de refs.** A garantia é ordenação **por sujeito**; um `merge` é um fato sobre **um par** (antiga, nova), e uma cadeia `A→B` seguida de `B→C` atravessa **dois pares distintos**, para os quais nenhuma ordem é prometida. **OBSERVADO:** o desempate de `occurred_at` idêntico é, no texto da cláusula, "ordem de emissão declarada pelo produtor" — mas **nenhum campo do envelope mínimo carrega essa ordem** (`emitted_at` é timestamp, não sequência, e pode empatar). Aplicar a cadeia fora de ordem produz um grafo de alias diferente | O grafo de alias diverge do da fonte: `resolve(ref, as_of)` e a visão derivada dos eventos passam a discordar, e a discordância aparece como reatribuição errada — ou não-reatribuição — de história clínica. Reforça a lacuna do envelope apontada em THR-0068 | HAZ-0011, HAZ-0027 | SEC-0052, SEC-0021, SEC-0024, SEC-0051 | **P1** |
+| **THR-0072** | TB-05 (canal E), TB-03, TB-11 | T, I | `SYS`, `INS` | **Tombstone de erasure não aplicado — retenção indevida.** `identity.erasure.v1` comunica que a ref foi marcada `retired` a montante (tipicamente exercício de direito de eliminação) e que o mapeamento para a identidade de origem foi rompido. Se a V2 não aplicar a transição — porque o evento se perdeu (THR-0070), porque o consumidor a trata como no-op (`subject_ref_nova: null` é o único caso válido e é fácil de tratar como malformado), ou porque a aplicação não alcança **todas** as cópias (projeções, caches, cache de `resolve`, índices, exports, telemetria dentro da retenção) — a V2 segue apresentando e avaliando o sujeito | Dado pessoal sensível retido e **em uso ativo** depois de o titular ter exercido direito de eliminação a montante. Agrava-se por uma tensão real que a V2 **não pode resolver sozinha**: o PSR é a chave de todo fato clínico, e apagá-lo destruiria o registro clínico e a trilha de auditoria — o que "aplicar o tombstone" significa juridicamente (eliminar, bloquear, ou reter sob obrigação clínica/regulatória) é determinação de `AUTH-PRIVACY-LEGAL`, `UNASSIGNED` (`BLK-0004`) | HAZ-0028 | SEC-0053, SEC-0020, SEC-0032, SEC-0052 | **P1** |
+
+#### 12.3.2 Canal R — `resolve(ref, as_of)`
+
+| THR | TB | Classe | Ator | Caminho | Impacto e via de dano clínico | HAZ | SEC candidatos | Pri |
+|---|---|---|---|---|---|---|---|---|
+| **THR-0073** | TB-05 (canal R) | T, S | `EXT`, `SYS` | **Resposta adulterada ou "atual servida como então".** A cláusula exige determinismo, semântica ponto-no-tempo e *fail-closed*, mas **não define autenticação nem prova de integridade da resposta**, e o transporte é `null`. Três realizações: (i) intermediário/proxy adultera a cadeia de alias; (ii) implementação degradada responde a resolução **atual** quando `as_of` está fora da janela suportada, em vez de negar; (iii) resposta stale servida por um intermediário que não conhece a semântica de `as_of` | O replay deixa de ser determinístico **sem levantar erro**: avaliações históricas são reatribuídas a sujeitos diferentes daqueles com que foram computadas, contrariando `DOM-0002`/`DOM-0003` e ADR-0004 §5.2. Como o `resolve` é a âncora da certificação de replay do Gate G3, uma resposta errada **valida** uma reconstrução errada | HAZ-0006, HAZ-0027, HAZ-0035 | SEC-0054, SEC-0011, SEC-0051, SEC-0024 | **P1** |
+| **THR-0074** | TB-05 (canal R), TB-03 | T, I | `SYS`, `AUTH` | **Cache de `resolve` envenenado ou mal chaveado.** A chave correta é `(ref, as_of, amh_tenant, legal_entity, versão de contrato)`; a chave "natural" que um desenvolvedor escreve é `ref`. Consequências: resposta de um instante servida para outro; cache negativo de `nao-mintada-em-as_of` congelando um sujeito como inexistente; ausência de invalidação quando um evento de identidade chega; e — se a chave omitir `{amh_tenant, legal_entity}` — resposta de um escopo servida a outro | Reatribuição silenciosa e intermitente, que **não reproduz** em teste single-tenant nem em teste de instância única (mesmo defeito estrutural de THR-0019). O cache negativo é o pior caso: um sujeito real passa a `not_evaluated` permanente e sai da vigilância sem que nenhum alarme dispare | HAZ-0013, HAZ-0027, HAZ-0025 | SEC-0054, SEC-0009, SEC-0019, SEC-0052 | **P1** |
+| **THR-0075** | TB-05 (canal R) | L, I | `AUTH`, `INS` | **`resolve` como oráculo de enumeração e de metadado de identidade.** As condições de resposta são, por desenho, **explícitas e distinguíveis**: `nao-mintada-em-as_of`, `status: retired` + data do fato, "ref desconhecida", "fora de escopo". Um chamador autenticado que itere `as_of` sobre refs já vistas obtém a **data de minting**, a **cadeia de transições** e o **fato de que uma ref foi retirada**. O espaço UUIDv4 não é enumerável por força bruta — o oráculo é útil **sobre o conjunto de refs já vistas** (vazadas em log, export, ticket ou fixture; ver THR-0078). Diferenças de latência e de forma de erro são canal adicional | Correlação e re-identificação por metadado, e **vazamento de um fato jurídico sensível**: `retired` sinaliza, com data, que um titular exerceu direito de eliminação — informação sobre o titular que nenhuma finalidade `tratamento` justifica. Constrói, do lado do chamador, parte do mapa que AQ-4 e `SEC-0010` existem para impedir | HAZ-0013, HAZ-0028 | SEC-0054, SEC-0033, SEC-0050, SEC-0016, SEC-0032 | **P1** |
+| **THR-0076** | TB-05 (canal R), TB-02, TB-08 | E | `AUTH`, `SYS` | **Deputado confuso sobre `resolve`.** Um BFF, um worker de replay, um job de reconciliação ou uma ferramenta MCP chama `resolve` com a **identidade de carga de trabalho da V2**, sem carregar tenant, entidade legal, propósito-de-uso e contexto profissional do chamador humano. Do outro lado, a AMH autoriza pelo cliente — não pelo usuário. A cláusula exige "propósito-de-uso `tratamento` + contexto profissional", mas quem tem de **transportar** esse contexto é a V2 | Um usuário sem vínculo assistencial com o sujeito obtém resolução de identidade **do outro lado de uma fronteira de pessoa jurídica**, com a autoridade da V2 e sob o registro de auditoria da V2. Cada componente comporta-se "corretamente"; a autorização de usuário simplesmente nunca é avaliada. É THR-0026 realizado onde o *downstream* pertence a outra organização | HAZ-0003, HAZ-0013 | SEC-0006, SEC-0054, SEC-0001, SEC-0003, SEC-0041 | **P0** |
+
+#### 12.3.3 PSR — pseudônimo tratado como se fosse anonimato
+
+**Base normativa (SOURCE, via `lgpd-os16/minuta-parecer-os-16.md` §1.3 e PROPOSTA P-PSR-1):**
+o PSR **não é derivável** (é UUIDv4 mintado, não digest de atributo) — e o desenho merece
+crédito por isso — **mas é re-associável por consulta**, porque existe, do lado AMH, tabela de
+registro que mantém `mpi_id` ao lado do `subject_ref`. Portanto o PSR realiza
+**pseudonimização, não anonimização**; a definição do art. 13, §4º é expressamente "para os
+efeitos deste artigo" e não é porto seguro geral; e o art. 12 não é satisfeito, porque a
+reversão "exige uma consulta a uma tabela existente, sob contrato entre as partes". As três
+ameaças abaixo são as realizações técnicas do erro que P-PSR-1 proíbe.
+
+| THR | TB | Classe | Ator | Caminho | Impacto e via de dano clínico | HAZ | SEC candidatos | Pri |
+|---|---|---|---|---|---|---|---|---|
+| **THR-0077** | TB-03, TB-10, TB-05 | L, I | `INS`, `AUTH`, `SYS` | **Re-identificação por correlação sobre dados chaveados por PSR, dentro de um único tenant.** O PSR é estável em `{amh_tenant, legal_entity}` e chaveia **todo** fato clínico (ADR-0004 D-04/D-05). O acervo da V2 acumula, por PSR, série temporal de sinais/scores, leito, unidade, instantes de admissão/alta e transições de alerta — quase-identificadores que, numa UTI de dezenas de leitos, individualizam um paciente para qualquer pessoa com acesso operacional ou com conhecimento da unidade. O gatilho prático é um export, painel ou conjunto de análise descrito como "pseudonimizado" e por isso tratado como não-pessoal | Divulgação de dado pessoal **sensível** sob rótulo errado, e habilitação de uso secundário sem base legal — exatamente o que AQ-3 bloqueia. Distingue-se de THR-0020: **não é necessário nenhum cruzamento cross-PJ**; o acervo intra-tenant basta. Também é o caminho pelo qual um artefato da V2 poderia afirmar "sem PHI" e estar errado | HAZ-0028 | SEC-0055, SEC-0016, SEC-0020, SEC-0010, SEC-0033 | **P1** |
+| **THR-0078** | TB-10, TB-09, TB-08 | I | `SYS` | **PSR em logs, traces, rótulos de métrica, fixtures, tickets e mensagens de agente.** Por ser opaco, o PSR "parece" seguro e **escapa das defesas desenhadas para PHI óbvio**: aparece naturalmente em chaves de correlação, em cardinalidade de métrica, em corpos de erro, em argumentos e resultados de ferramenta MCP e no bloco `_fixture`. **OBSERVADO:** `scripts/check_forbidden_content.py` reconhece padrões de credencial, CPF **formatado**, e-mail e canários — **não há padrão para `amh:psr:v1:`**; e um redator de logs que filtre por lista de campos clínicos não filtra a **chave** | Um sink de retenção longa e audiência ampla (TB-10) passa a carregar o identificador que chaveia todo o registro clínico. Combinado com THR-0075, refs vazadas viram entradas úteis no oráculo; combinado com THR-0077, viram chave de junção para qualquer export. Instância específica de THR-0028/THR-0029/THR-0030 — registrada à parte porque **os controles existentes não a alcançam por construção** | HAZ-0028, HAZ-0029 | SEC-0055, SEC-0015, SEC-0016, SEC-0046, SEC-0017 | **P1** |
+| **THR-0079** | TB-09, TB-03, TB-05 | T, I | `SYS`, `INS` | **Fronteira sintético ↔ produção do PSR, nos dois sentidos.** (a) **Ref sintética aceita em produção**: `amh:psr:v1:SYNTH-...` **não é** um UUIDv4 e portanto viola o formato normativo; um validador que aceite "qualquer coisa após `amh:psr:v1:`" cria um sujeito fantasma sobre o qual fatos clínicos podem ser chaveados sem que a AMH jamais tenha mintado a ref. (b) **Ref de produção em ambiente inferior** (fixtures, CI, demo) — instância de THR-0030, agravada porque o PSR não dispara nenhum gate de conteúdo (THR-0078). (c) O marcador `SYNTH` é **convenção de nome, não separação técnica**: nada impede um produtor de dev de mintar refs sem o marcador, e nada impede o inverso | (a) contamina o registro clínico com um sujeito inexistente, cujos fatos nunca serão reconciliáveis e cujo `resolve` sempre negará — produzindo `not_evaluated` permanente que parece defeito de integração; (b) é PHI/dado pessoal em ambiente com controles de desenvolvimento; (c) transforma a garantia de sintetismo de `DEC-G0-03` em promessa não verificável | HAZ-0001, HAZ-0028 | SEC-0056, SEC-0017, SEC-0026, SEC-0055 | **P1** |
+
+#### 12.3.4 Contaminação cross-PJ a montante — R-a5
+
+| THR | TB | Classe | Ator | Caminho | Impacto e via de dano clínico | HAZ | SEC candidatos | Pri |
+|---|---|---|---|---|---|---|---|---|
+| **THR-0080** | TB-05 (canal E e R) | T, L, A | `SYS` (a montante), `AUTH` (a montante) | **Par falso-positivo no índice cross-PJ atribui fatos ao paciente errado, sem que a V2 tenha como detectar.** SOURCE: `minuta-parecer-os-16.md` §3.6 **R-a5** — *"se a resolução de identidade a montante passar a depender do índice, um par errado entra na V2 como fato clínico do paciente errado, sem que a V2 tenha como saber"* — e **R-a3** (falso-positivo cross-PJ como dano de privacidade **e** perigo clínico simultâneos, ADR-043 RB-07). Pré-condições: (i) o índice cross-PJ do ADR-043 entra em operação — hoje **gated** no parecer DPO/jurídico (ADR-0004 D-02); (ii) a resolução a montante passa a depender dele; (iii) um par falso-positivo é aceito. A V2 então recebe `identity.merge.v1`/`alias` **válido, autêntico, ordenado e idempotente**, e o aplica corretamente | História clínica de duas pessoas fundida numa só: score computado sobre valores de dois pacientes, alerta emitido sobre o paciente errado, e ausência de alerta para quem precisava. Simultaneamente, evento de privacidade cross-PJ — dados de um titular expostos no contexto assistencial de outro. **A V2 cumpre o contrato corretamente e ainda assim causa dano.** Por AQ-4 ela **não pode** conferir o par: não hospeda o índice, não vê os atributos que o sustentaram e não pode receber identificador de fonte | HAZ-0001, HAZ-0003, HAZ-0027 | **Preventivo: nenhum controle da V2.** Compensatório (apenas detecção): **SEC-0057** (PROPOSAL); auxiliares: SEC-0026, SEC-0032, SEC-0049, SEC-0035 | **P0** |
+
+**Declaração de propriedade do controle (INFERÊNCIA, e o ponto mais importante desta seção).**
+THR-0080 é a única ameaça deste modelo cujo **controle preventivo tem dono fora da V2 e fora
+da OMNI-como-fornecedora de software**: ele pertence à governança do índice do ADR-043 (AMH) e
+ao parecer jurídico da OS-16, e a `AUTH-AMH-OWNER` / `AUTH-PRIVACY-LEGAL`, ambos `UNASSIGNED`
+(`BLK-0010`, `BLK-0004`). **Isto não é aceitação de risco, e não pode ser lido como tal.** É o
+registro de que:
+
+1. a V2 **não pode** fechar esta ameaça por controle próprio, hoje ou depois;
+2. o único movimento disponível à V2 é **detecção compensatória parcial** (SEC-0057), que **não
+   previne** o dano e cuja taxa de falso-positivo é desconhecida e não medida;
+3. a decisão de operar com o índice ligado é decisão **de negócio e jurídica**, com dono humano
+   nomeado, e não decisão de engenharia;
+4. a concentração de autoridade registrada em **R-a7** da minuta LGPD (a mesma pessoa decide
+   pelos dois lados) **remove o atrito que normalmente funciona como controle entre
+   controladores distintos** — o que torna a nomeação explícita do dono deste risco mais
+   necessária, não menos.
+
+#### 12.3.5 Fixtures, dados sintéticos e drift de contrato
+
+| THR | TB | Classe | Ator | Caminho | Impacto e via de dano clínico | HAZ | SEC candidatos | Pri |
+|---|---|---|---|---|---|---|---|---|
+| **THR-0081** | TB-05, TB-09 | T, A | `SYS` | **Fixture inválida aceita por parser permissivo — a regra de tolerant reader implementada pela metade.** A invariante 6 tem duas metades: ignorar campos **adicionais** desconhecidos (fácil, e o caminho natural de qualquer desserializador) **e** rejeitar mensagem sem campos **obrigatórios** do envelope mínimo (exige verificação explícita). Um parser que implemente só a primeira aceita as quatro fixtures inválidas — e, em produção, aceita evento sem `idempotency_key` (dedup impossível), com `emitted_at < occurred_at` (ordenação corrompida), `merge` com ref nova igual à antiga, e **identificador de fonte cru**, que é o caso que a fixture `erasure.identificador-de-fonte-cru.invalid.json` existe justamente para provar rejeitado | A fronteira de minimização de AQ-4/XRD-05 **deixa de existir sem que nada falhe**: identificador de fonte atravessa para o domínio clínico da V2, e a dedup e a ordenação — de que depende toda a §12.3.1 — ficam desligadas para **todas** as mensagens. Um defeito único desativa simultaneamente vários controles, o que é o padrão de falha de causa comum já apontado no §13.1 do catálogo de controles | HAZ-0031, HAZ-0028 | SEC-0058, SEC-0026, SEC-0040, SEC-0016 | **P0** |
+| **THR-0082** | TB-09, TB-05 | T, A, R | `SYS`, `INS` | **Dessincronia fixture × esquema publicada como "conformidade".** **OBSERVADO:** as dez fixtures têm `sha256: null`, o manifesto tem `manifest_sha256: null` e `pinned: false`. Se o esquema publicado mudar e o conjunto de fixtures não for regerado — ou, na direção mais perigosa, se as fixtures forem editadas para passar num validador defeituoso — a suíte de conformidade **continua verde** e passa a atestar aderência a um esquema que ninguém consome. É o defeito estrutural de THR-0056 (artefato de verificação e artefato verificado compartilhando raiz de confiança) aplicado à fronteira de dados, agravado porque parser e fixtures tenderiam a ser mantidos pela mesma equipe e pelo mesmo pipeline | Evidência falsa de fronteira apresentada ao Gate G3. Uma fronteira "verificada" contra um esquema obsoleto é pior que uma fronteira não verificada: ela **fabrica confiança** exatamente onde a decisão de admitir dado real será tomada | HAZ-0031 | SEC-0058, SEC-0059, SEC-0031, SEC-0040 | **P1** |
+| **THR-0083** | TB-05, TB-09 | T, S | `SYS`, `INS`, `EXT` | **Drift de contrato: manifesto/digest não verificado → esquema alterado consumido em silêncio.** **OBSERVADO:** `manifest_sha256: null`, `ig_dependency.package_digest: null`, `pinned: false`; e o envelope mínimo **exclui deliberadamente** `contract_manifest_digest` por mensagem (`memoria-de-desenho.md` §5), de modo que **nenhuma mensagem carrega prova de qual versão de contrato a produziu**. A âncora única é o pin no `contracts.lock` da V2, hoje `pinned: false`. A própria política de compatibilidade manda o consumidor **rejeitar** pacote divergente — o que exige computar e comparar digest, isto é, precisamente o controle ausente | Uma republicação do esquema (mudança "compatível" na intenção do produtor, ou substituição maliciosa — THR-0051 aplicado ao contrato em vez do artefato de build) é consumida sem sinal. A semântica de **ref** ou de **tempo** pode mudar sob os pés da V2 sem janela de depreciação; o replay deixa de ser reproduzível, e as avaliações antes e depois do drift tornam-se incomparáveis sem que a proveniência registre por quê | HAZ-0031, HAZ-0040 | SEC-0059, SEC-0025, SEC-0038, SEC-0051, SEC-0052 | **P1** |
+
+### 12.4 Resumo de prioridades da extensão (PROPOSAL — não é aceitação de risco)
+
+| Prioridade | Qtd. | THR |
+|---|---|---|
+| **P0** | 5 | THR-0068, THR-0070, THR-0076, THR-0080, THR-0081 |
+| **P1** | 11 | THR-0069, THR-0071, THR-0072, THR-0073, THR-0074, THR-0075, THR-0077, THR-0078, THR-0079, THR-0082, THR-0083 |
+| **P2** | 0 | — |
+| **Total desta extensão** | **16** | THR-0068..THR-0083 |
+
+O §5 permanece **sem reescrita** e seus totais (67) referem-se ao conjunto do ciclo 0. Somados,
+o modelo passa a conter **83** ameaças, **todas OPEN**. A consequência do Gate G6 declarada no
+§5 agrava-se na mesma proporção: nenhuma das dezesseis pode ser fechada hoje, porque fechar
+exige controle implementado e verificado, e nada está implementado.
+
+> **VALIDATION REQUIRED, nos mesmos termos do §5:** estas prioridades não tiveram revisão
+> independente. `AUTH-SECURITY` segue `UNASSIGNED` (`BLK-0003`) e nenhum agente aceita a
+> própria triagem (`PROMPT:197-207`).
+
+### 12.5 Retroligações THR ↔ HAZ propostas ao dono do registro de perigos
+
+**Este documento não edita `docs/05-clinical-safety/hazard-log.md`.** As ligações abaixo são
+`PROPOSAL` para integração pelo dono daquele registro; severidade, verossimilhança e classe de
+perigo **não** são fornecidas — são ato dele (§9.2 aplica-se sem alteração).
+
+| HAZ existente | THR desta extensão a vincular |
+|---|---|
+| **HAZ-0001** identidade resolvida errada → fato no paciente errado | THR-0068, THR-0079, THR-0080 |
+| **HAZ-0003** `joint` contexto de tenant de valor controlado pelo chamador | THR-0076, THR-0080 |
+| **HAZ-0009** duplicata sem chave canônica de idempotência | THR-0069 |
+| **HAZ-0011** entrega fora de ordem | THR-0071 |
+| **HAZ-0012** fato clínico silenciosamente perdido | THR-0070 |
+| **HAZ-0013** `joint` leitura cross-tenant por chave/escopo ausente | THR-0074, THR-0075, THR-0076 |
+| **HAZ-0025** feed degradado com readiness saudável | THR-0070, THR-0074 |
+| **HAZ-0027** merge/unmerge a montante sem re-associação | THR-0068, THR-0069, THR-0070, THR-0071, THR-0073, THR-0074, THR-0080 |
+| **HAZ-0028** `joint` PHI/identificadores em sinks de retenção longa | THR-0072, THR-0075, THR-0077, THR-0078, THR-0079 |
+| **HAZ-0029** `joint` superfície MCP/IA | THR-0078 (PSR em argumento/resultado de ferramenta) |
+| **HAZ-0031** gate que valida zero casos / passa validando nada | THR-0081, THR-0082, THR-0083 |
+| **HAZ-0035** cobertura de auditoria incompleta | THR-0073 |
+| **HAZ-0040** estado de qualidade da fonte colapsado no estado de avaliação da V2 | THR-0083 |
+
+#### 12.5.1 Alargamentos candidatos de linha de perigo (aceitar ou rejeitar é ato do dono)
+
+Nenhum `HAZ` novo é cunhado aqui. Três ameaças ficam **fora do texto da condição** do perigo
+mais próximo:
+
+1. **THR-0070 — perda silenciosa de evento de identidade.** `HAZ-0027` descreve o merge que
+   **ocorre** e não é re-associado; `HAZ-0012` descreve a perda de um **fato clínico**. Nenhum
+   cobre a perda de um **fato de identidade** cuja ausência não produz sinal algum. Sugestão:
+   alargar a condição de `HAZ-0027`, ou abrir linha nova.
+2. **THR-0072 — retenção após erasure a montante.** `HAZ-0028` cobre **vazamento**; nenhuma
+   linha cobre **reter e continuar avaliando** um sujeito cuja ref foi retirada por exercício de
+   direito. Envolve também conflito com a retenção clínica/auditoria. Sugestão: linha nova,
+   com dono conjunto clínico + `AUTH-PRIVACY-LEGAL`.
+3. **THR-0080 — contaminação cross-PJ a montante.** `HAZ-0001` pressupõe que **a V2** resolve a
+   identidade a partir de um identificador ruim. Aqui a V2 age corretamente e o defeito entra
+   pronto, sem via de detecção própria. Sugestão: linha nova, explicitando no campo de controle
+   que o barreira preventiva é **externa à V2** — o registro de perigos precisa poder
+   representar um perigo cujo controle não pertence a quem o registra.
+
+### 12.6 Cobertura das seis superfícies exigidas pelo pacote de tarefa
+
+| # | Superfície exigida | Onde está coberta |
+|---|---|---|
+| 1 | Consumo de eventos de identidade: forjado/replayado; perdido (merge não aplicado); fora de ordem/duplicado; tombstone de erasure não aplicado | **THR-0068** (forjado), **THR-0069** (replay/duplicata), **THR-0070** (perdido), **THR-0071** (fora de ordem), **THR-0072** (tombstone). Referências: THR-0011, THR-0013, THR-0015, THR-0048 |
+| 2 | `resolve(ref, as_of)`: resposta adulterada/stale; cache envenenado; oráculo de enumeração; deputado confuso | **THR-0073**, **THR-0074**, **THR-0075**, **THR-0076**. Referências: THR-0007, THR-0017, THR-0019, THR-0026, THR-0063 |
+| 3 | PSR: re-identificação por correlação; vazamento em logs/traces/fixtures; sintético ↔ produção | **THR-0077**, **THR-0078**, **THR-0079**, com base em `minuta-parecer-os-16.md` §1.3 / P-PSR-1. Referências: THR-0020, THR-0028, THR-0029, THR-0030 |
+| 4 | Contaminação cross-PJ a montante (R-a5), com dono de controle fora da V2 e detecção compensatória | **THR-0080** + declaração de propriedade de controle (§12.3.4) + **SEC-0057** marcado `PROPOSAL` e explicitamente compensatório |
+| 5 | Fixtures e dados sintéticos: fixture inválida aceita por parser permissivo; dessincronia fixture × esquema publicada como conformidade | **THR-0081**, **THR-0082**. Referências: THR-0030, THR-0055, THR-0056 |
+| 6 | Drift de contrato: manifesto/digest não verificado → esquema alterado consumido em silêncio | **THR-0083**. Referências: THR-0047, THR-0051 |
+
+### 12.7 Lacunas declaradas desta extensão
+
+- **T-6 — o transporte não está escolhido.** `transport.escolhido: null`. Ameaças específicas
+  de broker, de canal FHIR ou de troca em lote (autorização de tópico, retenção do log de
+  eventos, semântica de *offset*, entrega em lote) **não podem ser enumeradas** antes do ADR de
+  fronteira. Esta seção modela o que é invariante às três opções; **um novo passo é devido
+  quando o transporte for decidido**.
+- **T-7 — o contrato é minuta.** Envelope, invariantes e semântica de `resolve` são `PROPOSAL`
+  e negociáveis (pontos N-1..N-10). Quatro entradas acima apontam lacunas **do envelope
+  proposto** (THR-0068, THR-0070, THR-0071, THR-0083); se a negociação as corrigir, as ameaças
+  mudam de forma — não desaparecem.
+- **T-8 — nada foi testado, porque nada existe.** Não há lane, não há `resolve`, não há
+  consumidor, não há PSR mintado. Todas as dezesseis são antecipatórias, como todas as 67
+  anteriores (§8, item 4).
+- **T-9 — a análise de re-identificação de THR-0077 não é quantitativa.** Não há estudo de
+  *k*-anonimato, nem medida de unicidade sobre acervo real — e não poderia haver, porque não
+  existe acervo. A afirmação é qualitativa e depende de premissas de tamanho de unidade;
+  `VALIDATION REQUIRED`, dono `AUTH-PRIVACY-LEGAL` em conjunto com governança clínica.
+- **T-10 — SEC-0057 não tem taxa de falso-positivo conhecida** e pode, se mal desenhado,
+  **virar ele próprio uma estrutura de correlação** que `SEC-0010` proíbe. A restrição de
+  desenho está declarada no controle; a verificação de que ela é respeitada é
+  `VALIDATION REQUIRED`.
+
+### 12.8 Itens em aberto acrescentados por esta extensão
+
+Complementam o §11, sem alterá-lo:
+
+10. **O envelope mínimo não tem prova de origem nem de versão de contrato** (THR-0068,
+    THR-0083). Emenda **compatível** hoje (campos opcionais novos); mudança **major** depois.
+    Insumo para a negociação AMH e para o ADR de fronteira — **não é decisão deste documento**.
+11. **O envelope mínimo não tem token de continuidade** (sequência, marca-d'água ou heartbeat),
+    logo a perda de evento é indetectável (THR-0070) e o desempate de `occurred_at` refere-se a
+    uma "ordem de emissão declarada pelo produtor" que **nenhum campo carrega** (THR-0071).
+    **Ponto de negociação novo a propor** — este documento não o registra em
+    `memoria-de-desenho.md`, que pertence a outro dono.
+12. **A divergência 5 × 6 tipos de evento (ponto N-8) tem consequência de segurança**: um
+    consumidor que trate `identity.reassignment.v1` como tipo desconhecido, sob tolerant reader,
+    **ignora silenciosamente uma reatribuição de fatos** — que é exatamente THR-0070 por outra
+    porta. Enquanto N-8 não fechar, o consumidor deve tratar tipo `identity.*` desconhecido como
+    **erro fail-closed**, nunca como campo adicional tolerável.
+13. **O que "aplicar o tombstone de erasure" significa** juridicamente para um registro clínico
+    (THR-0072) é determinação de `AUTH-PRIVACY-LEGAL` (`BLK-0004`), não de engenharia.
+14. **O gate `scripts/check_forbidden_content.py` não reconhece o padrão de PSR** (OBSERVADO).
+    **PROPOSAL** ao dono daquele gate: acrescentar padrão para `amh:psr:v1:` fora dos caminhos
+    do pacote de contrato. Este documento **não altera scripts**.
+15. **THR-0080 precisa de dono humano nomeado** antes de qualquer operação com o índice cross-PJ
+    ligado. É a única ameaça deste modelo cujo controle preventivo não pertence à V2, e a
+    concentração de autoridade registrada em **R-a7** torna a nomeação mais necessária, não
+    menos.

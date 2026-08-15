@@ -2,10 +2,24 @@
 doc_id: DOM-GLOSSARY
 status: PROPOSAL
 owner: UNASSIGNED — VALIDATION REQUIRED
-source: INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §8 (Product, domain, and requirements architecture — glossary term list), §9.1 (Architecture principles), §9.2 (Initial bounded contexts), §9.3 (Conceptual data model), §7.6 (Anti-corruption and conformance layer — two status dimensions)
+source: >
+  INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §8 (Product, domain, and requirements
+  architecture — glossary term list), §9.1 (Architecture principles), §9.2
+  (Initial bounded contexts), §9.3 (Conceptual data model), §7.6
+  (Anti-corruption and conformance layer — two status dimensions). §8
+  (2026-08-15, pt-BR, DEC-G0-10) acrescentado com fontes adicionais:
+  docs/08-interoperability/amh-data/identity-adjudication/adjudicacao-decisoes-2026-08-15.md
+  (AQ-3, AQ-4, AQ-5); docs/08-interoperability/amh-data/contract-v1/
+  (eventos-ciclo-de-vida-identidade.md, memoria-de-desenho.md);
+  docs/11-security-privacy-compliance/lgpd-os16/minuta-parecer-os-16.md;
+  docs/00-governance/traceability-policy.md §3.1;
+  docs/08-interoperability/amh-data/compatibility-finding.md;
+  docs/02-users-and-workflows/g1-kit/protocolo-baselines-pereciveis.md;
+  docs/06-architecture/adrs/ADR-0008-evaluation-status-and-completeness-freshness-semantics.md;
+  docs/06-architecture/adrs/ADR-0005-modelo-canonico-observacao-proveniencia-qualidade-correcao-tempo.md.
 date_collected: 2026-08-14
-collector: temporal-provenance domain modeler
-last_updated: 2026-08-14
+collector: temporal-provenance domain modeler; §8 (2026-08-15) acrescentado pelo engenheiro de política de CI e conformidade documental
+last_updated: 2026-08-15
 ---
 
 # IntensiCare V2 — Canonical Glossary
@@ -599,6 +613,21 @@ UNASSIGNED).
 > **source data-quality** vocabulary (`valid | warning | quarantined`) — see
 > `status-dimensions.md` for the full treatment of why these two dimensions must never
 > be collapsed (DOM-0008).
+>
+> **Nota acrescentada em 2026-08-15 (pt-BR, DEC-G0-10) — OBSERVED, estende esta entrada
+> com fonte nova; a definição das duas dimensões acima não muda.** Desde a redação
+> original desta seção (2026-08-14), o `ADR-0008` — que fixa a álgebra/precedência do
+> lado "status de avaliação V2" (as cinco transições, a precedência e a regra de
+> expiração) — foi **aceito**: `status: accepted (2026-08-15, GDEC-0007)`
+> (`docs/06-architecture/adrs/ADR-0008-evaluation-status-and-completeness-freshness-semantics.md`).
+> O `ADR-0005` — que fixa o modelo canônico de observação/proveniência/qualidade do lado
+> "qualidade de dado da fonte" e depende explicitamente desta mesma separação (seu texto
+> registra: "N8 pressupõe as duas dimensões de status: um ADR aceito referencia um alvo
+> que este ADR..." antes de permanecer proposto) — segue **`status: proposed`**
+> (`docs/06-architecture/adrs/ADR-0005-modelo-canonico-observacao-proveniencia-qualidade-correcao-tempo.md`).
+> A matriz explícita de mapeamento entre as duas dimensões permanece placeholder, com
+> donos designados (arquiteto de compatibilidade AMH + engenheiro de segurança clínica
+> nomeado), em ambos os ADRs — nenhum dos dois a preenche.
 
 ### Freshness
 
@@ -876,3 +905,215 @@ UNASSIGNED).
 No term in this table has an approved pt-BR translation. Every row requires a named
 clinical-language validator before any translation is used in clinician-facing UI, rule
 content, or regulatory submissions.
+
+---
+
+## 8. Termos acrescentados em 2026-08-15 (pt-BR — DEC-G0-10)
+
+> **Como ler esta seção.** As seções 1–7 acima são o glossário conceitual original
+> (2026-08-14, em inglês, com candidatos de tradução pt-BR por termo — nada ali foi
+> alterado). Esta seção é um **acréscimo**, redigido em pt-BR conforme `DEC-G0-10`
+> (`docs/00-governance/registers/g0-resolucoes-2026-08-15.md`), reunindo termos que se
+> tornaram materiais nas decisões e artefatos de 2026-08-15. Cada entrada cita sua fonte;
+> onde a fonte é uma decisão do titular (`DECIDIDO`), o termo em si é transcrito
+> fielmente — o rótulo `PROPOSAL` aparece apenas onde este glossário consolida ou
+> resume uma interpretação, não onde apenas transcreve. Nenhum termo aqui é ratificação
+> jurídica, clínica ou de arquitetura por este documento; cada um permanece sujeito às
+> pendências registradas em sua própria fonte.
+
+### `portable_subject_ref` (PSR) — formato `amh:psr:v1`
+
+**Definição (transcrita de DECIDIDO AQ-4):** identificador de fronteira **obrigatório**
+do contrato AMH×IntensiCare v1 — string opaca, **mintada** (nunca derivada de atributo
+do paciente), não reversível por cálculo, estável no escopo `{amh_tenant, legal_entity}`,
+no formato normativo `amh:psr:v1:<uuidv4>`. É independente de encontro, porém **sempre**
+transmitida qualificada por encontro; a V2 chaveia fatos clínicos pelo par
+`(PSR, encontro)`. Nenhum `mpi_id` cru, CPF ou identificador de fonte atravessa a
+fronteira — apenas o PSR. PSRs são sintéticos em dev/test e mintados pela AMH em
+produção; não há chave interna paralela da V2 a reconciliar depois (`IDP-02` fica
+superseded por esta decisão).
+
+**Nota de proveniência jurídica — citada, não ratificada por este glossário (PROPOSAL,
+resume INFERÊNCIA de outro especialista).** A minuta de parecer LGPD (rotulada "SUGESTÃO
+DE AGENTE — sem valor de parecer jurídico") registra que o PSR realiza
+**pseudonimização, não anonimização**: não é derivável por cálculo, mas é
+**re-associável por consulta** a uma tabela de registro mantida pela AMH que preserva o
+`mpi_id` associado. Por isso, dado chaveado por PSR deve ser tratado como dado pessoal
+(e, por ser dado de saúde, dado pessoal **sensível**) — nenhum artefato deve descrevê-lo
+como "anonimizado" ou "não pessoal". Esta nota é uma posição sugerida de agente,
+aguardando o parecer jurídico definitivo (`DEC-G0-03`); não é ratificação.
+
+**Fonte:** `docs/08-interoperability/amh-data/identity-adjudication/adjudicacao-decisoes-2026-08-15.md`
+§2 (AQ-4, DECIDIDO); `docs/08-interoperability/amh-data/contract-v1/memoria-de-desenho.md`
+(seção `subject`, linhas ~50, 64–67, 90, 113, 161); `docs/08-interoperability/amh-data/contract-v1/`
+(contrato v1, pasta inteira); nota de pseudonimização:
+`docs/11-security-privacy-compliance/lgpd-os16/minuta-parecer-os-16.md` §1.3.
+
+---
+
+### Eventos de ciclo de vida de identidade
+
+**Definição (transcrita de DECIDIDO AQ-5):** cláusula **obrigatória** do contrato
+AMH×IntensiCare v1 — eventos que comunicam transições na malha de PSRs, entregues
+**at-least-once** e **ordenados por sujeito**. A minuta de especificação
+(`eventos-ciclo-de-vida-identidade.md` §1) lista **seis** tipos, cada um com semântica
+própria:
+
+| Tipo (`event_type`) | Fato que comunica |
+|---|---|
+| `identity.alias.v1` | A ref antiga passa a ser **alias** da ref nova (sobrevivente); ambas continuam resolvendo |
+| `identity.merge.v1` | Duas identidades unificadas; a ref antiga é absorvida pela nova |
+| `identity.unmerge.v1` | Desfaz um merge anterior (*split*); o histórico **não** é reescrito |
+| `identity.restore.v1` | Reverte um evento anterior (p.ex. erasure ou merge indevido); a reversão é carimbada, nunca apagada |
+| `identity.reassignment.v1` | Corrige a associação da ref à identidade subjacente (fatos reatribuídos) |
+| `identity.erasure.v1` | Marca a ref `retired` (p.ex. exercício de direito de eliminação); a ref **nunca** é deletada nem reutilizada |
+
+**Divergência 5×6 tipos — registrada aqui, NÃO resolvida por este glossário (ASM
+registrada na fonte).** A ata de adjudicação (`adjudicacao-decisoes-2026-08-15.md` §2,
+AQ-5) lista literalmente **cinco** tipos ("alias, merge, unmerge, restore, erasure"); a
+derivação de engenharia OS-17 e o bloco `decisions` do `contracts.lock.draft.yaml`
+listam **seis**, incluindo `reassignment`. A minuta de especificação segue os seis da
+OS-17 por ser a derivação mais específica, mas registra explicitamente que a ata
+prevalece quanto ao teor das decisões, e que a confirmação do titular sobre incluir ou
+não `reassignment` é ponto de negociação/pendência (`memoria-de-desenho.md` §8, ponto em
+aberto N-8). Este glossário apenas transcreve a divergência já documentada em sua fonte;
+não a adjudica.
+
+**Fonte:** `docs/08-interoperability/amh-data/contract-v1/eventos-ciclo-de-vida-identidade.md`
+§1, §3; `docs/08-interoperability/amh-data/identity-adjudication/adjudicacao-decisoes-2026-08-15.md`
+§2 (AQ-5, DECIDIDO); `docs/08-interoperability/amh-data/contract-v1/memoria-de-desenho.md` §8.
+
+---
+
+### `resolve(ref, as_of)`
+
+**Definição (transcrita de DECIDIDO AQ-5, derivação OS-18):** consulta de **resolução
+ponto-no-tempo**, cláusula **obrigatória** do contrato v1. Recebe uma ref PSR e um
+instante `as_of` (timestamp UTC); retorna a resolução **vigente naquele instante** — "a
+que esta ref se referia em `as_of`", nunca apenas "a que se refere agora" — mais a
+**cadeia de alias aplicável** (sequência ordenada de transições, com `event_id` e
+`occurred_at` de cada uma). Propriedades exigidas: **determinismo** (mesma
+`(ref, as_of)` ⇒ mesma resposta sempre, mesmo após novos eventos — o passado não é
+reescrito); **consistência com o fluxo de eventos** (equivalência de replay: para
+qualquer instante `t`, o estado derivado dos eventos com `occurred_at <= t` coincide com
+a resposta de `resolve(ref, as_of=t)`); **fail-closed** para ref desconhecida,
+malformada, fora do escopo `{amh_tenant, legal_entity}` autorizado, ou `as_of` fora da
+janela suportada — a operação **nunca adivinha** nem degrada para resolução "atual". Uma
+ref `retired` (pós-erasure) continua resolvendo, com `status: retired` explícito na
+resposta.
+
+**Por que é obrigatória, junto dos eventos (citação direta da ata, DECIDIDO):** "sem
+eventos de ciclo de vida de identidade e `resolve(ref, as_of)`, o replay afetado por
+identidade NÃO é certificável e o Gate G3 NÃO passa. Não se admite janela-teto como
+paliativo."
+
+**Fonte:** `docs/08-interoperability/amh-data/contract-v1/eventos-ciclo-de-vida-identidade.md`
+§4; `docs/08-interoperability/amh-data/contract-inventory.md` (linha OS-18);
+`docs/08-interoperability/amh-data/identity-adjudication/adjudicacao-decisoes-2026-08-15.md`
+§2 (AQ-5, DECIDIDO).
+
+---
+
+### Tutela da saúde (base legal candidata — LGPD art. 11, II, "f")
+
+**Definição (transcrita de DECIDIDO AQ-3 — premissa de fato de negócio, NÃO conclusão
+jurídica):** base legal decidida pelo titular (Opção C) para o tratamento de dados
+pessoais sensíveis no **laço clínico single-tenant** do IntensiCare V2, em contexto de
+tratamento: LGPD art. 11, II, alínea "f" — tratamento indispensável para **"tutela da
+saúde, exclusivamente, em procedimento realizado por profissionais de saúde, serviços de
+saúde ou autoridade sanitária"**. Consequências desta decisão: (1) o laço clínico **não**
+tem portão de consentimento — o portão exigível é **propósito-de-uso + autorização de
+contexto profissional**; (2) consentimento aplica-se apenas a **usos secundários**
+(pesquisa, analytics, compartilhamento), que permanecem **bloqueados** até existir
+infraestrutura real de consentimento; (3) `ie_perm_sms_email` **jamais** constitui
+consentimento.
+
+**Ratificação jurídica pendente — registrada explicitamente, NÃO resolvida por este
+glossário.** A própria decisão carrega `legal_ratification: PENDENTE — advogados, antes
+de dados reais (DEC-G0-03)`, e a ata a descreve como "a cláusula de maior sensibilidade
+jurídica" da adjudicação. A minuta de parecer LGPD — rotulada explicitamente "SUGESTÃO
+DE AGENTE — sem valor de parecer jurídico" — examina a hipótese e **sugere** (PROPOSTA
+B-1, não ratificada) que o parecer confirme o art. 11, II, "f" como base legal candidata
+adequada para o loop clínico, **condicionada** a: confirmação de premissas de fato,
+alocação expressa de papéis controlador/operador, portão de propósito-de-uso
+implementado como controle verificável, e minimização efetiva. Por `DEC-G0-03`, o
+desenvolvimento prossegue **exclusivamente com dados sintéticos** até ratificação
+jurídica por advogados brasileiros, exigida antes de qualquer teste de conformidade com
+dados reais, operação sombra ou piloto (gatilhos G6/G8).
+
+**Fonte:** `docs/08-interoperability/amh-data/identity-adjudication/adjudicacao-decisoes-2026-08-15.md`
+§2 (AQ-3, DECIDIDO); `docs/11-security-privacy-compliance/lgpd-os16/minuta-parecer-os-16.md`
+§4 (§4.6, PROPOSTA B-1..B-4).
+
+---
+
+### Forma composta de ID CRV (`CRV-<REGRA>-NNNN`)
+
+**Definição (transcrita de FONTE — resolução de namespace/formato de ID, NÃO ratificação
+do prefixo `CRV` em si):** forma de citação vigente, a partir de 2026-08-15, para
+vetores de referência clínica **reais** de cada regra: `CRV-SOFA-03NN` (ex.:
+`CRV-SOFA-0301`), `CRV-NEWS2-01NN` (ex.: `CRV-NEWS2-0101`), `CRV-GCS-02NN` (ex.:
+`CRV-GCS-0201`). Substitui, para citação de vetores reais, a forma anterior de sufixo nu
+(ex.: `CRV-0301`) que resultou de uma resolução prévia de colisão de faixas numéricas
+entre RULE-SOFA e RULE-NEWS2 (ambas haviam reivindicado o mesmo bloco `CRV-0101–0199`).
+Autoridade da prefixação por regra: `GDEC-0007` (revisão clínica do ciclo 1,
+`docs/00-governance/registers/decision-register.md`). **Isto permanece uma resolução de
+namespace/formato de ID** (`decisions_allowed: register formats, ID formats`) — **NÃO**
+é ratificação do prefixo `CRV` em si na taxonomia de `traceability-policy.md` §1, que
+segue pendente de `GDEC-0002` exatamente como antes.
+
+**Fonte:** `docs/00-governance/traceability-policy.md` §3.1 ("Forma composta final —
+prefixo por regra").
+
+---
+
+### Candidato a integração
+
+**Definição (transcrita de FONTE, restatada do prompt orquestrador §7.0):**
+classificação vigente da compatibilidade AMH×IntensiCare no commit pinado avaliado:
+**"Integration candidate; not currently demonstrated compatible for actionable ICU
+evaluation."** Os dois termos devem ser lidos juntos — nenhum isoladamente. **"Candidato
+a integração"** é afirmativo: a AMH é parceira de integração crível, com IG FHIR R4
+real, isolamento de tenant especificado com rigor incomum, e um padrão de publicação de
+contrato maduro já exercitado ponta a ponta (o manifesto Maezo). **"Não demonstrado
+compatível para avaliação acionável de UTI"** carrega três qualificadores decisivos: (a)
+**"atualmente"** — estado do commit pinado e deste ciclo de evidência, não da trajetória
+da AMH; (b) **"demonstrado"** — o ônus é da evidência, não da plausibilidade; ausência de
+demonstração não é afirmação de impossibilidade; (c) o escopo é especificamente uma
+**via clínica acionável** — dados AMH podem ser adequados para reconciliação, coorte,
+desfechos e vigilância de qualidade, usos que este achado não condena. A restrição de
+portfólio associada — Observation laboratorial bloqueado por fonte vazia (`PACIENTE_EXAME`
+com zero linhas); nenhum perfil de sinal vital demonstrado na IG — é tratada como
+restrição de portfólio determinante ("hard portfolio constraint") até nova evidência ser
+aceita no Gate G3. O relatório permanece **"integration candidate"** até lá; avaliação
+clínica continua **não-acionante**.
+
+**Fonte:** `docs/08-interoperability/amh-data/compatibility-finding.md` (achado
+restatado do prompt §7.0; ver §§1–3, §7 do documento para a justificativa em quatro
+partes).
+
+---
+
+### Baseline perecível
+
+**Definição (transcrita de FONTE):** medição do estado pré-V2 (carga de alertas/alarmes,
+interrupções, fadiga percebida e tempo até reconhecimento) que se torna
+**permanentemente irrecuperável** uma vez que a unidade candidata tenha qualquer
+exposição visível à IntensiCare V2 — demonstração, treinamento, piloto (mesmo em poucos
+leitos, mesmo por poucos dias) ou sessão de simulação com profissionais da unidade.
+Referida como `VAL-0035` / `G2-VAL-0025`, é descrita nas fontes como "a única medição do
+programa que não pode ser feita depois" e "o único item irreversível" do backlog de
+validação. Três mecanismos independentes de perda, cada um suficiente isoladamente: (1)
+a intervenção altera o objeto medido — a V2 é, ela própria, fonte de interrupção; (2)
+memória não substitui contagem contemporânea; (3) comparação exige o mesmo instrumento.
+A perecibilidade **não é uniforme**: componentes baseados em registro/prontuário (B4b —
+tempo até reconhecimento adjudicado) permanecem tecnicamente recuperáveis enquanto os
+registros forem retidos; o que é irrecuperável é o que depende de **observação
+presencial contemporânea** e **autorrelato contemporâneo** — B1 (carga de alarmes), B2
+(interrupções), B3 (fadiga) e B4a (proxy observacional de tempo até reconhecimento),
+juntos chamados a "cápsula perecível". O protocolo associado é autocontido e pode ser
+executado independentemente do restante do kit de pesquisa G1; nenhuma medição havia
+sido realizada, nenhum sítio existia e nenhuma janela estava agendada em 2026-08-15
+(OBSERVED, na fonte).
+
+**Fonte:** `docs/02-users-and-workflows/g1-kit/protocolo-baselines-pereciveis.md` §1–§3.
