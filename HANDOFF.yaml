@@ -104,6 +104,56 @@ prompt_do_orquestrador_revisado_2026_08_15:
   proximo_orquestrador: inicia pelo §0 do prompt; HANDOFF.yaml continua sendo a
     primeira leitura de estado.
 
+ciclo_1_conteudo_clinico_2026_08_15:
+  autor: orquestrador clínico (ciclo 1) — agentes especialistas com escopos de escrita disjuntos
+  autoridade_revisora: rodaquino-OMNI (GDEC-0003 — revisor clínico nomeado, escopo ciclo-1; autor ≠ aprovador)
+  branch: cycle-1/clinical-content
+  legado_pinado: >-
+    HEAD 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 + manifesto SHA-256 por arquivo
+    (docs/archive/legacy-provenance/legacy-pin-cycle-1.md, 1.317 entradas; arquivos
+    fora do manifesto marcados (rt) no inventário)
+  task_1_revisao_legado:
+    cobertura: "100% do conteúdo clínico localizado (prova: legacy-review/00-inventory/coverage-map.md)"
+    corpus: docs/05-clinical-safety/legacy-review/  # 10 workstreams + suplemento fork-SOFA; ~60 registros
+    workstreams: [00-inventory, ews, sepsis-scores, alert-threshold-engine, kpi,
+      neuro-sedation-scores, pathways, organ-support-med-safety,
+      data-quality-physio-calc, clinical-documentation-forms]
+  task_2_precursores: [docs/05-clinical-safety/rule-releases/sofa/, docs/05-clinical-safety/rule-releases/news2/, docs/05-clinical-safety/rule-releases/gcs/]
+    # 0.1.0, re-derivados de fontes primárias verificadas ao vivo; classificação NOT ACTIONABLE
+  task_3_kpis: docs/05-clinical-safety/pathway-portfolio/clinical-kpi-review.md
+  task_4_adrs: [ADR-0007, ADR-0008, ADR-0025, ADR-0026, ADR-0027, ADR-0028, ADR-0029]  # todos proposed; índice atualizado; próximo livre ADR-0030
+  proveniencia: docs/archive/legacy-provenance/migration-manifest-cycle-1.md  # zero código copiado; só re-derivação
+  portfolio: "candidate-inventory §8 (CAND-0010..0020 nomeados, NÃO admitidos); hard-gate-assessment §7; contagem acionável continua 0; gate 4 continua FAIL"
+  aguardando_assinatura_de_revisao_clinica:   # TUDO abaixo é PROPOSAL até revisão nomeada
+    - Verdictos de 100% dos registros de revisão legada (RETAIN..REJECT por regra/score/limiar/KPI)
+    - RULE-SOFA 0.1.0 — 14 questões abertas (spec §11; destaque: janela de frescor por insumo, agregação pior-valor-24h, unidades canônicas)
+    - RULE-NEWS2 0.1.0 — 10 questões (spec §11; destaque: faixa 16-17 anos, governança Scale 2, gravidez)
+    - RULE-GCS 0.1.0 — 10 questões (spec §13; destaque: vocabulário NT, sedação desconhecida, NMB)
+    - Vetores CRV (89+34+18) — independência autor/aprovador NÃO satisfeita; uso só red/green
+    - ADR-0007/0008/0025/0026/0027/0028/0029 — opção recomendada de cada um + questões numeradas por arquivo
+    - clinical-kpi-review.md — 12 questões (destaque: comissionamento do baseline pré-implantação, item irreversível)
+    - candidate-inventory §8 e hard-gate-assessment §7 (movimentos FAIL→PARTIAL propostos)
+  descobertas_criticas_ciclo_1:
+    - "HAZ-0005 confirmado da fonte em TODOS os escores e reconstruído no motor de trilhas novo (ausente → normal silencioso, consagrado em teste)"
+    - "NEWS2 Scale 2 inalcançável em produção; paciente DPOC acumula 4-5 pontos permanentes na Scale 1"
+    - "SOFA/qSOFA pontuados mas jamais semeados no motor de alertas → no-fire estrutural silencioso"
+    - "Fork de SOFA em domain_formularios (REJECT): vocabulário de vasopressor só em pt → dopamina em EN >15 pontua 2 e não 4"
+    - "31 indicadores de qualidade servidos como valores ALEATÓRIOS dentro das próprias metas; endpoint de ventilação serve dados fabricados"
+    - "Profilaxia invertida (alerta quando profilaxia FOI dada); renal alimenta mL/dia em banda mL/kg/h (anúria lê normal)"
+    - "Três conjuntos de regras de sepse coexistindo sem autoridade declarada; alertas declarativos de pathway nunca entregues"
+    - "Conversão de bilirrubina AUSENTE do normalizador (risco 17×), corroborado por dois workstreams independentes"
+  reconciliacoes_pendentes:
+    - "Colisão de namespace CRV: SOFA e NEWS2 reivindicam CRV-01xx; GCS usou CRV-02xx — steward de rastreabilidade deve rebatizar"
+    - "Idioma misto no corpus ciclo-1 (diretiva EN em voo quando DEC-G0-10 foi registrada): ADR-0027/0028 + revisões em EN; ADRs posteriores e manifesto em pt-BR — tradução retroativa é decisão aberta do titular"
+    - "Licença do legado: LICENSE = AGPLv3 boilerplate sem titular preenchido × pyproject 'Proprietary' — contradição OBSERVADA; conclusão jurídica reservada (AUTH-PRIVACY-LEGAL, G6/G8)"
+    - "Verdicto OSMS BLOQUEADO (polaridade booleana do motor de trilhas) pende de ruling do workstream pathways"
+    - "Repos upstream ahlabs-trilhas/trilhas-frontend não montados (NL-1): citações das 959 regras extraídas herdam essa ressalva"
+  segundo_revisor: >-
+    ADR-0007 codifica que conteúdo autorado/editado materialmente por
+    rodaquino-OMNI não pode ser aprovado por ele mesmo — conteúdo do ciclo 1 é
+    de autoria de agentes e PODE ser aprovado pelo revisor nomeado; um segundo
+    revisor humano só é necessário para conteúdo que o titular vier a editar.
+
 rules_for_any_resuming_agent:
   - Read docs/00-governance/evidence-notation.md before writing anything; front-matter is CI-enforced
   - Never name an owner, mark DECIDED, accept a risk, or resolve a contradiction — humans do that
