@@ -1,0 +1,84 @@
+# CODEOWNERS — IntensiCare V2
+#
+# STATUS: SKELETON ONLY. NO RULE BELOW IS ACTIVE.
+#
+# Every path-ownership line in this file is commented out (prefixed with
+# `#`). GitHub does not enforce a commented-out CODEOWNERS line, so this
+# file currently has NO effect on review requirements.
+#
+# Why: prompt §15.1 requires "ownership/CODEOWNERS for clinical, security,
+# data, UX, operations, and ADR areas." But every one of those decision-
+# owner roles is, as of 2026-08-14, `UNASSIGNED — VALIDATION REQUIRED`
+# per docs/00-governance/authority-model.md §1, and Gate G0 is blocked on
+# naming them — see docs/00-governance/registers/blockers-register.md
+# (BLK-0001 through BLK-0008, all status: OPEN).
+#
+# No agent may invent a person, team, or GitHub handle to fill these
+# rules in (docs/00-governance/evidence-notation.md §2 usage rule 7; this
+# task's decisions_prohibited explicitly bars inventing GitHub usernames).
+# A real CODEOWNERS handle is a claim that a specific account will be
+# requested for review — writing a fake one would be worse than writing
+# none, because it would silently fail to notify anyone while looking
+# like it works.
+#
+# HOW TO ACTIVATE THIS FILE
+# 1. A named human is assigned to each `AUTH-*` role in
+#    docs/00-governance/authority-model.md §1 (this closes the relevant
+#    slice of Gate G0).
+#  2. That human (or a team containing them) gets a real GitHub handle —
+#     either `@individual-username` or `@intensicare-v2/team-slug` for an
+#     org team created for this purpose.
+# 3. Uncomment the matching line below and replace the UNASSIGNED marker
+#    with the real `@handle`.
+# 4. Record the assignment as a DECIDED entry in
+#    docs/00-governance/registers/decision-register.md, per
+#    docs/00-governance/evidence-notation.md §2 rule 3 (a PROPOSAL/
+#    UNASSIGNED role only becomes binding when a named human authority
+#    ratifies it).
+#
+# Path-to-role mapping below is derived from:
+#   - prompt §15.1 area list (clinical, security, data, UX, operations, ADR)
+#   - prompt §16 documentation architecture (docs/ tree)
+#   - docs/00-governance/authority-model.md §1 (AUTH-* role IDs)
+#
+# Format reference (for when this is activated): each active line is
+# `<path-pattern>  <handle-or-team> [<handle-or-team> ...]`. Later
+# matching lines override earlier ones, per GitHub's CODEOWNERS rules.
+
+# --- Clinical safety area (AUTH-CLINSAFETY) ---------------------------------
+# /docs/05-clinical-safety/          UNASSIGNED — VALIDATION REQUIRED
+# /docs/06-architecture/adrs/**      UNASSIGNED — VALIDATION REQUIRED  (clinical-touching ADRs; see also ADR area below)
+
+# --- Security area (AUTH-SECURITY) ------------------------------------------
+# /docs/11-security-privacy-compliance/   UNASSIGNED — VALIDATION REQUIRED
+# /.github/workflows/                     UNASSIGNED — VALIDATION REQUIRED
+# /scripts/check_forbidden_content.py     UNASSIGNED — VALIDATION REQUIRED
+
+# --- Privacy/legal area (AUTH-PRIVACY-LEGAL) --------------------------------
+# /docs/11-security-privacy-compliance/   UNASSIGNED — VALIDATION REQUIRED  (LGPD basis, retention, residency — shares path with security; both must review)
+
+# --- Data-platform area (AUTH-DATA-PLATFORM) --------------------------------
+# /docs/07-data-and-provenance/       UNASSIGNED — VALIDATION REQUIRED
+# /docs/08-interoperability/          UNASSIGNED — VALIDATION REQUIRED
+
+# --- UX area (AUTH-UX) -------------------------------------------------------
+# /docs/02-users-and-workflows/       UNASSIGNED — VALIDATION REQUIRED
+# /docs/10-ux-and-accessibility/      UNASSIGNED — VALIDATION REQUIRED
+
+# --- Operations area (AUTH-OPERATIONS) --------------------------------------
+# /docs/13-operations-and-reliability/    UNASSIGNED — VALIDATION REQUIRED
+# /docs/14-devsecops-and-delivery/        UNASSIGNED — VALIDATION REQUIRED
+
+# --- ADR area (no single AUTH-* role — ADRs cut across all of them) --------
+# /docs/06-architecture/adrs/         UNASSIGNED — VALIDATION REQUIRED  (requires review from every AUTH-* role the decision touches, per decision-rights.md)
+
+# --- Product / intended use (AUTH-PRODUCT, AUTH-INTENDED-USE) --------------
+# /docs/01-vision-and-intended-use/   UNASSIGNED — VALIDATION REQUIRED
+# /docs/04-product-requirements/      UNASSIGNED — VALIDATION REQUIRED
+
+# --- Governance itself (no self-approval — see decision-rights.md §3) ------
+# /docs/00-governance/                UNASSIGNED — VALIDATION REQUIRED
+
+# --- Fallback: no default owner -------------------------------------------
+# Deliberately no `*` catch-all rule. An inactive catch-all would imply a
+# universal reviewer exists; none does yet.
