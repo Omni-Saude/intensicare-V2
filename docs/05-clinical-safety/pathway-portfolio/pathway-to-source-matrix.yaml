@@ -1,0 +1,1004 @@
+# =============================================================================
+# IntensiCare V2 — Pathway-to-Source Eligibility Matrix (machine-readable)
+#
+#   doc_id:     PORT-PATHWAY-SOURCE-MATRIX
+#   status:     PROPOSAL — NOT ACCEPTED. No row is a decision.
+#   label:      PROPOSAL
+#   owner:      UNASSIGNED — VALIDATION REQUIRED  (AUTH-CLINSAFETY + AUTH-DATA-PLATFORM)
+#   source:     INTENSICARE_V2_ORCHESTRATOR_PROMPT.md 7.2 (lines 397-420)
+#   date_collected: 2026-08-14
+#   collector:  clinical pathway portfolio optimizer
+#   human_readable_companion: pathway-to-source-matrix.md
+#
+# PURPOSE (PROMPT:420): "Use this matrix as a hard input to the pathway portfolio
+# optimizer." Every row below is a per-input eligibility record for one candidate.
+#
+# THE HEADLINE: every one of the 25 rows resolves to
+#   eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+# There are no eligible inputs at the pinned AMH evidence snapshot.
+#
+# ---------------------------------------------------------------------------
+# READ THIS BEFORE USING ANY ROW
+# ---------------------------------------------------------------------------
+# 1. INPUT LISTS ARE PROPOSALS, NOT LEGACY CONTENT. The legacy technical
+#    assessment documents ZERO inputs, codes, units, windows, thresholds or
+#    bands for any score (candidate-inventory.md INV-GAP-4; verified by
+#    exhaustive search - the strings "SpO2", "oxygen", "GCS" and "Glasgow" do
+#    not occur in it). The input concepts below are restated from the published
+#    instruments' generally known composition and are labelled PROPOSAL. They
+#    are NOT imported from legacy code, legacy YAML, or any legacy rule
+#    definition, and they require ratification by AUTH-CLINSAFETY against the
+#    authoritative published specification of each instrument.
+#
+# 2. NO THRESHOLD, BAND, CUT-POINT, WEIGHT OR RECOMMENDATION APPEARS ANYWHERE
+#    IN THIS FILE. Those are clinical content; approving them is outside this
+#    phase (decisions_prohibited) and importing them is forbidden by
+#    docs/00-governance/legacy-import-policy.md.
+#
+# 3. NO CLINICAL CODE IS FABRICATED. Every clinical_code_or_value_set field
+#    reads NOT_SPECIFIED. No terminology server, expansion, or release version
+#    was verified this cycle; LOINC and UCUM releases are unpinned
+#    (contracts.lock.draft.yaml:165-167). Writing a plausible-looking LOINC code
+#    here would be fabricated evidence.
+#
+# 4. "PROFILE EXISTS" IS NOT EVIDENCE (PROMPT:414). Rows whose source is a
+#    declared AMH profile are still INELIGIBLE, because declared contract is
+#    evidence Layer 1 and Layers 2-4 have no evidence
+#    (contracts.lock.draft.yaml:461-479).
+#
+# 5. NO PHI. No patient, identifier, or clinical value appears in this file.
+# =============================================================================
+
+matrix_metadata:
+  doc_id: PORT-PATHWAY-SOURCE-MATRIX
+  version: 0.1.0-draft
+  status: PROPOSAL — NOT ACCEPTED
+  generated: 2026-08-14
+  generated_by: clinical pathway portfolio optimizer (candidate inventory / source-eligibility phase)
+  row_count: 25
+  eligible_row_count: 0
+  ineligible_row_count: 25
+  gate: G2 (pathway portfolio) and G3 (AMH compatibility) — both OPEN
+  amh_evidence_snapshot:
+    repo: Omni-Saude/amh-data-platform
+    commit: 0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116
+    branch: main
+    verified: 2026-08-14
+    note: >-
+      Read-only, via docs/08-interoperability/amh-data/ artifacts produced by the
+      AMH-data compatibility architect. This specialist did not access the AMH
+      repository directly; every AMH statement below is sourced to a V2 artifact
+      that cites it.
+  legacy_reference:
+    repo: intensicare (legacy, READ-ONLY, risk-informed input NOT authority)
+    path: INTENSICARE_TECHNICAL_ASSESSMENT.md
+    tracked_by_git: false
+    commit: null
+    repo_head_at_read_time: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79
+    branch_at_read_time: chore/v3-wip-landing
+    read_date: 2026-08-14
+    provenance_caveat: >-
+      OBSERVED - this file is UNTRACKED in the legacy repository (git
+      ls-files --error-unmatch reports it unknown to git; it has no commit
+      history). It is NOT contained in the commit above; that SHA is only the
+      repository HEAD at read time. Line citations therefore reference a
+      working-tree copy and CANNOT be re-verified by SHA - line numbers may
+      drift with no recorded change. Re-verification must re-read the file and
+      re-locate the quoted text.
+    import_status: NO_IMPORT — reference-with-provenance only, per docs/00-governance/legacy-import-policy.md
+
+# The 20 fields required verbatim by PROMPT:401-410, in order.
+row_schema:
+  - pathway_and_version
+  - input_concept
+  - mandatory_or_optional
+  - clinical_code_or_value_set
+  - expected_unit_and_conversion_policy
+  - patient_encounter_tenant_scope
+  - source_system_and_authoritative_amh_contract
+  - amh_artifact_version_or_digest
+  - resource_table_event_and_field_path
+  - times_source_observed_issued_received_available
+  - freshness_window_and_measured_latency_percentiles
+  - tenant_facility_coverage
+  - population_and_null_invalid_distributions
+  - provenance
+  - duplicate_order_correction_cancellation_semantics
+  - confidence
+  - owner
+  - conformance_evidence
+  - unresolved_gap
+  - eligibility_decision
+
+# Controlled vocabulary for eligibility_decision.
+eligibility_vocabulary:
+  INELIGIBLE_FOR_ACTIONABLE_EVALUATION: >-
+    PROMPT:415 - a missing authoritative source, code, unit, patient/encounter
+    link, timestamp, freshness policy, correction behaviour, or representative
+    population measurement makes the input ineligible for actionable evaluation.
+  ELIGIBLE_FOR_ACTIONABLE_EVALUATION: >-
+    Not used. No row qualifies. Requires all of PROMPT:415 satisfied AND
+    measured, not declared, evidence at layers 2-4.
+  ELIGIBLE_FOR_NON_ACTIONING_SHADOW_EVALUATION: >-
+    Not used. PROMPT:349 permits shadow/non-actioning evaluation only with
+    privacy, security and research/governance authorisation, none of which
+    exists; and a shadow evaluation still requires a populated source, which
+    also does not exist.
+
+# Reasons, referenced by rows to keep them readable without losing specificity.
+ineligibility_reason_codes:
+  R1_VITALS_STRUCTURALLY_EXCLUDED: >-
+    The AMH FHIR IG contains exactly one Observation profile
+    (Observation-amh-laboratory) and it PATTERN-FIXES Observation.category to
+    `laboratory`. A conformant instance CANNOT carry a vital-signs category.
+    This is structural exclusion, not absence of coverage - vital signs would
+    require a new profile to be authored, published, versioned AND populated.
+    SOURCE compatibility-finding.md section 3.2; contracts.lock.draft.yaml:118-126
+    (`vital_signs_capable: false`).
+  R2_LAB_OBSERVATION_BLOCKED_EMPTY_SOURCE: >-
+    AMH ADR-040 records Observation as `bloqueado ate os resultados de exame
+    serem ingeridos no Bronze`; the block is `bloqueado por falta de dado, nao
+    por codigo`; the Bronze table PACIENTE_EXAME `existe no catalogo mas veio com
+    0 linhas`; the structured Diagnose/LIS source `nao e ingerido`.
+    SOURCE compatibility-finding.md section 3.1.
+  R3_UNBLOCKING_PLAN_NONCONFORMANT: >-
+    The announced Observation construction would emit
+    Observation.code = {text - "Resultado de exame"} and Observation.valueString,
+    while the profile binds code to the amh-loinc-laboratory ValueSet and fixes
+    valueQuantity.system to UCUM. Free text plus a string payload is not a
+    LOINC-coded UCUM quantity. compatibility-finding.md section 3.1 states -
+    "No ICU scoring rule - NEWS2, MEWS, SOFA, qSOFA, or any threshold logic -
+    can consume a valueString." Contradiction C-4, reserved for AMH owners.
+  R4_NO_CONTRACT_IDENTIFIED: >-
+    No contract, profile, table, event or API of any kind has been inventoried
+    for this input class at the pinned commit. Not blocked - absent. Distinguish
+    from R1/R2 - those are known negatives, this is an uninventoried space.
+  R5_NO_FRESHNESS_POLICY: >-
+    No per-input freshness window and no invalidate-versus-degrade rule exists.
+    OPEN as g1-validation-backlog.md VAL-0023 and as legacy open question
+    INTENSICARE_TECHNICAL_ASSESSMENT.md:999. Required by PROMPT:415.
+  R6_NO_MEASURED_LATENCY: >-
+    End-to-end freshness is entirely unmeasured. Every latency figure in the AMH
+    repository is either a target in a draft document or AMH's own bulk-write
+    throughput into HAPI - neither is a consumer read-path measurement.
+    compatibility-finding.md section 4.3. ADR-040 states the FHIR channel
+    `nao e near-real-time`.
+  R7_NO_POPULATION_MEASUREMENT: >-
+    Evidence layer 3 (populated data) is NO_OBSERVED_EVIDENCE and layer 4
+    (operational fitness) is NO_EVIDENCE. contracts.lock.draft.yaml:461-479.
+    AMH's own population claims are SOURCE claims pending verification, not
+    observations.
+  R8_IDENTITY_TENANCY_UNRESOLVED: >-
+    The ADR-006 / ADR-039 / ADR-041 / FHIR-IG conflict over longitudinal MPI
+    versus tenant-local identity is unresolved and must not be silently resolved
+    by V2 (PROMPT:438-447). Hazards HAZ-0001, HAZ-0002, HAZ-0027.
+  R9_NO_TERMINOLOGY_PIN: >-
+    No terminology server, expansion or release version verified; LOINC and UCUM
+    releases unpinned; the legacy unit validator failed on three non-canonical
+    `unit='anyOf:'` values. contracts.lock.draft.yaml:165-167;
+    INTENSICARE_TECHNICAL_ASSESSMENT.md:459,586. Hazard HAZ-0032.
+  R10_NO_CORRECTION_SEMANTICS: >-
+    Duplicate, ordering, correction and cancellation behaviour is undefined for
+    every input. PROMPT:378 and PROMPT:415 require it. Hazards HAZ-0008,
+    HAZ-0009, HAZ-0011.
+  R11_NO_ENVIRONMENT: >-
+    Only `dev` is provisioned; `stg`, `prod` and `dr` do not exist and have no
+    tfstate. Gate G3 requires conformance tests to pass in a production-like
+    environment - a condition currently impossible for anyone at any level of
+    access. compatibility-finding.md section 4.4.
+  R12_NO_CLINICAL_SOURCE_CONCEPT: >-
+    The input is a clinical judgement or a bedside assessment rather than a
+    machine-emitted measurement, and no evidence input identifies any system,
+    form, or field from which it could be obtained.
+
+# =============================================================================
+# ROWS
+# =============================================================================
+rows:
+
+  # ---------------------------------------------------------------------------
+  # SHARED CONTEXT INPUTS — required by EVERY candidate, not by one
+  # ---------------------------------------------------------------------------
+
+  - id: CTX-01
+    pathway_and_version: "ALL CANDIDATES (CAND-0001..CAND-0009) — shared context input; no candidate version exists"
+    input_concept: "Patient identity, and date of birth / age at encounter (required to enforce the approved population boundary)"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED — Patient identifier NamingSystems are declared in the AMH IG but no value set, assigner policy or uniqueness rule is pinned for V2 use (R9)"
+    expected_unit_and_conversion_policy: "N/A (identifier); age derivation policy from DOB is NOT DEFINED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    patient_encounter_tenant_scope: "TENANT-SCOPED, MANDATORY. PROMPT:118 forbids inferring tenant/patient/encounter context from caller-controlled values. Scope semantics UNRESOLVED (R8)."
+    source_system_and_authoritative_amh_contract: "AMH FHIR R4 IG — Patient profile (declared). No AMH x IntensiCare contract exists: schemas/contracts/ has no intensicare/ path (contracts.lock.draft.yaml OBS-2)."
+    amh_artifact_version_or_digest: "package br.com.americashealth.fhir v1.0.0, FHIR 4.0.1, ig_status active. package_digest: null — VALIDATION_REQUIRED (contracts.lock.draft.yaml:127-131)"
+    resource_table_event_and_field_path: "Patient.identifier / Patient.birthDate (declared profile; exact conformant path for V2 use NOT AGREED — no consumer contract exists)"
+    times_source_observed_issued_received_available: "NOT DEFINED. No timestamp semantics, timezone, precision or clock-skew policy agreed for consumer use (PROMPT:378). Hazard HAZ-0026."
+    freshness_window_and_measured_latency_percentiles: "No freshness window defined (R5). No measured latency percentile exists (R6)."
+    tenant_facility_coverage: "UNKNOWN — no tenant scope designated for V2; no coverage measured (R7, R11)."
+    population_and_null_invalid_distributions: "UNKNOWN — no observed data. AMH claims 11,451,908 FHIR resources but this is a SOURCE claim, not an observation (R7)."
+    provenance: "Declared-contract evidence only (layer 1). No provenance/lineage contract for consumer use."
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10). MPI merge/unmerge re-association behaviour is an unresolved contradiction (R8); hazard HAZ-0027."
+    confidence: LOW
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-DATA-PLATFORM + AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE. Layer 1 declared only; layers 2-4 NO EVIDENCE (contracts.lock.draft.yaml:461-479)."
+    unresolved_gap: >-
+      Population enforcement is a BLOCKING intended-use decision (IU-06,
+      VAL-0006/0007) AND has no trusted source. Candidate hazard PH-11 - adult
+      instruments evaluating an out-of-population or unknown-age patient.
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R7_NO_POPULATION_MEASUREMENT, R8_IDENTITY_TENANCY_UNRESOLVED, R10_NO_CORRECTION_SEMANTICS, R11_NO_ENVIRONMENT]
+    eligibility_note: >-
+      Distinct from the vital-sign and laboratory rows - this input is NOT
+      structurally blocked. A declared Patient profile exists. It is ineligible
+      because a declared contract is layer-1 evidence only and PROMPT:414 states
+      that "profile exists" is not evidence an input is populated or fit for use.
+      This row is therefore the most plausible near-term candidate for becoming
+      eligible, and the least in need of an AMH design change.
+
+  - id: CTX-02
+    pathway_and_version: "ALL CANDIDATES — shared context input"
+    input_concept: "Encounter / episode of care (ICU admission), including unit and bed location"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "N/A"
+    patient_encounter_tenant_scope: "ENCOUNTER- and TENANT-SCOPED. PROMPT:444 requires scoping every subject reference by tenant and encounter/facility context until the identity adjudication is decided."
+    source_system_and_authoritative_amh_contract: "AMH FHIR R4 IG — Encounter profile (declared); Location/Organization profiles declared."
+    amh_artifact_version_or_digest: "package br.com.americashealth.fhir v1.0.0; package_digest null (VALIDATION_REQUIRED)"
+    resource_table_event_and_field_path: "Encounter.* / Location.* (declared); no agreed consumer path"
+    times_source_observed_issued_received_available: "NOT DEFINED (R10). Admission/discharge/transfer event semantics for consumers are unspecified."
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6)."
+    tenant_facility_coverage: "UNKNOWN (R7, R11)."
+    population_and_null_invalid_distributions: >-
+      UNKNOWN, with a specific documented negative - AMH reports 52,452 clinical
+      rows referencing absent encounters due to ingestion skew (hazard-log.md
+      HAZ-0038, sourced to PROMPT:105). Referential completeness is therefore
+      known to be imperfect and unmeasured for V2's purposes.
+    provenance: "Layer 1 declared only."
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)."
+    confidence: LOW
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-DATA-PLATFORM)"
+    conformance_evidence: "NONE beyond declaration."
+    unresolved_gap: >-
+      Bed/unit assignment has no verified source - the legacy unit filter matched
+      patient-name/pathway strings rather than a reliable unit field
+      (INTENSICARE_TECHNICAL_ASSESSMENT.md:324; hazard HAZ-0004). Without a
+      trusted unit/bed link, alert routing has no destination.
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R7_NO_POPULATION_MEASUREMENT, R8_IDENTITY_TENANCY_UNRESOLVED, R10_NO_CORRECTION_SEMANTICS, R11_NO_ENVIRONMENT]
+
+  - id: CTX-03
+    pathway_and_version: "ALL CANDIDATES — shared context input"
+    input_concept: "Tenant / organization context (the authorization and isolation boundary for every evaluation)"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "N/A"
+    patient_encounter_tenant_scope: "IS the scope. Must derive from verified identity, never from a caller-supplied value (PROMPT:118)."
+    source_system_and_authoritative_amh_contract: >-
+      AMH HAPI partition model - URL-based partition identification with a
+      mandatory equality check between token tenant claim and URL tenant, 403 on
+      divergence or on a missing URL tenant, allow_references_across_partitions
+      false. compatibility-finding.md section 2 item 2.
+    amh_artifact_version_or_digest: "Pinned commit 0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116; no versioned consumer contract"
+    resource_table_event_and_field_path: "HAPI partition URL + token tenant claim (declared)"
+    times_source_observed_issued_received_available: "N/A"
+    freshness_window_and_measured_latency_percentiles: "N/A"
+    tenant_facility_coverage: "NO TENANT DESIGNATED for V2 (R11). compatibility-finding.md section 5 condition 4 - a V2-reachable environment with a designated tenant scope does not exist."
+    population_and_null_invalid_distributions: "N/A"
+    provenance: "Layer 1 declared; the authentication mechanism itself is a THREE-way contradiction (C-2) - CapabilityStatement advertises OAuth+SMART, the HAPI README says mTLS now with SMART `(futuro)`, and an implemented OIDC/JWT/SMART authorizer exists in the tree."
+    duplicate_order_correction_cancellation_semantics: "N/A"
+    confidence: LOW
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-SECURITY + AUTH-DATA-PLATFORM)"
+    conformance_evidence: "NONE. No credential, network path, or designated tenant exists."
+    unresolved_gap: "Contradiction C-2 (authentication) is unresolved and reserved for AMH owners; a consumer cannot choose client behaviour against three positions."
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R8_IDENTITY_TENANCY_UNRESOLVED, R11_NO_ENVIRONMENT]
+
+  # ---------------------------------------------------------------------------
+  # CAND-0001 — NEWS2
+  # Input list: PROPOSAL, restated from the published instrument. NOT legacy content.
+  # ---------------------------------------------------------------------------
+
+  - id: NEWS2-01
+    pathway_and_version: "CAND-0001 NEWS2 / NO VERSION — no V2 rule bundle exists"
+    input_concept: "Respiratory rate (PROPOSAL — instrument composition, not legacy-sourced)"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED — no LOINC code pinned; fabricating one would be fabricated evidence (R9)"
+    expected_unit_and_conversion_policy: "PROPOSAL — breaths per minute, UCUM `/min`. Conversion policy NOT DEFINED; unknown units must be quarantined, never coerced (PROMPT:716; hazard HAZ-0032)."
+    patient_encounter_tenant_scope: "Per CTX-01/02/03 — all unresolved"
+    source_system_and_authoritative_amh_contract: "NONE. No vital-sign profile exists in the AMH IG (R1)."
+    amh_artifact_version_or_digest: "N/A — no contract to version"
+    resource_table_event_and_field_path: "N/A — the only Observation profile pattern-fixes category to `laboratory` and cannot carry this concept"
+    times_source_observed_issued_received_available: "N/A — no source"
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6). Note - a respiratory-rate freshness window is one of the most clinically consequential unset parameters in the product."
+    tenant_facility_coverage: "N/A — no source"
+    population_and_null_invalid_distributions: "N/A — no source (R7)"
+    provenance: "N/A — no source"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH (in the ineligibility finding; the underlying constraint is doubly evidenced and structural)
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: "Contradiction C-1 — AMH diagrams assert vital signs (`Observation para sinais vitais`, `sinais vitais de dispositivos IoT`) while the IG structurally excludes them. Preserved for AMH-owner resolution; NOT resolved here."
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R1_VITALS_STRUCTURALLY_EXCLUDED, R5_NO_FRESHNESS_POLICY, R6_NO_MEASURED_LATENCY, R7_NO_POPULATION_MEASUREMENT, R9_NO_TERMINOLOGY_PIN, R10_NO_CORRECTION_SEMANTICS]
+
+  - id: NEWS2-02
+    pathway_and_version: "CAND-0001 NEWS2 / NO VERSION"
+    input_concept: "Oxygen saturation (PROPOSAL — instrument composition, not legacy-sourced)"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "PROPOSAL — percent, UCUM `%`. Conversion policy NOT DEFINED."
+    patient_encounter_tenant_scope: "Per CTX-01/02/03 — all unresolved"
+    source_system_and_authoritative_amh_contract: "NONE (R1)"
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "N/A"
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: >-
+      NEWS2 is published with two oxygen-saturation scales whose selection depends
+      on a patient-level clinical determination (target-range assignment). No
+      source for that determination has been identified (R12). Selecting a scale
+      by default would silently alter the clinical definition, which PROMPT:418
+      forbids.
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R1_VITALS_STRUCTURALLY_EXCLUDED, R5_NO_FRESHNESS_POLICY, R7_NO_POPULATION_MEASUREMENT, R9_NO_TERMINOLOGY_PIN, R12_NO_CLINICAL_SOURCE_CONCEPT]
+
+  - id: NEWS2-03
+    pathway_and_version: "CAND-0001 NEWS2 / NO VERSION"
+    input_concept: "Supplemental-oxygen status / delivery (air versus supplemental oxygen) (PROPOSAL)"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "Categorical; no value set defined"
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: "NONE — this is a therapy/device-state concept; no device, respiratory-support, or therapy contract has been inventoried (R4)"
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "N/A"
+    freshness_window_and_measured_latency_percentiles: "No window (R5)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: >-
+      This input is not a vital sign and is not blocked by R1 - it is simply
+      absent from every inventoried contract (R4). It also carries an
+      ICU-specific validity question - in a population where supplemental oxygen
+      and mechanical ventilation are near-universal, the discriminatory value of
+      this component may differ from the ward populations in which the instrument
+      is commonly described. That is an evidence question for the clinical
+      evidence methodologist, NOT graded here.
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R4_NO_CONTRACT_IDENTIFIED, R5_NO_FRESHNESS_POLICY, R7_NO_POPULATION_MEASUREMENT, R9_NO_TERMINOLOGY_PIN]
+
+  - id: NEWS2-04
+    pathway_and_version: "CAND-0001 NEWS2 / NO VERSION"
+    input_concept: "Body temperature (PROPOSAL)"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "PROPOSAL — degrees Celsius, UCUM `Cel`. Conversion policy NOT DEFINED; measurement-site variation (oral/axillary/core) is unaddressed by any inventoried contract."
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: "NONE (R1)"
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "N/A"
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: "Measurement-site semantics would be required even if a source existed; no contract carries them."
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R1_VITALS_STRUCTURALLY_EXCLUDED, R5_NO_FRESHNESS_POLICY, R7_NO_POPULATION_MEASUREMENT, R9_NO_TERMINOLOGY_PIN]
+
+  - id: NEWS2-05
+    pathway_and_version: "CAND-0001 NEWS2 / NO VERSION"
+    input_concept: "Systolic blood pressure (PROPOSAL)"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "PROPOSAL — UCUM `mm[Hg]`. Conversion policy NOT DEFINED. Invasive versus non-invasive provenance is not distinguished by any inventoried contract, and in ICU both coexist for one patient."
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: "NONE (R1)"
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "N/A"
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A — and invasive/non-invasive method provenance would itself be a mandatory field, hazard HAZ-0008/HAZ-0011 territory if two methods disagree"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10) — conflicting simultaneous arterial-line and cuff values are a foreseeable ICU conflict with no defined resolution (VAL-0022)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: "Method provenance and conflict resolution are undefined; PROMPT:1058 forbids silently resolving contradictions, and most-recent-wins is silent resolution wearing an algorithm (VAL-0022)."
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R1_VITALS_STRUCTURALLY_EXCLUDED, R5_NO_FRESHNESS_POLICY, R7_NO_POPULATION_MEASUREMENT, R9_NO_TERMINOLOGY_PIN, R10_NO_CORRECTION_SEMANTICS]
+
+  - id: NEWS2-06
+    pathway_and_version: "CAND-0001 NEWS2 / NO VERSION"
+    input_concept: "Pulse / heart rate (PROPOSAL)"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "PROPOSAL — UCUM `/min`. Conversion policy NOT DEFINED."
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: "NONE (R1)"
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "N/A"
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: "Monitor-derived heart rate versus manually recorded pulse are different concepts with different reliability; no contract distinguishes them."
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R1_VITALS_STRUCTURALLY_EXCLUDED, R5_NO_FRESHNESS_POLICY, R7_NO_POPULATION_MEASUREMENT, R9_NO_TERMINOLOGY_PIN]
+
+  - id: NEWS2-07
+    pathway_and_version: "CAND-0001 NEWS2 / NO VERSION"
+    input_concept: "Level of consciousness (PROPOSAL)"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "Categorical/ordinal; no value set defined. Which consciousness instrument is used is itself an unratified clinical decision."
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: "NONE — a nurse-recorded bedside assessment; no inventoried contract carries it (R4/R12)"
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "N/A"
+    freshness_window_and_measured_latency_percentiles: "No window (R5)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: >-
+      ICU-specific validity question - in a sedated or ventilated patient a
+      consciousness component may reflect sedation rather than neurological
+      deterioration. This is an evidence and applicability question for the
+      clinical evidence methodologist and AUTH-CLINSAFETY; it is recorded, NOT
+      graded, here. It applies equally to MEWS-05, QSOFA-03 and SOFA-05.
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R4_NO_CONTRACT_IDENTIFIED, R5_NO_FRESHNESS_POLICY, R7_NO_POPULATION_MEASUREMENT, R12_NO_CLINICAL_SOURCE_CONCEPT]
+
+  # ---------------------------------------------------------------------------
+  # CAND-0002 — MEWS
+  # ---------------------------------------------------------------------------
+
+  - id: MEWS-01
+    pathway_and_version: "CAND-0002 MEWS / NO VERSION"
+    input_concept: "Systolic blood pressure (PROPOSAL) — SHARED with NEWS2-05, QSOFA-02"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "PROPOSAL — UCUM `mm[Hg]`; conversion policy NOT DEFINED"
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: "NONE (R1)"
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "N/A"
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: "Input shared with CAND-0001 and CAND-0004 — a single source failure disables three candidates simultaneously; see the correlated-cluster note in candidate-inventory.md section 3."
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R1_VITALS_STRUCTURALLY_EXCLUDED, R5_NO_FRESHNESS_POLICY, R7_NO_POPULATION_MEASUREMENT, R9_NO_TERMINOLOGY_PIN]
+
+  - id: MEWS-02
+    pathway_and_version: "CAND-0002 MEWS / NO VERSION"
+    input_concept: "Pulse / heart rate (PROPOSAL) — SHARED with NEWS2-06"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "PROPOSAL — UCUM `/min`; conversion policy NOT DEFINED"
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: "NONE (R1)"
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "N/A"
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: "Shared input; see MEWS-01."
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R1_VITALS_STRUCTURALLY_EXCLUDED, R5_NO_FRESHNESS_POLICY, R7_NO_POPULATION_MEASUREMENT, R9_NO_TERMINOLOGY_PIN]
+
+  - id: MEWS-03
+    pathway_and_version: "CAND-0002 MEWS / NO VERSION"
+    input_concept: "Respiratory rate (PROPOSAL) — SHARED with NEWS2-01, QSOFA-01"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "PROPOSAL — UCUM `/min`; conversion policy NOT DEFINED"
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: "NONE (R1)"
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "N/A"
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: "Shared across three candidates; see MEWS-01."
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R1_VITALS_STRUCTURALLY_EXCLUDED, R5_NO_FRESHNESS_POLICY, R7_NO_POPULATION_MEASUREMENT, R9_NO_TERMINOLOGY_PIN]
+
+  - id: MEWS-04
+    pathway_and_version: "CAND-0002 MEWS / NO VERSION"
+    input_concept: "Body temperature (PROPOSAL) — SHARED with NEWS2-04"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "PROPOSAL — UCUM `Cel`; conversion policy NOT DEFINED"
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: "NONE (R1)"
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "N/A"
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: "Shared input; see MEWS-01."
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R1_VITALS_STRUCTURALLY_EXCLUDED, R5_NO_FRESHNESS_POLICY, R7_NO_POPULATION_MEASUREMENT, R9_NO_TERMINOLOGY_PIN]
+
+  - id: MEWS-05
+    pathway_and_version: "CAND-0002 MEWS / NO VERSION"
+    input_concept: "Level of consciousness (PROPOSAL) — SHARED with NEWS2-07, QSOFA-03, SOFA-05"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "Categorical/ordinal; no value set defined"
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: "NONE (R4/R12)"
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "N/A"
+    freshness_window_and_measured_latency_percentiles: "No window (R5)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: >-
+      Four candidates depend on a consciousness assessment, and each published
+      instrument specifies a DIFFERENT scale. Mapping between them to save a
+      source would silently alter each clinical definition (PROMPT:418). Recorded,
+      not resolved.
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R4_NO_CONTRACT_IDENTIFIED, R5_NO_FRESHNESS_POLICY, R7_NO_POPULATION_MEASUREMENT, R12_NO_CLINICAL_SOURCE_CONCEPT]
+
+  # ---------------------------------------------------------------------------
+  # CAND-0004 — qSOFA
+  # ---------------------------------------------------------------------------
+
+  - id: QSOFA-01
+    pathway_and_version: "CAND-0004 qSOFA / NO VERSION"
+    input_concept: "Respiratory rate (PROPOSAL) — SHARED with NEWS2-01, MEWS-03"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "PROPOSAL — UCUM `/min`; conversion policy NOT DEFINED"
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: "NONE (R1)"
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "N/A"
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: "Shared input; see MEWS-01."
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R1_VITALS_STRUCTURALLY_EXCLUDED, R5_NO_FRESHNESS_POLICY, R7_NO_POPULATION_MEASUREMENT, R9_NO_TERMINOLOGY_PIN]
+
+  - id: QSOFA-02
+    pathway_and_version: "CAND-0004 qSOFA / NO VERSION"
+    input_concept: "Systolic blood pressure (PROPOSAL) — SHARED with NEWS2-05, MEWS-01"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "PROPOSAL — UCUM `mm[Hg]`; conversion policy NOT DEFINED"
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: "NONE (R1)"
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "N/A"
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: "Shared input; see MEWS-01."
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R1_VITALS_STRUCTURALLY_EXCLUDED, R5_NO_FRESHNESS_POLICY, R7_NO_POPULATION_MEASUREMENT, R9_NO_TERMINOLOGY_PIN]
+
+  - id: QSOFA-03
+    pathway_and_version: "CAND-0004 qSOFA / NO VERSION"
+    input_concept: "Altered mentation (PROPOSAL) — SHARED concept with NEWS2-07, MEWS-05, SOFA-05, different published scale"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "Categorical/ordinal; no value set defined"
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: "NONE (R4/R12)"
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "N/A"
+    freshness_window_and_measured_latency_percentiles: "No window (R5)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: "See MEWS-05 — instrument-specific consciousness scales must not be silently mapped to one another."
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R4_NO_CONTRACT_IDENTIFIED, R5_NO_FRESHNESS_POLICY, R7_NO_POPULATION_MEASUREMENT, R12_NO_CLINICAL_SOURCE_CONCEPT]
+
+  - id: QSOFA-04
+    pathway_and_version: "CAND-0004 qSOFA / NO VERSION"
+    input_concept: "Suspected infection — the published GATING CONDITION of the instrument, not one of its three components"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "Boolean clinical judgement; no representation defined"
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: >-
+      NONE. No inventoried contract carries suspicion of infection. Adjacent
+      candidates (a Condition resource, an antimicrobial order, a culture order)
+      are PROXIES, not the concept, and substituting one would be a silent
+      alteration of the clinical definition (R12).
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "N/A"
+    freshness_window_and_measured_latency_percentiles: "No window (R5)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: >-
+      This row is the most important single row in the matrix for CAND-0004.
+      Running the instrument on an undifferentiated ICU population without this
+      gate is a DIFFERENT pathway requiring separate evidence (PROMPT:418), not a
+      configuration of this one. Candidate hazard PH-04.
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R4_NO_CONTRACT_IDENTIFIED, R12_NO_CLINICAL_SOURCE_CONCEPT, R7_NO_POPULATION_MEASUREMENT]
+
+  # ---------------------------------------------------------------------------
+  # CAND-0003 — SOFA (one row per organ component; sub-inputs named in-row)
+  # ---------------------------------------------------------------------------
+
+  - id: SOFA-01
+    pathway_and_version: "CAND-0003 SOFA / NO VERSION"
+    input_concept: "Respiratory component — arterial oxygenation ratio (blood-gas-derived) together with respiratory-support status (PROPOSAL; two sub-inputs)"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "PROPOSAL — UCUM `mm[Hg]` for arterial oxygen tension and a dimensionless inspired-oxygen fraction; ratio derivation policy NOT DEFINED"
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: >-
+      Would be AMH laboratory Observation for the blood-gas half - BLOCKED (R2),
+      and non-conformant even if unblocked (R3). The respiratory-support half has
+      no inventoried contract at all (R4).
+    amh_artifact_version_or_digest: "Observation-amh-laboratory v1.0.0 in package br.com.americashealth.fhir v1.0.0; package_digest null"
+    resource_table_event_and_field_path: "Declared source of the profile is bronze_diagnose.diagnose_exame_resultado — which the AMH source request states is NOT ingested (compatibility-finding.md section 3.1)"
+    times_source_observed_issued_received_available: "NOT DEFINED. Specimen-collection time versus result-issue time is a clinically material distinction no contract carries."
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6). Blood-gas results and continuous vitals have materially different cadences — candidate hazard PH-03."
+    tenant_facility_coverage: "UNKNOWN (R7, R11)"
+    population_and_null_invalid_distributions: "MEASURED ZERO at source — PACIENTE_EXAME `existe no catalogo mas veio com 0 linhas` (R2). This is the strongest population evidence in the matrix, and it is a zero."
+    provenance: "N/A — no populated source"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10). Laboratory corrections and amendments are routine and have no defined handling; hazard HAZ-0008."
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY + AUTH-DATA-PLATFORM)"
+    conformance_evidence: "NONE"
+    unresolved_gap: "Contradiction C-4 — the unblocking plan would deliver valueString free text; no threshold logic can consume it. Reserved for AMH owners."
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R2_LAB_OBSERVATION_BLOCKED_EMPTY_SOURCE, R3_UNBLOCKING_PLAN_NONCONFORMANT, R4_NO_CONTRACT_IDENTIFIED, R5_NO_FRESHNESS_POLICY, R9_NO_TERMINOLOGY_PIN, R10_NO_CORRECTION_SEMANTICS]
+
+  - id: SOFA-02
+    pathway_and_version: "CAND-0003 SOFA / NO VERSION"
+    input_concept: "Coagulation component — platelet count (PROPOSAL)"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "PROPOSAL — a UCUM count-per-volume unit; the exact unit and any conversion policy are NOT DEFINED and must be ratified, not guessed"
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: "AMH laboratory Observation — BLOCKED (R2); non-conformant unblocking plan (R3)"
+    amh_artifact_version_or_digest: "Observation-amh-laboratory v1.0.0; package_digest null"
+    resource_table_event_and_field_path: "bronze_diagnose.diagnose_exame_resultado (declared; not ingested)"
+    times_source_observed_issued_received_available: "NOT DEFINED (collection versus issue time)"
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6)"
+    tenant_facility_coverage: "UNKNOWN (R7, R11)"
+    population_and_null_invalid_distributions: "MEASURED ZERO at source (R2)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY + AUTH-DATA-PLATFORM)"
+    conformance_evidence: "NONE"
+    unresolved_gap: "As SOFA-01 (C-4)."
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R2_LAB_OBSERVATION_BLOCKED_EMPTY_SOURCE, R3_UNBLOCKING_PLAN_NONCONFORMANT, R5_NO_FRESHNESS_POLICY, R9_NO_TERMINOLOGY_PIN, R10_NO_CORRECTION_SEMANTICS]
+
+  - id: SOFA-03
+    pathway_and_version: "CAND-0003 SOFA / NO VERSION"
+    input_concept: "Hepatic component — bilirubin (PROPOSAL)"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "NOT DEFINED. Brazilian laboratories commonly report in mass-per-volume while some published tables use molar units; a conversion policy is MANDATORY and does not exist. Silent mis-conversion is hazard HAZ-0032."
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: "AMH laboratory Observation — BLOCKED (R2); non-conformant unblocking plan (R3)"
+    amh_artifact_version_or_digest: "Observation-amh-laboratory v1.0.0; package_digest null"
+    resource_table_event_and_field_path: "bronze_diagnose.diagnose_exame_resultado (declared; not ingested)"
+    times_source_observed_issued_received_available: "NOT DEFINED"
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6)"
+    tenant_facility_coverage: "UNKNOWN (R7, R11)"
+    population_and_null_invalid_distributions: "MEASURED ZERO at source (R2)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY + AUTH-DATA-PLATFORM)"
+    conformance_evidence: "NONE"
+    unresolved_gap: "Unit-system conversion is the specific unresolved risk on this row, in addition to C-4."
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R2_LAB_OBSERVATION_BLOCKED_EMPTY_SOURCE, R3_UNBLOCKING_PLAN_NONCONFORMANT, R5_NO_FRESHNESS_POLICY, R9_NO_TERMINOLOGY_PIN, R10_NO_CORRECTION_SEMANTICS]
+
+  - id: SOFA-04
+    pathway_and_version: "CAND-0003 SOFA / NO VERSION"
+    input_concept: "Cardiovascular component — mean arterial pressure together with vasoactive-agent exposure, agent identity and weight-normalised dose rate (PROPOSAL; multiple sub-inputs)"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "PROPOSAL — UCUM `mm[Hg]` for pressure; a weight-normalised dose-rate unit for the agent. Dose-rate conversion and body-weight sourcing are NOT DEFINED."
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: >-
+      Pressure half - NONE (R1, vital signs structurally excluded). Vasoactive
+      half - NO medication-administration contract, dose granularity, infusion-rate
+      representation, or body-weight source has been inventoried (R4).
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "NOT DEFINED. An infusion is an interval, not an instant; no inventoried contract carries interval semantics for medication administration."
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY + AUTH-DATA-PLATFORM)"
+    conformance_evidence: "NONE"
+    unresolved_gap: >-
+      This is the most compound row in the matrix - four sub-inputs across three
+      contract families (vitals, medication administration, patient weight), none
+      of which has an authoritative populated source. Even a full AMH Observation
+      unblock would not make this row eligible.
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R1_VITALS_STRUCTURALLY_EXCLUDED, R4_NO_CONTRACT_IDENTIFIED, R5_NO_FRESHNESS_POLICY, R7_NO_POPULATION_MEASUREMENT, R9_NO_TERMINOLOGY_PIN, R10_NO_CORRECTION_SEMANTICS]
+
+  - id: SOFA-05
+    pathway_and_version: "CAND-0003 SOFA / NO VERSION"
+    input_concept: "Neurological component — consciousness assessment (PROPOSAL) — SHARED concept with NEWS2-07, MEWS-05, QSOFA-03, different published scale"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "Ordinal; no value set defined"
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: "NONE (R4/R12)"
+    amh_artifact_version_or_digest: "N/A"
+    resource_table_event_and_field_path: "N/A"
+    times_source_observed_issued_received_available: "NOT DEFINED"
+    freshness_window_and_measured_latency_percentiles: "No window (R5)"
+    tenant_facility_coverage: "N/A"
+    population_and_null_invalid_distributions: "N/A (R7)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY)"
+    conformance_evidence: "NONE"
+    unresolved_gap: "Sedation confounding in a ventilated ICU population (see NEWS2-07) applies with particular force to an organ-failure instrument."
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R4_NO_CONTRACT_IDENTIFIED, R5_NO_FRESHNESS_POLICY, R7_NO_POPULATION_MEASUREMENT, R12_NO_CLINICAL_SOURCE_CONCEPT]
+
+  - id: SOFA-06
+    pathway_and_version: "CAND-0003 SOFA / NO VERSION"
+    input_concept: "Renal component — creatinine and/or urine output over a defined interval (PROPOSAL; two alternative sub-inputs)"
+    mandatory_or_optional: MANDATORY
+    clinical_code_or_value_set: "NOT_SPECIFIED (R9)"
+    expected_unit_and_conversion_policy: "NOT DEFINED. Creatinine carries the same mass-versus-molar conversion risk as SOFA-03. Urine output requires a volume over an interval, not an instantaneous value."
+    patient_encounter_tenant_scope: "Per CTX-01/02/03"
+    source_system_and_authoritative_amh_contract: >-
+      Creatinine - AMH laboratory Observation, BLOCKED (R2), non-conformant
+      unblocking plan (R3). Urine output - NO contract inventoried; fluid balance
+      is a nursing-record concept absent from every inventoried contract (R4).
+    amh_artifact_version_or_digest: "Observation-amh-laboratory v1.0.0; package_digest null"
+    resource_table_event_and_field_path: "bronze_diagnose.diagnose_exame_resultado (declared; not ingested) for creatinine; none for urine output"
+    times_source_observed_issued_received_available: "NOT DEFINED"
+    freshness_window_and_measured_latency_percentiles: "No window (R5); no measurement (R6)"
+    tenant_facility_coverage: "UNKNOWN (R7, R11)"
+    population_and_null_invalid_distributions: "MEASURED ZERO at source for the laboratory half (R2)"
+    provenance: "N/A"
+    duplicate_order_correction_cancellation_semantics: "UNDEFINED (R10)"
+    confidence: HIGH
+    owner: "UNASSIGNED — VALIDATION REQUIRED (AUTH-CLINSAFETY + AUTH-DATA-PLATFORM)"
+    conformance_evidence: "NONE"
+    unresolved_gap: >-
+      Choosing between the creatinine and urine-output alternatives because only
+      one is available would change the instrument's behaviour. PROMPT:418 - if
+      only a safe subset can be evaluated, define it as a separately evidenced
+      pathway or return partial / not_evaluated; never silently alter the clinical
+      definition.
+    eligibility_decision: INELIGIBLE_FOR_ACTIONABLE_EVALUATION
+    eligibility_reasons: [R2_LAB_OBSERVATION_BLOCKED_EMPTY_SOURCE, R3_UNBLOCKING_PLAN_NONCONFORMANT, R4_NO_CONTRACT_IDENTIFIED, R5_NO_FRESHNESS_POLICY, R9_NO_TERMINOLOGY_PIN, R10_NO_CORRECTION_SEMANTICS]
+
+# =============================================================================
+# CANDIDATES WITH NO ENUMERABLE INPUTS — no rows, and why
+# Recording these as empty is a finding. Inventing rows for them would be
+# fabrication.
+# =============================================================================
+candidates_without_rows:
+
+  - candidate: CAND-0005
+    name: Ventilator / mechanical-ventilation pathway (stub)
+    reason: >-
+      No inputs are documented. The legacy assessment names this pathway once, to
+      record that it is a stub (INTENSICARE_TECHNICAL_ASSESSMENT.md:117). A row
+      set would have to be invented.
+    what_would_produce_rows: "A clinical definition authored by a named clinical owner. Backlog item G2-VAL-0006."
+
+  - candidate: CAND-0006
+    name: The eleven unnamed pathway definitions
+    reason: >-
+      Unenumerated (candidate-inventory.md INV-GAP-1). Eleven of twelve legacy
+      pathway definitions are never named in the assessment; their inputs cannot
+      be listed.
+    what_would_produce_rows: "A scoped read-only enumeration pass over the legacy pathway definitions, with provenance and no content import. Backlog item G2-VAL-0002."
+
+  - candidate: CAND-0007
+    name: The 959-rule / 27-cluster domain catalog
+    reason: "Unenumerated (candidate-inventory.md INV-GAP-2). No cluster and no rule is named or described anywhere in the assessment."
+    what_would_produce_rows: "Enumeration, then clinical triage. Backlog item G2-VAL-0003. Note - enumeration is necessary but not sufficient (INTENSICARE_TECHNICAL_ASSESSMENT.md:881)."
+
+  - candidate: CAND-0008
+    name: Score-threshold alert rules
+    reason: >-
+      Has no external source inputs. Its input is a V2-internal (value,
+      evaluation-status) pair produced by CAND-0001..CAND-0004, so it inherits
+      their eligibility exactly. It cannot be more eligible than the least
+      eligible score it consumes.
+    what_would_produce_rows: "Not applicable - this candidate is governed by the evaluation-status contract (evaluation-status-semantics.md), not by a source contract."
+
+  - candidate: CAND-0009
+    name: Bed-grid severity derivation
+    reason: >-
+      Classified REJECT as a pathway candidate (hard-gate-assessment.md section 3).
+      Its inputs are V2-internal evaluation results plus bed/unit assignment
+      (CTX-02, which has no verified source).
+    what_would_produce_rows: "Not applicable - to be specified as a V2 status-rendering requirement, not a pathway."
+
+# =============================================================================
+# AGGREGATE FINDINGS
+# =============================================================================
+findings:
+  headline: >-
+    All 25 rows are INELIGIBLE_FOR_ACTIONABLE_EVALUATION. Zero inputs across
+    zero candidates are eligible at the pinned AMH evidence snapshot.
+
+  by_reason_code:
+    # Count of rows listing each code in `eligibility_reasons` as an
+    # INDEPENDENT, DECISIVE ground for ineligibility. Verified by parsing this
+    # file (2026-08-14); do not hand-edit without re-counting.
+    R1_VITALS_STRUCTURALLY_EXCLUDED: 12
+    R2_LAB_OBSERVATION_BLOCKED_EMPTY_SOURCE: 4
+    R3_UNBLOCKING_PLAN_NONCONFORMANT: 4
+    R4_NO_CONTRACT_IDENTIFIED: 9
+    R5_NO_FRESHNESS_POLICY: 21
+    R6_NO_MEASURED_LATENCY: 1
+    R7_NO_POPULATION_MEASUREMENT: 20
+    R8_IDENTITY_TENANCY_UNRESOLVED: 3
+    R9_NO_TERMINOLOGY_PIN: 17
+    R10_NO_CORRECTION_SEMANTICS: 9
+    R11_NO_ENVIRONMENT: 3
+    R12_NO_CLINICAL_SOURCE_CONCEPT: 6
+    note: >-
+      Counts sum to more than 25 - most rows fail for several independent
+      reasons. That redundancy is the finding - no single AMH fix makes any row
+      eligible.
+    counting_rule: >-
+      R5, R6, R7 and R10 are recorded in the corresponding per-row FIELD for
+      every row (no row anywhere carries a defined freshness window, a measured
+      latency percentile, a population measurement, or defined correction
+      semantics), but are listed under `eligibility_reasons` only where they are
+      an INDEPENDENT ground. For a row whose source does not exist at all, "no
+      measured latency" is entailed by the absence of a source rather than an
+      additional reason, and counting it twice would overstate the evidence.
+      Read the per-row fields, not only these counts.
+
+  structural_observations:
+    - id: F-1
+      statement: >-
+        No row fails for exactly one reason. The median row cites four to six
+        independent ineligibility reasons. INFERENCE - unblocking AMH Observation
+        would be necessary but nowhere near sufficient; freshness policy (R5),
+        correction semantics (R10), terminology pinning (R9) and population
+        measurement (R7) are V2-side or joint obligations that no AMH act closes.
+    - id: F-2
+      statement: >-
+        NO ROW in this matrix carries a defined freshness window (R5) or defined
+        duplicate/order/correction/cancellation semantics (R10) - 25 of 25, on
+        the per-row fields. Both are policy obligations largely within this
+        programme's control (R5 is OPEN as VAL-0023). INFERENCE - they are the
+        largest body of eligibility work that is NOT blocked on an AMH-owner act,
+        and they can begin as soon as AUTH-CLINSAFETY is named.
+    - id: F-3
+      statement: >-
+        The two context rows CTX-01 and CTX-02 rest on DECLARED AMH profiles
+        (Patient, Encounter) rather than on absent ones. They are the only rows
+        whose ineligibility is about unmeasured population and unresolved identity
+        rather than about a structurally missing contract. INFERENCE - if any part
+        of this matrix becomes eligible first, it will be these.
+    - id: F-4
+      statement: >-
+        Eleven rows fail on R1 - a constraint that cannot be closed by
+        configuration, mapping, or negotiation, only by AMH authoring, publishing,
+        versioning and POPULATING a new vital-signs profile. compatibility-finding.md
+        section 3.2 - "not a reuse, not a configuration change, not a mapping."
+    - id: F-5
+      statement: >-
+        Six rows fail on R12 - the input is a clinical judgement or bedside
+        assessment (consciousness x4, infection suspicion, supplemental-oxygen
+        status) with no machine source anywhere. INFERENCE - even a complete AMH
+        vital-signs and laboratory feed would leave these six unsourced. Any
+        portfolio built on the assumption that "AMH will eventually supply the
+        inputs" is wrong for a quarter of the matrix.
+
+  what_this_matrix_does_not_establish:
+    - "It does not select or rank any pathway. That is Gate G2 and requires ratified weights and named owners."
+    - "It does not grade clinical evidence for any candidate."
+    - "It does not declare AMH incompatible. compatibility-finding.md is explicit that the finding is about evidence, not about AMH's quality or trajectory."
+    - "It does not resolve contradictions C-1 through C-4. They are reserved for AMH owners."
+    - "It is not complete - CAND-0006 and CAND-0007 contribute no rows because they are unenumerated. Absent rows are an inventory gap, not an eligibility finding."
+
+  re_test_obligation: >-
+    PROMPT:420 makes this matrix a hard input to the portfolio optimizer. It MUST
+    be re-verified at the execution commit and revised on new evidence. A stale
+    eligibility matrix used to justify a portfolio is precisely the failure mode
+    PROMPT:414 warns against.
+
+status_footer:
+  status: PROPOSAL — NOT ACCEPTED
+  decided_by: null
+  note: >-
+    No agent may self-apply DECIDED (docs/00-governance/evidence-notation.md
+    section 2 rule 3). Acceptance of this matrix belongs to AUTH-CLINSAFETY and
+    AUTH-DATA-PLATFORM jointly, at Gate G2/G3.

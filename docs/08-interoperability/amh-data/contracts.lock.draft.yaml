@@ -1,0 +1,535 @@
+# =============================================================================
+# AMH x IntensiCare V2 — CONTRACTS LOCK (DRAFT)
+# =============================================================================
+#
+#   status: DRAFT — NOT ACCEPTED
+#
+# This file is a DRAFT produced by the Wave 1 AMH-data compatibility architect.
+# It is NOT an accepted pin, NOT an approved contract, and carries NO AMH-owner
+# sign-off. It records what was verified read-only at one AMH commit so that a
+# future accepted lock has a factual starting point.
+#
+# WHAT THIS FILE IS
+#   A record of file-level identity (blob SHAs) and version identifiers observed
+#   at a pinned AMH commit, plus the shape a real lock would need.
+#
+# WHAT THIS FILE IS NOT
+#   - It is not evidence of compatibility. Gate G3 alone can grant that.
+#   - It is not evidence of deployment, population, or operational fitness.
+#     Evidence layers 2, 3 and 4 have NO evidence in this cycle.
+#   - It does not choose a transport, approve a boundary, or designate an
+#     authoritative interface. Only AMH owners can designate interfaces.
+#   - It pins nothing that V2 code may depend on. No V2 component should read
+#     this file. Accepting a lock is a separate, gated act.
+#
+# EPISTEMIC LABELS used throughout: OBSERVED (read directly at the pinned commit
+# by this specialist) / SOURCE (a claim the AMH repository makes about itself)
+# / INFERENCE / PROPOSAL / VALIDATION REQUIRED.
+#
+# NOTE ON amh_data_quality_status: AMH's `valid | warning | quarantined` is a
+# SOURCE DATA-QUALITY dimension. It must never be conflated with IntensiCare's
+# EVALUATION-STATUS dimension `valid | partial | not_evaluated | stale | invalid`.
+# The two are orthogonal and are never collapsed.
+#
+# No PHI, credentials, tokens, endpoints or secrets appear in this file.
+# =============================================================================
+
+lock_version: 0.1.0-draft
+status: DRAFT — NOT ACCEPTED
+accepted: false
+accepted_by: null
+accepted_at: null
+
+meta:
+  purpose: >-
+    Draft pin of AMH artifacts verified read-only at a single commit, for the
+    AMH x IntensiCare V2 compatibility dossier. Not an accepted contract lock.
+  prepared_by: AMH-data compatibility architect (Wave 1 specialist)
+  prepared_at_utc: "2026-08-14"
+  evidence_cycle: wave-1-repository-reconnaissance
+  companion_documents:
+    - docs/08-interoperability/amh-data/four-layer-dossier.md
+    - docs/08-interoperability/amh-data/claim-verification-matrix.md
+    - docs/08-interoperability/amh-data/compatibility-finding.md
+    - docs/08-interoperability/amh-data/contract-inventory.md
+    - docs/08-interoperability/amh-data/open-questions-for-amh-owners.md
+  method: >-
+    Read-only GitHub contents/trees API calls against a pinned commit, as user
+    rodaquino-OMNI. No environment was accessed, no endpoint contacted, no
+    credential used against any AMH runtime. Nothing was written to the AMH
+    repository.
+
+# -----------------------------------------------------------------------------
+# PRODUCER — AMH
+# -----------------------------------------------------------------------------
+producer:
+  name: AMH Data Platform
+  repository: Omni-Saude/amh-data-platform
+  repository_url: https://github.com/Omni-Saude/amh-data-platform
+  visibility: private            # OBSERVED via repository metadata API
+  branch: main                   # OBSERVED — default_branch
+
+  # The commit at which every artifact below was read.
+  evidence_snapshot_commit: 0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116
+  evidence_snapshot_commit_date_utc: "2026-08-14T02:17:49Z"   # OBSERVED
+  evidence_snapshot_verified_at_utc: "2026-08-14"
+
+  # OBSERVED: at verification time the pinned commit WAS the current main HEAD
+  # (pushed_at 2026-08-14T02:17:51Z). No drift at that moment. This will not
+  # remain true — the README itself warns the repository moves fast.
+  drift_status_at_verification: NO_DRIFT_AT_VERIFICATION_TIME
+
+  # The commit at which a real integration would be built and tested.
+  # DELIBERATELY NULL: no execution commit has been chosen or agreed.
+  # VALIDATION REQUIRED — every claim in the dossier must be re-verified here.
+  execution_commit: null
+  execution_commit_status: NOT_SELECTED
+
+  license:
+    spdx_id: NOASSERTION          # OBSERVED via repository metadata API
+    name: Other
+    url: null
+    # VALIDATION REQUIRED — code-reuse licensing and ownership are unresolved
+    # (prompt §7.1, final bullet). See open-questions-for-amh-owners.md Q5.
+    reuse_status: UNRESOLVED
+
+# -----------------------------------------------------------------------------
+# CONSUMER — IntensiCare V2
+# -----------------------------------------------------------------------------
+consumer:
+  name: IntensiCare V2
+  repository: Omni-Saude/intensicare-V2
+  branch_at_drafting: cycle-0/spark-foundation      # OBSERVED locally
+  commit_at_drafting: cb355212b96fc5e63ab79474d50538cc86d96a5d
+  # DELIBERATELY NULL: no consumer release is pinned to any AMH contract.
+  consumer_release: null
+  consumer_release_status: NOT_SELECTED
+
+# -----------------------------------------------------------------------------
+# FHIR PACKAGE — OBSERVED at schemas/fhir-profiles/README.md
+# -----------------------------------------------------------------------------
+fhir_package:
+  package_id: br.com.americashealth.fhir            # OBSERVED
+  package_version: 1.0.0                            # OBSERVED
+  fhir_version: 4.0.1                               # OBSERVED (R4)
+  canonical_url: https://fhir.americashealth.com.br/ImplementationGuide/amh
+  ig_status: active                                 # OBSERVED
+  profile_structuredefinition_count: 19             # OBSERVED (IG README)
+  observation_profiles:
+    - id: Observation-amh-laboratory
+      url: https://fhir.americashealth.com.br/StructureDefinition/Observation-amh-laboratory
+      version: 1.0.0
+      # OBSERVED: category is PATTERN-FIXED to `laboratory`. A conformant
+      # instance CANNOT carry a vital-sign category. There is no general
+      # vital-signs profile in this package.
+      category_pattern_fixed_to: laboratory
+      vital_signs_capable: false
+  # Package digest is NOT pinned here: the published package.tgz was not built
+  # or retrieved this cycle. A real lock MUST carry a cryptographic digest of
+  # the exact published package artifact, not merely per-file blob SHAs.
+  package_digest: null
+  package_digest_status: VALIDATION_REQUIRED
+
+# -----------------------------------------------------------------------------
+# TERMINOLOGY — OBSERVED
+# -----------------------------------------------------------------------------
+terminology:
+  amh_data_quality_status:
+    codesystem_url: https://fhir.americashealth.com.br/CodeSystem/amh-data-quality-status
+    version: 1.0.0
+    content: complete
+    count: 3
+    codes: [valid, warning, quarantined]
+    dimension: SOURCE_DATA_QUALITY
+    scope_note: >-
+      OBSERVED: scoped to the Silver-Rules `_dq_status` column. VALIDATION
+      REQUIRED — whether this status is carried onto FHIR resources served by
+      HAPI at all. If it is not, a V2 FHIR consumer receives NO source-quality
+      signal.
+    # Binding rule, restated so it cannot be lost if this file is read alone:
+    never_conflate_with:
+      dimension: V2_EVALUATION_STATUS
+      codes: [valid, partial, not_evaluated, stale, invalid]
+      rule: >-
+        Orthogonal dimensions. AMH `valid` asserts nothing about freshness or
+        pathway sufficiency — a record can be AMH-valid and V2-stale. AMH
+        `quarantined` must never surface as a normal V2 value.
+  value_sets_referenced:
+    - url: https://fhir.americashealth.com.br/ValueSet/amh-loinc-laboratory
+      bound_to: Observation.code (Observation-amh-laboratory)
+      binding_strength: extensible      # OBSERVED (IG README)
+  external_code_systems_declared:
+    - http://loinc.org
+    - http://unitsofmeasure.org         # UCUM; fixed on valueQuantity.system
+    - http://terminology.hl7.org/CodeSystem/observation-category
+  # VALIDATION REQUIRED — no terminology server, expansion, or version was
+  # verified this cycle. LOINC/UCUM release versions are unpinned.
+  terminology_versions_pinned: false
+
+# -----------------------------------------------------------------------------
+# MAEZO MANIFEST — reference pattern only. NOT a V2 contract.
+# -----------------------------------------------------------------------------
+maezo_reference:
+  note: >-
+    Recorded as the publication PATTERN V2 should imitate. Per prompt §7.5, V2
+    must NOT reuse Maezo topic names, payloads, or the 28-field envelope.
+  manifest_path: schemas/contracts/maezo/v1/contract-manifest.yaml
+  manifest_producer_commit: 09a0a282e69f49aa9c6944b25afb35eee65fcc9c
+  manifest_producer_commit_verified_exists: true    # OBSERVED via commits API
+  manifest_status_in_file: PUBLISHED                # OBSERVED
+  manifest_version: 1.0.0
+  canonical_schema_version: 1.0.0
+  compatibility_mode: BACKWARD
+  glue_registration_environment: dev                # OBSERVED — dev only
+  evidence_id: XRG2-AMH-DEV-GHA-30991849241
+  # RECORDED CONTRADICTION C-3 — not resolved by this specialist.
+  contradiction:
+    id: C-3
+    side_a: >-
+      README.md L176 describes this manifest as `status: UNPUBLISHED`, with
+      `glue_registration.registry_name: null`, three null `schema_version_ids`
+      and `evidence_id: SET-AT-PUBLICATION`.
+    side_b: >-
+      The manifest file at the pinned commit reads `status: PUBLISHED`, registry
+      `amh-fhir-dev`, three populated schema version UUIDs, and a set evidence_id.
+    resolution: UNRESOLVED — reserved for AMH owners.
+
+# -----------------------------------------------------------------------------
+# VERIFIED FILES — per-file blob SHAs at the evidence snapshot commit
+#
+# blob_sha is the git blob SHA-1 returned by the GitHub contents API at
+# ref=0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116. It identifies exact file bytes
+# and is a drift detector: if a blob_sha changes at the execution commit, that
+# file changed and its claim must be re-verified.
+#
+# verdict values: CONFIRMED-AT-COMMIT | CONFIRMED-WITH-NUANCE | DIFFERS | NOT FOUND
+# Full quotes and reasoning: claim-verification-matrix.md
+# -----------------------------------------------------------------------------
+verified_files:
+
+  - claim_ref: 1
+    path: README.md
+    blob_sha: 34c2e698e46a2cb64e767a9633631fa780ecf5ef
+    size_bytes: 28651
+    verdict: CONFIRMED-AT-COMMIT
+    supports: >-
+      Only `dev` provisioned (stg/prod/dr absent); SAD is Draft for Internal
+      Review; 52,452 clinical rows reference an absent encounter; only
+      `Security Gate` is a required status check.
+
+  - claim_ref: 2
+    path: docs/architecture/principles.md
+    blob_sha: 6d18497a3cf4ccd785628dd0b24e006c4ba65e20
+    size_bytes: 7192
+    verdict: CONFIRMED-WITH-NUANCE
+    supports: >-
+      All 12 principles confirmed, including FHIR-vs-dimensional separation,
+      tenant isolation, idempotency, streaming-for-clinical, schema-as-contract.
+    nuance: >-
+      The admission that several principles are NOT sustained is NOT in this
+      file — it is in README.md L225-227. This file also designates itself
+      derived and points to a canonical `architecture/principles.md` that was
+      NOT read this cycle.
+
+  - claim_ref: 3
+    path: architecture/adrs/ADR-040-fonte-bronze-para-fhir-e-fatia-clinica-do-lakehouse.md
+    blob_sha: e3aa5998b348242b73060a8f4ea5658c4015c54e
+    size_bytes: 5084
+    verdict: CONFIRMED-AT-COMMIT
+    supports: >-
+      Batch-first FHIR from Bronze Iceberg with CDC/MSK/Flink parked; SOURCE
+      claim of 11,451,908 FHIR resources across 7/8 types; explicitly
+      "não é near-real-time"; Observation blocked pending source ingestion.
+
+  - claim_ref: 4
+    path: schemas/fhir-profiles/README.md
+    blob_sha: c1d6a5b56bacfac5e516bd8468983c4cebd76b96
+    size_bytes: 18304
+    verdict: CONFIRMED-AT-COMMIT
+    supports: >-
+      FHIR R4 4.0.1, package br.com.americashealth.fhir version 1.0.0; the sole
+      Observation profile is Observation-amh-laboratory. Also carries the
+      cross-tenant longitudinal-MPI language that opposes ADR-041.
+
+  - claim_ref: 5
+    path: schemas/fhir-profiles/Observation-amh-laboratory-profile.json
+    blob_sha: 62bff188ea71c2cb737f725d02ccb79c606ba62f
+    size_bytes: 7032
+    verdict: CONFIRMED-AT-COMMIT
+    supports: >-
+      Requires subject 1..*, effective[x] 1..*, status 1..*, category
+      pattern-fixed to laboratory, code bound to amh-loinc-laboratory,
+      valueQuantity.system fixed to UCUM.
+    additional_observed: >-
+      Also requires extension:mpiId 1..1 and extension:tenantId 1..1 (not named
+      in the orchestrator snapshot). Observation.encounter is OPTIONAL.
+
+  - claim_ref: 6
+    path: docs/reference/fhir-observation-source-request.md
+    blob_sha: 85063a76443d5d1edfe0cb67ebad9619d52a00f9
+    size_bytes: 3075
+    verdict: CONFIRMED-AT-COMMIT
+    supports: >-
+      Tasy PACIENTE_EXAME present in catalogue with 0 rows; preferred
+      Diagnose/LIS source not ingested; block is "por falta de dado, não por código".
+    additional_observed: >-
+      NEW CONTRADICTION C-4: the planned unblocking emits code={text:...} and
+      valueString, which does NOT conform to the laboratory profile's LOINC +
+      UCUM requirements. The conformant path is described as higher effort and
+      is unscheduled.
+
+  - claim_ref: 7a
+    path: architecture/diagrams/data-flows/data-flow-fhir-clinical.md
+    blob_sha: 50ae2a798f787de0ec03dad58c6ffc53ca6a71bd
+    size_bytes: 11611
+    verdict: CONFIRMED-AT-COMMIT
+    supports: >-
+      Side A of contradiction C-1 — asserts EVOLUCAO_PACIENTE may produce
+      Observation "para sinais vitais" and lists Observation inbound as
+      "sinais vitais de dispositivos IoT". Document is dated "Versão 1.0 |
+      Maio 2026" and describes the CDC path ADR-040 later replaced.
+    resolution: UNRESOLVED — recorded, reserved for AMH owners.
+
+  - claim_ref: 7b
+    path: architecture/diagrams/c4-component/c4-component-fhir-pipeline.md
+    blob_sha: 578ad34f624a2b2a089ec80d2c414e170bb9dc77
+    size_bytes: 11427
+    verdict: CONFIRMED-AT-COMMIT
+    supports: >-
+      Side A of C-1 — table asserts Observation for "sinais vitais estruturados
+      (LOINC code)".
+    additional_observed: >-
+      Self-inconsistent: the rendered FHIR Mapper Operator lists
+      EVOLUCAO_PACIENTE -> ClinicalImpression with NO Observation branch,
+      contradicting its own table in the same file.
+    resolution: UNRESOLVED — recorded, reserved for AMH owners.
+
+  - claim_ref: 8
+    path: architecture/adrs/ADR-041-grao-do-tenant-fonte-erp-compartilhada.md
+    blob_sha: 0e95b1b6edd429c7ffa497970ea9179adbea6adc
+    size_bytes: 9726
+    verdict: CONFIRMED-AT-COMMIT
+    supports: >-
+      Tenant grain is root CNPJ — 12 tenants (10 clinical PJs + operadora +
+      administrative); landing zone is technical, not a business tenant; §6
+      decides the MPI is per-tenant and does not cross PJs.
+    scope_note: >-
+      Existence and summary only. Full identity adjudication is reserved for the
+      Wave 2 specialist. ADR-006 and ADR-039 were NOT read this cycle.
+
+  - claim_ref: 9
+    path: applications/hapi-fhir/config/partitioning-config.md
+    blob_sha: ab77f80e11401387e04201101361a87937b0dc8e
+    size_bytes: 6548
+    verdict: CONFIRMED-AT-COMMIT
+    supports: >-
+      URL-based tenant identification; token tenant claim must equal URL tenant
+      (denies divergence and denies missing URL tenant); client-supplied
+      X-Partition-Name / X-Request-Partition-IDs rejected with 403;
+      allow_references_across_partitions false; partition bootstrap explicitly
+      NOT implemented (PartitionInitializer does not exist).
+
+  - claim_ref: 10a
+    path: schemas/fhir-profiles/CapabilityStatement-amh-server.json
+    blob_sha: 9b1628733667d974369ceccac19d8f1d25dc3300
+    size_bytes: 8838
+    verdict: CONFIRMED-AT-COMMIT
+    supports: >-
+      Side A of contradiction C-2 — rest[0].security.service advertises OAuth
+      and SMART-on-FHIR, Cognito + IAM Identity Center backed. Dated 2026-05-10.
+    resolution: UNRESOLVED — recorded, reserved for AMH owners.
+
+  - claim_ref: 10b
+    path: applications/hapi-fhir/README.md
+    blob_sha: 8382aee5f9f9a73add1ce6c22871f7111de97db2
+    size_bytes: 3149
+    verdict: CONFIRMED-AT-COMMIT
+    supports: >-
+      Side B of C-2 — "mTLS para serviços internos"; "SMART on FHIR (OAuth 2.0)
+      para apps externas (futuro)"; Lambda authorizer for tenant validation.
+    resolution: UNRESOLVED — recorded, reserved for AMH owners.
+
+  - claim_ref: 11
+    path: schemas/fhir-profiles/code-systems/CodeSystem-amh-data-quality-status.json
+    blob_sha: b79311728203a7c09603654430569b28d4c894ef
+    size_bytes: 1317
+    verdict: CONFIRMED-AT-COMMIT
+    supports: >-
+      content=complete, count=3, codes exactly valid | warning | quarantined,
+      scoped to the Silver-Rules _dq_status column.
+
+  - claim_ref: 12
+    path: docs/status/varredura-de-vazios-na-gold-2026-08-13.md
+    blob_sha: f07fab40d6024bfbd123c25f05f8ad10fbc97389
+    size_bytes: 6778
+    verdict: CONFIRMED-AT-COMMIT
+    supports: >-
+      SOURCE measurement (2026-08-13, 93 Gold tables / 12 companies): 21 tables
+      with zero rows; 21 tables with a 100%-null business column; explicit
+      warning that an empty column returns NULL with HTTP 200 and consumers read
+      absence as assertion.
+    scope_note: >-
+      Measures the Gold ANALYTICAL layer, not HAPI FHIR resources. No equivalent
+      population sweep of the FHIR lane was found this cycle.
+
+  - claim_ref: 13
+    path: schemas/contracts/maezo/v1/contract-manifest.yaml
+    blob_sha: 76fbc9bd030395e1c1b796fe4821fc60556a2d35
+    size_bytes: 9441
+    verdict: CONFIRMED-AT-COMMIT (pattern + producer commit) / DIFFERS (status vs README)
+    supports: >-
+      Full publication pattern confirmed; pins producer commit
+      09a0a282e69f49aa9c6944b25afb35eee65fcc9c, independently verified to exist.
+    differs: >-
+      README.md describes this file as UNPUBLISHED with null registry fields;
+      the file itself reads PUBLISHED with populated fields. See C-3.
+
+  - claim_ref: 14
+    path: schemas/openapi/maezo/v1/subject-context.openapi.yaml
+    blob_sha: a2811246ffd9f8ba8fcdbf52a1576499751fbd58
+    size_bytes: 17910
+    verdict: CONFIRMED-AT-COMMIT
+    supports: >-
+      READ-ONLY by contract (GET only), purpose-bound, fail-closed 403 with
+      explicit reason; exposes encounters, conditions, coverage. Observations
+      are structurally absent — the response sections are a closed enum
+      [encounters, conditions, coverage].
+
+  - claim_ref: 15
+    path: infrastructure/policies/fhir/fhir-api-access-procedure.md
+    blob_sha: a09cc1d53aad62d9fd28aa937b0d020a07a7d9a3
+    size_bytes: 10724
+    verdict: CONFIRMED-WITH-NUANCE
+    supports: >-
+      Contains an illustrative Python authorizer block (labelled "Code Snippet",
+      not "pseudocode") that must not be imported as an implemented control.
+    additional_observed: >-
+      Corroborated more strongly than claimed: the authorizer it names,
+      `fhir-api-authorizer`, does NOT exist anywhere in the repository tree.
+      The implemented authorizer is `lambda-authorizer-fhir` and differs
+      materially in design.
+
+# -----------------------------------------------------------------------------
+# ADDITIONAL OBSERVATIONS not in the original 15-claim list
+# -----------------------------------------------------------------------------
+additional_observations:
+
+  - id: OBS-1
+    subject: Implemented FHIR authorizer (third side of contradiction C-2)
+    path: applications/lambdas/lambda-authorizer-fhir/
+    observed: >-
+      An implemented, unit-tested OAuth2/JWT authorizer exists in the tree
+      (src/app.py, src/jwt_validator.py, src/jwks_cache.py, src/policy_builder.py
+      plus four test modules). Its README states it validates OIDC JWTs against
+      JWKS, requires exp/iss/aud/sub/tenant/scope claims, enforces SMART scopes
+      per HTTP verb, treats the tenant claim as mandatory and never defaulted,
+      does not consult X-Partition-Name, and fails closed.
+    significance: >-
+      Makes the authentication divergence THREE-way, not two-way. This is
+      evidence layer 1 (code in repo), NOT layer 2 (deployed). It does not
+      establish that this authorizer is in any live request path.
+    resolution: UNRESOLVED — recorded, reserved for AMH owners.
+
+  - id: OBS-2
+    subject: No AMH x IntensiCare contract exists
+    observed: >-
+      schemas/contracts/ contains exactly two entries: maezo/ and
+      source-authority/. There is no intensicare/ path. Verified by full-tree
+      enumeration (3,685 entries). "IntensiCare" appears twice in the entire
+      repository, both incidental (a narrative repo listing in a planning doc
+      and a VPN decommission runbook).
+
+  - id: OBS-3
+    subject: No MCP material in the active tree
+    observed: >-
+      Zero tree paths matching "mcp"; zero code-search hits for "model context
+      protocol". Consistent with the orchestrator prompt's §2 closing statement.
+    significance: >-
+      MCP is a NEW V2 interface requiring its own ADR and contracts — not
+      inherited AMH compatibility, and not a clinical ingestion transport.
+
+  - id: OBS-4
+    subject: OpenAPI surface is Maezo-only
+    observed: >-
+      schemas/openapi/ contains only maezo/v1/subject-context.openapi.yaml and
+      maezo/v1/population-features.openapi.yaml. No general-purpose or clinical
+      AMH REST API specification exists in that directory.
+
+# -----------------------------------------------------------------------------
+# EVIDENCE LAYERS — status of this draft lock
+# -----------------------------------------------------------------------------
+evidence_layers:
+  layer_1_declared_contract:
+    status: SUBSTANTIALLY_ESTABLISHED
+    basis: OBSERVED across 17 files at the pinned commit
+    open_contradictions: [C-1, C-2, C-3, C-4]
+  layer_2_deployed_capability:
+    status: NO_EVIDENCE
+    basis: No environment access in this cycle. Nothing contacted, nothing discovered.
+  layer_3_populated_data:
+    status: NO_OBSERVED_EVIDENCE
+    basis: >-
+      Documents read; data not read. AMH's own population claims (11,451,908
+      FHIR resources; 52,452 orphan clinical rows; 21 empty Gold tables) are
+      SOURCE claims pending environment verification — NOT observations.
+  layer_4_operational_fitness:
+    status: NO_EVIDENCE
+    basis: >-
+      Nothing measured. Every latency figure in the repository is either a
+      target in a draft document or AMH's own bulk-write throughput into HAPI —
+      neither is a consumer read-path measurement.
+
+# -----------------------------------------------------------------------------
+# FIELDS A REAL LOCK MUST CARRY AND THIS DRAFT CANNOT
+#
+# Per prompt §7.5. Each is null with an explicit reason. This section exists so
+# that the gap between this draft and an acceptable lock is legible rather than
+# silently absent.
+# -----------------------------------------------------------------------------
+required_but_absent:
+  amh_intensicare_manifest_path:
+    value: null
+    reason: >-
+      No such manifest exists. A path such as
+      schemas/contracts/intensicare/v1/contract-manifest.yaml would be PROPOSED
+      to AMH owners; creating it requires AMH-owner authority and review.
+  amh_intensicare_manifest_digest: { value: null, reason: "No manifest exists to digest." }
+  contract_semantic_versions:     { value: null, reason: "No contract has been defined." }
+  lifecycle_status:               { value: null, reason: "No contract has been defined." }
+  producer_owner:                 { value: null, reason: "AMH has not designated an owner for an IntensiCare boundary." }
+  consumer_owner:                 { value: null, reason: "Not assigned in this cycle." }
+  clinical_data_steward:          { value: null, reason: "Not assigned in this cycle." }
+  security_classification:        { value: null, reason: "Requires a defined payload to classify." }
+  approval_records:               { value: [],   reason: "No approvals sought or obtained. No AMH-owner sign-off." }
+  compatibility_policy:           { value: null, reason: "Requires a defined contract." }
+  deprecation_window:             { value: null, reason: "Requires a defined contract." }
+  change_notification_route:      { value: null, reason: "VALIDATION REQUIRED — see open-questions-for-amh-owners.md." }
+  registry_ids:                   { value: null, reason: "Nothing registered for IntensiCare." }
+  fixtures:                       { value: [],   reason: "No contract to fixture. A real lock needs valid AND deliberately invalid fixtures, per the Maezo pattern." }
+  measured_compatibility_results: { value: null, reason: "No tests run against any AMH environment." }
+  supported_tenants:              { value: null, reason: "VALIDATION REQUIRED — no tenant scope agreed. Only 2 of 12 tenants are documented as having pre-created HAPI partitions." }
+  supported_environments:         { value: null, reason: "SOURCE: only `dev` is provisioned; stg/prod/dr do not exist." }
+  effective_dates:                { value: null, reason: "No contract in effect." }
+  availability_slo:               { value: null, reason: "SOURCE: AMH NFR targets are declared, not production-measured; there is no production." }
+  freshness_slo:                  { value: null, reason: "VALIDATION REQUIRED — unmeasured. ADR-040 states the FHIR channel is not near-real-time." }
+  explicit_exclusions:            { value: null, reason: "Requires a defined contract. Would at minimum have to exclude vital signs and laboratory Observations at current evidence." }
+  replay_backfill_correction_guarantees: { value: null, reason: "VALIDATION REQUIRED — unknown." }
+  reconciliation_procedure:       { value: null, reason: "VALIDATION REQUIRED — unknown." }
+  transport:                      { value: null, reason: "PROHIBITED DECISION for this specialist. §7.5 requires options be compared; no transport is chosen or implied." }
+
+# -----------------------------------------------------------------------------
+# ACCEPTANCE PRECONDITIONS
+# -----------------------------------------------------------------------------
+acceptance:
+  status: NOT_ACCEPTED
+  preconditions:
+    - Re-verify every blob_sha above at the chosen execution commit; any change requires re-reading that file.
+    - AMH owners designate the authoritative interfaces (prompt §7.1).
+    - Contradictions C-1 (vital signs), C-2 (authentication), C-3 (manifest status) and C-4 (Observation shape) are resolved by AMH owners.
+    - An AMH x IntensiCare contract package is authored, owned, approved and published by AMH.
+    - Evidence layers 2, 3 and 4 produce real evidence for every consumed interface.
+    - Gate G3 conditions are met in full and compatibility is granted per interface, pathway, tenant/facility and operating mode.
+  note: >-
+    Until accepted, the standing report is `integration candidate` and clinical
+    evaluation remains non-actioning (prompt §7.5). No V2 component should read
+    this file.

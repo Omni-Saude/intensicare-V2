@@ -1,0 +1,78 @@
+# docs-gates.yml — the ONLY CI gates that exist for IntensiCare V2 today.
+#
+# Scope (current state, per docs/14-devsecops-and-delivery/ci-policy.md):
+#   This workflow checks documentation discipline only. No application
+#   stack has been chosen (ADRs pending — see prompt §10 / §3 rule 14), so
+#   no build, test, SBOM, sign, or deploy stage can exist yet. Do not add
+#   one here without a corresponding ADR; see ci-policy.md for the full
+#   list of §15.2 stages and what each is blocked on.
+#
+# Both jobs below are BLOCKING. Per INTENSICARE_V2_ORCHESTRATOR_PROMPT.md
+# §3 rule 13: "No production release may rely on advisory/non-blocking
+# safety, tenant-isolation, migration, security, accessibility, contract,
+# restore, or clinical test gates." Neither job uses `continue-on-error`
+# or `if: always()` to swallow a failure — a red check must stay red.
+#
+# NOTE: this workflow running and reporting pass/fail is NOT the same as
+# these checks being ENFORCED as required status checks on `main`. That
+# requires repository-admin branch-protection configuration, which is not
+# yet done — see docs/14-devsecops-and-delivery/branch-protection-request.md
+# (status: BLOCKED, requires repository admin action).
+#
+# Actions are pinned by full 40-character commit SHA, never by a mutable
+# tag (`@v4`, `@main`), per prompt §15.2 "Never deploy ... unpinned
+# actions". Pin rationale (OBSERVED 2026-08-14 via the GitHub REST API,
+# `git/refs/tags/<tag>` resolved to a commit object, cross-checked against
+# `git/commits/<sha>` for a plausible commit date):
+#
+#   actions/checkout    @ 3d3c42e5aac5ba805825da76410c181273ba90b1  (tag v7.0.1,
+#     the latest release at collection time; commit dated 2026-07-17)
+#   actions/setup-python @ 5fda3b95a4ea91299a34e894583c3862153e4b97  (tag v7.0.0,
+#     the latest release at collection time; commit dated 2026-07-20)
+#
+# Re-verify these pins periodically (e.g. via Dependabot/Renovate once a
+# dependency-update policy is DECIDED) rather than trusting them
+# indefinitely — a pin is a point-in-time OBSERVED fact, not a standing
+# guarantee that no vulnerability is ever found in that commit.
+
+name: Docs Gates
+
+# Quoted per YAML 1.1's truthy-key gotcha: an unquoted `on:` key is parsed
+# as the boolean `true` by strict YAML 1.1 parsers (observed here via
+# PyYAML during testing), even though GitHub's own workflow parser
+# resolves it correctly either way. Quoting removes the ambiguity.
+"on":
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+permissions:
+  contents: read
+
+jobs:
+  doc-conventions:
+    name: doc-conventions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.x"
+      - name: Check documentation conventions (docs/**/*.md front-matter)
+        run: python3 scripts/check_doc_conventions.py
+
+  forbidden-content:
+    name: forbidden-content
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.x"
+      - name: Scan for credentials, PHI canary, CPF-shaped and email content
+        run: python3 scripts/check_forbidden_content.py
