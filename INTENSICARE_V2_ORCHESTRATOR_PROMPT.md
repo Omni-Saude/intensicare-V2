@@ -12,19 +12,173 @@ Do not stop after producing a plan, architecture, backlog, or repository scaffol
 Resolve and record these before doing substantive work:
 
 ```yaml
+# ATUALIZADO 2026-08-15 — valores corrigidos para o estado real (DEC-G0-07/08; EVID-0010/0011)
 v2_repository: /Users/familia/code/intensicare-V2
+v2_remote: https://github.com/Omni-Saude/intensicare-V2   # main PROTEGIDO: checks doc-conventions+forbidden-content (strict), enforce_admins, histórico linear, sem force-push/deleção, PR obrigatório (0 aprovações até haver 2º revisor)
+v2_branches: "main (protegido) | cycle-0/spark-foundation (fundação, pushed) | cycle-1/clinical-content (clínico + adjudicação; verificar se já integrado a main)"
 legacy_repository_read_only: /Users/familia/intensicare/
-legacy_assessment: /Users/familia/intensicare/INTENSICARE_TECHNICAL_ASSESSMENT.md>
+legacy_assessment: /Users/familia/intensicare/INTENSICARE_TECHNICAL_ASSESSMENT.md   # ARQUIVO NÃO RASTREADO no git: calcular SHA-256 antes de citar; linhas derivam silenciosamente
 legacy_docs_audit: /Users/familia/intensicare/INTENSICARE_DOCS_INTELLIGENCE_AUDIT.md
-amh_data_repository: https://github.com/Omni-Saude/amh-data-platform
-amh_github_installation_account: rodaquino-OMNI
-amh_evidence_snapshot_commit: 0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116
+amh_data_repository: https://github.com/Omni-Saude/amh-data-platform   # licença: concessão escrita do titular (DEC-G0-08); reuso de artefato exige aprovação por artefato
+amh_access_mechanism: "gh CLI OAuth como rodaquino-OMNI (DEC-G0-07) — NÃO é GitHub App; somente leitura; VERIFICAR acesso antes de pedir novo login"
+amh_evidence_snapshot_commit: 0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116   # RE-PINAR e verificar deriva a cada sessão (ASM-0002); era HEAD de main em 2026-08-14
 amh_published_contract_manifest_commit: 09a0a282e69f49aa9c6944b25afb35eee65fcc9c
+amh_ig_package_alvo: "1.1.0 — A PUBLICAR (OS-01..OS-06); NADA pinado ainda; ver docs/08-interoperability/amh-data/contracts.lock.draft.yaml (pinned:false em todos)"
 target_country_initial: Brazil
-target_language_initial: pt-BR
+target_language_initial: pt-BR   # DEC-G0-10: TODO material produzido em pt-BR; interação com o usuário pode ser em inglês
+autoridade_nomeada: "rodaquino-OMNI — CEO e acionista principal (OMNI e AMH), médico intensivista; papéis interinos e restrições em docs/00-governance/authority-model.md §5 e registers/g0-resolucoes-2026-08-15.md"
 ```
 
 If any repository, authority, or owner is unavailable, record the blocker and continue only with work that does not depend on it. Never fabricate an interface, approval, evidence source, or stakeholder decision.
+
+## 0. ESTADO DE EXECUÇÃO E CONTINUIDADE — LEIA ANTES DE QUALQUER TRABALHO (2026-08-15)
+
+Este prompt já foi executado por dois orquestradores. Você NÃO está em partida a
+frio: os ciclos 0 (fundação SPARK) e 1 (conteúdo clínico + adjudicação de
+identidade) produziram artefatos, decisões humanas e lições registradas. Esta
+seção prevalece sobre qualquer trecho posterior que presuma estado inicial.
+
+### 0.1 Leituras obrigatórias, nesta ordem
+
+1. `HANDOFF.yaml` (raiz) — estado, pins, gates, próximas ações, regras de retomada;
+2. `docs/15-release-evidence/cycle-0-first-cycle-report.md` — relatório do ciclo 0;
+3. `docs/00-governance/registers/blockers-register.md` e `decision-register.md`
+   (GDEC-0001..0006) — o que está decidido e o que bloqueia;
+4. `docs/08-interoperability/amh-data/identity-adjudication/adjudicacao-decisoes-2026-08-15.md`
+   — a ata das seis decisões de identidade (fonte da verdade quanto ao teor);
+5. `docs/08-interoperability/amh-data/ordens-de-servico-amh-2026-08-15.md` —
+   as 21 ordens de serviço do lado AMH (OS-01..OS-21);
+6. `docs/08-interoperability/amh-data/open-questions-for-amh-owners.md` —
+   placar Q1..Q10 (2 respondidas, 5 parciais, 3 abertas);
+7. a memória persistente do agente (índice `MEMORY.md`), quando disponível.
+
+### 0.2 Decisões DECIDIDAS — fechadas para re-litigação
+
+Autoridade nomeada: **rodaquino-OMNI** (CEO e acionista principal de OMNI e AMH;
+médico intensivista). Não re-debata; cite. Regras de supersessão estão na ata e
+em `g0-resolucoes-2026-08-15.md`.
+
+- **DEC-G0-01..09**: titular assume interinamente AUTH-PRODUCT/SECURITY(projeto)/
+  DATA-PLATFORM(ambos os lados)/UX/OPERATIONS com restrições; BLK-0004
+  reclassificado para G6/G8 (jurídico = sugestão de agente + ratificação por
+  advogados); acesso = OAuth rodaquino-OMNI; concessão escrita AMH; proteção de
+  branch aplicada. **DEC-G0-10**: todo material novo em pt-BR.
+- **AQ-1=C**: MPI por tenant (ADR-041 §6) + índice cross-PJ governado (ADR-043,
+  gated em parecer DPO/jurídico). ADR-006 superseded quanto a escopo de MPI.
+- **AQ-2=B**: `identifier:mpiId` autoritativo; extensions rebaixadas de 1..1;
+  URL de profile única (`fhir.americashealth.com.br`); pinar IG package 1.1.0
+  quando publicado.
+- **AQ-3=C**: base legal do loop clínico = tutela da saúde (LGPD Art. 11, II, f);
+  SEM gate de consentimento no loop clínico; usos secundários bloqueados;
+  `ie_perm_sms_email` jamais é consentimento.
+- **AQ-4=A**: `portable_subject_ref` (formato `amh:psr:v1`) é o identificador de
+  fronteira OBRIGATÓRIO; PSR nativo desde o dia um (sintético em dev); chave de
+  fatos clínicos = (PSR, encontro); IDP-02 superseded.
+- **AQ-5=A**: eventos de ciclo de vida de identidade + `resolve(ref, as_of)` são
+  cláusulas obrigatórias do contrato v1; sem eles o G3 NÃO passa.
+- **AQ-6=A**: bypass cross-tenant não existirá; enumeração = 12 tenants
+  pós-ADR-041; correções no IG 1.1.0.
+
+### 0.3 Trabalho já realizado — NÃO refazer
+
+**Ciclo 0** (branch `cycle-0/spark-foundation`, commits `4f35eba`+`ddac9bc`):
+governança e registros (00), uso pretendido e pesquisa G1 (01/02), modelo de
+domínio e invariantes DOM (03), 44 hazards + 41 SAF + esqueleto de safety case +
+portfólio de vias com 0 elegíveis (05), programa de ADRs com índice de 24 +
+ADR-0001/0002 propostos (06), dossiê AMH de quatro camadas + contradições +
+política interina de identidade (08), modelo de ameaças com 67 THR + 50 SEC (11),
+estratégia de testes + padrão de vetores clínicos CRV (12), gates de CI
+bloqueantes (14, `scripts/`), stubs das pastas vazias com o gate que as popula.
+
+**Ciclo 1 — conteúdo clínico (SEGUNDO ORQUESTRADOR, concorrente)**: revisão
+forense das regras clínicas legadas em `docs/05-clinical-safety/legacy-review/`,
+especificações melhoradas em `docs/05-clinical-safety/rule-releases/`,
+`clinical-kpi-review.md`, ADRs clínicos (ex.: `ADR-0027-age-and-population-gating-enforcement.md`),
+pin do legado em `docs/archive/legacy-provenance/legacy-pin-cycle-1.md`, e
+GDEC-0003 (autoridade clínica do titular, escopo ciclo-1, com regra de segundo
+revisor para conteúdo de autoria do próprio titular). **Antes de qualquer
+trabalho clínico: leia esses artefatos e NÃO repita a revisão do legado.**
+Verifique `git status`/`git log` para detectar orquestradores concorrentes e
+trabalho não commitado antes de escrever.
+
+### 0.4 Anti-padrões conhecidos (todos observados nesta execução)
+
+1. Presença de schema ≠ dados populados; "HTTP 200" ≠ apto para uso (Gold: 21
+   tabelas vazias; `PACIENTE_EXAME` = 0 linhas).
+2. "Identidade decidida" ≠ "Observation disponível": população, forma
+   (valueString vs LOINC/UCUM) e emissão continuam abertas (IDP-12).
+3. Editar registro compartilhado sem reler o estado em disco → sobrescrita de
+   trabalho concorrente. Regra: ler-antes-de-escrever; escopos de escrita
+   disjuntos; edições concorrentes não commitadas = janela fechada.
+4. Interrupções por limite de sessão: agentes devem escrever artefatos
+   incrementalmente ANTES do resumo final; retomadas devem ser cirúrgicas
+   ("write-out only", sem re-pesquisa).
+5. Cunhar prefixos de ID fora da taxonomia sem registrar em
+   `traceability-policy.md` §1.1; alocar GDEC-nnnn somente ao integrar no
+   registro (colisões reais ocorreram: GDEC-0003).
+6. `status: DECIDED` em front-matter é rejeitado pelo gate: atas de decisão
+   usam `status: OBSERVED` (registro de escriba) com blocos DECIDED por decisão.
+7. Decisão só no chat = decisão perdida: persistir imediatamente em arquivo com
+   proveniência.
+8. Citar o assessment legado por linhas sem hash: é arquivo NÃO rastreado;
+   linhas derivam silenciosamente.
+9. Assumir que `main` da AMH não deriva: re-pinar a cada sessão (ASM-0002).
+10. Enfraquecer gate para atingir contagem desejada (proibido; contagem
+    honesta do portfólio hoje = 0 vias acionáveis).
+11. Gate de segurança "advisory": todo gate de segurança/convenção é
+    bloqueante; proteção de branch já aplicada em `main`.
+12. Inventar exemplos de identificadores reais (PSR, CPF): usar `null`/sintético
+    marcado; CPF com dígito verificador inválido em fixtures.
+13. Tratar aprovação em um contexto como aprovação no próximo: cada gate humano
+    é um ato nomeado, datado e com regra de supersessão.
+
+### 0.5 Roteamento inteligente de modelos e agentes especializados
+
+Delegue apenas a especialistas estreitos (nunca genéricos — ver §4), com pacote
+de tarefa completo, escopos de escrita disjuntos e despacho paralelo quando
+independentes. Roteie o modelo pela classe da tarefa:
+
+| Classe de tarefa | Tier de modelo |
+|---|---|
+| Análise clínica/segurança/compatibilidade profunda; verificação adversarial; ADRs; adjudicações | Tier máximo de raciocínio (classe Opus) |
+| Scaffolding estruturado, registros, integrações mecânicas de governança, estratégia de testes | Tier intermediário (classe Sonnet) |
+| Varreduras triviais e mecânicas, com verificação posterior | Tier econômico (classe Haiku) — nunca para conteúdo clínico |
+| Síntese, arbitragem entre agentes, revisão de integração | Orquestrador (não delegar) |
+
+Disciplina de despacho: pacotes de tarefa conforme §4; retomada cirúrgica após
+interrupção (dizer exatamente o que já está em disco e o que falta); relatório
+de handoff obrigatório (OBSERVADO/ALTERADO/TESTADO/NÃO TESTADO/ASSUMIDO/
+DECIDIDO/REJEITADO/EM ABERTO); dois agentes jamais editam o mesmo arquivo
+simultaneamente.
+
+### 0.6 Caminho crítico atual (ordem de dependência)
+
+1. **OS-16 — parecer DPO/jurídico**: única dependência externa do pacote AMH,
+   SEM pré-requisito técnico → iniciar em paralelo imediatamente (DEC-G0-03).
+2. **G1 — pesquisa de usuários**: 42 itens bloqueantes
+   (`g1-validation-backlog.md`); baselines perecíveis G2-VAL-0025/VAL-0035
+   (irrecuperáveis após go-live).
+3. **Execução AMH OS-01..OS-21**: IG 1.1.0, correções do produtor batch,
+   partições HAPI, PSR SP-1..SP-7, eventos de ciclo de vida +
+   `resolve(ref, as_of)`, fonte estruturada Diagnose/LIS para Observation.
+4. **Decisão de produto pendente do titular**: sinais vitais (contradição C-1)
+   — exige novo profile AMH e decisão de produto; nomear tenant piloto.
+5. **Contrato AMH×IntensiCare v1**: sujeito = PSR; eventos de identidade
+   obrigatórios; base legal tutela da saúde; pinagem por digest.
+6. **ADRs 0001/0003/0005+** → fatia vertical G7 com dados sintéticos.
+
+Honestidade obrigatória em qualquer relatório: `Observation` da AMH continua
+**não consumível**; o achado de compatibilidade permanece **candidato a
+integração**; a natureza do bloqueio mudou de indefinição para execução e
+ambiente.
+
+### 0.7 O que o §21 original ainda exige
+
+O §21 ("first response") foi EXECUTADO no ciclo 0. O próximo ciclo não repete a
+primeira resposta: retome pelo caminho crítico (§0.6), reportando por evidência
+concluída conforme §17.
+
+---
 
 ## 1. Mission and success definition
 
@@ -87,6 +241,16 @@ Treat the legacy technical assessment as a risk-informed input, not authority. I
 ### Verified AMH-data evidence snapshot
 
 The private repository was inspected through the GitHub App installation on the personal account `rodaquino-OMNI`. The evidence snapshot is `Omni-Saude/amh-data-platform@0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116` on `main`. This establishes repository content at one commit; it does not establish deployed behavior, production readiness, or future compatibility.
+
+> **[ATUALIZADO 2026-08-15]** Os itens 7–9 abaixo (tenant/MPI/autenticação) foram
+> parcialmente **adjudicados** pelo titular — ver §0.2 e a ata
+> `adjudicacao-decisoes-2026-08-15.md`. As 15 alegações foram re-verificadas
+> arquivo a arquivo no commit pinado (15/15 sustentadas; ver
+> `claim-verification-matrix.md`), com 4 achados novos materiais (exclusão
+> estrutural de sinais vitais; plano de desbloqueio de Observation viola o
+> próprio profile; contradição de autenticação em 3 vias; conflito de identidade
+> em 6 posições). O bypass `cross_tenant_authorized` foi decidido como deriva
+> documental (AQ-6).
 
 Treat the following as source-backed constraints that must be rechecked at the execution commit:
 
@@ -237,6 +401,14 @@ Create, at minimum:
 15. explicit exclusions and deferred capabilities.
 
 ### Gate G0 — authority and access
+
+> **[ESTADO 2026-08-15]** 9 de 11 bloqueadores resolvidos/reclassificados pelo
+> titular nomeado (`g0-resolucoes-2026-08-15.md`; GDEC-0004). Permanecem
+> parciais: BLK-0002 e BLK-0008 (autoridade clínica com escopo ciclo-1 via
+> GDEC-0003; verificação de credencial e segundo revisor pendentes).
+> BLK-0004 (jurídico) reclassificado para G6/G8. RISK-0007 registra a
+> concentração de autoridade em uma pessoa. Não re-execute o que já está
+> resolvido; trate apenas os itens remanescentes.
 
 Do not finish SPARK until:
 
@@ -436,6 +608,15 @@ Test the assessment’s historical claim that Gold/Athena-style availability may
 Never create two ungoverned clinical sources of truth. Define precedence, conflict, correction, replay, and reconciliation behavior.
 
 ### 7.4 Identity, tenant, consent and authorization adjudication
+
+> **[EXECUTADO E DECIDIDO 2026-08-15]** O registro de contradição foi criado
+> (seis posições, não quatro — inclui ADR-043 e ADR-042/AMH-020b), e a
+> adjudicação AQ-1..AQ-6 foi **decidida pelo titular** (ver §0.2 e a ata).
+> A política interina IDP-01..12 foi rebaselinada: IDP-02 superseded
+> (PSR nativo), IDP-07 reenquadrada (tutela da saúde), IDP-10 elevada a
+> cláusula vinculante do contrato v1. As regras fail-closed abaixo permanecem
+> válidas como política permanente onde assim marcadas em
+> `interim-identity-policy.md`. NÃO re-execute esta adjudicação.
 
 Create a formal contradiction record and owner decision for the conflict among ADR-006’s longitudinal MPI concept, ADR-039’s unresolved MPI/consent debt, ADR-041’s tenant-local MPI/root-CNPJ boundary, and the FHIR IG’s longitudinal-MPI language.
 
@@ -1063,6 +1244,14 @@ Never:
 - let an MCP/AI agent become an unreviewed source of clinical truth.
 
 ## 21. Orchestrator’s first response and first execution cycle
+
+> **[EXECUTADO 2026-08-15 — NÃO REPETIR]** A primeira resposta e o primeiro
+> ciclo foram concluídos (relatório: `docs/15-release-evidence/cycle-0-first-cycle-report.md`;
+> commits `4f35eba`, `ddac9bc`, `856209d`). O ciclo clínico 1 correu em
+> orquestrador concorrente (ver §0.3). O próximo orquestrador inicia pelo §0
+> (leituras obrigatórias) e retoma pelo caminho crítico §0.6, reportando
+> conforme §17. O texto abaixo permanece como referência histórica do contrato
+> de partida a frio.
 
 Your first response must not propose a final stack. It must provide:
 
