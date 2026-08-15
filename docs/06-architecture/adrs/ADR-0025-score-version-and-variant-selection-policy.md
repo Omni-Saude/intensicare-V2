@@ -3,7 +3,7 @@ id: ADR-0025
 title: >
   Política de seleção de versão/variante de escore clínico (NEWS2, MEWS, SOFA, qSOFA) e
   vigilância de atualização de edição
-status: proposed
+status: accepted (2026-08-15, GDEC-0007)
 status_history:
   - status: proposed
     date: 2026-08-15
@@ -15,6 +15,14 @@ status_history:
       REVIEW (revisor: rodaquino-OMNI, GDEC-0003). Este ADR não recebeu ID reservado prévio
       em `adr-index.md` (a tarefa que o originou restringe `write_scope` a este único
       arquivo); ver aviso de proveniência abaixo.
+  - status: accepted (2026-08-15, GDEC-0007)
+    date: 2026-08-15
+    by: rodaquino-OMNI (revisor clínico nomeado, GDEC-0003) — transcrito pelo orquestrador clínico do ciclo 1 (escriba)
+    note: >
+      Decisão por escrito, em sessão, do titular nomeado, registrada em
+      decision-register.md GDEC-0007 (folha de decisão do ciclo 1, §7, linhas A25-1 a
+      A25-7). As quatro linhas de edição canônica de §5.1 são ratificadas; MEWS/NEWS2
+      assumido SUPERSEDE dormente; qSOFA GCS<15; restrição SSC-2021 vinculante. Ver §5.0.
 date: 2026-08-15
 owner: >
   rodaquino-OMNI — revisor clínico nomeado do ciclo 1 e aprovador de conteúdo clínico
@@ -102,10 +110,14 @@ provenance:
 
 # ADR-0025 — Política de seleção de versão/variante de escore clínico e vigilância de atualização de edição
 
-> **Status: proposed.** Este documento apresenta opções, drivers e condições de aceitação.
-> **Não registra nenhuma decisão** e não deve ser citado como tendo fixado a edição
-> canônica de nenhum escore. Todo conteúdo clínico é
-> **PROPOSAL — AWAITING NAMED CLINICAL REVIEW (revisor: rodaquino-OMNI, GDEC-0003)**.
+> **Status: `accepted (2026-08-15, GDEC-0007)`.** O revisor clínico nomeado
+> (rodaquino-OMNI, GDEC-0003) decidiu, por escrito, em sessão de 2026-08-15
+> (transcrição-mestre: `decision-register.md` GDEC-0007), a tabela de edição canônica
+> de §5.1, a regra de seleção de variante de §5.2 e o desenho de vigilância de §5.3
+> como decisão — ver §5.0 para o registro por questão (A25-1 a A25-7). Condições
+> não clínicas (verificação da Table 1 de Subbe 2001, ativação do metodologista de
+> evidência, atualização de `adr-index.md`) permanecem `VALIDATION REQUIRED` /
+> pendentes e não são fechadas por esta aceitação.
 
 > **Aviso de proveniência e de escopo de escrita, dito uma vez, válido para todo o
 > documento.** Esta tarefa restringe `write_scope` estritamente a este arquivo. O passo 5
@@ -456,17 +468,50 @@ Apenas qualitativo. Sem pontuação numérica — pesos não foram ratificados p
 
 ## 5. Decisão e escopo
 
-> **NENHUMA DECISÃO ESTÁ REGISTRADA.**
->
-> Este ADR apresenta opções, drivers, evidência e condições de aceitação. Nenhuma opção é
-> escolhida, preferida ou provisoriamente adotada. As tabelas de "edição canônica proposta"
-> abaixo (§5.1–§5.4) são **PROPOSAL — AWAITING NAMED CLINICAL REVIEW (revisor:
-> rodaquino-OMNI, GDEC-0003)**, oferecidas como o insumo mais direto para a decisão, não
-> como a decisão em si. Preencher esta seção com uma decisão real é reservado à autoridade
-> nomeada no cabeçalho: `AUTH-CLINSAFETY` (conteúdo clínico) e `AUTH-PRODUCT` (ratificação
-> arquitetural do ADR).
+### 5.0 Decisão (GDEC-0007, 2026-08-15)
 
-### 5.1 Tabela de edição canônica proposta, por escore (PROPOSAL — não decidida)
+> decided_by: **rodaquino-OMNI** (revisor clínico nomeado, GDEC-0003; também titular
+> interino de papéis `AUTH-*` de fase de projeto per GDEC-0004 onde pertinente).
+>
+> As tabelas de §5.1–§5.3 são ratificadas como decisão. Registro por questão, per a
+> folha de decisão do ciclo 1
+> (`docs/05-clinical-safety/cycle-1-review-decision-sheet.md` §7, linhas A25-1 a A25-7):
+>
+> - **A25-1 →** as quatro linhas de edição canônica de §5.1 são **ratificadas**:
+>   NEWS2 = RCP 2017; SOFA = Vincent 1996 via Sepsis-3; qSOFA = Singer 2016 +
+>   restrição SSC 2021; MEWS = Subbe 2001, condicional (A1/A25-2).
+> - **A25-2 →** enquanto o Gate G2 não decide, **assume-se SUPERSEDE do MEWS pelo
+>   NEWS2**; a linha MEWS de §5.1/§5.3 permanece registrada como **dormente**, não
+>   retirada do documento, até decisão formal de portfólio.
+> - **A25-3 →** a verificação célula a célula da Table 1 de Subbe 2001 (C2) é
+>   **moot sob A25-2**; se o MEWS retornar ao portfólio, a verificação é tarefa do
+>   metodologista de evidência clínica quando ativado — não trabalho imediato.
+> - **A25-4 →** qSOFA: "alteração da mentalidade" operacionalizada como **GCS<15**
+>   (definição do texto publicado, Singer 2016/JAMA), com nota registrada sobre a
+>   derivação de Seymour (coorte de derivação, GCS≤13) como leitura alternativa não
+>   adotada.
+> - **A25-5 →** a restrição SSC 2021 (recomendação forte contra qSOFA como
+>   ferramenta única de triagem) é **vinculante** no portfólio — nenhum bundle pode
+>   admitir qSOFA como gatilho de triagem isolado sem justificativa registrada por
+>   autoridade nomeada.
+> - **A25-6 →** o registro em `adr-index.md` (C7/C9) — já concluído na integração do
+>   ciclo 1 — é **confirmado**; próximo ID livre permanece ADR-0030.
+> - **A25-7 →** a checagem regulatória brasileira (ANVISA/CFM/MS, enquadramento
+>   SaMD) é **comissionada agora**, como ordem de serviço paralela — não diferida.
+>
+> **rationale:** conforme folha de decisão do ciclo 1 (GDEC-0007); fundamentos por
+> linha na própria folha (`cycle-1-review-decision-sheet.md` §7).
+>
+> **supersessão:** rege-se pela própria seção de gatilhos de revisão desta ADR (§8.2,
+> T1–T7) — nenhum gatilho adicional é criado por esta transcrição.
+>
+> **Nota de escopo.** Esta decisão fecha as cláusulas CLÍNICAS. A verificação
+> primária da Table 1 de Subbe 2001 (C2, moot sob A25-2), a ativação do metodologista
+> de evidência (C5), a aceitação do ADR-0007 com slot compatível (C4) e a atualização
+> de `adr-index.md`/dependências (C7/C9, dívida de handoff — ver aviso de proveniência
+> no topo) permanecem OPEN e não são fechadas por esta aceitação.
+
+### 5.1 Tabela de edição canônica, por escore (ratificada — GDEC-0007, 2026-08-15)
 
 | Escore | Edição canônica proposta | O que exatamente vem de onde | Status de verificação da fonte |
 |---|---|---|---|
@@ -475,7 +520,7 @@ Apenas qualitativo. Sem pontuação numérica — pesos não foram ratificados p
 | **qSOFA** | **Singer M et al.** *JAMA* 2016;315(8):801-810 (Sepsis-3), **com a restrição de uso normativa da Surviving Sepsis Campaign 2021 (Evans L et al.) anexada como condição de uso, não como uma edição alternativa** | Os três critérios (FR≥22, PAS≤100, alteração da mentalidade) e o limiar 2-de-3 (E10). A operacionalização de "alteração da mentalidade" — **GCS<15 (o texto publicado generalizado) versus GCS≤13 (a coorte de derivação da força-tarefa)** — é uma escolha explícita que qualquer bundle de regra deve declarar e citar, não uma ambiguidade a herdar silenciosamente. | **Verificado** (E10). A restrição SSC 2021 — "recomendamos **contra** usar qSOFA... como ferramenta única de triagem" (recomendação forte, evidência de qualidade moderada) — está **verificada** (E11) e é proposta como **vinculante**: nenhum bundle de regra pode admitir qSOFA como gatilho de alerta autônomo de triagem de sepse sem que uma autoridade clínica nomeada registre, por escrito, por que está contrariando uma recomendação forte de uma diretriz vigente. |
 | **MEWS** | **Subbe CP et al.** *QJM* 2001;94(10):521-526 — **somente se retido no portfólio** (Gate G2, condicional a A1) | O conjunto de cinco parâmetros (PAS, FC, FR, temperatura, AVPU) está confirmado a nível de citação (E4). **As bandas por parâmetro (Table 1) NÃO estão verificadas** — a comparação usada nas revisões forenses é a transcrição mais citada, rotulada INFERENCE, não SOURCE (E5). | **NÃO verificado a nível de Table 1 — VALIDATION REQUIRED, bloqueante.** Nenhuma especificação V2 pode citar Subbe 2001 como `SOURCE` para as bandas numéricas do MEWS até essa verificação primária concluir (A2). Mesmo se retido, o **resultado mais provável** desta linha, per E13, é que o Gate G2 escolha **SUPERSEDE** (retirar MEWS a favor de NEWS2, dada a sobreposição "VERY HIGH") — nesse caso, esta linha inteira se torna histórica, não operacional; este ADR não antecipa essa decisão, apenas a registra como o desfecho mais provável indicado pela evidência de portfólio já coletada. |
 
-### 5.2 Regra de seleção de variante (PROPOSAL — não decidida)
+### 5.2 Regra de seleção de variante (ratificada — GDEC-0007, 2026-08-15)
 
 1. **O que conta como "a mesma edição" do escore.** Dois conjuntos de conteúdo clínico são
    a mesma edição de um escore se, e somente se: (a) o mesmo conjunto de parâmetros de
@@ -513,7 +558,7 @@ Apenas qualitativo. Sem pontuação numérica — pesos não foram ratificados p
    comportamento) é, estruturalmente, o mesmo defeito que uma variante não declarada
    produziria se fosse permitida — este item o proíbe nos dois casos com a mesma regra.
 
-### 5.3 Desenho de vigilância de atualização (PROPOSAL — não decidida)
+### 5.3 Desenho de vigilância de atualização (ratificado — GDEC-0007, 2026-08-15)
 
 **Lista de observação, por escore (PROPOSAL):**
 
@@ -556,15 +601,15 @@ de regra.
 
 | # | Condição | Dono | Evidência que a fecharia | Status |
 |---|---|---|---|---|
-| C1 | Um revisor clínico nomeado ratifica ou rejeita a tabela de edição canônica de §5.1, cláusula por cláusula. | `AUTH-CLINSAFETY` (candidato: rodaquino-OMNI, GDEC-0003) | Registro de revisão assinado, cláusula por cláusula, per o processo já usado nas cinco revisões forenses citadas. | **ABERTA** |
-| C2 | A Table 1 de Subbe 2001 (MEWS) é verificada célula a célula a partir da fonte primária. | UNASSIGNED — VALIDATION REQUIRED | O artigo original obtido e comparado linha a linha contra a transcrição usada nas revisões forenses. | **ABERTA — bloqueante apenas para a linha MEWS** |
-| C3 | O Gate G2 resolve a decisão de portfólio NEWS2×MEWS (retenção vs. SUPERSEDE). | `AUTH-PRODUCT` + `AUTH-CLINSAFETY` | Registro de decisão de portfólio do Gate G2. | **ABERTA** |
-| C4 | `ADR-0007` é redigido e aceito com um modelo de bundle compatível com "novo ID de regra por variante, nunca edição silenciosa" (§5.2 item 4). | UNASSIGNED — VALIDATION REQUIRED | `ADR-0007` aceito. | **ABERTA — `ADR-0007` ainda `not-started`** |
+| C1 | Um revisor clínico nomeado ratifica ou rejeita a tabela de edição canônica de §5.1, cláusula por cláusula. | `AUTH-CLINSAFETY` (candidato: rodaquino-OMNI, GDEC-0003) | Registro de revisão assinado, cláusula por cláusula, per o processo já usado nas cinco revisões forenses citadas. | **FECHADA — ver §5.0, GDEC-0007, 2026-08-15 (A25-1)** |
+| C2 | A Table 1 de Subbe 2001 (MEWS) é verificada célula a célula a partir da fonte primária. | UNASSIGNED — VALIDATION REQUIRED | O artigo original obtido e comparado linha a linha contra a transcrição usada nas revisões forenses. | **ABERTA, porém MOOT sob A25-2 (MEWS assumido SUPERSEDE-dormente) — só reabre se MEWS retornar ao portfólio** |
+| C3 | O Gate G2 resolve a decisão de portfólio NEWS2×MEWS (retenção vs. SUPERSEDE). | `AUTH-PRODUCT` + `AUTH-CLINSAFETY` | Registro de decisão de portfólio do Gate G2. | **ABERTA — A25-2 é a assunção operante até o Gate G2 decidir formalmente** |
+| C4 | `ADR-0007` é redigido e aceito com um modelo de bundle compatível com "novo ID de regra por variante, nunca edição silenciosa" (§5.2 item 4). | UNASSIGNED — VALIDATION REQUIRED | `ADR-0007` aceito. | **FECHADA quanto à aceitação — `ADR-0007` aceito em 2026-08-15 (GDEC-0007); verificação de compatibilidade de schema ainda pendente** |
 | C5 | Um metodologista de evidência clínica é ativado e grada a força de evidência de cada escore candidato admitido em portfólio. | `AUTH-PRODUCT` (ativação do papel) | Papel preenchido; graduação de evidência registrada por candidato. | **ABERTA** |
-| C6 | A ambiguidade GCS<15 vs. GCS≤13 (qSOFA, E10) é resolvida por escolha explícita e citada, não herdada silenciosamente. | `AUTH-CLINSAFETY` | Registro de escolha, com citação, na especificação V2 do qSOFA. | **ABERTA** |
-| C7 | `adr-index.md` é atualizado para registrar `ADR-0025` (fora do `write_scope` desta tarefa — ver aviso de proveniência no topo). | ADR-program engineer (papel a designar) | `adr-index.md` §3/§4/§6 atualizado com esta ADR. | **ABERTA — dívida de handoff explícita** |
+| C6 | A ambiguidade GCS<15 vs. GCS≤13 (qSOFA, E10) é resolvida por escolha explícita e citada, não herdada silenciosamente. | `AUTH-CLINSAFETY` | Registro de escolha, com citação, na especificação V2 do qSOFA. | **FECHADA — ver §5.0, GDEC-0007, 2026-08-15 (A25-4: GCS<15)** |
+| C7 | `adr-index.md` é atualizado para registrar `ADR-0025` (fora do `write_scope` desta tarefa — ver aviso de proveniência no topo). | ADR-program engineer (papel a designar) | `adr-index.md` §3/§4/§6 atualizado com esta ADR. | **CONFIRMADA CONCLUÍDA per A25-6 (integração do ciclo 1); atualização de status para `accepted` permanece a cargo do orquestrador (fora do write_scope desta transcrição)** |
 | C8 | `assumptions-register.md` recebe IDs `ASM-xxxx` para A1–A6. | UNASSIGNED — VALIDATION REQUIRED | Entradas registradas. | **ABERTA** |
-| C9 | `adr-index.md` §4 registra a relação de dependência entre `ADR-0025` e `ADR-0007` (consome o mecanismo de bundle) e entre `ADR-0025` e a decisão de portfólio do Gate G2. | ADR-program engineer | Grafo de dependências atualizado. | **ABERTA — mesma restrição de escopo de C7** |
+| C9 | `adr-index.md` §4 registra a relação de dependência entre `ADR-0025` e `ADR-0007` (consome o mecanismo de bundle) e entre `ADR-0025` e a decisão de portfólio do Gate G2. | ADR-program engineer | Grafo de dependências atualizado. | **CONFIRMADA CONCLUÍDA per A25-6 — mesma nota de C7** |
 
 ---
 
@@ -702,7 +747,7 @@ neste documento; todo `HAZ`/`SAF` citado foi lido de `docs/05-clinical-safety/`.
 ## 11. Checklist de completude (autoverificação do revisor)
 
 - [x] ID estável corresponde ao nome do arquivo (`ADR-0025-score-version-and-variant-selection-policy.md`)
-- [x] Status é um dos valores permitidos (`proposed`)
+- [x] Status é um dos valores permitidos (`accepted (2026-08-15, GDEC-0007)`)
 - [ ] `adr-index.md` reflete este ADR — **NÃO feito**, deliberadamente, por restrição de `write_scope` desta tarefa (ver aviso de proveniência no topo; C7/C9)
 - [x] Dono, aprovadores, prazo de decisão presentes (placeholders permitidos; nenhum nome inventado — `owner`/`approvers` citam GDEC-0003, uma decisão já `DECIDED` existente, não uma aprovação nova)
 - [x] Autor não está listado como aprovador; pares de independência verificados (§ independence_check no cabeçalho)

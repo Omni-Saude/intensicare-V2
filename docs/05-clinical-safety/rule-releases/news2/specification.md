@@ -1,12 +1,16 @@
 ---
 id: RULE-NEWS2
-title: NEWS2 clinical-content specification — V2 rule-release precursor 0.1.0
+title: NEWS2 clinical-content specification — V2 rule-release precursor 0.2.0
 label: PROPOSAL
+status: REVISADO CLINICAMENTE 2026-08-15 (GDEC-0007) — decisões incorporadas; aprovação formal pendente do mecanismo de bundle assinado (ADR-0007); NOT ACTIONABLE (inalterado)
+last_updated: 2026-08-15
 statement: >
   Complete clinical-content specification for NEWS2 in IntensiCare V2, re-derived from the
   Royal College of Physicians NEWS2 (2017) primary source with corrected SpO2 scale
-  governance and explicit missing-data behavior. PROPOSAL — AWAITING NAMED CLINICAL REVIEW
-  (reviewer: rodaquino-OMNI). Classification: NOT ACTIONABLE — no evidenced populated source.
+  governance and explicit missing-data behavior. REVISADO CLINICAMENTE 2026-08-15
+  (GDEC-0007) — decisões incorporadas; aprovação formal pendente do mecanismo de bundle
+  assinado (ADR-0007). Classification: NOT ACTIONABLE — no evidenced populated source
+  (inalterado).
 provenance:
   source_repo: rcp.ac.uk (primary) + intensicare-V2 (review records)
   path_or_url: https://www.rcp.ac.uk/media/a4ibkkbf/news2-final-report_0_0.pdf
@@ -37,15 +41,21 @@ superseded_by: null
 | Field | Value |
 |---|---|
 | Rule identifier | `RULE-NEWS2` |
-| Semantic version | `0.1.0` (precursor — pre-review, pre-bundle, unsigned) |
-| Status | **PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)** |
+| Semantic version | `0.2.0` (precursor — reviewed, pre-bundle, unsigned) |
+| Status | **REVISADO CLINICAMENTE 2026-08-15 (GDEC-0007) — decisões incorporadas; aprovação formal pendente do mecanismo de bundle assinado (ADR-0007); NOT ACTIONABLE (inalterado)** |
 | Classification | **NOT ACTIONABLE — no evidenced populated source.** OBSERVED (`INTENSICARE_V2_ORCHESTRATOR_PROMPT.md` §7.0; HAZ-0043): the AMH evidence snapshot demonstrates **no populated vital-signs profile and zero populated observations** for the seven NEWS2 inputs. This document is clinical-content authorship only. It claims no runtime readiness, no activation path, and no data feed. Admitting this rule to any portfolio before a populated source is evidenced is the HAZ-0043 failure mode. |
 | Primary source | Royal College of Physicians. *National Early Warning Score (NEWS) 2: Standardising the assessment of acute-illness severity in the NHS.* Updated report of a working party. London: RCP, 2017. Issuer PDF: `https://www.rcp.ac.uk/media/a4ibkkbf/news2-final-report_0_0.pdf` (fetched and text-extracted by this author 2026-08-15) |
 | Legacy relationship | TRANSFORM with element-level REJECT, per `../../legacy-review/ews/news2-review.md` §6. Nothing in this file is imported from legacy code. See `migration-notes.md`. |
 | Companion files | `reference-vectors.md` (CRV set), `migration-notes.md` |
 
+**Histórico de versões (changelog):**
+
+- **0.2.0** — decisões da revisão clínica nomeada incorporadas (GDEC-0007, 2026-08-15)
+- 0.1.0 — proposta inicial (ciclo 1), AWAITING NAMED CLINICAL REVIEW
+
 Label discipline: every material claim below is tagged **SOURCE** (cited RCP content),
-**INFERENCE**, **PROPOSAL**, or **VALIDATION REQUIRED**. This author approves nothing.
+**INFERENCE**, **PROPOSAL**, **DECIDIDO (GDEC-0007)**, or **VALIDATION REQUIRED**. This
+author approves nothing; the GDEC-0007 decisions are the named reviewer's.
 
 ---
 
@@ -73,12 +83,13 @@ PROPOSAL). These must be resolved into one enforceable gate:
 | Gate element | Behavior | Basis |
 |---|---|---|
 | **Age ≥ 18 (verified)** | In population; evaluate. | PROPOSAL — aligns with IU-05. Narrower than RCP's ≥16, therefore never applies the instrument outside its published population. |
-| **Age 16–17 (verified)** | **Out of the proposed V2 population** → `not_evaluated`, reason `out_of_population_scope`, with an explicit UI disclosure that this band is RCP-permitted but excluded by V2 intended use. | PROPOSAL. The 16–17 band is a **named-reviewer decision** (open question Q1, §11): admitting it widens V2 intended use; excluding it forgoes RCP-permitted coverage. This spec proposes exclusion until decided. |
+| **Age 16–17 (verified)** | **Out of the V2 population** → `not_evaluated`, reason `out_of_population_scope`, with an explicit UI disclosure that this band is RCP-permitted but excluded by V2 intended use. | **DECIDIDO (GDEC-0007, 2026-08-15, N-1 (a)):** excluir — coerência com a fronteira adulto-UTI (VAL-0006/0007) e um único gate etário no produto (ADR-0027 A27-1); revisitar se o escopo adolescente abrir. |
 | **Age < 16 (verified)** | `not_evaluated`, reason `out_of_population_scope`. Never scored. | SOURCE (RCP Rec 2) + VAL-0006/VAL-0007. |
 | **Age unknown / DOB missing, unparseable, or conflicting** | `not_evaluated`, reason `unknown_age`. **Never assume adult.** | PROPOSAL, per VAL-0006/VAL-0007 (BLOCKING) and HAZ-0036 (out-of-population evaluation from untrusted age). Legacy had no age gate at all (news2-review.md D-9 — REJECTED). |
-| **Pregnancy documented** | `not_evaluated`, reason `out_of_population_scope` (pregnancy). | SOURCE (RCP Rec 2). The *detection input* (which resource evidences pregnancy, its freshness, its absence semantics) is **VALIDATION REQUIRED** — no trusted pregnancy source is evidenced in AMH. Absent any pregnancy datum, the patient is treated as not-documented-pregnant; whether that default is acceptable is reviewer decision Q2 (§11). |
+| **Pregnancy documented** | `not_evaluated`, reason `out_of_population_scope` (pregnancy) — instrument-inappropriate; an obstetric instrument is indicated, and the explanation must say so. | SOURCE (RCP Rec 2). The *detection input* (which resource evidences pregnancy, its freshness, its absence semantics) is **VALIDATION REQUIRED** — no trusted pregnancy source is evidenced in AMH. |
+| **Pregnancy NOT documented** | Score normally, **with the mandatory visible annotation "gravidez não verificada"** on every rendered result. | **DECIDIDO (GDEC-0007, 2026-08-15, N-2 (a)):** fail-closed universal aniquilaria a disponibilidade sem fonte de gravidez evidenciada; gravidez *conhecida* é a exclusão que importa. A anotação visível substitui o tratamento silencioso "treated as not-documented-pregnant" do 0.1.0. |
 | **Spinal cord injury** | Not gated; flagged. PROPOSAL: surface the RCP caution in explanation text when a relevant condition is documented; no exclusion. | SOURCE (RCP Rec 3) — "use with caution", not "do not use". |
-| **Goals-of-care / palliative context** | Not an evaluation input in 0.1.0. **Flagged to reviewer** (HAZ-0044): a NEWS2-driven escalation display for a patient with documented treatment limitations is technically correct and clinically wrong. Whether care-goal context gates evaluation, gates display, or only annotates is reviewer decision Q3 (§11). | HAZ-0044; intended-use statement records palliative/obstetric/ECMO-CRRT sub-populations as neither included nor excluded. |
+| **Goals-of-care / palliative context** | **Always compute and display the score**; under a documented treatment-limitation order, **only the escalation / response-tier display is suppressed, with a visible reason** ("escalonamento suprimido — ordem de limitação terapêutica documentada"). Evaluation is never gated. | **DECIDIDO (GDEC-0007, 2026-08-15, N-3 (a)):** o escore continua clinicamente informativo em conforto; o dano do HAZ-0044 está no acionamento, não no número. Consistent with SOFA OQ-11 and ADR-0027 A27-4. |
 
 INFERENCE: because the gate consumes age/pregnancy inputs that have **no evidenced
 populated source**, the gate itself is specifiable but not currently executable —
@@ -93,8 +104,10 @@ consistent with the NOT ACTIONABLE classification.
 Seven scored parameters plus one governed non-scored input (the SpO2 scale
 assignment, §3). Terminology bindings are **candidate bindings (INFERENCE)** — the
 terminology architect owns final value sets; UCUM units are normative for comparison.
-Plausible ranges and freshness windows are **PROPOSAL — VALIDATION REQUIRED** (they are
-clinical parameters; no numbers exist in the RCP source for either).
+Plausible ranges: **ratificadas como v0.1 — DECISÃO (GDEC-0007, 2026-08-15, N-9 (a))**,
+fail-closed em implausível, números marcados VALIDATION REQUIRED para calibração em
+shadow. Freshness windows: **ratificadas — DECISÃO (GDEC-0007, 2026-08-15, N-5 (a))**,
+see §2.2.
 
 | # | Input | Candidate LOINC | UCUM | Plausible range (outside → `invalid`) | Freshness window | Expiry horizon | Missing behavior | Stale behavior | Conflict behavior |
 |---|---|---|---|---|---|---|---|---|---|
@@ -113,12 +126,13 @@ Notes:
   disorientation, delirium or any acute reduction in GCS score)" is part of the
   consciousness assessment; "new confusion scores 3 on the NEWS chart, ie a red score."
   SOURCE (RCP Chart 3, per `news2-review.md` §2 transcription): chronic confusion is not
-  scored ("no score if chronic"). PROPOSAL: V2 accepts only an explicit ACVPU token; it
-  performs **no automatic GCS→ACVPU mapping** in 0.1.0. The GCS-mapping question — and
-  the ICU sedation confounder (a sedated/ventilated patient's consciousness reflects
-  sedation, not deterioration; `pathway-portfolio/pathway-to-source-matrix.md` NEWS2-07)
-  — is flagged to the pending sedation-confounding ADR (no sedation ADR exists yet in
-  `docs/06-architecture/adrs/adr-index.md`). Reviewer decision Q4 (§11).
+  scored ("no score if chronic"). **DECIDIDO (GDEC-0007, 2026-08-15, N-4 (a)):** V2
+  accepts only an explicit ACVPU token; it performs **no automatic GCS→ACVPU mapping**
+  in 0.2.0; and a **sedation-state annotation is mandatory on every consciousness
+  input** (ACVPU under sedation is marked "confundido" and never reads as unqualified
+  valid — ADR-0028 A28-4; the error direction is more alarm, acceptable under INV-B).
+  The ICU sedation confounder (`pathway-portfolio/pathway-to-source-matrix.md` NEWS2-07)
+  is governed by ADR-0028.
 - **Chronic-vs-new confusion.** The 'C' token means *new* confusion by definition. A
   documented chronic-confusion state with no acute change maps to 'A'-equivalent per
   Chart 3; the capture workflow for that distinction is bedside-assessment content,
@@ -145,10 +159,10 @@ Supplemental-oxygen status changes with therapy orders and respiratory assessmen
 4 h. Expiry horizons (beyond which even a stale display becomes `not_evaluated`,
 evaluation-status-semantics §3.4) are set at 8 h for continuous parameters and 24 h
 for intermittent ones — 24 h being double the RCP's minimum ward observation interval.
-**Every number in this table is a clinical parameter requiring named review
-(VAL-0023 closure is the reviewer's act, not this document's).** The ICU adaptation
-itself (shorter-than-ward windows) requires confirmation that it does not import a
-ward instrument into a context where its calibration is unstudied — see Q5 (§11).
+**DECISÃO (GDEC-0007, 2026-08-15, N-5 (a)):** todas as janelas e horizontes de
+expiração ratificados (quitação de VAL-0023 para NEWS2), e a adaptação UTI confirmada
+dentro do intended use proposto — a cadência de UTI é mais densa que a da enfermaria da
+RCP e o uso é advisory-only.
 
 ### 2.3 Conflicting duplicates (PROPOSAL)
 
@@ -157,7 +171,23 @@ that disagree beyond device tolerance and have no recorded resolution → the pa
 is **`invalid`** (`conflicting_sources`), per evaluation-status-semantics §3.5
 (conflicting simultaneous values with no resolution policy). Exact-duplicate delivery
 (same value, same idempotency identity) is not a conflict — deduplicate silently and
-record the event. Tolerance bounds per parameter: VALIDATION REQUIRED.
+record the event.
+
+**Tolerance table — DECIDIDO (GDEC-0007, 2026-08-15, N-10 (a)):** within tolerance →
+the **worst** (most abnormal) value scores, with the resolution recorded; beyond
+tolerance → parameter `invalid` (`conflicting_sources`). Os valores permanecem marcados
+**VALIDATION REQUIRED** para calibração em shadow.
+
+| Parameter | Device tolerance (within → worst value; beyond → `invalid`) |
+|---|---|
+| Pulse (FC) | ± 5 bpm |
+| Systolic blood pressure (PAS) | ± 10 mmHg |
+| Respiration rate (FR) | ± 3 irpm |
+| SpO2 | ± 3 percentage points |
+| Temperature (T) | ± 0.3 °C |
+
+Rationale (sheet): dentro da tolerância de dispositivo, o pior valor vigia; fora, é
+conflito real e não se escolhe às cegas.
 
 ---
 
@@ -186,7 +216,7 @@ notes. In all other circumstances, the regular NEWS SpO2 scale 1 should be used.
 | Provenance required | Author identity, timestamp, and the clinical indication (hypercapnic respiratory failure, target 88–92%) — the RCP requires the decision "recorded in the patient's clinical notes"; V2 requires it as a structured, attributable order/flag, not free text. |
 | Behavior when absent | **Scale 1.** SOURCE-backed default (RCP Rec 27: "In all other circumstances, the regular NEWS SpO2 scale 1 should be used"). Absence of an order is a real clinical state (no Scale-2 decision has been made), not missing data — so this default is not zero-coercion. |
 | What must NEVER select Scale 2 | Supplemental-oxygen status, any diagnosis code alone, any device signal, any inference. The legacy mechanisms — a `hypercapnic` parameter no workflow could set (D-3) and supplemental-O2-selects-Scale-2 (D-4) — are REJECTED. Scale selection is a documented human clinical decision or it is Scale 1. |
-| Freshness | Encounter-scoped: persists until explicitly revoked or the encounter ends. No silent automatic expiry — an auto-revert to Scale 1 would silently change banding without a clinical decision. PROPOSAL: surface order age; require re-confirmation cadence set by reviewer (Q6, §11). |
+| Freshness | Encounter-scoped: persists until explicitly revoked or the encounter ends. No silent automatic expiry — an auto-revert to Scale 1 would silently change banding without a clinical decision. **DECIDIDO (GDEC-0007, 2026-08-15, N-6 (a)):** ordem persistente no encontro; **reconfirmação solicitada a cada 7 dias** — não bloqueante, a ordem **não expira sozinha** (expiração silenciosa recriaria o flip de escala sem ordem — o defeito legado invertido); idade da ordem sempre visível. |
 | Conflict | Simultaneous unrevoked contradictory assignments → SpO2 parameter `invalid` (`conflicting_sources`). |
 
 ### 3.3 Scale 2 band table (SOURCE — RCP 2017 Chart 1, re-derived from issuer PDF)
@@ -235,13 +265,14 @@ the supplemental-O2-selects-Scale-2 path are REJECTED per `news2-review.md` §6
 SOURCE (RCP 2017, section 7): "If supplemental oxygen is required to maintain oxygen
 saturation, two additional points should be added to the aggregate score."
 
-Resolution and rounding (PROPOSAL): band comparison happens at chart resolution —
-integers for RR, SpO2, SBP, pulse; 0.1 °C for temperature. A finer-precision source
-value is rounded to chart resolution before banding (round half away from zero), so no
-value can fall between bands. The rounding direction at exact half-steps is a reviewer
-question (Q7, §11): rounding *toward the more abnormal band* is the conservative
-alternative. This is the REFINEd successor of the legacy float-rounding guard concept
-(a concept retained; the legacy code is not).
+Resolution and rounding — **DECIDIDO (GDEC-0007, 2026-08-15, N-7 (a)):** band
+comparison happens at chart resolution — integers for RR, SpO2, SBP, pulse; 0.1 °C for
+temperature. A finer-precision source value is rounded to chart resolution before
+banding, so no value can fall between bands. **At an exact half-step, rounding goes
+toward the MORE ABNORMAL band** (o único caso prático é temperatura; INV-B: empate
+resolve para vigilância, nunca para tranquilidade). The former half-away-from-zero
+default is replaced. This is the REFINEd successor of the legacy float-rounding guard
+concept (a concept retained; the legacy code is not).
 
 ### 4.2 Aggregate bands and response tiers (SOURCE — RCP 2017 Chart 2, report p.30)
 
@@ -267,6 +298,11 @@ this specification restores the published four-tier model, including Low–mediu
 content. Structural note (INFERENCE from Chart 1): only the seven physiological
 parameters can score 3; the air/oxygen row maxes at 2 and can never trigger the red
 tier.
+
+**Treatment-limitation suppression — DECIDIDO (GDEC-0007, 2026-08-15, N-3 (a)):**
+under a documented treatment-limitation order the score and its parameters are still
+computed and displayed; **only this escalation/response-tier display is suppressed,
+with a visible reason** (§1.2). Suppression never hides the number.
 
 ### 4.3 Monotonicity constraint — no configurable weakening (PROPOSAL)
 
@@ -315,10 +351,11 @@ with source times).
 Precedence when several conditions hold: `invalid` > `not_evaluated` > `stale` >
 `partial` > `valid` (semantics §3.6).
 
-**No partial policy is declared for RULE-NEWS2 0.1.0.** Therefore `partial` is
-unreachable: any incompleteness resolves to `not_evaluated` (semantics §3.2 — partial
-without an approved policy is prohibited). Whether a NEWS2 partial policy should ever
-exist is Q8 (§11).
+**No partial policy exists for RULE-NEWS2 — permanently. DECIDIDO (GDEC-0007,
+2026-08-15, N-8 (a)):** nunca — all-or-`not_evaluated` é permanente; `partial` is
+unreachable and any incompleteness resolves to `not_evaluated` (semantics §3.2). A RCP
+não define parcial; o parâmetro-vermelho isolado já escala via INV-B, cobrindo o único
+caso clinicamente urgente.
 
 ### 5.3 Staleness on display (PROPOSAL)
 
@@ -339,7 +376,7 @@ to `None` → 0 on the HL7 path (D-7) — is REJECTED in full. An invalid or unm
 consciousness token is **`invalid`, never 0 and never silently 3**: the legacy
 any-non-A-string→3 fallback (D-8) is also rejected — fail-loud in the correct
 dimension (status), not by inventing a score. The all-inputs-absent case MUST yield
-`not_evaluated` with reasons — CRV-0102 in `reference-vectors.md` is the standing
+`not_evaluated` with reasons — CRV-NEWS2-0102 in `reference-vectors.md` is the standing
 regression vector (HAZ-0005, E1 severity: this failure occurred in production
 lineage).
 
@@ -354,15 +391,16 @@ SOURCE-defined clinical state. An **unknown** O2 status is `not_evaluated`, neve
 
 ```yaml
 rule: RULE-NEWS2
-version: 0.1.0
+version: 0.2.0
 classification: NOT_ACTIONABLE_NO_EVIDENCED_POPULATED_SOURCE
 source:
   citation: "RCP NEWS2 (2017), Chart 1 p.29, Chart 2 p.30, Scale-2 governance p.31, Recs 1-2, 26-30"
   url: "https://www.rcp.ac.uk/media/a4ibkkbf/news2-final-report_0_0.pdf"
 population_gate:
-  age_years: {gte: 18}                # PROPOSAL; 16-17 band = reviewer decision Q1
+  age_years: {gte: 18}                # DECIDIDO N-1 (a), GDEC-0007: 16-17 excluded
   age_unknown: not_evaluated:unknown_age
-  pregnancy_documented: not_evaluated:out_of_population_scope
+  pregnancy_documented: not_evaluated:out_of_population_scope   # instrument-inappropriate; obstetric instrument indicated
+  pregnancy_undocumented: score_with_mandatory_annotation "gravidez não verificada"   # DECIDIDO N-2 (a), GDEC-0007
 inputs:
   rr:            {ucum: "/min",   plausible: [0, 80],  window_h: 1, expiry_h: 8}
   spo2:          {ucum: "%",      plausible: [40, 100], window_h: 1, expiry_h: 8}
@@ -377,7 +415,17 @@ governed_inputs:
     default_when_absent: scale1          # SOURCE: RCP Rec 27
     set_by: qualified_clinician_documented_order
     never_derived_from: [o2_status, diagnosis_code, device_signal]
-rounding: {rr: 1, spo2: 1, sbp: 1, pulse: 1, temperature: 0.1, mode: half_away_from_zero}  # tie direction = reviewer Q7
+    persistence: encounter_scoped_no_auto_expiry
+    reconfirmation: request_every_7_days_non_blocking   # DECIDIDO N-6 (a), GDEC-0007
+rounding: {rr: 1, spo2: 1, sbp: 1, pulse: 1, temperature: 0.1, mode: half_toward_more_abnormal_band}  # DECIDIDO N-7 (a), GDEC-0007
+conflict_tolerance:                      # DECIDIDO N-10 (a), GDEC-0007; values VALIDATION REQUIRED (shadow calibration)
+  pulse: 5        # bpm
+  sbp: 10         # mmHg
+  rr: 3           # irpm
+  spo2: 3         # percentage points
+  temperature: 0.3  # Cel
+  within_tolerance: worst_value_scores_with_recorded_resolution
+  beyond_tolerance: invalid:conflicting_sources
 bands:
   rr:            [{lte: 8, s: 3}, {r: [9, 11], s: 1}, {r: [12, 20], s: 0}, {r: [21, 24], s: 2}, {gte: 25, s: 3}]
   spo2_scale1:   [{lte: 91, s: 3}, {r: [92, 93], s: 2}, {r: [94, 95], s: 1}, {gte: 96, s: 0}]
@@ -397,6 +445,7 @@ aggregate:
     - {name: low_medium, when: {total: [0, 4], red_param: true}}   # red_param: any single parameter score == 3
     - {name: medium,     when: {total: [5, 6]}}
     - {name: high,       when: {total: {gte: 7}}}
+  treatment_limitation_order: suppress_escalation_tier_display_only_with_visible_reason  # DECIDIDO N-3 (a), GDEC-0007; score always computed and shown
   monotonicity: config_may_tighten_never_loosen   # ADR-0007 enforcement hook
 status_logic:
   valid: all_inputs(present, plausible, mapped, in_window) and population_gate_passed
@@ -405,7 +454,7 @@ status_logic:
     invalid_when: [implausible_value, unmappable_unit, unmappable_code, conflicting_sources]
     not_evaluated_when: [missing_required_input, expired_input, stale_input_at_eval,
                          unknown_age, out_of_population_scope, quarantined_input, rule_unavailable]
-  partial: UNREACHABLE   # no partial policy declared for 0.1.0
+  partial: UNREACHABLE   # no partial policy declared for 0.2.0
   zero_coercion: FORBIDDEN_EVERYWHERE   # HAZ-0005
 ```
 
@@ -421,12 +470,16 @@ vectors.
 Every rendered NEWS2 result MUST show: the score and tier (only when `valid`), the
 seven inputs used with source times and the scale in use, **any missing/stale/invalid
 inputs by name**, the rule version, and the advisory framing. No rendering may show a
-tier without its status.
+tier without its status. **Mandatory decided annotations (GDEC-0007), always visible
+when applicable:** "gravidez não verificada" (N-2 — no pregnancy documentation);
+"escalonamento suprimido — ordem de limitação terapêutica documentada" (N-3); the
+sedation-state annotation on the consciousness input (N-4); the Scale-2 order age and
+its 7-day reconfirmation state (N-6).
 
 **EN (valid):** "NEWS2 total {total} — {tier}. Advisory information only; not a
 directive and not a substitute for clinical judgement. Inputs used: {list with source
 times}. SpO2 scored on {Scale 1 | Scale 2 (documented clinical order, {order time})}.
-Rule RULE-NEWS2 v0.1.0."
+Rule RULE-NEWS2 v0.2.0."
 
 **EN (not evaluated):** "NEWS2 not evaluated — {reason, e.g. 'respiratory rate
 missing'}. No score exists for this patient at this time; absence of a score is not
@@ -435,7 +488,7 @@ reassurance. Last valid assessment: {time or 'none'}."
 **pt-BR (valid):** "NEWS2 total {total} — {tier}. Informação consultiva; não é uma
 diretriz e não substitui o julgamento clínico. Dados utilizados: {lista com horários}.
 SpO2 pontuada na {Escala 1 | Escala 2 (decisão clínica documentada, {horário})}.
-Regra RULE-NEWS2 v0.1.0."
+Regra RULE-NEWS2 v0.2.0."
 
 **pt-BR (não avaliado):** "NEWS2 não avaliado — {motivo, ex.: 'frequência
 respiratória ausente'}. Não existe pontuação para este paciente neste momento; a
@@ -448,7 +501,7 @@ ausência de pontuação não significa normalidade. Última avaliação válida
 
 | Link | Relationship |
 |---|---|
-| HAZ-0005 | Zero-coercion of missing inputs — §5.4 forbids; CRV-0102 regression vector. |
+| HAZ-0005 | Zero-coercion of missing inputs — §5.4 forbids; CRV-NEWS2-0102 regression vector. |
 | HAZ-0036 | Out-of-population evaluation — §1.2 gate; unknown age never assumed adult. |
 | HAZ-0040 | `valid` token collision across dimensions — §5.2 quarantined-input row keeps dimensions separate. |
 | HAZ-0043 | Premature admission with no populated source — the NOT ACTIONABLE classification exists to prevent exactly this. |
@@ -500,27 +553,67 @@ specify MEWS (family representative decision per portfolio records — see
 
 ---
 
-## 11. Open questions for the named reviewer (rodaquino-OMNI)
+## 11. Open questions for the named reviewer (rodaquino-OMNI) — ALL DECIDED (GDEC-0007, 2026-08-15)
+
+All 10 questions were decided in writing by the named reviewer on 2026-08-15
+(`decision-register.md` GDEC-0007; row-level record in
+`../../cycle-1-review-decision-sheet.md` §2, rows N-1..N-10). The original question
+text is preserved; each decision is transcribed below by the scribe.
 
 1. **Age 16–17 band:** RCP-permitted, outside the proposed V2 adult (≥18) intended
    use. Admit or exclude? (§1.2; interacts with IU-05 ratification.)
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — **excluir** (<18 → not_evaluated);
+   coerência com a fronteira adulto-UTI (VAL-0006/0007) e um único gate etário no
+   produto; revisitar se o escopo adolescente abrir.
 2. **Pregnancy default:** is "no pregnancy documentation ⇒ treat as not pregnant"
    acceptable given no trusted pregnancy source is evidenced, or must unknown
    pregnancy status gate to `not_evaluated` for defined cohorts (e.g. by age/sex)?
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — sem documentação ⇒ **escora com anotação
+   visível "gravidez não verificada"**; gravidez documentada → not_evaluated
+   (instrumento não validado; instrumento obstétrico indicado). Fail-closed universal
+   aniquilaria a disponibilidade sem fonte de gravidez evidenciada; gravidez
+   *conhecida* é a exclusão que importa. Implementado em §1.2.
 3. **Goals-of-care context (HAZ-0044):** should documented treatment limitations gate
    evaluation, gate display of response tiers, or only annotate?
-4. **ACVPU capture and GCS mapping:** confirm no-automatic-GCS-mapping for 0.1.0, and
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — **computar sempre; suprimir só o
+   escalonamento** (exibição do tier de resposta) sob ordem de limitação documentada,
+   com razão visível. O dano do HAZ-0044 está no acionamento, não no número.
+   Implementado em §1.2/§4.2.
+4. **ACVPU capture and GCS mapping:** confirm no-automatic-GCS-mapping for 0.2.0, and
    route the sedation-confounder (NEWS2-07) into a dedicated ADR — is a
    sedation-state annotation required on every consciousness input?
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — **confirmar ambos**: sem mapeamento
+   GCS→ACVPU; anotação de sedação obrigatória em todo insumo de consciência. ACVPU é
+   avaliação observada própria; alinhado a ADR-0028 Q4/A28-4. Implementado em §2.1.
 5. **Freshness windows and expiry horizons (§2.2):** confirm or replace every number;
    confirm the ICU adaptation of a ward-calibrated instrument is acceptable within
    intended use.
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — **ratificar** todas as janelas
+   (1h/8h contínuos; 4h/24h intermitentes) e a adaptação UTI; uso é advisory-only
+   dentro do intended use proposto. Quita VAL-0023 para NEWS2.
 6. **Scale-2 assignment re-confirmation cadence** (§3.2): encounter-persistent with
    what mandatory review interval?
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — persistente no encontro; **reconfirmação
+   solicitada a cada 7 dias, não bloqueante, não expira sozinha** (expiração silenciosa
+   recriaria o flip de escala sem ordem — o defeito legado invertido). Implementado em
+   §3.2.
 7. **Rounding tie direction** (§4.1): half-away-from-zero vs round-toward-more-abnormal
    at exact half-steps.
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — **arredondar para a banda mais anormal**
+   no meio-passo exato (único caso prático é temperatura; INV-B: empate resolve para
+   vigilância, nunca para tranquilidade). Implementado em §4.1/§6; vetor
+   CRV-NEWS2-0192.
 8. **Partial policy:** should any approved partial-evaluation policy ever exist for
    NEWS2, or is all-or-`not_evaluated` permanent?
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — **nunca**: all-or-not_evaluated
+   permanente; o parâmetro-vermelho isolado já escala via INV-B, cobrindo o único caso
+   clinicamente urgente. Implementado em §5.2.
 9. **Plausible ranges** (§2.1): confirm or replace each `invalid` boundary.
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — **ratificar como v0.1**, calibrar em
+   shadow; fail-closed em implausível; números marcados VALIDATION REQUIRED.
 10. **Conflict tolerance bounds** (§2.3): per-parameter device-tolerance values for
     the conflicting-duplicates rule.
+    **DECISÃO (GDEC-0007, 2026-08-15):** (a) — tabela adotada: **FC ±5 bpm, PAS ±10
+    mmHg, FR ±3 irpm, SpO2 ±3 p.p., T ±0,3 °C** — dentro → pior valor; fora →
+    `invalid`; valores marcados VALIDATION REQUIRED (calibrar em shadow). Implementado
+    em §2.3/§6; vetores CRV-NEWS2-0113/0193.

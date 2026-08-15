@@ -1,11 +1,12 @@
 ---
 id: RULE-GCS-MIG-0100
-title: RULE-GCS v0.1.0 — notas de migração rule-local (o que esta especificação supersede e rejeita do legado)
+title: RULE-GCS v0.2.0 — notas de migração rule-local (o que esta especificação supersede e rejeita do legado)
 label: PROPOSAL
-status: PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)
+status: REVISADO CLINICAMENTE 2026-08-15 (GDEC-0007) — decisões incorporadas; aprovação formal pendente do mecanismo de bundle assinado (ADR-0007); NOT ACTIONABLE (inalterado)
+last_updated: 2026-08-15
 statement: >
   Sumário rule-local da disposição de cada artefato GCS legado relativo a RULE-GCS
-  v0.1.0, citando os registros forenses REV-NS-01 (GCS) e REV-NS-02 (RASS, para o gate
+  v0.2.0, citando os registros forenses REV-NS-01 (GCS) e REV-NS-02 (RASS, para o gate
   de avaliabilidade). Nada foi importado; o modelo de instrumento foi re-derivado de
   Teasdale & Jennett 1974 e glasgowcomascale.org. A coerção-a-1 do motor de formulários,
   o missing→0 dos consumidores, o status-"normal" na deterioração e o bloco de
@@ -24,7 +25,7 @@ provenance:
     em 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79; SHA-256 por arquivo em
     docs/archive/legacy-provenance/legacy-pin-cycle-1.md) e mapeadas às seções de
     specification.md que as supersedem.
-  confidence: high (disposições fielmente transportadas); low (ratificação clínica — nenhuma existe)
+  confidence: high (disposições fielmente transportadas); medium (revisão clínica nomeada GDEC-0007 2026-08-15; aprovação formal via bundle assinado ADR-0007 pendente)
   owner: UNASSIGNED — VALIDATION REQUIRED
   validation_status: VALIDATION REQUIRED
 links:
@@ -37,7 +38,7 @@ supersedes: null
 superseded_by: null
 ---
 
-# RULE-GCS v0.1.0 — notas de migração rule-local
+# RULE-GCS v0.2.0 — notas de migração rule-local
 
 Escopo: somente o instrumento GCS (e a entrada de gate RASS na medida em que RULE-GCS a
 consome). O manifesto de migração completo é arquivo de outro especialista. O legado é
@@ -60,20 +61,20 @@ qualquer forma por `docs/00-governance/legacy-import-policy.md` §3.
 O veredito da revisão forense é **TRANSFORM**: reter o conceito, rejeitar o modelo.
 Disposição por achado:
 
-| Elemento legado (achado da revisão) | Veredito da revisão | Disposição RULE-GCS 0.1.0 |
+| Elemento legado (achado da revisão) | Veredito da revisão | Disposição RULE-GCS 0.2.0 |
 |---|---|---|
-| Faixa 3–15 na API (`schemas/vitals.py:73`, ge=3 le=15) — numericamente correta | OBSERVED (correta) | **Superseded por re-derivação** — mesma faixa, proveniência nova (Teasdale & Jennett 1974; spec §3.5). Enumerações por componente agora aplicadas (E 1–4, V 1–5, M 1–6); fora → `invalid`, nunca clamp. Vetores CRV-0217/0218. |
+| Faixa 3–15 na API (`schemas/vitals.py:73`, ge=3 le=15) — numericamente correta | OBSERVED (correta) | **Superseded por re-derivação** — mesma faixa, proveniência nova (Teasdale & Jennett 1974; spec §3.5). Enumerações por componente agora aplicadas (E 1–4, V 1–5, M 1–6); fora → `invalid`, nunca clamp. Vetores CRV-GCS-0217/0218. |
 | Armazenamento apenas do total (`vital_sign.py:49` — coluna única, sem E/V/M, sem constraint de BD) | OBSERVED (defeito estrutural) | **REJEITADO** — o modelo V2 é componente-primeiro (spec §3.1); total-apenas da fonte não aceito para computação (spec §5.2, OQ-GCS-6). Constraints de domínio explícitas no modelo declarativo (spec §9). |
-| **Coerção-a-1 do motor de formulários** (`domain_formularios.py:731-753`: componente ausente → mínimo; formulário vazio → GCS 3.0 indistinguível de coma profundo verdadeiro) | OBSERVED — **VIOLAÇÃO HAZ-0005 (coerção inversa)** | **REJEITADO em cheio.** "1" significa exclusivamente "testado, sem resposta" (spec §3.2); não testado é NT de primeira classe (spec §3.3); ausência é `missing_required_input` (spec §3.4). Vetores de regressão CRV-0205 (E4 M6 V→1 = GCS 11 falso), CRV-0207 (formulário vazio → 3.0), CRV-0208. Esta é exatamente a prática que glasgowcomascale.org proíbe verbatim ("Do not use number '1' to record missing component"). |
-| **Missing→0 nos consumidores** (SOFA `sofa.py:358-359, 487-489`; qSOFA `qsofa.py:113-114, 148-158`; forms-SOFA `domain_formularios.py:611-626` sem metadado algum) | OBSERVED — **VIOLAÇÃO HAZ-0005 (padrão E1)** | **REJEITADO.** RULE-GCS emite status + reason, nunca número substituto (spec §6.2); o contrato de consumidor (spec §7) proíbe qualquer consumidor de fabricar 0/valor a partir de ausência — comportamento dos consumidores já re-especificado em RULE-SOFA-0100 §4.5/§5 (referenciado, não editado aqui). Vetor CRV-0208. |
+| **Coerção-a-1 do motor de formulários** (`domain_formularios.py:731-753`: componente ausente → mínimo; formulário vazio → GCS 3.0 indistinguível de coma profundo verdadeiro) | OBSERVED — **VIOLAÇÃO HAZ-0005 (coerção inversa)** | **REJEITADO em cheio.** "1" significa exclusivamente "testado, sem resposta" (spec §3.2); não testado é NT de primeira classe (spec §3.3); ausência é `missing_required_input` (spec §3.4). Vetores de regressão CRV-GCS-0205 (E4 M6 V→1 = GCS 11 falso), CRV-GCS-0207 (formulário vazio → 3.0), CRV-GCS-0208. Esta é exatamente a prática que glasgowcomascale.org proíbe verbatim ("Do not use number '1' to record missing component"). |
+| **Missing→0 nos consumidores** (SOFA `sofa.py:358-359, 487-489`; qSOFA `qsofa.py:113-114, 148-158`; forms-SOFA `domain_formularios.py:611-626` sem metadado algum) | OBSERVED — **VIOLAÇÃO HAZ-0005 (padrão E1)** | **REJEITADO.** RULE-GCS emite status + reason, nunca número substituto (spec §6.2); o contrato de consumidor (spec §7) proíbe qualquer consumidor de fabricar 0/valor a partir de ausência — comportamento dos consumidores já re-especificado em RULE-SOFA-0100 §4.5/§5 (referenciado, não editado aqui). Vetor CRV-GCS-0208. |
 | **Status "normal" em ausência** na deterioração (`domain_piora_clinica.py:427-428`: sem dados de GCS → literal "normal") | OBSERVED — VIOLAÇÃO HAZ-0005 | **REJEITADO.** Ausência → `not_evaluated` com motivo, contado em categoria própria em todo roll-up (evaluation-status-semantics.md §3.3; spec §6.1). |
-| **Bloco de intubação comentado e nunca implementado** (`domain_formularios.py:131-132`, verbatim: `# "glasgow_intubated_block": { ... },`) — a única consciência legada do problema | OBSERVED | **Superseded pela implementação de primeira classe** — o que era placeholder comentado vira o núcleo do modelo: V-NT(`endotracheal_intubation`/`tracheostomy`) com nenhum total (spec §3.3/§3.5). O caso canônico intubado é o vetor CRV-0205. |
-| **Nenhum gate de sedação em lugar algum** (RASS não é entrada de `sofa.py`, `qsofa.py` nem `_eval_gcs_drop`; RASS −4 sob propofol escorava SOFA CNS 4 e disparava permanentemente "coma crítico") | OBSERVED (REV-NS-01 §4.3) | **Superseded pelo gate de avaliabilidade** (spec §4): RASS contemporâneo pareado (1 h); `sedation_confounded` sob RASS ≤ −3 + exposição sedativa ativa ou infusão sem janela de interrupção; coma não sedado escorável; subordinado ao ADR-0028. Vetores CRV-0209/0210/0212/0213. |
+| **Bloco de intubação comentado e nunca implementado** (`domain_formularios.py:131-132`, verbatim: `# "glasgow_intubated_block": { ... },`) — a única consciência legada do problema | OBSERVED | **Superseded pela implementação de primeira classe** — o que era placeholder comentado vira o núcleo do modelo: V-NT(`endotracheal_intubation`/`tracheostomy`) com nenhum total (spec §3.3/§3.5). O caso canônico intubado é o vetor CRV-GCS-0205. |
+| **Nenhum gate de sedação em lugar algum** (RASS não é entrada de `sofa.py`, `qsofa.py` nem `_eval_gcs_drop`; RASS −4 sob propofol escorava SOFA CNS 4 e disparava permanentemente "coma crítico") | OBSERVED (REV-NS-01 §4.3) | **Superseded pelo gate de avaliabilidade** (spec §4): RASS contemporâneo pareado (1 h); `sedation_confounded` sob RASS ≤ −3 + exposição sedativa ativa **ou desconhecida** ou infusão sem janela de interrupção; sedação desconhecida → FAIL-CLOSED (`sedation_state_unknown`) — DECIDIDO GDEC-0007, OQ-GCS-2/3 (política conjunta com RULE-SOFA OQ-8 e ADR-0028 Q2); coma não sedado escorável. Vetores CRV-GCS-0209/0210/0212/0219/0220 (0213 aposentado/superseded). |
 | Padrão CAM-ICU do próprio V1 (`domain_sedacao.py:271-291`: gate RASS ≤ −4 "não avaliável") — prova de que o padrão existia e não foi aplicado à GCS | OBSERVED | **Conceito TRANSFORMADO** — a ideia "instrumento neuro gated por RASS" é a única herança conceitual aceita desta família, generalizada como gate de avaliabilidade (spec §4) com limiar re-ancorado na fonte (Sessler 2002; sedação profunda ≤ −3 conforme prática PADIS), não importada do valor legado −4. |
-| Bandas de severidade institucionais (`_glasgow_severity`: subdivisão `grave 6-8`/`muito_grave 3-5`) | OBSERVED (subdivisão sem fonte) | **REJEITADO / fora de escopo** — RULE-GCS 0.1.0 não emite banda de severidade alguma (spec §0, OQ-GCS-9); qualquer banda futura exige fonte nomeada e ratificação própria. |
+| Bandas de severidade institucionais (`_glasgow_severity`: subdivisão `grave 6-8`/`muito_grave 3-5`) | OBSERVED (subdivisão sem fonte) | **REJEITADO / fora de escopo** — RULE-GCS 0.2.0 não emite banda de severidade alguma (spec §0, OQ-GCS-9); qualquer banda futura exige fonte nomeada e ratificação própria. |
 | Banda `[0,9)` do pathway desmame (`desmame.yaml:85-105`) admitindo silenciosamente os valores impossíveis 0–2 | OBSERVED | **Irrepresentável no V2** — o domínio de valor do total é 3–15 com enumerações por componente; 0–2 não é construível (spec §3.5/§9). |
-| Δ-GCS estruturalmente morto (`api/v1/deterioration.py:123`: `glasgow_24h_ago` hard-coded `None`) | OBSERVED | **Não migrado** — nenhum critério de tendência/ΔGCS em RULE-GCS 0.1.0; se um consumidor futuro quiser ΔGCS, é conteúdo próprio com fonte própria, e o padrão "ramo estruturalmente inalcançável" é lição de teste (vetores de replay obrigatórios, spec §12 M-5). |
-| Ausência de gate populacional em todos os consumidores (REV-NS-01 §3 população) | INFERENCE (da revisão) | **Superseded** — gate etário aplicável ≥18 com `population_unverified`/`out_of_population_scope` (spec §1.2; ADR-0027; VAL-0006/0007). Vetores CRV-0215/0216. |
+| Δ-GCS estruturalmente morto (`api/v1/deterioration.py:123`: `glasgow_24h_ago` hard-coded `None`) | OBSERVED | **Não migrado** — nenhum critério de tendência/ΔGCS em RULE-GCS 0.2.0; se um consumidor futuro quiser ΔGCS, é conteúdo próprio com fonte própria, e o padrão "ramo estruturalmente inalcançável" é lição de teste (vetores de replay obrigatórios, spec §12 M-5). |
+| Ausência de gate populacional em todos os consumidores (REV-NS-01 §3 população) | INFERENCE (da revisão) | **Superseded** — gate etário aplicável ≥18 com `population_unverified`/`out_of_population_scope` (spec §1.2; ADR-0027; VAL-0006/0007). Vetores CRV-GCS-0215/0216. |
 
 ## 3. Tabela de disposição — achados de REV-NS-02 (RASS) na medida consumida por RULE-GCS
 
@@ -83,7 +84,7 @@ tarefa). Aqui apenas o que o gate de RULE-GCS consome:
 | Elemento legado | Veredito da revisão | Disposição no gate RULE-GCS |
 |---|---|---|
 | Enumeração −5..+4 e rótulos pt-BR fiéis a Sessler 2002 | OBSERVED (correta) | **Superseded por re-derivação** — domínio −5..+4 re-ancorado em Sessler 2002 (spec §4.1); fora do domínio → `invalid`. |
-| Missing RASS → 0.0 "Alerta e calmo" no motor de formulários (`domain_formularios.py:685-686`) | OBSERVED — **VIOLAÇÃO HAZ-0005 (pior achado do registro)** | **REJEITADO.** RASS ausente NUNCA vira 0/alerta; ausência de RASS pareado → estado de sedação desconhecido (spec §4.4, default sinalizado OQ-GCS-2/ADR-0028). Vetor CRV-0211. |
+| Missing RASS → 0.0 "Alerta e calmo" no motor de formulários (`domain_formularios.py:685-686`) | OBSERVED — **VIOLAÇÃO HAZ-0005 (pior achado do registro)** | **REJEITADO.** RASS ausente NUNCA vira 0/alerta; ausência de RASS pareado → estado de sedação desconhecido → `not_evaluated(sedation_state_unknown)` — FAIL-CLOSED DECIDIDO (GDEC-0007, OQ-GCS-2 (b); spec §4.4). Vetor CRV-GCS-0219 (supersede CRV-GCS-0211). |
 | Clamp silencioso de RASS fora de faixa (+10 → +4) | OBSERVED — designed behaviour | **REJEITADO.** Fora do domínio → `invalid` (reason `out_of_range`), nunca clamp (spec §4.1; evaluation-status-semantics.md §3.5). |
 | Avaliador de alertas RASS inimportável (módulo morto) | OBSERVED | **Não migrado** — nada de alerta RASS em RULE-GCS; lição operacional coberta por M-5 (replay obrigatório). |
 

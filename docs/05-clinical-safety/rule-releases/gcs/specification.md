@@ -1,8 +1,9 @@
 ---
 id: RULE-GCS-0100
-title: RULE-GCS v0.1.0 — especificação de conteúdo clínico da Escala de Coma de Glasgow (precursor de pacote de release)
+title: RULE-GCS v0.2.0 — especificação de conteúdo clínico da Escala de Coma de Glasgow (precursor de pacote de release)
 label: PROPOSAL
-status: PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)
+status: REVISADO CLINICAMENTE 2026-08-15 (GDEC-0007) — decisões incorporadas; aprovação formal pendente do mecanismo de bundle assinado (ADR-0007); NOT ACTIONABLE (inalterado)
+last_updated: 2026-08-15
 statement: >
   Especificação completa de conteúdo clínico para a Escala de Coma de Glasgow (GCS) como
   instrumento de primeira classe no V2 — modelo de componentes E/V/M com estado
@@ -10,7 +11,7 @@ statement: >
   partir de três componentes testados, e gate de avaliabilidade por confusão sedativa
   (RASS contemporâneo; sedation_confounded). Re-derivada das fontes primárias (Teasdale &
   Jennett 1974; Teasdale et al. 2014; glasgowcomascale.org; Sessler 2002); nada foi
-  copiado do código legado. Versão semântica 0.1.0 — precursor 0.x de um pacote de
+  copiado do código legado. Versão semântica 0.2.0 — precursor 0.x de um pacote de
   release clínico conforme prompt orquestrador §6.4, explicitamente NÃO um release
   assinado. Classificação: NOT ACTIONABLE — nenhuma fonte populada evidenciada existe
   para qualquer entrada da GCS (restrição AMH); artefato de autoria apenas, sem nenhuma
@@ -30,7 +31,7 @@ provenance:
     INFERENCE/PROPOSAL; definições publicadas rotuladas SOURCE. Redação em pt-BR conforme
     DEC-G0-10; identificadores e enums legíveis por máquina em EN por consistência com os
     rule-releases existentes (sofa/, news2/).
-  confidence: medium (valores publicados do instrumento: high; toda disposição clínica: unratified)
+  confidence: medium-high (valores publicados do instrumento: high; disposições clínicas: decididas pela revisão nomeada GDEC-0007 2026-08-15; aprovação formal via bundle assinado ADR-0007 pendente)
   owner: UNASSIGNED — VALIDATION REQUIRED
   validation_status: VALIDATION REQUIRED
 links:
@@ -43,21 +44,26 @@ supersedes: null
 superseded_by: null
 ---
 
-# RULE-GCS v0.1.0 — especificação de conteúdo clínico (precursor de pacote de release)
+# RULE-GCS v0.2.0 — especificação de conteúdo clínico (precursor de pacote de release)
 
 ## 0. Identidade, status, classificação
 
 | Campo | Valor |
 |---|---|
 | Identificador da regra | **RULE-GCS** |
-| Versão semântica | **0.1.0** — precursor 0.x; não assinado; não é um release |
-| Status | **PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)** |
+| Versão semântica | **0.2.0** — precursor 0.x; não assinado; não é um release |
+| Status | **REVISADO CLINICAMENTE 2026-08-15 (GDEC-0007) — decisões incorporadas; aprovação formal pendente do mecanismo de bundle assinado (ADR-0007); NOT ACTIONABLE (inalterado)** |
 | Classificação | **NOT ACTIONABLE — nenhuma fonte populada evidenciada (restrição AMH); artefato de autoria apenas** |
 | Clinical owner | UNASSIGNED — VALIDATION REQUIRED |
 | Aprovador independente | UNASSIGNED — VALIDATION REQUIRED (autor ≠ aprovador; o autor desta especificação não aprova nada) |
 | Lógica legível por máquina | bloco YAML declarativo em §9 (inline neste precursor) |
-| Vetores de referência | `reference-vectors.md` (este diretório) — todos DRAFT/PROPOSAL |
+| Vetores de referência | `reference-vectors.md` (este diretório) — clinicamente revisados (GDEC-0007); evidência de execução pendente; DRAFT para fins de execução |
 | Notas de migração rule-local | `migration-notes.md` (este diretório) |
+
+**Histórico de versões (changelog):**
+
+- **0.2.0** — decisões da revisão clínica nomeada incorporadas (GDEC-0007, 2026-08-15)
+- 0.1.0 — proposta inicial (ciclo 1), AWAITING NAMED CLINICAL REVIEW
 
 **Por que NOT ACTIONABLE, sem suavização.** SOURCE
 (`docs/08-interoperability/amh-data/compatibility-finding.md` §3, AMH pinado em
@@ -219,13 +225,16 @@ registro de reason-codes de ADR-0008 — nunca ad hoc):
 | `verbal` | `endotracheal_intubation` | intubação endotraqueal |
 | `verbal` | `tracheostomy` | traqueostomia |
 | `verbal` | `aphasia` | afasia documentada |
+| `verbal` | `language_barrier` | barreira linguística documentada — **DECIDIDO (GDEC-0007, 2026-08-15, OQ-GCS-1 (a))**: invalida V sem invalidar E/M; glasgowcomascale.org trata como não testável |
+| `verbal` | `deafness` | surdez documentada — **DECIDIDO (GDEC-0007, 2026-08-15, OQ-GCS-1 (a))**: idem |
 | `motor` | `neuromuscular_blockade` | bloqueio neuromuscular ativo |
 | `motor` | `paralysis_other` | paralisia documentada de outra causa (p.ex. lesão medular alta) |
 | qualquer | `other_documented` | outro impedimento documentado em texto livre — uso deve ser monitorado (§12 M-6) |
 
-INFERENCE (sinalizada — OQ-GCS-4): bloqueio neuromuscular ativo torna **todos** os
-componentes não observáveis, não apenas o motor. PROPOSAL: BNM ativo documentado →
-os três componentes NT (reason `neuromuscular_blockade`); o revisor deve confirmar.
+**DECIDIDO (GDEC-0007, 2026-08-15, OQ-GCS-4 (a)):** bloqueio neuromuscular ativo torna
+**todos** os componentes não observáveis, não apenas o motor — BNM ativo documentado →
+os três componentes NT (reason `neuromuscular_blockade`); sob bloqueio neuromuscular
+nada além de pupilas é testável.
 
 ### 3.4 Distinção NT × ausente (missing)
 
@@ -249,7 +258,7 @@ outro e nenhum deles é representável como número (HAZ-0005).
   clínica pode usar a convenção "E4 V-NT(IOT) M6"; qualquer notação de modalidade
   (p.ex. "10T") é **apresentação**, nunca aritmética (REV-NS-01 §4 recomendação 1).
 - Total fornecido pela fonte (LOINC 9269-2) sem componentes: ver §5.2 — não aceito para
-  computação neste 0.1.0 (OQ-GCS-6).
+  computação neste 0.2.0 (OQ-GCS-6).
 
 ## 4. Gate de avaliabilidade — confusão por sedação (cross-ref ADR-0028)
 
@@ -267,7 +276,7 @@ instrumento, a origem de — RULE-SOFA-0100 §4.5 (I-8), que não é contradito.
 - Falha de pareamento (RASS existe mas fora da janela de 1 h) → avaliabilidade
   indeterminada pelo RASS; aplica-se §4.4 (estado de sedação desconhecido).
 
-### 4.2 `sedation_confounded` — condições de entrada (PROPOSAL)
+### 4.2 `sedation_confounded` — condições de entrada (DECIDIDO — GDEC-0007, OQ-GCS-3 (a))
 
 A avaliação GCS é marcada `sedation_confounded` quando qualquer condição vale:
 
@@ -282,22 +291,33 @@ marcação), mas **nenhum total é emitido** e nenhum consumidor pode ler severi
 status do total `not_evaluated` (reason `sedation_confounded`), com o último GCS
 pré-sedação exposto na explicação (§10).
 
-### 4.3 Coma não sedado é escorável (INFERENCE, alinhada a RULE-SOFA-0100 §4.5)
+### 4.3 Coma não sedado é escorável (DECIDIDO — GDEC-0007, OQ-GCS-3 (a); alinhada a RULE-SOFA-0100 §4.5)
 
 RASS ≤ −3 com **ausência documentada** de exposição sedativa é coma genuíno e escora
 normalmente. Isto refina o gatilho mais grosseiro "RASS ≤ −3" de REV-NS-01 §4 (que, lido
-sozinho, tornaria coma estrutural não sedado não escorável); o refinamento já está
-registrado em RULE-SOFA-0100 e sinalizado ao ADR-0028.
+sozinho, tornaria coma estrutural não sedado não escorável); o refinamento foi aceito
+pela mesma decisão (e por ADR-0028 A28-1: conjunção RASS ≤ −3 **e** exposição sedativa).
 
-### 4.4 Estado de sedação desconhecido — QUESTÃO SINALIZADA AO REVISOR (OQ-GCS-2)
+### 4.4 Estado de sedação desconhecido — DECIDIDO FAIL-CLOSED (GDEC-0007, 2026-08-15, OQ-GCS-2 (b))
 
-Se a informação de exposição sedativa está indisponível E/OU não há RASS pareado, o
-estado de sedação é **desconhecido**. Default 0.1.0 (PROPOSAL, deliberadamente idêntico
-a RULE-SOFA-0100 OQ-8 para não contradizer a especificação SOFA): a GCS escora, e a
-explicação DEVE divulgar **"estado de sedação não avaliado"** / "sedation state not
-assessed". O revisor deve decidir se o desconhecido deve, em vez disso, bloquear o
-escore (`not_evaluated`, reason `sedation_state_unknown`) — a decisão pertence ao
-ADR-0028 e vale simultaneamente para RULE-GCS e RULE-SOFA §4.5.
+**DECISÃO (GDEC-0007, 2026-08-15, OQ-GCS-2 (b)):** fail-closed — política única valendo
+simultaneamente para RULE-GCS, RULE-SOFA OQ-8 e ADR-0028 Q2 (uma só resposta para os
+três artefatos):
+
+- RASS pareado **≥ −2** presente → CNS/GCS **testável** (escora, sujeito às demais
+  regras) — isto destrava a maioria dos casos reais.
+- RASS pareado **≤ −3** com exposição sedativa **ativa OU desconhecida** →
+  `sedation_confounded` → total `not_evaluated` (reason `sedation_confounded`) —
+  RASS ≤ −3 sem informação de sedação é indistinguível de sedação profunda.
+- Coma **documentadamente não sedado** escora (§4.3).
+- RASS **ausente ou não pareado** (E/OU exposição sedativa desconhecida sem RASS
+  pareado que destrave) → estado de sedação desconhecido → total `not_evaluated`
+  (reason `sedation_state_unknown`) — insumo de gate ausente.
+
+O default 0.1.0 "escora com divulgação" foi **removido** — a divergência do default foi
+aceita e sinalizada pelo titular (GDEC-0007, prioridade 1: política única de sedação
+fail-closed). A redação desta seção é deliberadamente consistente com RULE-SOFA-0100
+§4.5 I-8.
 
 ## 5. Entradas canônicas
 
@@ -323,15 +343,16 @@ unidade dimensional inesperada como `invalid` (reason `unmappable_unit`).
 ### 5.2 Total-apenas da fonte — não aceito para computação (PROPOSAL — OQ-GCS-6)
 
 Um GCS total fornecido pela fonte (linha 5) **sem** os três componentes não é aceito
-como entrada de computação em 0.1.0: um total nu não permite verificar tratamento de NT
+como entrada de computação em 0.2.0: um total nu não permite verificar tratamento de NT
 (o defeito legado exato — REV-NS-01 §1.1: armazenamento apenas do total) nem a soma.
 Comportamentos: total + três componentes testados presentes e soma coincide →
 cross-check ok (o total computado é o emitido); soma diverge → `invalid`
 (`component_total_mismatch`); total sem componentes → `not_evaluated`
 (reason `missing_required_input:components`). Consequência declarada honestamente: fontes
 que só produzem o total (como o V1 legado) são inutilizáveis por esta regra até
-fornecerem componentes. O revisor pode preferir aceitar o total nu com divulgação —
-decisão sinalizada, não tomada.
+fornecerem componentes. **DECISÃO (GDEC-0007, 2026-08-15, OQ-GCS-6 (a)):** manter a
+rejeição — exibição com proveniência apenas; total sem componentes não permite NT nem
+auditoria (é o modelo legado que se está rejeitando).
 
 ### 5.3 Janelas de frescor — quitação proposta de VAL-0023 para a GCS
 
@@ -346,11 +367,12 @@ especificação propõe (ratificação por `AUTH-CLINSAFETY` encerra VAL-0023 pa
 | Estado de infusão sedativa | contemporâneo ao instante da avaliação GCS | n/a | Estado de administração, não medida pontual. |
 | Idade | constante do encontro | n/a | Gate populacional. |
 
-Os três componentes devem além disso ser **contemporâneos entre si**: PROPOSAL — os três
+Os três componentes devem além disso ser **contemporâneos entre si**: os três
 observados dentro de uma janela mútua de **30 min** (uma avaliação GCS é um ato único de
 exame; componentes de exames diferentes somados produzem um total que nenhum avaliador
 observou). Fora disso → `not_evaluated` (reason `component_set_not_contemporaneous`).
-Ratificação: OQ-GCS-7.
+**DECISÃO (GDEC-0007, 2026-08-15, OQ-GCS-5 (a)):** ratificado — janelas 12 h/24 h,
+pareamento RASS 1 h e contemporaneidade mútua 30 min (quita VAL-0023 para a GCS).
 
 **Stale vs expirado (evaluation-status-semantics.md §3.4):** componente fora da janela e
 dentro do expiry → avaliação `stale` — último valor e idade exibidos, **nenhum total
@@ -372,8 +394,9 @@ sem soma).
 propostos como **reason codes governados** alimentando `not_evaluated` no nível do
 total — NÃO como novos estados de topo. O registro de reason codes pertence a ADR-0008;
 esta especificação sinaliza a necessidade das entradas:
-`component_not_testable`, `sedation_confounded`, `sedation_state_unknown` (se OQ-GCS-2
-assim decidir), `component_set_not_contemporaneous`, `component_total_mismatch`.
+`component_not_testable`, `sedation_confounded`, `sedation_state_unknown` (**agora
+necessário — OQ-GCS-2 decidiu fail-closed, GDEC-0007**),
+`component_set_not_contemporaneous`, `component_total_mismatch`.
 
 ### 6.1 Nível do total
 
@@ -383,6 +406,7 @@ assim decidir), `component_set_not_contemporaneous`, `component_total_mismatch`.
 | Qualquer componente NT | `not_evaluated` (reason `component_not_testable`; componentes e `nt_reason`s enumerados; componentes testados exibidos) |
 | Qualquer componente ausente | `not_evaluated` (reason `missing_required_input:<component>`) |
 | Gate sedativo: confundida (§4.2) | `not_evaluated` (reason `sedation_confounded`; componentes exibidos com marcação; último GCS pré-sedação exposto) |
+| Gate sedativo: estado de sedação desconhecido (§4.4 — fail-closed, GDEC-0007 OQ-GCS-2 (b)) | `not_evaluated` (reason `sedation_state_unknown`) |
 | Componente presente somente fora da janela, dentro do expiry | `stale` (valor + idade exibidos; total não legível) |
 | Componente além do expiry | `not_evaluated` (reason `expired_input:<component>`) |
 | Valor fora da enumeração, unidade inmapeável, conflito simultâneo não reconciliado, soma×total divergente | `invalid` (reason específico) — o valor ofensor nunca é descartado silenciosamente |
@@ -399,7 +423,7 @@ como status + reason. Nenhum valor numérico, nenhum "último conhecido", nenhum
 componente (a coerção-a-1 legada), nenhum zero (o missing→0 dos consumidores legados),
 nenhum status "normal" (o padrão legado de deterioração) pode substituí-los. A sonda de
 entrada-ausente SAF-0002 aplica-se a toda superfície produtora de valor desta regra; os
-vetores CRV-0207/0208/0209/0212 são os vetores negativos obrigatórios.
+vetores CRV-GCS-0207/0208/0209/0212 são os vetores negativos obrigatórios.
 
 ## 7. Contrato de consumidor downstream
 
@@ -426,9 +450,9 @@ citá-lo.
 
 ### 7.3 NEWS2 — consciência ACVPU (RULE-NEWS2-0100 — referenciado, não editado)
 
-RULE-NEWS2 0.1.0 aceita somente token ACVPU explícito e **não realiza mapeamento
+RULE-NEWS2 0.2.0 aceita somente token ACVPU explícito e **não realiza mapeamento
 automático GCS→ACVPU** (RULE-NEWS2 §2.1 nota, questão Q4 daquele documento). RULE-GCS
-0.1.0 correspondentemente **não emite** derivação ACVPU. A questão do mapeamento
+0.2.0 correspondentemente **não emite** derivação ACVPU. A questão do mapeamento
 GCS→ACVPU permanece aberta nos dois documentos e pertence ao revisor + ADR-0028
 (o confundidor sedativo é comum às duas superfícies). Nenhum consumidor pode inferir
 "A" (alerta) de uma GCS ausente/NT/confundida.
@@ -437,9 +461,9 @@ GCS→ACVPU permanece aberta nos dois documentos e pertence ao revisor + ADR-002
 
 | Perigo | Relevância para RULE-GCS | Controles nesta especificação | SAF vinculados |
 |---|---|---|---|
-| **HAZ-0005** (primário) | O defeito legado ocorreu nesta família: componente não testado coagido a 1 (forms), GCS ausente → 0 nos consumidores, ausência → status "normal" | §3.2/§3.4/§6.2 (NT e ausência irrepresentáveis como número); §3.5 (nenhum total com NT); vetores CRV-0205..0209, CRV-0212 | SAF-0001, SAF-0002, SAF-0003, SAF-0006, SAF-0019, SAF-0030 |
+| **HAZ-0005** (primário) | O defeito legado ocorreu nesta família: componente não testado coagido a 1 (forms), GCS ausente → 0 nos consumidores, ausência → status "normal" | §3.2/§3.4/§6.2 (NT e ausência irrepresentáveis como número); §3.5 (nenhum total com NT); vetores CRV-GCS-0205..0209, CRV-GCS-0212 | SAF-0001, SAF-0002, SAF-0003, SAF-0006, SAF-0019, SAF-0030 |
 | **HAZ-0006** | Avaliação neurológica antiga lida como atual | §5.3 janelas + expiry; `stale` nunca renderiza total | SAF-0004 (via evaluation-status-semantics) |
-| **HAZ-0036** | Instrumento/consumidores adultos avaliados fora da população aprovada | §1.2 gate etário aplicável; idade desconhecida nunca assumida adulta; CRV-0215/0216 | SAF-0035, SAF-0027, SAF-0020, SAF-0023 |
+| **HAZ-0036** | Instrumento/consumidores adultos avaliados fora da população aprovada | §1.2 gate etário aplicável; idade desconhecida nunca assumida adulta; CRV-GCS-0215/0216 | SAF-0035, SAF-0027, SAF-0020, SAF-0023 |
 | **HAZ-0044** | Escalonamento contrário a metas de cuidado documentadas | §1.3.1 carve-out sinalizado; vínculo futuro de work-item deve consultar contexto de metas | SAF-0041, SAF-0035, SAF-0022, SAF-0017 |
 | HAZ-0043 | Admissão sem fontes populadas → `not_evaluated` permanente lido como silêncio | §0 classificação NOT ACTIONABLE; §12 M-1 | SAF-0040, SAF-0033 |
 
@@ -450,7 +474,7 @@ defeito a corrigir antes de qualquer assinatura.
 
 ```yaml
 rule: RULE-GCS
-version: 0.1.0
+version: 0.2.0
 status: proposal_not_actionable
 population:
   age_min_years: 18
@@ -458,7 +482,7 @@ population:
   under_age: not_evaluated(out_of_population_scope)
 components:
   eye:    {range: [1, 4], nt_reasons: [eye_trauma_or_edema, other_documented]}
-  verbal: {range: [1, 5], nt_reasons: [endotracheal_intubation, tracheostomy, aphasia, other_documented]}
+  verbal: {range: [1, 5], nt_reasons: [endotracheal_intubation, tracheostomy, aphasia, language_barrier, deafness, other_documented]}  # language_barrier/deafness DECIDIDOS OQ-GCS-1 (a), GDEC-0007
   motor:  {range: [1, 6], nt_reasons: [neuromuscular_blockade, paralysis_other, other_documented]}
 value_semantics:
   one_means: tested_no_response      # never "untested"
@@ -469,12 +493,13 @@ freshness:
   component_expiry_h: 24
   component_mutual_contemporaneity_min: 30
   rass_pairing_window_h: 1
-assessability_gate:                  # subordinate to ADR-0028
+assessability_gate:                  # subordinate to ADR-0028 (decisions aligned: A28-1/A28-2)
+  testable_when: rass_paired >= -2   # destrava a maioria dos casos reais (GDEC-0007)
   sedation_confounded_when:
-    - rass_paired <= -3 AND sedative_exposure_active
+    - rass_paired <= -3 AND (sedative_exposure_active OR sedative_exposure_unknown)
     - sedative_infusion_active AND no_documented_interruption_window
   unsedated_coma: scoreable          # RASS <= -3 with documented absence of sedatives
-  sedation_state_unknown: score_with_disclosure   # DEFAULT pending OQ-GCS-2 / ADR-0028
+  sedation_state_unknown: not_evaluated(sedation_state_unknown)   # FAIL-CLOSED — DECIDIDO OQ-GCS-2 (b), GDEC-0007, política conjunta com RULE-SOFA OQ-8 e ADR-0028 Q2; o default score_with_disclosure foi removido
 total:
   formula: eye + verbal + motor
   range: [3, 15]
@@ -553,16 +578,16 @@ agregado nu nunca é exibição aceitável.
 
 ## 11. Cobertura contra o prompt orquestrador §6.4 (lista de campos do pacote de release)
 
-| Campo §6.4 | Onde | Status 0.1.0 |
+| Campo §6.4 | Onde | Status 0.2.0 |
 |---|---|---|
-| Identificador da regra + versão semântica | §0 | Presente (precursor 0.1.0) |
+| Identificador da regra + versão semântica | §0 | Presente (precursor 0.2.0) |
 | Uso pretendido/população/exclusões | §1 | Proposto; carve-outs sinalizados ao revisor |
 | Evidência externa + data do snapshot | §2 | Verificada 2026-08-15 |
 | Clinical owner + aprovador independente | §0 | **UNASSIGNED — VALIDATION REQUIRED (bloqueante para qualquer release)** |
-| Lógica legível por máquina + content hash | §9 | Bloco inline presente; hash de conteúdo somente na materialização de um bundle (nada assinável em 0.1.0) |
+| Lógica legível por máquina + content hash | §9 | Bloco inline presente; hash de conteúdo somente na materialização de um bundle (nada assinável em 0.2.0) |
 | Versões de terminologia/value-set | §5.1 | **Somente códigos candidatos; nenhum pin — VALIDATION REQUIRED** |
 | Política de completude e frescor | §5.3, §6 | Proposta (quita VAL-0023 para a GCS mediante ratificação) |
-| Vetores de referência, propriedades, casos-limite, replay corpus | `reference-vectors.md` | Vetores rascunhados (18, todos DRAFT); replay corpus inexistente — requer fontes populadas |
+| Vetores de referência, propriedades, casos-limite, replay corpus | `reference-vectors.md` | 18 vetores ativos + 2 aposentados/superseded (GDEC-0007) — clinicamente revisados; evidência de execução pendente (DRAFT para execução); replay corpus inexistente — requer fontes populadas |
 | Vínculos perigo/controle | §8 | Presente |
 | Texto de explicação + critérios de aceitação UX | §10 | Texto proposto; critérios UX VALIDATION REQUIRED (validação pt-BR, ADR-0029) |
 | Status de validação retrospectiva/prospectiva | — | **Nenhum. Nenhuma fonte populada existe; nenhuma validação de qualquer tipo ocorreu.** |
@@ -604,39 +629,67 @@ nunca um último valor congelado.
   mudanças no contrato de fonte AMH afetando qualquer entrada §5.1; mudança de status
   dos perigos vinculados; ratificação de ADR-0008 ou ADR-0028 (ambos supersedem partes
   de §4/§6 por desenho).
-- Este precursor 0.1.0 caduca se não avançar a revisão clínica nomeada até 2027-08-15;
-  precursor caducado não pode ser revivido sem re-verificação de toda citação e pin.
+- A revisão clínica nomeada ocorreu em 2026-08-15 (GDEC-0007); este precursor 0.2.0
+  caduca se não avançar ao mecanismo de aprovação formal (bundle assinado, ADR-0007)
+  até 2027-08-15; precursor caducado não pode ser revivido sem re-verificação de toda
+  citação e pin.
 
-## 13. Questões abertas para o revisor nomeado (rodaquino-OMNI)
+## 13. Questões abertas para o revisor nomeado (rodaquino-OMNI) — TODAS DECIDIDAS (GDEC-0007, 2026-08-15)
 
-Nenhuma pode ser fechada por agente.
+As 10 questões foram decididas por escrito pelo revisor nomeado em 2026-08-15
+(`decision-register.md` GDEC-0007; registro por linha em
+`../../cycle-1-review-decision-sheet.md` §3, linhas G-1..G-10). O texto original das
+questões é preservado; cada decisão é transcrita abaixo pelo escriba — a decisão é do
+humano nomeado.
 
 1. **OQ-GCS-1:** Confirmar o modelo NT de primeira classe e o vocabulário governado de
    motivos (§3.3) — os motivos enumerados bastam? Falta algum (p.ex. barreira de
    idioma/surdez no componente verbal)?
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — **acrescentar "barreira linguística" e
+   "surdez"** ao NT verbal; manter os demais. Ambos invalidam V sem invalidar E/M;
+   glasgowcomascale.org trata como não testável. Implementado em §3.3/§9.
 2. **OQ-GCS-2:** Estado de sedação desconhecido (sem RASS pareado e/ou sem informação de
    exposição sedativa) — manter o default "escora com divulgação" (idêntico a
    RULE-SOFA-0100 OQ-8) ou bloquear (`not_evaluated`, `sedation_state_unknown`)? Decisão
    do ADR-0028; deve valer simultaneamente para RULE-GCS e RULE-SOFA.
+   **DECISÃO (GDEC-0007, 2026-08-15):** (b) — **fail-closed**
+   (`sedation_state_unknown`), valendo conjuntamente para RULE-SOFA OQ-8 e ADR-0028 Q2
+   (resposta única para os três artefatos); RASS presente ≥ −2 destrava a maioria dos
+   casos reais. Implementado em §4.4 (default "escora com divulgação" removido).
 3. **OQ-GCS-3:** Confirmar as condições de `sedation_confounded` (§4.2): RASS ≤ −3 com
    exposição sedativa ativa, OU infusão sedativa sem janela de interrupção documentada;
    e o refinamento "coma não sedado escora" (§4.3).
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — confirmado; RASS ≤ −3 + exposição
+   sedativa = confundido; coma estrutural sem sedação é achado real e deve pontuar.
 4. **OQ-GCS-4:** BNM ativo → os três componentes NT (não apenas motor) — confirmar.
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — confirmado; sob bloqueio neuromuscular
+   nada além de pupilas é testável. Implementado em §3.3.
 5. **OQ-GCS-5:** Janelas de frescor: componentes 12 h/24 h (alinhadas a RULE-SOFA);
    pareamento RASS 1 h; contemporaneidade mútua dos componentes 30 min — ratificar
    (quitação de VAL-0023 para a GCS).
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — ratificado (quita VAL-0023 p/ GCS);
+   alinhado ao RULE-SOFA; componentes de momentos distintos não somam.
 6. **OQ-GCS-6:** Total-apenas da fonte não aceito para computação (§5.2) — manter, ou
    aceitar com divulgação? Consequência: fontes só-total (padrão legado) ficam
    inutilizáveis até fornecerem componentes.
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — **manter a rejeição** (exibição com
+   proveniência apenas); total sem componentes não permite NT nem auditoria — é o
+   modelo legado que se está rejeitando.
 7. **OQ-GCS-7:** Exibição dos componentes testados quando não há total — confirmar a
    convenção "E4 V-NT(IOT) M6" e que notações tipo "10T" são apresentação, nunca
    aritmética.
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — confirmado; guidance verbatim do emissor.
 8. **OQ-GCS-8:** Gate populacional ≥18 e comportamento `population_unverified` —
    confirmar (bloqueado nas decisões VAL-0006/VAL-0007/IU-06; ADR-0027).
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — confirmado; consistente com ADR-0027.
 9. **OQ-GCS-9:** Confirmar exclusão de banda de severidade ("leve/moderado/grave") do
-   escopo 0.1.0; qualquer banda futura exige fonte nomeada e ratificação própria.
-10. **OQ-GCS-10:** Mapeamento GCS→ACVPU para NEWS2 — confirmar ausência em 0.1.0 (dos
+   escopo 0.2.0; qualquer banda futura exige fonte nomeada e ratificação própria.
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — confirmado; banda exigiria fonte nomeada
+   própria.
+10. **OQ-GCS-10:** Mapeamento GCS→ACVPU para NEWS2 — confirmar ausência em 0.2.0 (dos
     dois lados; RULE-NEWS2 Q4) e a quem pertence a decisão futura.
+    **DECISÃO (GDEC-0007, 2026-08-15):** (a) — confirmado; a decisão futura pertence ao
+    ADR-0028 + revisão conjunta das duas regras (espelha RULE-NEWS2 N-4).
 
 *Autorado pelo GCS-instrument V2 clinical-content specification author (ciclo 1,
 Tarefa 2). O autor não aprova nada; todos os valores são definições publicadas ou

@@ -407,6 +407,58 @@ provenance:
   validation_status: "N/A — decisão já tomada pelo titular nomeado"
 ```
 
+## GDEC-0007 — Revisão clínica do ciclo 1: 98 pontos decididos (97 aceitos, K-8 modificado)
+
+Transcrição de decisão tomada **por escrito, em sessão**, pelo revisor clínico nomeado
+(rodaquino-OMNI, GDEC-0003). O orquestrador é escriba, não decisor.
+
+```yaml
+id: GDEC-0007
+title: Decisões da revisão clínica do ciclo 1 — folha de 98 pontos (specs SOFA/NEWS2/GCS, ADRs 0007/0008/0025-0029, KPIs, portfólio/reconciliações)
+status: DECIDED
+statement: >
+  O titular decidiu os 98 pontos de decisão pendentes do ciclo 1 conforme
+  docs/05-clinical-safety/cycle-1-review-decision-sheet.md: 97 ACEITOS como
+  recomendados; K-8 MODIFICADO — dos 6 macro-nomes legados, 5 permanecem DROP e
+  "vidas_salvas" é MANTIDO, redefinido como "número de pacientes com alta viva
+  da UTI" (KPI de missão e cultura; a fórmula Tasy legada permanece descartada).
+  O titular destacou cinco prioridades, prevalecentes em caso de conflito
+  (nenhum existe): (1) política única de sedação fail-closed — RASS ≥−2
+  testável; RASS ≤−3 com sedação ativa OU desconhecida → confundido/não
+  avaliado; coma documentadamente não sedado escora — divergência do default
+  "escora-com-divulgação" aceita e sinalizada; (2) escalar-nunca-tranquilizar
+  aplicado consistentemente; (3) sem parciais genéricos (só os três nomeados);
+  (4) portfólio enxuto, exceto vidas_salvas; (5) K-10 — baseline
+  pré-implantação COMISSIONADO AGORA (único item irreversível).
+decided_by: rodaquino-OMNI (revisor clínico nomeado, GDEC-0003)
+decided_date: "2026-08-15"
+rationale: >
+  Recomendações fundamentadas em revisão forense 100% verificada da fonte
+  legada e em fontes primárias verificadas ao vivo; a modificação K-8 preserva
+  um KPI de missão institucional com definição mensurável honesta (contagem de
+  altas vivas, sem alegação causal); a política de sedação fail-closed elimina
+  a ambiguidade sedação-profunda-vs-coma que o default permitiria.
+supersession_rule: >
+  Cada ponto segue a regra de supersession do artefato que o incorpora (specs
+  versionados 0.x, ADRs com gatilhos de revisão próprios); a folha é registro
+  histórico. Reabrir um ponto exige nova decisão do titular referenciando esta.
+links:
+  requirements: []
+  hazards: [HAZ-0005, HAZ-0044]
+  adrs: [ADR-0007, ADR-0008, ADR-0025, ADR-0026, ADR-0027, ADR-0028, ADR-0029]
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: docs/05-clinical-safety/cycle-1-review-decision-sheet.md
+  commit_sha_or_version: fc8c98f (folha proposta); decisões desta sessão, 2026-08-15
+  section_or_lines: "mensagem escrita do titular em sessão + coluna Decisão da folha"
+  date_collected: "2026-08-15"
+  collector: orquestrador clínico (ciclo 1) — escriba
+  transformation: "transcrita; os 5 itens prioritários condensados com intenção preservada"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisão já tomada pelo titular nomeado"
+```
+
 ## Index
 
 | ID | Title | Status | Decided by | Decided date |
@@ -417,6 +469,7 @@ provenance:
 | GDEC-0004 | Resoluções do Gate G0 — DEC-G0-01 a DEC-G0-09 | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0005 | Adjudicação de identidade e tenancy AMH×IntensiCare — AQ-1 a AQ-6 | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0006 | Política de idioma — conteúdo novo em pt-BR a partir de 2026-08-15 | DECIDED | rodaquino-OMNI | 2026-08-15 |
+| GDEC-0007 | Revisão clínica do ciclo 1 — 98 pontos (97 aceitos; K-8 modificado: vidas_salvas mantido como altas vivas da UTI) | DECIDED | rodaquino-OMNI | 2026-08-15 |
 
 ## Notes
 
@@ -432,3 +485,6 @@ provenance:
   clínico). Todos os três transcrevem decisões já tomadas por humano
   nomeado (`rodaquino-OMNI`); nenhum foi decidido por este steward. Próximo
   ID disponível: `GDEC-0007`.
+- **Nota (2026-08-15, mais tarde):** `GDEC-0007` alocado pelo orquestrador
+  clínico (transcrição da revisão do ciclo 1). Próximo ID disponível:
+  `GDEC-0008`.

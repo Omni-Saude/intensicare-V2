@@ -1,12 +1,13 @@
 ---
 id: RULE-SOFA-0100
-title: RULE-SOFA v0.1.0 — SOFA clinical-content specification (release-package precursor)
+title: RULE-SOFA v0.2.0 — SOFA clinical-content specification (release-package precursor)
 label: PROPOSAL
-status: PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)
+status: REVISADO CLINICAMENTE 2026-08-15 (GDEC-0007) — decisões incorporadas; aprovação formal pendente do mecanismo de bundle assinado (ADR-0007); NOT ACTIONABLE (inalterado)
+last_updated: 2026-08-15
 statement: >
   Complete clinical-content specification for a V2 SOFA rule, re-derived from the primary
   sources (Vincent 1996; Singer 2016 Sepsis-3; SSC 2021) and never copied from legacy code.
-  Semantic version 0.1.0 — a 0.x PRECURSOR to a clinical release package per orchestrator
+  Semantic version 0.2.0 — a 0.x PRECURSOR to a clinical release package per orchestrator
   prompt §6.4, explicitly NOT a signed release. Classification: NOT ACTIONABLE — no
   evidenced populated source exists for any SOFA input (AMH constraint); this is an
   authorship artifact only and claims no runtime readiness.
@@ -22,7 +23,7 @@ provenance:
     review records LEGREV-SOFA-0001 and LEGREV-QSOFA-0001 for legacy-defect avoidance only.
     No legacy formula, constant, or code was copied. Author choices are labeled
     INFERENCE/PROPOSAL; published definitions are labeled SOURCE.
-  confidence: medium (SOURCE band values: high; all clinical dispositions: unratified)
+  confidence: medium-high (SOURCE band values: high; clinical dispositions: decididas pela revisão nomeada GDEC-0007 2026-08-15; aprovação formal via bundle assinado ADR-0007 pendente)
   owner: UNASSIGNED — VALIDATION REQUIRED
   validation_status: VALIDATION REQUIRED
 links:
@@ -35,21 +36,26 @@ supersedes: null
 superseded_by: null
 ---
 
-# RULE-SOFA v0.1.0 — clinical-content specification (release-package precursor)
+# RULE-SOFA v0.2.0 — clinical-content specification (release-package precursor)
 
 ## 0. Identity, status, classification
 
 | Field | Value |
 |---|---|
 | Rule identifier | **RULE-SOFA** |
-| Semantic version | **0.1.0** — a 0.x precursor; unsigned; not a release |
-| Status | **PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)** |
+| Semantic version | **0.2.0** — a 0.x precursor; unsigned; not a release |
+| Status | **REVISADO CLINICAMENTE 2026-08-15 (GDEC-0007) — decisões incorporadas; aprovação formal pendente do mecanismo de bundle assinado (ADR-0007); NOT ACTIONABLE (inalterado)** |
 | Classification | **NOT ACTIONABLE — no evidenced populated source (AMH constraint); authorship artifact only** |
 | Clinical owner | UNASSIGNED — VALIDATION REQUIRED |
 | Independent approver | UNASSIGNED — VALIDATION REQUIRED (author ≠ approver; the author of this spec approves nothing) |
-| Machine-readable logic | `logic.yaml` (this directory), SHA-256 `ccac846e1525e8cddb946ade9801bd48edd9191449148100b57c787c71455a4d` |
-| Reference vectors | `reference-vectors.md` (this directory) — all DRAFT/PROPOSAL |
+| Machine-readable logic | `logic.yaml` (this directory), SHA-256 `c13b22b3e9fada466a160fe0b263435fb809dff95cc3061d257fe90645a75a24` |
+| Reference vectors | `reference-vectors.md` (this directory) — clinicamente revisados (GDEC-0007); evidência de execução pendente; DRAFT para fins de execução |
 | Rule-local migration summary | `migration-notes.md` (this directory) |
+
+**Histórico de versões (changelog):**
+
+- **0.2.0** — decisões da revisão clínica nomeada incorporadas (GDEC-0007, 2026-08-15)
+- 0.1.0 — proposta inicial (ciclo 1), AWAITING NAMED CLINICAL REVIEW
 
 **Why NOT ACTIONABLE, stated without softening.** SOURCE
 (`docs/08-interoperability/amh-data/compatibility-finding.md` §3, AMH pinned at
@@ -67,7 +73,7 @@ scores, each with its own evaluation status, and a total 0–24 emitted only und
 conditions. **What it never emits:** partial totals; mortality-risk bands (legacy D-18
 REJECTED — any banding requires its own named source and ratification); any sepsis
 determination (Sepsis-3 ΔSOFA ≥2 requires a ratified baseline convention that does not
-exist — out of scope for 0.1.0, see OQ-14).
+exist — out of scope for 0.2.0, see OQ-14).
 
 ## 1. Intended use, population, exclusions
 
@@ -93,29 +99,32 @@ The paediatric/neonatal scope decision (IU-06) is a 🚩 BLOCKING human decision
 is DECIDED, the gate above is the only safe behavior; a paediatric SOFA variant, if ever
 wanted, is a separately evidenced instrument.
 
-### 1.3 Exclusions and carve-outs — FLAGGED FOR REVIEWER DECISION (OQ-11)
+### 1.3 Exclusions and carve-outs — DECIDED: annotate, never silently exclude (OQ-11 (b), GDEC-0007)
 
-None of the following is decided by this document; each is flagged per HAZ-0044 and the
-intended-use statement's "neither included nor excluded" sub-populations:
+**DECISÃO (GDEC-0007, 2026-08-15, OQ-11 (b)):** computar com anotação — excluir tudo
+criaria `not_evaluated` permanente sem valor; anotar preserva vigilância com honestidade
+interpretativa. Dispositions per carve-out:
 
-1. **Palliative care / goals-of-care restriction (HAZ-0044).** A SOFA evaluation on a
-   patient with a documented treatment-limitation order is technically correct and may be
-   clinically unwanted as a work-item driver. PROPOSAL: evaluation itself is not
-   suppressed (the score may still inform comfort-oriented decisions), but any future
-   alert/work-item binding must consult care-goal context. Reviewer must decide.
+1. **Palliative care / goals-of-care restriction (HAZ-0044).** Evaluation itself is NOT
+   suppressed (the score may still inform comfort-oriented decisions); any escalation /
+   alert / work-item binding is **suppressed with a visible reason** under a documented
+   treatment-limitation order — the future work-item layer must consult care-goal
+   context. (DECIDIDO — GDEC-0007 OQ-11; consistent with NEWS2 N-3 and ADR-0027 A27-4.)
 2. **Chronic organ dysfunction.** SOFA measures dysfunction, not acuity. A cirrhotic
    patient's chronic hyperbilirubinemia, a dialysis patient's chronic creatinine, or
    chronic thrombocytopenia will score points that do not represent acute change.
    SOURCE (Singer 2016): baseline SOFA "can be assumed to be zero in patients not known
-   to have preexisting organ dysfunction" — the converse (known chronic dysfunction)
-   has no operational convention here. PROPOSAL: 0.1.0 scores measured physiology as-is
-   and the explanation text must not claim acuity; interpretation caveat surfaces in the
-   explanation (§7). Reviewer must decide whether chronic-dysfunction annotation or
-   exclusion is required before any release.
+   to have preexisting organ dysfunction". DECIDIDO (GDEC-0007 OQ-11): 0.2.0 scores
+   measured physiology as-is **with a mandatory annotation of the documented chronic
+   limitation**; the explanation text must not claim acuity (§7).
 3. **Renal replacement therapy.** Creatinine under RRT does not reflect native renal
-   function. Flagged; no convention proposed without a source.
-4. **ECMO.** PaO2/FiO2 is not interpretable on extracorporeal support. Flagged.
-5. **Setting.** Adult ICU only (IU-03); all other settings UNDECIDED (IU-04a–f).
+   function. DECIDIDO (GDEC-0007 OQ-11): the renal component evaluates **with the
+   mandatory flag `on_rrt` ("em TSR")** — annotated, not excluded.
+4. **ECMO.** PaO2/FiO2 is not interpretable on extracorporeal support (VV-ECMO).
+   DECIDIDO (GDEC-0007 OQ-11): the respiration component is `not_evaluated`
+   (reason `pf_not_interpretable_on_ecmo`); the other five components evaluate normally.
+5. **Setting.** Adult ICU only (IU-03); all other settings UNDECIDED (IU-04a–f) —
+   unchanged; not part of OQ-11.
 
 ## 2. Normative sources — verified
 
@@ -170,7 +179,8 @@ legacy code; identical numbers exist only where legacy happened to match Vincent
 
 All LOINC bindings are **candidate** codes (PROPOSAL) pending the terminology
 architect's pinned value sets (matrix rows SOFA-01..SOFA-06 record `NOT_SPECIFIED (R9)`).
-All freshness windows are **PROPOSAL** — see §3.2. Canonical-unit choices are I-6.
+Freshness windows: **ratificadas — DECISÃO (GDEC-0007, 2026-08-15, OQ-9 (a))**, see §3.2.
+Canonical-unit choices are I-6 (confirmadas — OQ-6 (a), GDEC-0007).
 
 | # | Input | LOINC candidate(s) | Canonical unit (UCUM) | Accepted alternates → conversion | Acceptable range | Freshness window (PROPOSAL) | Missing behavior | Stale behavior | Conflict behavior |
 |---|---|---|---|---|---|---|---|---|---|
@@ -180,14 +190,14 @@ All freshness windows are **PROPOSAL** — see §3.2. Canonical-unit choices are
 | 4 | Respiratory-support status | none pinned — VALIDATION REQUIRED | coded concept | — | {invasive MV, NIV/CPAP, HFNC, none} | Within 1 h of qualifying PaO2 | Required only when ratio <200; then `not_evaluated` (`missing_required_input:respiratory_support_status`) | As window | Contradictory simultaneous states → `invalid` |
 | 5 | Platelets | 777-3, 26515-7 | 10\*3/uL | 10\*9/L ≡ identical | 1–2000; **0 → `invalid`** (implausible; known legacy missing-sentinel) | 24 h (expiry 48 h) | Coagulation `not_evaluated` | Coagulation `stale`/expired | Coagulation `invalid` |
 | 6 | Bilirubin, total | 1975-2 (mass), 14631-6 (molar) | mg/dL | µmol/L → ÷17.104 | 0.1–60 mg/dL | 24 h (expiry 48 h) | Liver `not_evaluated` | Liver `stale`/expired | Liver `invalid` |
-| 7 | MAP | 8478-0 | mm[Hg] | — (derivation from SBP/DBP: OQ, not admitted in 0.1.0) | 20–200 | 4 h (expiry 8 h) | See CV logic §4.4 | CV `stale`/expired | CV `invalid` |
-| 8 | Vasoactive agent identity | medication code; ATC candidates C01CA03 (norepinephrine), C01CA24 (epinephrine), C01CA04 (dopamine), C01CA07 (dobutamine); RxNorm pin VALIDATION REQUIRED | coded concept | synonym normalization (noradrenaline≡norepinephrine, adrenaline≡epinephrine) | tabulated set only | Administration interval overlapping T | No active agent = a valid state (CV from MAP) | n/a | Contradictory administration records → CV `invalid` |
-| 9 | Vasoactive dose rate | (administration attribute) | ug/kg/min | µg/min or mL/h → conversion requires weight #10 and concentration; policy VALIDATION REQUIRED | dopamine 0.5–60; dobutamine 0.5–40; epi/norepi 0.01–5 | Active at T; rate sustained ≥1 h (I-3); last confirmation ≤2 h (expiry 4 h) | Agent active + dose missing → CV `not_evaluated` (`missing_dose`) — **never a guessed tier** | CV `stale`/expired | CV `invalid` |
+| 7 | MAP | 8478-0 | mm[Hg] | derivation from SBP/DBP admissible as fallback when no device-reported MAP exists: MAP = (SBP + 2×DBP)/3, mandatory flag `derived_map` ("derivada") — DECIDIDO OQ-9 (a), GDEC-0007 | 20–200 | 4 h (expiry 8 h) | See CV logic §4.4 | CV `stale`/expired | CV `invalid` |
+| 8 | Vasoactive agent identity | medication code; ATC candidates C01CA03 (norepinephrine), C01CA24 (epinephrine), C01CA04 (dopamine), C01CA07 (dobutamine); RxNorm pin VALIDATION REQUIRED | coded concept | synonym normalization (noradrenaline≡norepinephrine, adrenaline≡epinephrine) | tabulated set → banded; untabulated agent → CV floor 3 flagged (§4.4 I-5, GDEC-0007 OQ-5) | Administration interval overlapping T | No active agent = a valid state (CV from MAP) | n/a | Contradictory administration records → CV `invalid` |
+| 9 | Vasoactive dose rate | (administration attribute) | ug/kg/min | µg/min or mL/h → conversion requires weight #10 and concentration; policy VALIDATION REQUIRED | dopamine 0.5–60; dobutamine 0.5–40; epi/norepi 0.01–5 | Active at T; rate sustained ≥1 h (I-3); first hour of a new infusion → provisional tier flagged (§4.4 I-3, GDEC-0007 OQ-3); last confirmation ≤2 h (expiry 4 h) | Tabulated agent active + dose missing/unusable → CV floors at the band agent presence alone guarantees, flagged "dose ausente — piso por presença do agente" (§4.4 — DECISÃO DERIVADA, GDEC-0007 princípio 2); **never a guessed exact tier** | CV `stale`/expired | CV `invalid` |
 | 10 | Body weight (dose normalization only) | 29463-7 | kg | — | 30–300 | 7 d (expiry 14 d) | Needed only for non-normalized dose units → then CV `not_evaluated` (`missing_weight`) | As window | CV `invalid` |
 | 11 | GCS total (E/V/M) | 9269-2 (9267-6, 9270-0, 9268-4) | {score} | — | integers 3–15; outside → `invalid` | 12 h (expiry 24 h) | CNS `not_evaluated` | CNS `stale`/expired | CNS `invalid` |
 | 12 | RASS (confounder gate only) | none pinned — VALIDATION REQUIRED | ordinal | — | −5..+4 | Within 1 h of qualifying GCS | RASS absent → sedation state unknown: see §4.5 | n/a | CNS `invalid` |
-| 13 | Creatinine | 2160-0 (mass), 14682-9 (molar) | mg/dL | µmol/L → ÷88.42 | 0.1–25 mg/dL | 24 h (expiry 48 h) | Renal `not_evaluated` | Renal `stale`/expired | Renal `invalid` |
-| 14 | Urine output (interval) | 9187-6, 3167-4 | mL over explicit 24-h interval | — | 0–10000; **0 is a VALID value (anuria)**, never a missing-marker | Interval ending ≤4 h before T (expiry: ending >8 h before T) | Renal `not_evaluated` (`missing_required_input:urine_output`) — default pending OQ-7 | Renal `stale`/expired | Renal `invalid` |
+| 13 | Creatinine | 2160-0 (mass), 14682-9 (molar) | mg/dL | µmol/L → ÷88.42 | 0.1–25 mg/dL | 24 h (expiry 48 h) | Renal evaluates from urine output alone as declared partial, flag `creatinine_not_assessed` (§4.6 I-7, GDEC-0007 OQ-7); both criteria absent → `not_evaluated` | Renal `stale`/expired | Renal `invalid` |
+| 14 | Urine output (interval) | 9187-6, 3167-4 | mL over explicit 24-h interval | — | 0–10000; **0 is a VALID value (anuria)**, never a missing-marker | Interval ending ≤4 h before T (expiry: ending >8 h before T) | Renal evaluates from creatinine alone as declared partial, flag `urine_output_not_assessed` (§4.6 I-7, GDEC-0007 OQ-7); both criteria absent → `not_evaluated` (`missing_required_input:renal`) | Renal `stale`/expired | Renal `invalid` |
 
 **Unit discipline (HAZ-0032 control):** every quantity arrives UCUM-coded; conversion to
 the canonical unit uses the exact factor **before** band comparison, without pre-rounding,
@@ -206,14 +216,17 @@ is exactly 1.90 mg/dL = band 1) and are therefore **not** an independent band se
 laboratories commonly report mass-per-volume), minimizing conversions. Conversion at the
 boundary: µmol/L values are converted with the exact factor 17.104 (bilirubin molar mass
 584.66 g/mol) and compared in mg/dL; the same policy applies to creatinine (factor
-88.42). Reviewer must ratify (OQ-6).
+88.42). **DECISÃO (GDEC-0007, 2026-08-15, OQ-6 (a)):** ratificado — unidades canônicas
+mg/dL e convert-before-compare confirmados.
 
-### 3.2 Freshness windows — proposed discharge of VAL-0023 for SOFA
+### 3.2 Freshness windows — VAL-0023 discharged for SOFA (GDEC-0007)
 
 VAL-0023 asks: what freshness window applies to each clinical input, and which missing
 components invalidate versus degrade a score? For RULE-SOFA this specification proposes
-the concrete windows in §3.1 (summarized below) and the algebra in §5. Every number is
-PROPOSAL with rationale; ratification by `AUTH-CLINSAFETY` closes VAL-0023 for this rule.
+the concrete windows in §3.1 (summarized below) and the algebra in §5.
+**DECISÃO (GDEC-0007, 2026-08-15, OQ-9 (a)):** todas as janelas e expirações abaixo
+ratificadas pelo revisor nomeado — quitação de VAL-0023 para RULE-SOFA; PAM derivada de
+PAS/PAD admitida como fallback com flag "derivada" (§3.1 linha 7, §4.4).
 
 | Input class | Window | Expiry (→ `not_evaluated`) | Rationale (PROPOSAL) |
 |---|---|---|---|
@@ -240,13 +253,14 @@ against the evaluation clock at read time, never from receipt time or row order.
 ### 4.0 Evaluation semantics
 
 - **Evaluation instant `T`; assessment window `[T−24h, T]`.** SOURCE (Vincent 1996): the
-  score was designed for daily assessment. INFERENCE/PROPOSAL (I-9): within the window,
+  score was designed for daily assessment. INFERENCE (I-9): within the window,
   the **most abnormal (worst) qualifying value** per input is selected, consistent with
   the serial-SOFA literature's daily-worst convention (Ferreira FL, et al. *JAMA*
   2001;286(14):1754–1758 — cited for convention identification only); the primary source
-  does not fully specify aggregation, so this is an author choice requiring ratification
-  (OQ-10). Selection happens **after** validity screening; an invalid in-window value
-  poisons the component (§5), it is not silently skipped.
+  does not fully specify aggregation. **DECISÃO (GDEC-0007, 2026-08-15, OQ-10 (a)):**
+  agregação pior-valor-em-24h ratificada. Selection happens **after** validity
+  screening; an invalid in-window value poisons the component (§5), it is not silently
+  skipped.
 - **Band assignment:** each component's bands are evaluated as predicates and the
   **highest satisfied band** is assigned. This reading reproduces the published table's
   cumulative structure and resolves the unsupported-P/F case (§4.1) without inventing a
@@ -270,7 +284,7 @@ SOURCE (Vincent 1996) — PaO2/FiO2 in mm[Hg]:
   any surrogate requires its own citation and separate ratification).
 - **I-1 (PROPOSAL):** "respiratory support" (the 1996 term) is operationalized as
   invasive mechanical ventilation **or** non-invasive positive pressure (NIV/CPAP).
-  HFNC does **not** qualify in 0.1.0 (post-1996 modality, uncited in the primary
+  HFNC does **not** qualify in 0.2.0 (post-1996 modality, uncited in the primary
   source) — reviewer decision OQ-1.
 - **I-2 (INFERENCE, ratification required — OQ-2):** ratio < 200 **without** qualifying
   support: bands 3–4's conditions are unsatisfied, so the highest satisfied band is
@@ -329,29 +343,51 @@ Deterministic rules (each labeled):
   scoreable **with MAP absent**; missing MAP must never zero, downgrade, or block a
   tier-4 patient. MAP is a required input **only** when no tabulated agent is active
   (bands 0/1); then MAP absent → `not_evaluated` (`missing_required_input:map`).
-- **I-3 (PROPOSAL — OQ-3):** the 1996 duration condition "for at least 1 h" is
-  operationalized as: the administration record shows the qualifying rate sustained for
-  ≥ 60 min at T. During the first hour of a newly started infusion the tier condition is
-  not yet met → component `not_evaluated` (reason `duration_condition_unmet`) rather
-  than a guessed tier; reviewer may prefer a different convention.
-- **I-4 (PROPOSAL — OQ-4):** combination therapy (routine in shock): component score =
-  **max** of the per-agent bands across all active tabulated agents. The primary source
-  is silent on combinations; max-of-tiers is the only direction-safe choice (any other
-  combiner can only under-score).
-- **I-5 (PROPOSAL — OQ-5):** an active vasoactive agent **outside** the tabulated set
-  (vasopressin, phenylephrine, …) has no band in the primary source. Default: component
-  `not_evaluated` (reason `vasoactive_agent_unmapped`) — deliberately conservative;
-  never a guessed tier (rejects legacy D-10, which scored vasopressin *below* low-dose
-  dopamine). Reviewer may ratify a sourced mapping; until then the rule declines to
-  score.
-- **Agent active + dose missing → `not_evaluated` (reason `missing_dose`).** Never a
-  default tier (legacy D-10 REJECTED). Dose rates must be weight-normalized µg/kg/min;
-  non-normalized source units require weight (§3.1 row 10) and an explicit conversion
-  policy (VALIDATION REQUIRED) or the component is `not_evaluated` (`missing_weight`) /
-  `invalid` (`unmappable_unit`) as applicable.
-- MAP source: a device-reported mean pressure (LOINC 8478-0). Deriving MAP from SBP/DBP
-  is **not admitted** in 0.1.0 (formula exists in legacy but its admission is a clinical
-  choice); flagged in OQ-9's window review as a candidate future input.
+- **I-3 (DECIDIDO — OQ-3 (b), GDEC-0007, 2026-08-15):** the 1996 duration condition
+  "for at least 1 h" is operationalized as: the administration record shows the
+  qualifying rate sustained for ≥ 60 min at T. **During the first hour of a newly
+  started qualifying infusion, a PROVISIONAL escalation-capable tier applies**: the
+  component score is computed from the dose **immediately** and emitted with the
+  mandatory flag `provisional_infusion_lt_1h` ("provisório — infusão <1h"). The
+  provisional score **never lowers, only raises**, versus the no-vasopressor (MAP-based)
+  reading. This is a **declared adaptation** versus Vincent 1996 verbatim (the ≥1 h
+  clause is retained as an anti-bolus filter for the *confirmed* tier): choque em início
+  de noradrenalina é disfunção CV *agora*; INV-B permite escalar, nunca tranquilizar.
+- **I-4 (DECIDIDO — OQ-4 (a), GDEC-0007):** combination therapy (routine in shock):
+  component score = **max** of the per-agent bands across all active tabulated agents.
+  The primary source is silent on combinations; max-of-tiers is the only direction-safe
+  choice (any other combiner can only under-score).
+- **I-5 (DECIDIDO — OQ-5 (b), GDEC-0007, 2026-08-15):** an active vasoactive agent
+  **outside** the tabulated set (vasopressin, phenylephrine, others) has no band in the
+  primary source. **Behavior: CV component floor score 3**, with the mandatory flag
+  `vasoactive_agent_untabulated` ("agente não tabelado"); a sourced tier mapping remains
+  **VALIDATION REQUIRED**. Rationale (sheet): vasopressina em prática ≈ choque
+  refratário a catecolamina; `not_evaluated` *tranquilizava* indevidamente (viola
+  INV-B). The floor is a lower bound — never a guessed exact tier (legacy D-10, which
+  scored vasopressin *below* low-dose dopamine, remains REJECTED); in combination with
+  tabulated agents the component is max(3, tabulated tiers).
+- **Tabulated agent active + dose missing/unparseable → floor by agent presence.**
+  **DECISÃO DERIVADA (GDEC-0007, princípio 2 — escalar-nunca-tranquilizar, declarado
+  prevalecente pelo titular; aplicação da lógica de OQ-5 (b)) — sujeita a confirmação
+  do revisor na próxima revisão:** when a tabulated agent is affirmatively present but
+  no usable dose-based band is computable (dose absent; or dose not normalizable —
+  missing weight, unconvertible dose unit), the component no longer yields
+  `not_evaluated` (`missing_dose`): it **floors at the minimum band that agent
+  presence alone guarantees in Vincent 1996** — **dobutamine → 2** (any dose),
+  **dopamine → 2** (≤5 band), **norepinephrine or epinephrine → 3** (≤0.1 band) —
+  with the mandatory flag `dose_missing_agent_presence_floor` ("dose ausente — piso
+  por presença do agente"). The floor **never lowers an available dose-based score**
+  (with a computable dose, the dose bands govern; in combinations, max-of-tiers over
+  floors and dose bands) and is **composable with the first-hour provisional flag**
+  (§4.4 I-3). Legacy D-10 remains REJECTED: the legacy behavior *asserted an exact
+  tier* for an unknown dose with no marker; the floor asserts only a declared lower
+  bound with mandatory disclosure. An in-window dose value that is out of plausible
+  range or in unreconciled conflict still poisons the component (`invalid`) — the
+  floor repairs absence, never detected integrity failures.
+- MAP source: a device-reported mean pressure (LOINC 8478-0). **DECIDIDO (GDEC-0007,
+  OQ-9 (a)):** deriving MAP from SBP/DBP — MAP = (SBP + 2×DBP)/3 — is **admitted as a
+  fallback** when no device-reported MAP exists, with the mandatory flag `derived_map`
+  ("derivada"); a derived value is better than absence and the formula is standard.
 
 ### 4.5 Central nervous system (SOFA-CNS)
 
@@ -367,21 +403,26 @@ SOURCE (Vincent 1996) — Glasgow Coma Scale:
 
 - GCS is an integer in 3–15; values outside → `invalid` (reason `out_of_range`) —
   legacy D-13 control.
-- **Sedation caveat — I-8 (PROPOSAL, cross-referenced to the pending
-  sedation/neuro-assessment confounding ADR; input recorded at
+- **Sedation policy — I-8 (DECIDIDO — OQ-8 (b), GDEC-0007, 2026-08-15; FAIL-CLOSED
+  joint policy, uma só resposta com RULE-GCS OQ-GCS-2 e ADR-0028 Q2; forensic input at
   `docs/05-clinical-safety/legacy-review/neuro-sedation-scores/REV-NS-01-gcs.md` §4):**
-  a GCS observed while a **sedative infusion is active** without a documented
-  interruption window is pharmacologically confounded — default in 0.1.0: CNS component
-  `not_evaluated` (reason `sedation_confounded`), with the last pre-sedation GCS
-  surfaced in the explanation. Contemporaneous RASS ≤ −3 **with** active sedation
-  confirms confounding; RASS ≤ −3 with **documented absence** of sedative exposure is
-  genuine coma and scores normally (INFERENCE — this refines REV-NS-01 §4's coarser
-  "RASS ≤ −3" trigger, which read alone would render unsedated structural coma
-  unscoreable; the refinement is flagged for the pending ADR). If sedative-exposure
-  information is unavailable, sedation state is unknown: 0.1.0 scores the GCS and the
-  explanation must disclose "sedation state not assessed" — reviewer must decide whether
-  unknown-sedation should instead block scoring (OQ-8). This entire clause is
-  subordinate to the pending ADR and will be superseded by it.
+  - Paired RASS **≥ −2** present → CNS is testable; the GCS scores (subject to the other
+    rules of this section).
+  - Paired RASS **≤ −3** with **active OR unknown** sedative exposure →
+    `sedation_confounded` → CNS component `not_evaluated` (reason
+    `sedation_confounded`), with the last pre-sedation GCS surfaced in the explanation.
+    RASS ≤ −3 sem informação de sedação é indistinguível de sedação profunda.
+  - A GCS observed while a **sedative infusion is active** without a documented
+    interruption window is pharmacologically confounded → `not_evaluated`
+    (`sedation_confounded`), regardless of RASS.
+  - RASS ≤ −3 with **documented absence** of sedative exposure is genuine coma and
+    scores normally (this refines REV-NS-01 §4's coarser "RASS ≤ −3" trigger, which read
+    alone would render unsedated structural coma unscoreable — refinement accepted by
+    the same decision and by ADR-0028 A28-1).
+  - RASS **missing or unpaired** → sedation state unknown → CNS component
+    `not_evaluated` (reason `sedation_state_unknown` — missing gating input). The former
+    0.1.0 default "score with 'sedation state not assessed' disclosure" is **REMOVED**
+    (fail-closed decided; a divergência do default foi aceita e sinalizada pelo titular).
 - **Untestable components:** if any E/V/M component is untestable (e.g. verbal in an
   intubated patient) the total GCS is not computable → `not_evaluated` (reason
   `component_not_testable`). No minimum-fill, no imputation (REV-NS-01 REJECTED
@@ -399,29 +440,34 @@ SOURCE (Vincent 1996) — creatinine (canonical mg/dL) **or** urine output:
 | 3 | ≥ 3.5 and < 5.0 | < 500 mL/day |
 | 4 | ≥ 5.0 | < 200 mL/day |
 
-- Component score = **max**(creatinine band, urine-output band) — the published "or"
+- Component score = **max** over the **available** criterion bands — the published "or"
   across a shared band scale. Creatinine bands are continuous: creatinine exactly 5.0
   is band 4 (the trilhas dead-gap defect is unrepresentable).
 - Urine output 0 mL/24h is a **valid, maximal-severity value** (anuria → band 4), never
   a missing-marker. Missingness is representable only as an absent input.
-- **I-7 (PROPOSAL — OQ-7, feeds ADR-0008):** default in 0.1.0, **both** sub-inputs are
-  required for a `valid` renal component. Rationale: a creatinine-only renal score can
-  under-score by up to 4 points (oliguric patient, still-normal creatinine) — exactly the
-  false-reassurance direction of HAZ-0005 — and the legacy one-input renal score with no
-  partiality marker (D-16) is REJECTED. Consequence stated honestly: with no urine-output
-  source evidenced anywhere (matrix SOFA-06), the renal component is permanently
-  `not_evaluated` under this default. The reviewer may instead ratify creatinine-only
-  scoring as a **declared component-level partial policy** under
-  evaluation-status-semantics.md §3.2 (with the mandatory disclosure "urine output not
-  assessed — renal score is a lower bound"); this spec deliberately does not self-approve
-  that policy.
+- **I-7 (DECIDIDO — OQ-7 (b), GDEC-0007, 2026-08-15; feeds ADR-0008 A8-2):** renal =
+  **worst-of-available-criteria**. With both criteria present, the component is `valid`
+  (max of the two bands). With exactly **one** criterion present (creatinine-only or
+  urine-output-only), the component evaluates as a **declared component-level partial**
+  — a ratified partial class under evaluation-status-semantics §3.2 and ADR-0008 A8-2
+  (C-com-default-A) — with the score of the available criterion, the **mandatory
+  absent-criterion flag** (`urine_output_not_assessed` / `creatinine_not_assessed`) and
+  the lower-bound disclosure ("o escore renal é um limite inferior"). Both criteria
+  absent → `not_evaluated` (`missing_required_input:renal`). Rationale (sheet): Vincent
+  usa creatinina OU débito urinário (pior); débito horário rigoroso é raro fora de
+  BIC/SVD — exigi-lo mataria o componente sem ganho de segurança. The former 0.1.0
+  both-inputs default is **superseded**; the legacy one-input renal score with **no
+  partiality marker** (D-16) remains REJECTED — the flag and disclosure are what
+  distinguish the decided behavior from the legacy defect.
 
 ## 5. Evaluation-status mapping
 
 Component-level statuses use the five-state vocabulary of
-`docs/05-clinical-safety/evaluation-status-semantics.md`; `partial` is currently
-unusable anywhere in this rule because its entry condition (an explicitly approved
-partial policy with an independent clinical approver) is unmet.
+`docs/05-clinical-safety/evaluation-status-semantics.md`. **`partial` has exactly ONE
+ratified use in this rule** — the renal worst-of-available-criteria class (DECIDIDO
+GDEC-0007, OQ-7 (b) / A8-2): a declared, named partial with mandatory flag and
+lower-bound disclosure. No generic partial exists; formal signing of the policy follows
+the ADR-0007 bundle mechanism.
 
 ### 5.1 Component level
 
@@ -429,23 +475,34 @@ partial policy with an independent clinical approver) is unmet.
 |---|---|
 | All required inputs present, in-window, in-range, unit-mapped; predicates evaluated | `valid` (score 0–4 readable) |
 | Any required input absent | `not_evaluated` (reason `missing_required_input:<input>`) |
+| Renal: exactly one of creatinine / urine output present (§4.6 I-7) | `partial` (declared ratified class — score readable as lower bound; mandatory absent-criterion flag; GDEC-0007 OQ-7) |
 | Required input present only outside window, inside expiry | `stale` (value + age shown; **score not readable**) |
 | Required input beyond expiry | `not_evaluated` (reason `expired_input:<input>`) |
 | Any in-window value out-of-range, unit-unmappable, or in unreconciled simultaneous conflict | `invalid` (reason) — the offending value is never silently dropped |
-| Sedation-confounded GCS (§4.5), unmapped agent (§4.4), unmet duration (§4.4) | `not_evaluated` (specific reason) |
+| Sedation-confounded or sedation-state-unknown GCS (§4.5) | `not_evaluated` (reason `sedation_confounded` / `sedation_state_unknown`) |
+| Untabulated vasoactive agent active (§4.4 I-5) | `valid` — floor score 3 with mandatory flag `vasoactive_agent_untabulated` (GDEC-0007 OQ-5) |
+| Tabulated agent active + dose missing/unusable (§4.4) | `valid` — floor by agent presence (dobutamine/dopamine 2; norepi/epi 3), mandatory flag `dose_missing_agent_presence_floor` (DECISÃO DERIVADA, GDEC-0007 princípio 2) |
+| First hour of a new qualifying infusion (§4.4 I-3) | `valid` — provisional tier with mandatory flag `provisional_infusion_lt_1h` (GDEC-0007 OQ-3) |
 
 ### 5.2 Total
 
-- The total (0–24) is computed and emitted **only when all six components are `valid`**.
+- The total (0–24) is computed and emitted **only when all six components are readable**:
+  `valid`, or the renal declared partial (§4.6 I-7 — the single ratified partial class,
+  GDEC-0007 OQ-7).
+- When the renal declared partial contributes, the **total status is `partial`** and the
+  absent-criterion flag plus lower-bound disclosure propagate to **every** display of
+  the total — a bare number is never emitted.
 - Any component `invalid` → total `invalid`, reasons enumerating the offending
   components (integrity doubt propagates; precedence `invalid` > `not_evaluated` >
-  `stale` > `valid`).
-- Otherwise, any component not `valid` → total **`not_evaluated`**, with machine-readable
-  reasons enumerating every non-valid component and its reason, and with per-component
+  `stale` > `partial` > `valid` — P-a, DECIDIDO A8-1, GDEC-0007).
+- Otherwise, any component not readable → total **`not_evaluated`**, with machine-readable
+  reasons enumerating every non-readable component and its reason, and with per-component
   detail (including the components that *are* valid) available to the clinician.
-- **No partial totals, ever** (partial-SOFA analysis, LEGREV-SOFA-0001 §7.3): a k-of-6
-  sum is a different, unvalidated instrument wearing SOFA's name; if clinical governance
-  wants the computable fragment surfaced, it is per-organ components, never summed.
+- **No generic partial totals, ever** (partial-SOFA analysis, LEGREV-SOFA-0001 §7.3): a
+  k-of-6 sum is a different, unvalidated instrument wearing SOFA's name; if clinical
+  governance wants the computable fragment surfaced, it is per-organ components, never
+  summed. (The renal declared partial is **not** a k-of-6 sum: all six components
+  contribute; the renal component itself is a ratified lower bound with disclosure.)
 - **No zero-coercion anywhere (HAZ-0005 primary control):** absence, staleness,
   invalidity, and confounding are representable **only** as status + reason. No numeric
   value, no "last known", no band, and no default may substitute. The SAF-0002
@@ -464,11 +521,14 @@ partial policy with an independent clinical approver) is unmet.
 The declarative logic (bands, predicates, windows, status algebra — data, no code) is
 `logic.yaml` in this directory.
 
-- Content hash (SHA-256): `ccac846e1525e8cddb946ade9801bd48edd9191449148100b57c787c71455a4d`
+- Content hash (SHA-256): `c13b22b3e9fada466a160fe0b263435fb809dff95cc3061d257fe90645a75a24`
+  (0.2.0 — recomputed after incorporating the GDEC-0007 decisions and the derived
+  missing-dose floor; the 0.1.0 hash was
+  `ccac846e1525e8cddb946ade9801bd48edd9191449148100b57c787c71455a4d`)
 - Precedence: where `logic.yaml` and this document disagree, **this document governs**
   and the disagreement is a defect to be fixed before any signing.
 - A future signed release binds RuleBundle → RuleVersion 1.x + TerminologySnapshot +
-  TestPack + Approval; none of these exist for 0.1.0 and this hash is a working-tree
+  TestPack + Approval; none of these exist for 0.2.0 and this hash is a working-tree
   integrity aid, not a signature.
 
 ## 7. Explanation text (clinician display)
@@ -517,16 +577,20 @@ translation exercise. Placeholders in `{}`.
 Minimum content obligations (every display): inputs used with source times; missing-input
 disclosure; rule version; freshness/age of oldest contributing input; advisory-only
 framing; per-organ attribution (a bare aggregate number is not an acceptable display —
-CAND-0003 explanation requirement).
+CAND-0003 explanation requirement). **Mandatory decided flags (GDEC-0007), always
+visible when applicable:** "provisório — infusão <1h" (§4.4 I-3); "agente não tabelado"
+(§4.4 I-5); "dose ausente — piso por presença do agente" (§4.4, DECISÃO DERIVADA);
+"PAM derivada" (§4.4/OQ-9); renal absent-criterion flag + lower-bound
+disclosure (§4.6 I-7); "em TSR" and the palliative escalation-suppression reason (§1.3).
 
 ## 8. Linked hazards and controls
 
 | Hazard | Relevance to RULE-SOFA | Controls in this spec | Linked SAF |
 |---|---|---|---|
-| **HAZ-0005** (primary) | Missing input coerced to zero → false reassurance; occurred in legacy (E1) | §5 status algebra; no partial totals; no zero-coercion; reference vectors CRV-0117/0118/0119; SAF-0002 probe obligation | SAF-0001, SAF-0002, SAF-0003, SAF-0006, SAF-0019, SAF-0030 |
+| **HAZ-0005** (primary) | Missing input coerced to zero → false reassurance; occurred in legacy (E1) | §5 status algebra; no partial totals; no zero-coercion; reference vectors CRV-SOFA-0317/0318/0319; SAF-0002 probe obligation | SAF-0001, SAF-0002, SAF-0003, SAF-0006, SAF-0019, SAF-0030 |
 | **HAZ-0006** | Stale inputs scored as current | §3.2 per-input windows + expiry; `stale` never renders severity | SAF-0004 (via evaluation-status-semantics) |
-| **HAZ-0032** | Unit mis-mapping (17× bilirubin error class) | §3.1 UCUM discipline; convert-then-compare; `invalid` on unmappable unit; CRV-0110/0130 | SAF-0032 (two-dimension rule per semantics §5) |
-| **HAZ-0036** | Adult instrument evaluated outside approved population/setting | §1.2 enforceable age gate; unknown age never assumed adult; CRV-0127/0128 | SAF-0035, SAF-0027, SAF-0020, SAF-0023 |
+| **HAZ-0032** | Unit mis-mapping (17× bilirubin error class) | §3.1 UCUM discipline; convert-then-compare; `invalid` on unmappable unit; CRV-SOFA-0310/0330 | SAF-0032 (two-dimension rule per semantics §5) |
+| **HAZ-0036** | Adult instrument evaluated outside approved population/setting | §1.2 enforceable age gate; unknown age never assumed adult; CRV-SOFA-0327/0328 | SAF-0035, SAF-0027, SAF-0020, SAF-0023 |
 | **HAZ-0043** | Admission with no populated sources → permanent `not_evaluated` read as quiet | §0 NOT ACTIONABLE classification; §9 M-1 emptiness surveillance; admission blocked until sources evidenced | SAF-0040, SAF-0035, SAF-0033, SAF-0025, SAF-0006 |
 | **HAZ-0044** | Escalation contrary to documented goals of care | §1.3.1 carve-out flagged for reviewer; any future work-item binding must consult care-goal context | SAF-0041, SAF-0035, SAF-0022, SAF-0017, SAF-0023 |
 
@@ -540,8 +604,10 @@ are specified now because §6.4 requires them in the package.
   If `not_evaluated` = 100% for 14 consecutive days, mandatory portfolio review of the
   rule's admission. Any reason's share moving >20 percentage points day-over-day →
   operational alert.
-- **M-2 (HAZ-0005 canary):** any emission of a numeric total with fewer than six `valid`
-  components, observed by runtime assertion or synthetic probe → severity-1 defect,
+- **M-2 (HAZ-0005 canary):** any emission of a numeric total with fewer than six
+  readable components (`valid`, or the renal declared partial with its mandatory flag —
+  GDEC-0007 OQ-7), or any renal-partial total displayed without its lower-bound
+  disclosure, observed by runtime assertion or synthetic probe → severity-1 defect,
   automatic kill-switch trigger. Target rate: zero; a single occurrence is a release
   blocker.
 - **M-3 (HAZ-0032):** `invalid` rate by reason; `unmappable_unit` >1% of any input's
@@ -566,65 +632,119 @@ frozen last value.
   pin changes; AMH source-contract changes affecting any §3.1 input; any status change
   of the linked hazards; ratification of ADR-0008 or the sedation-confounding ADR
   (both supersede parts of §4.5/§5 by design).
-- This 0.1.0 precursor lapses if not advanced to named clinical review by 2027-08-15;
+- Named clinical review occurred 2026-08-15 (GDEC-0007); this 0.2.0 precursor lapses if
+  not advanced to the formal approval mechanism (signed bundle, ADR-0007) by 2027-08-15;
   a lapsed precursor may not be revived without re-verifying every citation and pin.
 
 ## 10. Coverage against orchestrator prompt §6.4 (release-package field list)
 
-| §6.4 field | Where | 0.1.0 status |
+| §6.4 field | Where | 0.2.0 status |
 |---|---|---|
-| Rule identifier + semantic version | §0 | Present (0.1.0 precursor) |
-| Intended use/population/exclusions | §1 | Proposed; exclusions flagged for reviewer |
+| Rule identifier + semantic version | §0 | Present (0.2.0 precursor) |
+| Intended use/population/exclusions | §1 | Proposed; carve-outs DECIDED (annotate-not-exclude, GDEC-0007 OQ-11) |
 | External evidence + snapshot date | §2 | Verified 2026-08-15 |
 | Clinical owner + independent approver | §0 | **UNASSIGNED — VALIDATION REQUIRED (blocking for any release)** |
 | Machine-readable logic/schema + content hash | §6, `logic.yaml` | Present (unsigned working hash) |
 | Terminology/value-set versions | §3.1 | **Candidate codes only; no pin — VALIDATION REQUIRED** |
-| Completeness and freshness policy | §3.2, §5 | Proposed (discharges VAL-0023 for SOFA upon ratification) |
-| Reference vectors, properties, boundary cases, replay corpus | `reference-vectors.md` | Vectors drafted (34, all DRAFT); replay corpus none — requires populated sources |
+| Completeness and freshness policy | §3.2, §5 | Windows ratified (GDEC-0007 OQ-9 — VAL-0023 discharged for SOFA); formal signing via ADR-0007 bundle pending |
+| Reference vectors, properties, boundary cases, replay corpus | `reference-vectors.md` | 38 active vectors + 3 retired/superseded — clinicamente revisados (GDEC-0007, incl. decisão derivada do piso de dose ausente); evidência de execução pendente (DRAFT for execution); replay corpus none — requires populated sources |
 | Hazard/control links | §8 | Present |
 | Explanation text + UX acceptance criteria | §7 | Text proposed; UX acceptance criteria VALIDATION REQUIRED (pt-BR clinician validation) |
 | Retrospective/prospective validation status | — | **None. No populated source exists; no validation of any kind has occurred.** |
 | Monitoring, rollback, kill switch, retirement/review | §9 | Proposed |
 
 An immutable **signed** bundle exists only at 1.x with every VALIDATION REQUIRED row
-closed by named humans. Nothing in 0.1.0 is signable.
+closed by named humans. Nothing in 0.2.0 is signable.
 
-## 11. Open questions for the named reviewer (rodaquino-OMNI)
+## 11. Open questions for the named reviewer (rodaquino-OMNI) — ALL DECIDED (GDEC-0007, 2026-08-15)
 
-These go to the handoff; none may be closed by an agent.
+All 14 questions were decided in writing by the named reviewer on 2026-08-15
+(`decision-register.md` GDEC-0007; row-level record in
+`../../cycle-1-review-decision-sheet.md` §1). The original question text is preserved;
+each decision is transcribed below by the scribe — the decision is the named human's.
 
 1. **OQ-1 (I-1):** Respiratory-support scope for bands 3–4 — confirm invasive MV +
    NIV/CPAP; include or exclude HFNC (default here: excluded)?
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — HFNC **excluída**; VMI + VNI/CPAP
+   confirmados. Vincent 1996 antecede HFNC; incluir sem fonte seria adaptação não
+   citável; vigiar literatura (SOFA-HFNC é debate aberto).
 2. **OQ-2 (I-2):** Confirm the highest-satisfied-band reading: unsupported P/F <200
    scores 2.
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — confirmado; decorre da estrutura das
+   bandas publicadas, não é herança do legado.
 3. **OQ-3 (I-3):** Vasopressor duration — accept "qualifying rate sustained ≥60 min at
    T"; and is `not_evaluated` correct during the first hour of a new infusion, or should
    a provisional tier apply?
+   **DECISÃO (GDEC-0007, 2026-08-15):** (b) — **tier provisório escalável na 1ª hora**
+   de infusão nova qualificante (escore computado da dose imediatamente, flag
+   "provisório — infusão <1h"; nunca rebaixa, só eleva vs a leitura sem vasopressor;
+   adaptação declarada vs Vincent verbatim; a cláusula 1h vira filtro anti-bolus).
+   Implementado em §4.4 I-3.
 4. **OQ-4 (I-4):** Combination vasoactive therapy — accept max-of-tiers?
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — max-of-tiers confirmado.
 5. **OQ-5 (I-5):** Non-tabulated agents (vasopressin, phenylephrine) — accept
    `not_evaluated` default, or ratify a sourced mapping?
+   **DECISÃO (GDEC-0007, 2026-08-15):** (b) — agente não tabelado presente → **piso CV
+   3 sinalizado** ("agente não tabelado"); mapeamento com fonte permanece VALIDATION
+   REQUIRED. `not_evaluated` *tranquilizava* indevidamente (viola INV-B). Implementado
+   em §4.4 I-5 (substitui o default not_evaluated).
+   **DECISÃO DERIVADA (GDEC-0007, princípio 2; aplicação da lógica de OQ-5 (b)) —
+   2026-08-15, sujeita a confirmação do revisor na próxima revisão:** a mesma lógica
+   aplica-se a agente TABELADO presente com dose ausente/inutilizável — piso pelo
+   mínimo que a presença do agente garante em Vincent 1996 (dobutamina → 2; dopamina →
+   2; noradrenalina/adrenalina → 3), flag "dose ausente — piso por presença do
+   agente"; nunca rebaixa escore por dose disponível. Implementado em §4.4; vetores
+   CRV-SOFA-0340/0341 (CRV-SOFA-0321 aposentado/superseded).
 6. **OQ-6 (I-6):** Canonical units mg/dL (bilirubin ÷17.104; creatinine ÷88.42 from
    µmol/L) and convert-before-compare policy — confirm.
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — confirmado; convenção laboratorial
+   brasileira; fatores verificados por dois workstreams independentes.
 7. **OQ-7 (I-7):** Renal component — does the conservative both-inputs default stand, or
    is creatinine-only scoring ratified as a declared component-level partial policy
    (with lower-bound disclosure)? Feeds ADR-0008.
+   **DECISÃO (GDEC-0007, 2026-08-15):** (b) — **pior-critério-disponível** com flag do
+   critério ausente (creatinina-só ou débito-só valem como parcial declarado por
+   componente); ambos ausentes → not_evaluated. Vincent usa creatinina OU débito
+   urinário (pior); exigir ambos mataria o componente sem ganho de segurança.
+   Implementado em §4.6 I-7 (substitui o default ambos-obrigatórios).
 8. **OQ-8 (I-8):** GCS sedation confounding — confirm `not_evaluated` default at RASS
    ≤ −3 / active sedation; decide the unknown-sedation (no RASS) case; subordinate to
    the pending sedation-confounding ADR.
+   **DECISÃO (GDEC-0007, 2026-08-15):** (b) — **fail-closed** para sedação
+   desconhecida: RASS ≥ −2 presente → testável; RASS ≤ −3 com exposição sedativa ativa
+   OU desconhecida → sedation_confounded → not_evaluated; coma documentadamente não
+   sedado escora; RASS ausente → not_evaluated (insumo de gate ausente). Resposta
+   conjunta única com RULE-GCS OQ-GCS-2 e ADR-0028 Q2. Implementado em §4.5 (o default
+   "escora-com-divulgação" foi removido).
 9. **OQ-9 (I-10):** Ratify or adjust every freshness window and expiry in §3.2
    (this is the VAL-0023 discharge decision for SOFA); decide whether SBP/DBP-derived
    MAP is admissible as a fallback input.
+   **DECISÃO (GDEC-0007, 2026-08-15):** (a) — janelas ratificadas (quita VAL-0023 para
+   SOFA); **PAM derivada admissível** como fallback com flag "derivada"
+   (PAM = (PAS + 2×PAD)/3 é padrão e melhor que ausência). Implementado em §3.1/§4.4.
 10. **OQ-10 (I-9):** Ratify worst-value-in-24h aggregation (convention cited to the
     serial-SOFA literature; not fully specified in Vincent 1996).
+    **DECISÃO (GDEC-0007, 2026-08-15):** (a) — ratificada; pontual subestima flutuação.
 11. **OQ-11:** Carve-outs — palliative/goals-of-care (HAZ-0044), chronic organ
     dysfunction, RRT, ECMO: include, exclude, or annotate per §1.3?
+    **DECISÃO (GDEC-0007, 2026-08-15):** (b) — computar com anotação: paliativo →
+    supressão de escalonamento (HAZ-0044); crônico → limitação documentada anotada;
+    TSR → renal com flag "em TSR"; ECMO → respiratório not_evaluated (P/F não
+    interpretável em VV-ECMO). Implementado em §1.3.
 12. **OQ-12:** Population gate — confirm ≥18 years and the `population_unverified`
     behavior (blocked on the IU-06 paediatric/neonatal decision).
+    **DECISÃO (GDEC-0007, 2026-08-15):** (a) — confirmado ≥18; unverified →
+    not_evaluated; nunca presumir adulto (consistente com ADR-0027 fail-closed).
 13. **OQ-13:** Confirm exclusion of mortality-risk banding (legacy D-18 REJECTED) from
     this rule; any future banding needs a named source and its own ratification.
+    **DECISÃO (GDEC-0007, 2026-08-15):** (a) — exclusão confirmada; exibir risco de
+    óbito sem validação é dano potencial puro.
 14. **OQ-14:** ΔSOFA (Sepsis-3 sepsis operationalization) — confirm out of scope for
-    RULE-SOFA 0.1.0 and that any future ΔSOFA pathway requires a ratified baseline
+    RULE-SOFA 0.2.0 and that any future ΔSOFA pathway requires a ratified baseline
     convention and its own release.
+    **DECISÃO (GDEC-0007, 2026-08-15):** (a) — confirmado fora do escopo; futura
+    release própria com convenção de baseline ratificada (Sepsis-3 exige baseline
+    definido).
 
 *Authored by the SOFA-family V2 clinical-content specification author (cycle 1, Task 2).
 The author approves nothing; all values are published thresholds or synthetic proposals;

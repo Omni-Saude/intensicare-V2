@@ -1,7 +1,7 @@
 ---
 id: ADR-0026
 title: Política clínica de insumo ausente por classe de escore — que comportamento cada classe de instrumento deve ter quando falta um insumo?
-status: proposed
+status: accepted (2026-08-15, GDEC-0007)
 status_history:
   - status: proposed
     date: 2026-08-15
@@ -15,6 +15,14 @@ status_history:
       coerência do par. NENHUMA decisão é registrada; toda cláusula clínica é
       PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).
       Idioma pt-BR conforme DEC-G0-10.
+  - status: accepted (2026-08-15, GDEC-0007)
+    date: 2026-08-15
+    by: rodaquino-OMNI (revisor clínico nomeado, GDEC-0003) — transcrito pelo orquestrador clínico do ciclo 1 (escriba)
+    note: >
+      Decisão por escrito, em sessão, do titular nomeado, registrada em
+      decision-register.md GDEC-0007 (folha de decisão do ciclo 1, §6, linhas A26-1 a
+      A26-6). Opção K (política por classe) e os invariantes INV-A/INV-B tornam-se
+      decisão, aceita em conjunto com o ADR-0008. Ver §5.0.
 date: 2026-08-15
 owner: >
   rodaquino-OMNI — dono da decisão para as cláusulas CLÍNICAS deste ADR (candidato
@@ -89,15 +97,18 @@ provenance:
 
 # ADR-0026 — Política clínica de insumo ausente por classe de escore
 
-> **Status: proposed. Este documento apresenta classes, opções e drivers. NÃO registra
-> decisão alguma.** Toda cláusula clínica é PROPOSAL — AWAITING NAMED CLINICAL REVIEW
-> (reviewer: rodaquino-OMNI, GDEC-0003); aprovadores não clínicos UNASSIGNED. Este ADR
-> forma um **par** com o
-> [ADR-0008 — Semântica normativa do status de avaliação](./ADR-0008-evaluation-status-and-completeness-freshness-semantics.md):
-> o ADR-0008 fixa a álgebra dos cinco estados, a precedência, a agregação e as
-> transições temporais; **este ADR fixa o que cada classe de instrumento clínico faz
-> quando falta um insumo** — e é a via pela qual a "Opção C, default A" do ADR-0008 Q1
-> se instancia. Os dois devem ser aceitos, emendados e supersedidos em conjunto.
+> **Status: `accepted (2026-08-15, GDEC-0007)`.** O revisor clínico nomeado
+> (rodaquino-OMNI, GDEC-0003) decidiu, por escrito, em sessão de 2026-08-15
+> (transcrição-mestre: `decision-register.md` GDEC-0007), a Opção K (política por
+> classe) e os invariantes INV-A/INV-B como decisão — ver §5.0 para o registro por
+> questão (A26-1 a A26-6). Aprovadores não clínicos permanecem `UNASSIGNED —
+> VALIDATION REQUIRED` e não são fechados por esta aceitação. Este ADR forma um
+> **par** com o
+> [ADR-0008 — Semântica normativa do status de avaliação](./ADR-0008-evaluation-status-and-completeness-freshness-semantics.md),
+> aceito **na mesma decisão**: o ADR-0008 fixa a álgebra dos cinco estados, a
+> precedência, a agregação e as transições temporais; **este ADR fixa o que cada
+> classe de instrumento clínico faz quando falta um insumo** — e é a via pela qual a
+> "Opção C, default A" do ADR-0008 Q1 se instancia.
 
 ---
 
@@ -457,26 +468,57 @@ sem classe, vira retrofit.
 | D6 fidelidade | sobre-restringe rastreios | honra cada estrutura publicada | variável | — |
 | D7 reversibilidade | global | local | dispersa | n/a |
 
-**Recomendação (PROPOSAL — aguardando rodaquino-OMNI): Opção K**, com as políticas de
-§4.2 e os invariantes de §4.1. Não é decisão.
+**Decisão (GDEC-0007, 2026-08-15): Opção K**, com as políticas de §4.2 e os
+invariantes de §4.1 — ver §5.0.
 
 ---
 
 ## 5. Decisão e escopo
 
-> **NENHUMA DECISÃO ESTÁ REGISTRADA.** Este ADR apresenta classes, opções e drivers.
-> Preencher esta seção é reservado às autoridades nomeadas no front matter:
-> rodaquino-OMNI para as cláusulas clínicas (GDEC-0003); aprovadores não clínicos
-> UNASSIGNED.
+### 5.0 Decisão (GDEC-0007, 2026-08-15)
 
-### 5.1 Condições que devem ser satisfeitas antes da aceitação
+> decided_by: **rodaquino-OMNI** (revisor clínico nomeado, GDEC-0003; também titular
+> interino de papéis `AUTH-*` de fase de projeto per GDEC-0004 onde pertinente).
+>
+> A Opção K (política por classe) e os invariantes de §4.1 (INV-A/INV-B) são aceitos
+> como decisão. Registro por questão, per a folha de decisão do ciclo 1
+> (`docs/05-clinical-safety/cycle-1-review-decision-sheet.md` §6, linhas A26-1 a
+> A26-6):
+>
+> - **A26-1 →** INV-B (assimetria escalar-nunca-tranquilizar) **ratificado**, com
+>   salvaguardas de carga de alarme: medição em shadow mode como precondição de
+>   qualquer uso acionável.
+> - **A26-2 →** componentes classe-2 (multiorgânicos) são exibíveis sem total, sob o
+>   nome **"Disfunção orgânica — componentes (X/6 avaliáveis)"**, com linhagem SOFA
+>   apenas no detalhe; nunca como número somado.
+> - **A26-3 →** GCS NT + convenção de total-com-NT **adotada** (= RULE-GCS,
+>   já especificado e fonte-verificado).
+> - **A26-4 →** SIRS **REJECT como via standalone**; papel admissível apenas como
+>   componente de um composto sob sua própria política VALIDATE.
+> - **A26-5 →** baselines de Δ-escore (ΔSOFA) permanecem **diferidos** (= OQ-14);
+>   verificação de literatura de carry-forward é tarefa do metodologista de evidência
+>   quando o papel for ativado.
+> - **A26-6 →** lógica trivalente (Kleene) — "ausente = desconhecido, nunca falso" —
+>   **ratificada engine-wide**, para todos os predicados de via.
+>
+> **rationale:** conforme folha de decisão do ciclo 1 (GDEC-0007); fundamentos por
+> linha na própria folha (`cycle-1-review-decision-sheet.md` §6).
+>
+> **supersessão:** rege-se pela própria seção de gatilhos de revisita desta ADR (§8.2)
+> — nenhum gatilho adicional é criado por esta transcrição.
+>
+> **Nota de escopo.** Esta decisão fecha as cláusulas CLÍNICAS, aceita em conjunto com
+> o ADR-0008 (par acoplado). Aprovadores não clínicos (`AUTH-PRODUCT`, `AUTH-UX`) e a
+> verificação cruzada de schema com o ADR-0007 (C3) permanecem OPEN.
+
+### 5.1 Condições — situação após a decisão de 2026-08-15 (GDEC-0007)
 
 | # | Condição | Dono | Evidência que a fecha | Status |
 |---|---|---|---|---|
-| C1 | Revisão clínica nomeada de INV-B e das cinco políticas de classe (◆), inclusive as questões abertas de §12. | rodaquino-OMNI (GDEC-0003) | Registro de revisão com disposição por cláusula | OPEN |
-| C2 | Aceitação conjunta com o ADR-0008 (A3; o par não pode divergir). | mesmas autoridades | Aceitação registrada dos dois | OPEN |
-| C3 | Slot `score_class` + política de completude no schema de bundle (A2; ADR-0007). | autor ADR-0007 | Referência cruzada verificada | OPEN — ADR-0007 em autoria concorrente |
-| C4 | Verificações VALIDATION REQUIRED de convenções publicadas usadas normativamente (NT do GCS já verificado — E7; total-com-NT, CAM-ICU/RASS, carry-forward SOFA, convenção parcial NEWS2) resolvidas ou explicitamente adiadas com registro. | rodaquino-OMNI + revisores dos registros REV-NS | Citações primárias anexadas aos rule releases | OPEN |
+| C1 | Revisão clínica nomeada de INV-B e das cinco políticas de classe (◆), inclusive as questões abertas de §12. | rodaquino-OMNI (GDEC-0003) | Registro de revisão com disposição por cláusula | **FECHADA — ver §5.0, GDEC-0007, 2026-08-15** |
+| C2 | Aceitação conjunta com o ADR-0008 (A3; o par não pode divergir). | mesmas autoridades | Aceitação registrada dos dois | **FECHADA — ADR-0008 aceito na mesma decisão, GDEC-0007, 2026-08-15** |
+| C3 | Slot `score_class` + política de completude no schema de bundle (A2; ADR-0007). | autor ADR-0007 | Referência cruzada verificada | OPEN — ADR-0007 já aceito (GDEC-0007), verificação cruzada de schema ainda pendente |
+| C4 | Verificações VALIDATION REQUIRED de convenções publicadas usadas normativamente (NT do GCS já verificado — E7; total-com-NT, CAM-ICU/RASS, carry-forward SOFA, convenção parcial NEWS2) resolvidas ou explicitamente adiadas com registro. | rodaquino-OMNI + revisores dos registros REV-NS | Citações primárias anexadas aos rule releases | OPEN — parcialmente adiado com registro (A26-5, ΔSOFA) |
 | C5 | Aprovadores não clínicos nomeados. | Gate G0 residual | authority-model.md | OPEN |
 | C6 | Taxonomia de classes com dono designado (quem classifica instrumento novo). | AUTH-CLINSAFETY | Registro de dono | OPEN |
 
@@ -615,7 +657,14 @@ traceability).
 
 ## 12. Questões abertas para o revisor nomeado (rodaquino-OMNI)
 
-Nenhuma pode ser fechada por agente.
+> **RESOLVIDO — 2026-08-15, GDEC-0007.** As seis questões abaixo foram respondidas
+> pelo titular na revisão do ciclo 1: 1→A26-1 (INV-B ratificado, medição em shadow
+> como precondição); 2→A26-2 (fragmento exibível como "Disfunção orgânica —
+> componentes (X/6 avaliáveis)"); 3→A26-3 (NT + total-com-NT adotados; política de
+> confundimento por sedação decidida em A28-1/ADR-0028); 4→A26-4 (SIRS REJECT
+> standalone); 5→A26-5 (Δ-escores diferidos); 6→A26-6 (lógica trivalente ratificada
+> engine-wide). Ver §5.0 para o registro formal. O texto original é preservado abaixo
+> como registro histórico das perguntas feitas.
 
 1. **INV-B (assimetria):** ratificar que evidência positiva presente pode escalar com
    co-insumos ausentes — especificamente (a) o gatilho de parâmetro vermelho isolado

@@ -1,16 +1,21 @@
 ---
-id: RULE-SOFA-CRV-0100
-title: RULE-SOFA v0.1.0 — clinical reference vectors (DRAFT set, release-package precursor)
+id: RULE-SOFA-CRV-0300
+title: RULE-SOFA v0.2.0 — clinical reference vectors (DRAFT set, release-package precursor)
 label: PROPOSAL
-status: PROPOSAL — pending independent clinical review (author ≠ approver applies to vectors)
+status: clinicamente revisado (GDEC-0007, 2026-08-15); evidência de execução pendente — vetores permanecem DRAFT para fins de execução
+last_updated: 2026-08-15
 statement: >
-  Thirty-four clinical reference vectors for RULE-SOFA v0.1.0 per the clinical
-  reference-vector standard, covering typical, band-boundary, missing-input, stale,
-  conflicting, population-gating, invalid-value, sedation-confounded, and
-  zero-is-a-value scenarios, including the HAZ-0005 all-inputs-missing regression vector
-  and the legacy-defect regression vectors. Every vector is DRAFT: authored by the same
-  agent that authored the specification, so authorship independence is NOT satisfied and
-  no vector may be cited as release evidence.
+  Thirty-eight active clinical reference vectors (plus three retired/superseded by the
+  GDEC-0007 decisions, including the derived missing-dose floor) for RULE-SOFA v0.2.0
+  per the clinical reference-vector standard,
+  covering typical, band-boundary, missing-input, stale, conflicting, population-gating,
+  invalid-value, sedation-confounded, provisional-first-hour, untabulated-agent-floor,
+  missing-dose-floor, renal-declared-partial, and zero-is-a-value scenarios, including the HAZ-0005
+  all-inputs-missing regression vector and the legacy-defect regression vectors.
+  Clinicamente revisado (GDEC-0007); evidência de execução pendente. Every vector
+  remains DRAFT for execution purposes: authored by the same agent that authored the
+  specification, so authorship independence is NOT satisfied and no vector may be cited
+  as release execution evidence.
 provenance:
   source_repo: intensicare-V2
   path_or_url: docs/05-clinical-safety/rule-releases/sofa/reference-vectors.md
@@ -36,23 +41,39 @@ supersedes: null
 superseded_by: null
 ---
 
-# RULE-SOFA v0.1.0 — clinical reference vectors (DRAFT)
+# RULE-SOFA v0.2.0 — clinical reference vectors
 
-**PROPOSAL — pending independent clinical review (author ≠ approver applies to
-vectors).** All 34 vectors are `status: DRAFT` per
+**Clinicamente revisado (GDEC-0007, 2026-08-15); evidência de execução pendente.** Os
+vetores permanecem `status: DRAFT` **para fins de execução** per
 `docs/12-quality-validation-and-testing/clinical-reference-vector-standard.md` (the CRV
-standard). All patient data is synthetic. No vector may be cited as clinical release
-evidence: per CRV standard §8, `authorship.independence_confirmed: false` for every
-vector here, because the vector author is the same agent as the rule-spec author. A
-future independent author/reviewer must re-derive or independently confirm each expected
-outcome before any vector can reach `RATIFIED`.
+standard): the named review decided the clinical expectations (38 active vectors; 3
+retired/superseded where a decision — including the derived missing-dose floor,
+GDEC-0007 princípio 2 — changed the expected outcome), but execution
+evidence and independent authorship remain outstanding. All patient data is synthetic.
+No vector may be cited as clinical release execution evidence: per CRV standard §8,
+`authorship.independence_confirmed: false` for every vector here, because the vector
+author is the same agent as the rule-spec author. A future independent author/reviewer
+must re-derive or independently confirm each expected outcome before any vector can
+reach `RATIFIED`.
 
 ## 0. Conventions used in this file
 
-1. **Vector IDs.** `CRV-0101`..`CRV-0134`. The CRV catalog does not exist yet and the
-   `CRV` prefix itself is an unratified proposal; this file provisionally claims the
-   block **CRV-0101–0199 for RULE-SOFA** to avoid collision with concurrently authored
-   vector sets. IDs are provisional until catalog registration (CRV standard §3).
+1. **Vector IDs.** `CRV-SOFA-0301`..`CRV-SOFA-0341` (active: 38; retired:
+   CRV-SOFA-0321 → CRV-SOFA-0340, CRV-SOFA-0322 → CRV-SOFA-0336, CRV-SOFA-0323 →
+   CRV-SOFA-0335 — superseded after the GDEC-0007 decisions, including the derived
+   missing-dose floor, changed their expected outcomes). **DECISÃO (GDEC-0007,
+   2026-08-15, folha P-3 (a)):** esquema de prefixo por regra adotado — `CRV-SOFA-####`,
+   `CRV-NEWS2-####`, `CRV-GCS-####`; partes numéricas mantidas, prefixo trocado —
+   impossibilita a próxima colisão de namespace; renumeração executada nesta revisão
+   (0.2.0). História: this file's block was originally self-claimed as CRV-0101–0199,
+   which collided with RULE-NEWS2's concurrently claimed block; a first mechanical
+   renumbering (steward, 2026-08-15) moved SOFA to the 03xx numeric block (old ID + 0200
+   = 03xx ID), and the decided per-rule prefixes now make every ID globally unambiguous.
+   References in files outside `rule-releases/` still citing bare `CRV-03xx`/`CRV-01xx`/
+   `CRV-02xx` IDs are renumbered by the steward at their next revision (per P-3). See
+   `../../../00-governance/traceability-policy.md` §1.1 for the range table. IDs remain
+   provisional (PROPOSAL, not ratified into the taxonomy) until catalog registration
+   (CRV standard §3).
 2. **Compaction (documented deviation).** The CRV standard's principle "every field
    explicit" applies to materialized per-vector YAML files. This precursor uses one
    **common block** (§1) plus a **reference input panel** (§2); each vector then states
@@ -62,10 +83,12 @@ outcome before any vector can reach `RATIFIED`.
    file; that materialization is mechanical and adds no clinical content.
 3. **Evaluation instant** `T = 2026-08-15T12:00:00-03:00`. All windows per
    `specification.md` §3.2.
-4. **`fires`.** RULE-SOFA 0.1.0 defines no alert/fire condition; every vector asserts
+4. **`fires`.** RULE-SOFA 0.2.0 defines no alert/fire condition; every vector asserts
    `fires: false` and the score/status expectation carries the clinical content.
    `no_fire_reason: criteria_not_met` appears only with `expected_evaluation_status:
-   valid` (CRV standard §6 rule).
+   valid` — or `partial` for the single ratified declared-partial class (renal
+   worst-of-available, GDEC-0007 OQ-7), where a score is likewise readable (CRV
+   standard §6 rule, extended by the decided partial class).
 
 ## 1. Common block (applies verbatim to every vector below)
 
@@ -73,8 +96,8 @@ outcome before any vector can reach `RATIFIED`.
 pathway_id: CAND-0003            # SOFA, per candidate-inventory.md
 rule_version:
   bundle: "RULE-SOFA"
-  version: "0.1.0"
-  content_hash: "ccac846e1525e8cddb946ade9801bd48edd9191449148100b57c787c71455a4d"  # logic.yaml, unsigned working hash
+  version: "0.2.0"
+  content_hash: "c13b22b3e9fada466a160fe0b263435fb809dff95cc3061d257fe90645a75a24"  # logic.yaml 0.2.0 (GDEC-0007 + derived missing-dose floor), unsigned working hash
   status: draft
 context:
   tenant_id: "synthetic-tenant-0001"
@@ -141,7 +164,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
 ### 3.1 Typical (2)
 
 ```yaml
-- vector_id: CRV-0101
+- vector_id: CRV-SOFA-0301
   title: "All inputs present, in-window, normal — total 0, valid"
   scenario_class: typical
   boundary_edge_class: []
@@ -152,9 +175,9 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
     total: 0
     expected_evaluation_status: valid
     outcome: {fires: false, no_fire_reason: criteria_not_met}
-  note: "A genuine, fully assessed 0 — the state legacy could counterfeit from absence. Contrast CRV-0117."
+  note: "A genuine, fully assessed 0 — the state legacy could counterfeit from absence. Contrast CRV-SOFA-0317."
 
-- vector_id: CRV-0102
+- vector_id: CRV-SOFA-0302
   title: "All components at maximal severity — total 24, valid"
   scenario_class: typical
   boundary_edge_class: []
@@ -183,7 +206,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
 ### 3.2 Band boundaries (14) — exact cut-points, ± epsilon, and named legacy regressions
 
 ```yaml
-- vector_id: CRV-0103
+- vector_id: CRV-SOFA-0303
   title: "P/F exactly 400 — respiration 0"
   scenario_class: boundary
   boundary_edge_class: [threshold-exact-match]
@@ -191,7 +214,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
   expected: {components: {resp: 0}, others: PANEL-NORMAL, total: 0, expected_evaluation_status: valid,
              outcome: {fires: false, no_fire_reason: criteria_not_met}}
 
-- vector_id: CRV-0104
+- vector_id: CRV-SOFA-0304
   title: "P/F just below 400 — respiration 1"
   scenario_class: boundary
   boundary_edge_class: [threshold-just-below]
@@ -199,7 +222,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
   expected: {components: {resp: 1}, others: PANEL-NORMAL, total: 1, expected_evaluation_status: valid,
              outcome: {fires: false, no_fire_reason: criteria_not_met}}
 
-- vector_id: CRV-0105
+- vector_id: CRV-SOFA-0305
   title: "P/F exactly 100 on invasive ventilation — respiration 3"
   scenario_class: boundary
   boundary_edge_class: [threshold-exact-match]
@@ -211,7 +234,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
              outcome: {fires: false, no_fire_reason: criteria_not_met}}
   note: "Exactly 100 is NOT <100: band 4 unsatisfied, band 3 (<200 with support) is the highest satisfied."
 
-- vector_id: CRV-0106
+- vector_id: CRV-SOFA-0306
   title: "P/F just below 100 on invasive ventilation — respiration 4"
   scenario_class: boundary
   boundary_edge_class: [threshold-just-below]
@@ -222,7 +245,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
   expected: {components: {resp: 4}, others: PANEL-NORMAL, total: 4, expected_evaluation_status: valid,
              outcome: {fires: false, no_fire_reason: criteria_not_met}}
 
-- vector_id: CRV-0107
+- vector_id: CRV-SOFA-0307
   title: "P/F 150 WITHOUT respiratory support — respiration capped at 2 (I-2)"
   scenario_class: boundary
   boundary_edge_class: [multi-criteria-combination]
@@ -234,7 +257,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
              outcome: {fires: false, no_fire_reason: criteria_not_met}}
   note: "Highest-satisfied-band reading: bands 3-4 require support. Ratification pending (OQ-2)."
 
-- vector_id: CRV-0108
+- vector_id: CRV-SOFA-0308
   title: "Platelets exactly 20 — coagulation 3, not 4"
   scenario_class: boundary
   boundary_edge_class: [threshold-exact-match]
@@ -242,7 +265,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
   expected: {components: {coag: 3}, others: PANEL-NORMAL, total: 3, expected_evaluation_status: valid,
              outcome: {fires: false, no_fire_reason: criteria_not_met}}
 
-- vector_id: CRV-0109
+- vector_id: CRV-SOFA-0309
   title: "Bilirubin 1.95 mg/dL — liver 1 (trilhas dead-gap [1.9,2.0) regression)"
   scenario_class: boundary
   boundary_edge_class: [threshold-just-below]
@@ -251,7 +274,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
              outcome: {fires: false, no_fire_reason: criteria_not_met}}
   note: "Legacy trilhas rule 004 returned None here and could crash the whole score. Continuous bands make the gap unrepresentable."
 
-- vector_id: CRV-0110
+- vector_id: CRV-SOFA-0310
   title: "Bilirubin 34 umol/L — converts to 1.99 mg/dL, liver 1 (conversion before banding)"
   scenario_class: boundary
   boundary_edge_class: [unit-conversion-boundary]
@@ -260,7 +283,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
              outcome: {fires: false, no_fire_reason: criteria_not_met}}
   note: "34 read AS mg/dL would band 4 (a 3-point error). Proves exact conversion precedes comparison (HAZ-0032)."
 
-- vector_id: CRV-0111
+- vector_id: CRV-SOFA-0311
   title: "MAP exactly 70, no vasoactives — cardiovascular 0"
   scenario_class: boundary
   boundary_edge_class: [threshold-exact-match]
@@ -268,7 +291,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
   expected: {components: {cv: 0}, others: PANEL-NORMAL, total: 0, expected_evaluation_status: valid,
              outcome: {fires: false, no_fire_reason: criteria_not_met}}
 
-- vector_id: CRV-0112
+- vector_id: CRV-SOFA-0312
   title: "Dopamine exactly 5.0 ug/kg/min sustained 90 min — cardiovascular 2"
   scenario_class: boundary
   boundary_edge_class: [threshold-exact-match]
@@ -278,7 +301,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
              outcome: {fires: false, no_fire_reason: criteria_not_met}}
   note: "<=5 is band 2; 5.0 is not >5."
 
-- vector_id: CRV-0113
+- vector_id: CRV-SOFA-0313
   title: "Norepinephrine exactly 0.1 ug/kg/min sustained 90 min — cardiovascular 3"
   scenario_class: boundary
   boundary_edge_class: [threshold-exact-match]
@@ -288,7 +311,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
              outcome: {fires: false, no_fire_reason: criteria_not_met}}
   note: "<=0.1 is band 3; 0.1 is not >0.1. MAP present in panel but irrelevant to bands 2-4."
 
-- vector_id: CRV-0114
+- vector_id: CRV-SOFA-0314
   title: "GCS exactly 6 — CNS 3, not 4"
   scenario_class: boundary
   boundary_edge_class: [threshold-exact-match]
@@ -296,7 +319,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
   expected: {components: {cns: 3}, others: PANEL-NORMAL, total: 3, expected_evaluation_status: valid,
              outcome: {fires: false, no_fire_reason: criteria_not_met}}
 
-- vector_id: CRV-0115
+- vector_id: CRV-SOFA-0315
   title: "Creatinine exactly 5.0 mg/dL — renal 4 (trilhas dead-gap-at-5.0 regression)"
   scenario_class: boundary
   boundary_edge_class: [threshold-exact-match]
@@ -305,7 +328,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
              outcome: {fires: false, no_fire_reason: criteria_not_met}}
   note: "Legacy trilhas rule 007 matched NO branch at exactly 5.0 and scored 0 — a 4-point undercount at the top of the scale."
 
-- vector_id: CRV-0116
+- vector_id: CRV-SOFA-0316
   title: "Urine output exactly 200 mL/24h — renal 3, not 4"
   scenario_class: boundary
   boundary_edge_class: [threshold-exact-match]
@@ -315,10 +338,10 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
   note: "200 is not <200; <500 band applies. Creatinine 0.8 bands 0; component = max(0,3) = 3."
 ```
 
-### 3.3 Missing inputs (7) — the HAZ-0005 family
+### 3.3 Missing inputs — the HAZ-0005 family (4 active + 3 retired/superseded per GDEC-0007)
 
 ```yaml
-- vector_id: CRV-0117
+- vector_id: CRV-SOFA-0317
   title: "ALL inputs missing — not_evaluated, NEVER zero (HAZ-0005 primary regression)"
   scenario_class: edge
   boundary_edge_class: [all-inputs-missing]
@@ -332,7 +355,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
     outcome: {fires: false, no_fire_reason: insufficient_data}
   note: "Legacy returned SOFA 0 here and persisted it (LEGACY-TA:469-478). Any numeric output on this vector is a severity-1 release blocker (spec §9 M-2)."
 
-- vector_id: CRV-0118
+- vector_id: CRV-SOFA-0318
   title: "Single component missing (GCS absent) — total not_evaluated, five components valid"
   scenario_class: edge
   boundary_edge_class: [single-input-missing]
@@ -346,7 +369,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
     outcome: {fires: false, no_fire_reason: insufficient_data}
   note: "No 5-of-6 partial sum exists (spec §5.2). Per-component detail remains available to the clinician."
 
-- vector_id: CRV-0119
+- vector_id: CRV-SOFA-0319
   title: "Norepinephrine 0.5 ug/kg/min, MAP ABSENT — cardiovascular 4 (legacy D-07 regression)"
   scenario_class: edge
   boundary_edge_class: [single-input-missing, multi-criteria-combination]
@@ -360,7 +383,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
     outcome: {fires: false, no_fire_reason: criteria_not_met}
   note: "The worst single legacy defect: sofa.py returned CV=0 'missing' here, discarding positive evidence of severe shock. Bands 2-4 do not reference MAP; vasopressor evidence must dominate."
 
-- vector_id: CRV-0120
+- vector_id: CRV-SOFA-0320
   title: "MAP absent, NO vasoactive agents — cardiovascular not_evaluated"
   scenario_class: edge
   boundary_edge_class: [single-input-missing]
@@ -371,55 +394,45 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
     expected_evaluation_status: not_evaluated
     reasons: [missing_required_input:cv]
     outcome: {fires: false, no_fire_reason: insufficient_data}
-  note: "Contrast CRV-0119: MAP is required exactly when no tabulated agent is active."
+  note: "Contrast CRV-SOFA-0319: MAP is required exactly when no tabulated agent is active."
 
-- vector_id: CRV-0121
-  title: "Norepinephrine active, dose missing — cardiovascular not_evaluated, never a guessed tier (legacy D-10 regression)"
-  scenario_class: edge
-  boundary_edge_class: [single-input-missing]
-  deltas:
-    vasoactive_agents: [{agent: norepinephrine, dose: {present: false}, sustained_min: 240}]
-  expected:
-    components: {cv: not_evaluated(missing_dose), others: PANEL-NORMAL valid}
-    total: NOT EMITTED
-    expected_evaluation_status: not_evaluated
-    reasons: [missing_dose:cv]
-    outcome: {fires: false, no_fire_reason: insufficient_data}
-  note: "Legacy defaulted unknown norepinephrine dose to tier 3 — under-scoring true 4s. No default tier exists in V2."
+- vector_id: CRV-SOFA-0321
+  title: "APOSENTADO — norepinephrine active, dose missing → not_evaluated (expectativa 0.1.0/0.2.0 inicial, substituída por decisão derivada)"
+  status: RETIRED
+  superseded_by: CRV-SOFA-0340
+  retirement_note: >
+    DECISÃO DERIVADA (GDEC-0007, princípio 2 — escalar-nunca-tranquilizar; aplicação da
+    lógica de OQ-5 (b)), sujeita a confirmação do revisor na próxima revisão: agente
+    tabelado presente com dose ausente → piso pelo mínimo que a presença do agente
+    garante em Vincent 1996, não not_evaluated (que tranquilizava um paciente em
+    noradrenalina abaixo do piso do agente não tabelado). Ver CRV-SOFA-0340/0341
+    (§3.10). O D-10 legado (tier exato adivinhado, sem marcador) permanece rejeitado.
 
-- vector_id: CRV-0122
-  title: "Vasopressin only (untabulated agent), MAP 55 — cardiovascular not_evaluated (I-5 conservative default)"
-  scenario_class: edge
-  boundary_edge_class: [multi-criteria-combination]
-  deltas:
-    map: {value: 55, unit: "mm[Hg]"}
-    vasoactive_agents: [{agent: vasopressin, dose: 0.04, unit: "U/min", sustained_min: 240}]
-  expected:
-    components: {cv: not_evaluated(vasoactive_agent_unmapped), others: PANEL-NORMAL valid}
-    total: NOT EMITTED
-    expected_evaluation_status: not_evaluated
-    reasons: [vasoactive_agent_unmapped:cv]
-    outcome: {fires: false, no_fire_reason: insufficient_data}
-  note: "The 1996 table has no vasopressin row. Legacy scored it 2 (below low-dose dopamine). V2 declines to score pending OQ-5; the explanation must disclose the active agent."
+- vector_id: CRV-SOFA-0322
+  title: "RETIRADO — vasopressin only → not_evaluated (expectativa 0.1.0, substituída por decisão)"
+  status: RETIRED
+  superseded_by: CRV-SOFA-0336
+  retirement_note: >
+    DECISÃO (GDEC-0007, 2026-08-15, OQ-5 (b)): agente não tabelado presente → piso CV 3
+    sinalizado, não not_evaluated. Expectativa original (not_evaluated,
+    vasoactive_agent_unmapped) aposentada e superseded — nunca editada — conforme a
+    convenção retire-and-supersede deste arquivo. Ver CRV-SOFA-0336 (§3.10).
 
-- vector_id: CRV-0123
-  title: "Creatinine 1.0 present, urine output ABSENT — renal not_evaluated under 0.1.0 default (legacy D-16 regression; OQ-7)"
-  scenario_class: edge
-  boundary_edge_class: [single-input-missing]
-  deltas: {urine_output_24h: {present: false}, creatinine: {value: 1.0, unit: "mg/dL"}}
-  expected:
-    components: {renal: not_evaluated(missing_required_input:urine_output), others: PANEL-NORMAL valid}
-    total: NOT EMITTED
-    expected_evaluation_status: not_evaluated
-    reasons: [missing_required_input:renal]
-    outcome: {fires: false, no_fire_reason: insufficient_data}
-  note: "Legacy silently scored the present half with no partiality marker. This vector's expectation CHANGES if the reviewer ratifies creatinine-only scoring as a declared partial policy (OQ-7) — then it must be retired and superseded, not edited."
+- vector_id: CRV-SOFA-0323
+  title: "RETIRADO — renal-half → not_evaluated (expectativa 0.1.0, substituída por decisão)"
+  status: RETIRED
+  superseded_by: CRV-SOFA-0335
+  retirement_note: >
+    DECISÃO (GDEC-0007, 2026-08-15, OQ-7 (b)): renal = pior-critério-disponível;
+    creatinina-só escora como parcial declarado com flag do critério ausente. A nota
+    original deste vetor previa exatamente este caminho: "retired and superseded, not
+    edited". Ver CRV-SOFA-0335 (§3.10).
 ```
 
 ### 3.4 Stale and expired (2)
 
 ```yaml
-- vector_id: CRV-0124
+- vector_id: CRV-SOFA-0324
   title: "Platelets 36 h old (window 24 h, expiry 48 h) — coagulation stale, total not_evaluated"
   scenario_class: edge
   boundary_edge_class: [freshness-window-edge]
@@ -432,7 +445,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
     outcome: {fires: false, no_fire_reason: stale_data}
   note: "Status recomputed at read time from source clinical time; last value and its age are displayed."
 
-- vector_id: CRV-0125
+- vector_id: CRV-SOFA-0325
   title: "Platelets 50 h old (beyond 48 h expiry) — coagulation not_evaluated (expired), total not_evaluated"
   scenario_class: edge
   boundary_edge_class: [freshness-window-edge]
@@ -449,7 +462,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
 ### 3.5 Conflicting inputs (1)
 
 ```yaml
-- vector_id: CRV-0126
+- vector_id: CRV-SOFA-0326
   title: "Two simultaneous unreconciled platelet values (40 and 400) — coagulation invalid, total invalid"
   scenario_class: edge
   boundary_edge_class: [conflicting-sources]
@@ -468,7 +481,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
 ### 3.6 Population gating (3)
 
 ```yaml
-- vector_id: CRV-0127
+- vector_id: CRV-SOFA-0327
   title: "Age UNKNOWN, all inputs perfect — not_evaluated; the rule never assumes adult"
   scenario_class: edge
   boundary_edge_class: [population-exclusion-boundary]
@@ -481,7 +494,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
     outcome: {fires: false, no_fire_reason: out_of_population_scope}
   note: "HAZ-0036/PH-11: adult-instrument output on an unverified-age patient is misleading, not merely absent. VAL-0006/0007 BLOCKING."
 
-- vector_id: CRV-0128
+- vector_id: CRV-SOFA-0328
   title: "Age 17, all inputs perfect — not_evaluated (out of population)"
   scenario_class: edge
   boundary_edge_class: [population-exclusion-boundary]
@@ -493,7 +506,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
     reasons: [out_of_population_scope]
     outcome: {fires: false, no_fire_reason: out_of_population_scope}
 
-- vector_id: CRV-0129
+- vector_id: CRV-SOFA-0329
   title: "Age exactly 18 — in population, evaluates normally"
   scenario_class: boundary
   boundary_edge_class: [population-exclusion-boundary, threshold-exact-match]
@@ -508,7 +521,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
 ### 3.7 Invalid values and units (3)
 
 ```yaml
-- vector_id: CRV-0130
+- vector_id: CRV-SOFA-0330
   title: "FiO2 value 40 with unit ABSENT — respiration invalid; never heuristic-divided (trilhas FiO2-percent regression)"
   scenario_class: adversarial
   boundary_edge_class: [unit-conversion-boundary]
@@ -521,7 +534,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
     outcome: {fires: false, no_fire_reason: invalid_data}
   note: "A fraction cannot exceed 1.0 and no unit is declared. Trilhas-era code mixed percent and fraction, scoring nearly every patient resp 4. V2 never guesses /100; with unit '%' declared, 40 would convert to 0.40 lawfully."
 
-- vector_id: CRV-0131
+- vector_id: CRV-SOFA-0331
   title: "GCS 20 — CNS invalid (out of range 3-15; legacy D-13 regression)"
   scenario_class: adversarial
   boundary_edge_class: [threshold-just-above]
@@ -534,7 +547,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
     outcome: {fires: false, no_fire_reason: invalid_data}
   note: "Legacy scored GCS 20 as 1 point via the >=13 branch. A physiologically impossible value can never band."
 
-- vector_id: CRV-0132
+- vector_id: CRV-SOFA-0332
   title: "Platelets 0 — coagulation invalid (implausible; known legacy missing-sentinel)"
   scenario_class: adversarial
   boundary_edge_class: [threshold-just-below]
@@ -551,7 +564,7 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
 ### 3.8 Sedation confounding (1)
 
 ```yaml
-- vector_id: CRV-0133
+- vector_id: CRV-SOFA-0333
   title: "GCS 3 during active midazolam infusion, RASS -4 — CNS not_evaluated (sedation_confounded)"
   scenario_class: edge
   boundary_edge_class: [multi-criteria-combination]
@@ -565,13 +578,13 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
     expected_evaluation_status: not_evaluated
     reasons: [sedation_confounded:cns]
     outcome: {fires: false, no_fire_reason: insufficient_data}
-  note: "Legacy scored this patient CNS 4 with no sedation covariate (REV-NS-01). Expectation is CONTINGENT on the pending sedation-confounding ADR (spec §4.5, OQ-8); retire and supersede if the ADR decides otherwise. Contrast CRV-0102 (unsedated coma scores)."
+  note: "Legacy scored this patient CNS 4 with no sedation covariate (REV-NS-01). Expectation CONFIRMED by DECISÃO (GDEC-0007, 2026-08-15, OQ-8 (b) — política fail-closed conjunta com RULE-GCS/ADR-0028). Contrast CRV-SOFA-0302 (unsedated coma scores) and CRV-SOFA-0338/0339 (unknown sedation, fail-closed)."
 ```
 
 ### 3.9 Zero is a value, not absence (1)
 
 ```yaml
-- vector_id: CRV-0134
+- vector_id: CRV-SOFA-0334
   title: "Urine output 0 mL/24h (true anuria), creatinine 0.8 — renal 4, valid"
   scenario_class: edge
   boundary_edge_class: [threshold-just-below]
@@ -581,29 +594,142 @@ resp 0 / coag 0 / liver 0 / cv 0 / cns 0 / renal 0, total 0, status `valid`.
     total: 4
     expected_evaluation_status: valid
     outcome: {fires: false, no_fire_reason: criteria_not_met}
-  note: "The inverse of HAZ-0005: a measured zero is maximal-severity evidence and must never be conflated with 'no measurement'. Anuric patient with still-normal creatinine — also shows why creatinine-only renal scoring under-scores (OQ-7)."
+  note: "The inverse of HAZ-0005: a measured zero is maximal-severity evidence and must never be conflated with 'no measurement'. Anuric patient with still-normal creatinine — also shows why the mandatory lower-bound disclosure of the renal declared partial exists (GDEC-0007 OQ-7)."
+```
+
+### 3.10 Decision-driven vectors (GDEC-0007, 2026-08-15) — 7 new (3 superseding retired vectors; 0340/0341 per the derived missing-dose floor, GDEC-0007 princípio 2)
+
+```yaml
+- vector_id: CRV-SOFA-0335
+  title: "Creatinine 1.0 present, urine output ABSENT — renal PARTIAL score 0 with mandatory flag (supersedes CRV-SOFA-0323; GDEC-0007 OQ-7 (b))"
+  scenario_class: edge
+  boundary_edge_class: [single-input-missing]
+  supersedes: CRV-SOFA-0323
+  deltas: {urine_output_24h: {present: false}, creatinine: {value: 1.0, unit: "mg/dL"}}
+  expected:
+    components: {renal: "partial, score 0 (creatinine band), mandatory flag urine_output_not_assessed + lower-bound disclosure", others: PANEL-NORMAL valid}
+    total: 0
+    expected_evaluation_status: partial
+    mandatory_disclosure: "débito urinário não avaliado — o escore renal é um limite inferior"
+    outcome: {fires: false, no_fire_reason: criteria_not_met}
+  note: "Pior-critério-disponível (GDEC-0007 OQ-7 (b)): critério único escora como parcial declarado por componente. Distinção vs legado D-16 (que escorava a metade presente SEM marcador de parcialidade): a flag e a divulgação de limite inferior são obrigatórias em toda exibição."
+
+- vector_id: CRV-SOFA-0336
+  title: "Vasopressin only (untabulated agent), MAP 55 — cardiovascular FLOOR 3 flagged (supersedes CRV-SOFA-0322; GDEC-0007 OQ-5 (b))"
+  scenario_class: edge
+  boundary_edge_class: [multi-criteria-combination]
+  supersedes: CRV-SOFA-0322
+  deltas:
+    map: {value: 55, unit: "mm[Hg]"}
+    vasoactive_agents: [{agent: vasopressin, dose: 0.04, unit: "U/min", sustained_min: 240}]
+  expected:
+    components: {cv: "valid, score 3 (floor), mandatory flag vasoactive_agent_untabulated ('agente não tabelado')", others: PANEL-NORMAL valid}
+    total: 3
+    expected_evaluation_status: valid
+    mandatory_disclosure: "agente vasoativo não tabelado — piso CV 3; mapeamento com fonte VALIDATION REQUIRED"
+    outcome: {fires: false, no_fire_reason: criteria_not_met}
+  note: "The 1996 table has no vasopressin row. Legacy scored it 2 (below low-dose dopamine — D-10, still REJECTED). GDEC-0007 OQ-5 (b): not_evaluated tranquilizava indevidamente (INV-B); the decided floor never lowers, and a sourced exact mapping remains VALIDATION REQUIRED."
+
+- vector_id: CRV-SOFA-0337
+  title: "Norepinephrine 0.5 ug/kg/min started 30 min ago — cardiovascular 4 PROVISIONAL, flagged (GDEC-0007 OQ-3 (b))"
+  scenario_class: edge
+  boundary_edge_class: [multi-criteria-combination, freshness-window-edge]
+  deltas:
+    map: {value: 55, unit: "mm[Hg]"}
+    vasoactive_agents: [{agent: norepinephrine, dose: 0.5, unit: "ug/kg/min", sustained_min: 30, last_confirmed: "2026-08-15T11:45"}]
+  expected:
+    components: {cv: "valid, score 4, mandatory flag provisional_infusion_lt_1h ('provisório — infusão <1h')", others: PANEL-NORMAL valid}
+    total: 4
+    expected_evaluation_status: valid
+    mandatory_disclosure: "tier cardiovascular provisório — infusão qualificante com menos de 1 h"
+    outcome: {fires: false, no_fire_reason: criteria_not_met}
+  note: "First hour of a new qualifying infusion: the provisional escalation-capable tier applies immediately (GDEC-0007 OQ-3 (b)) — choque em início de noradrenalina é disfunção CV agora. Never lowers vs the no-vasopressor reading (MAP 55 alone would band 1; the provisional tier only raises). Declared adaptation vs Vincent verbatim; the >=1 h clause remains as anti-bolus filter for the confirmed tier."
+
+- vector_id: CRV-SOFA-0338
+  title: "GCS 5, RASS -4, sedative exposure UNKNOWN — CNS not_evaluated(sedation_confounded) — fail-closed (GDEC-0007 OQ-8 (b))"
+  scenario_class: edge
+  boundary_edge_class: [multi-criteria-combination]
+  deltas:
+    gcs: {value: 5, observed: "2026-08-15T09:00"}
+    rass: {value: -4, observed: "2026-08-15T09:00"}
+    sedative_infusion: {value: unknown}
+  expected:
+    components: {cns: not_evaluated(sedation_confounded), others: PANEL-NORMAL valid}
+    total: NOT EMITTED
+    expected_evaluation_status: not_evaluated
+    reasons: [sedation_confounded:cns]
+    outcome: {fires: false, no_fire_reason: insufficient_data}
+  note: "Fail-closed joint policy (GDEC-0007 OQ-8 (b) = RULE-GCS OQ-GCS-2 = ADR-0028 Q2): RASS <= -3 with active OR UNKNOWN sedative exposure is indistinguishable from deep sedation -> confounded. Under the retired 0.1.0 default this would have scored with a disclosure; that path is REMOVED. Contrast CRV-SOFA-0302 (documented absence of sedatives -> genuine coma scores)."
+
+- vector_id: CRV-SOFA-0339
+  title: "GCS 15 present, RASS ABSENT, sedative exposure unknown — CNS not_evaluated(sedation_state_unknown) — missing gating input (GDEC-0007 OQ-8 (b))"
+  scenario_class: edge
+  boundary_edge_class: [single-input-missing]
+  deltas:
+    rass: {present: false}
+    sedative_infusion: {value: unknown}
+  expected:
+    components: {cns: not_evaluated(sedation_state_unknown), others: PANEL-NORMAL valid}
+    total: NOT EMITTED
+    expected_evaluation_status: not_evaluated
+    reasons: [sedation_state_unknown:cns]
+    outcome: {fires: false, no_fire_reason: insufficient_data}
+  note: "RASS missing/unpaired = sedation state unknown = missing gating input -> fail-closed (GDEC-0007 OQ-8 (b)). The 0.1.0 'score with sedation-state-not-assessed disclosure' default is removed; a GCS 15 without a paired RASS never reads as a valid CNS 0."
+
+- vector_id: CRV-SOFA-0340
+  title: "Norepinephrine active, dose MISSING — cardiovascular FLOOR 3 flagged (supersedes CRV-SOFA-0321; DECISÃO DERIVADA, GDEC-0007 princípio 2)"
+  scenario_class: edge
+  boundary_edge_class: [single-input-missing]
+  supersedes: CRV-SOFA-0321
+  deltas:
+    vasoactive_agents: [{agent: norepinephrine, dose: {present: false}, sustained_min: 240}]
+  expected:
+    components: {cv: "valid, score 3 (floor — norepinephrine any dose is at least the <=0.1 band), mandatory flag dose_missing_agent_presence_floor ('dose ausente — piso por presença do agente')", others: PANEL-NORMAL valid}
+    total: 3
+    expected_evaluation_status: valid
+    mandatory_disclosure: "dose de noradrenalina ausente — piso 3 pela presença do agente; dose necessária para distinguir banda 3 de 4"
+    outcome: {fires: false, no_fire_reason: criteria_not_met}
+  note: "DECISÃO DERIVADA (GDEC-0007, princípio 2; aplicação da lógica de OQ-5 (b)) — sujeita a confirmação do revisor na próxima revisão. Distinção vs legado D-10 (rejeitado): o legado afirmava o tier exato 3 sem marcador, sub-escorando 4s verdadeiros como se fosse conclusão completa; o piso declara-se limite inferior com divulgação obrigatória e nunca rebaixa um escore por dose disponível."
+
+- vector_id: CRV-SOFA-0341
+  title: "Dopamine active, dose MISSING — cardiovascular FLOOR 2 flagged (DECISÃO DERIVADA, GDEC-0007 princípio 2)"
+  scenario_class: edge
+  boundary_edge_class: [single-input-missing]
+  deltas:
+    vasoactive_agents: [{agent: dopamine, dose: {present: false}, sustained_min: 180}]
+  expected:
+    components: {cv: "valid, score 2 (floor — dopamine any dose is at least the <=5 band), mandatory flag dose_missing_agent_presence_floor", others: PANEL-NORMAL valid}
+    total: 2
+    expected_evaluation_status: valid
+    mandatory_disclosure: "dose de dopamina ausente — piso 2 pela presença do agente; dose necessária para distinguir bandas 2/3/4"
+    outcome: {fires: false, no_fire_reason: criteria_not_met}
+  note: "Floor per agent presence in Vincent 1996: dobutamine/dopamine -> 2; norepinephrine/epinephrine -> 3. Composable with provisional_infusion_lt_1h (§4.4 I-3)."
 ```
 
 ## 4. Coverage summary
 
 | Category | Vectors | Count |
 |---|---|---|
-| Typical (normal / maximal) | CRV-0101, CRV-0102 | 2 |
-| Band boundaries (exact ± epsilon, incl. trilhas dead-gap and unit-conversion regressions) | CRV-0103..CRV-0116 | 14 |
-| Missing inputs (HAZ-0005 family, incl. all-missing, single-missing, vasopressor-without-MAP D-07, missing-dose D-10, renal-half D-16) | CRV-0117..CRV-0123 | 7 |
-| Stale / expired | CRV-0124, CRV-0125 | 2 |
-| Conflicting inputs | CRV-0126 | 1 |
-| Population gating (unknown age, under-age, exact 18) | CRV-0127..CRV-0129 | 3 |
-| Invalid value/unit (FiO2 unitless, GCS out-of-range, platelet 0-sentinel) | CRV-0130..CRV-0132 | 3 |
-| Sedation-confounded GCS | CRV-0133 | 1 |
-| Zero-is-a-value (anuria) | CRV-0134 | 1 |
-| **Total** | | **34** |
+| Typical (normal / maximal) | CRV-SOFA-0301, CRV-SOFA-0302 | 2 |
+| Band boundaries (exact ± epsilon, incl. trilhas dead-gap and unit-conversion regressions) | CRV-SOFA-0303..CRV-SOFA-0316 | 14 |
+| Missing inputs (HAZ-0005 family, incl. all-missing, single-missing, vasopressor-without-MAP D-07) | CRV-SOFA-0317..CRV-SOFA-0320 | 4 |
+| Retired/superseded per GDEC-0007 (kept as historical record) | CRV-SOFA-0321 → CRV-SOFA-0340; CRV-SOFA-0322 → CRV-SOFA-0336; CRV-SOFA-0323 → CRV-SOFA-0335 | (3 retired) |
+| Stale / expired | CRV-SOFA-0324, CRV-SOFA-0325 | 2 |
+| Conflicting inputs | CRV-SOFA-0326 | 1 |
+| Population gating (unknown age, under-age, exact 18) | CRV-SOFA-0327..CRV-SOFA-0329 | 3 |
+| Invalid value/unit (FiO2 unitless, GCS out-of-range, platelet 0-sentinel) | CRV-SOFA-0330..CRV-SOFA-0332 | 3 |
+| Sedation-confounded GCS | CRV-SOFA-0333 | 1 |
+| Zero-is-a-value (anuria) | CRV-SOFA-0334 | 1 |
+| Decision-driven (GDEC-0007): renal declared partial, untabulated-agent floor, provisional first hour, unknown-sedation fail-closed, missing-dose floors (derived, princípio 2) | CRV-SOFA-0335..CRV-SOFA-0341 | 7 |
+| **Total active** | | **38** |
 
 Every `fires: false` vector carries a non-null `no_fire_reason`; `criteria_not_met`
-appears only with `expected_evaluation_status: valid`. The LEGREV-SOFA-0001 §6
-zero-coercion table rows are all represented (CRV-0117..0123); the §5 trilhas defects
+appears only with `expected_evaluation_status: valid` or the ratified renal declared
+partial (`partial`, GDEC-0007 OQ-7). The LEGREV-SOFA-0001 §6 zero-coercion table rows
+are all represented (CRV-SOFA-0317..0320, 0335, 0336, 0340, 0341); the §5 trilhas defects
 (bilirubin 1.95, creatinine 5.0, FiO2 percent, platelet 0-sentinel) are all named
-regression vectors (CRV-0109, CRV-0115, CRV-0130, CRV-0132).
+regression vectors (CRV-SOFA-0309, CRV-SOFA-0315, CRV-SOFA-0330, CRV-SOFA-0332).
 
 *All values synthetic. No PHI. Authored by the RULE-SOFA spec author; independence NOT
-satisfied; nothing here is release evidence.*
+satisfied; clinicamente revisado (GDEC-0007); evidência de execução pendente — nothing
+here is release execution evidence.*

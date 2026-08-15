@@ -1,7 +1,7 @@
 ---
 id: ADR-0027
 title: Age and population gating enforcement for adult-validated clinical instruments
-status: proposed
+status: accepted (2026-08-15, GDEC-0007)
 status_history:
   - status: proposed
     date: 2026-08-15
@@ -15,6 +15,16 @@ status_history:
       decision is recorded and none may be inferred. This ADR cannot advance past
       `proposed` until a human owner is named for AUTH-CLINSAFETY and AUTH-INTENDED-USE
       in `authority-model.md` (Gate G0) and VAL-0006/VAL-0007 are resolved.
+  - status: accepted (2026-08-15, GDEC-0007)
+    date: 2026-08-15
+    by: rodaquino-OMNI (revisor clínico nomeado, GDEC-0003) — transcrito pelo orquestrador clínico do ciclo 1 (escriba)
+    note: >
+      Decisão por escrito, em sessão, do titular nomeado, registrada em
+      decision-register.md GDEC-0007 (folha de decisão do ciclo 1, §8, linhas A27-1 a
+      A27-7). Opção A (locus de enforcement) fixada, com o híbrido A+B+C adotado como
+      emenda deste ADR (A27-6) e as disposições de carve-out decididas (A27-4). Ver §5.0.
+      Bloco de decisão redigido em pt-BR per DEC-G0-10; o restante do documento
+      permanece em inglês (tradução material adiada, P-4).
 date: 2026-08-15
 owner: UNASSIGNED — VALIDATION REQUIRED
 approvers:
@@ -101,14 +111,16 @@ provenance:
 
 # ADR-0027 — Age and population gating enforcement for adult-validated clinical instruments
 
-> **Status: proposed. This document presents an enforcement invariant, a gating
-> vocabulary, and enforcement-locus options with their evidence. It records NO decision,
-> expresses no preference among the enforcement-locus alternatives beyond an honestly
-> argued recommendation, and may not be cited as settling the age threshold, the
-> pregnancy-handling rule, the sub-population carve-outs, or which system component
-> owns enforcement.** Every clinical value named below (≥18, NEWS2's ≥16) is a citation
-> of someone else's published boundary or another document's drafting placeholder — not
-> a V2 clinical decision.
+> **Status: `accepted (2026-08-15, GDEC-0007)`.** O revisor clínico nomeado
+> (rodaquino-OMNI, GDEC-0003) decidiu, por escrito, em sessão de 2026-08-15
+> (transcrição-mestre: `decision-register.md` GDEC-0007), o locus de enforcement
+> (Option A), a política de gravidez, o gate de care-setting, os quatro carve-outs de
+> subpopulação e a adoção do híbrido A+B+C como emenda — ver §5.0 para o registro por
+> questão (A27-1 a A27-7). O valor concreto do limiar etário passa a ser **≥18
+> produto-wide**, com pisos por instrumento (ex.: NEWS2 ≥16) registrados porém
+> **inativos**. A contratação de fonte demográfica confiável (C8) e a verificação de
+> engenharia do ponto único de avaliação (C6/A27-5) permanecem `VALIDATION REQUIRED` e
+> não são fechadas por esta aceitação.
 
 ---
 
@@ -553,7 +565,9 @@ locus to call, which is the precise condition HAZ-0036 describes as Unacceptable
 | D6 reversibility | Metadata change | Re-audit every bundle | Tag persists; enforcement still needed | Zero now, hazard rises immediately |
 | D7 auditability | One place to guarantee records | Depends on every bundle | Depends on downstream consumer | n/a |
 
-**Recommendation, argued not asserted (PROPOSAL, not a decision).** Option A most directly
+**Decision (GDEC-0007, 2026-08-15): Option A**, with the hybrid noted below adopted as
+an amendment (A27-6) rather than a fourth analyzed option — see §5.0. Argument
+originally offered as recommendation, now decision: Option A most directly
 answers D1, which is the driver every other driver is subordinate to given HAZ-0036's
 Unacceptable classification — but Option A's own honest weakness (D1's concentration
 risk, and A4's dependency on an evaluation-runtime property not yet established by
@@ -570,29 +584,64 @@ inspection, "Option A correctly built" rather than a distinct alternative.
 
 ## 5. Decision and scope
 
-> **NO DECISION IS RECORDED.**
->
-> This ADR presents an enforcement invariant, a gating vocabulary, and enforcement-locus
-> options with their evidence. No option is chosen, preferred, or provisionally adopted
-> beyond the honestly argued recommendation in §4.1, which is a PROPOSAL and nothing
-> more. Filling this section is reserved to the deciding authority named in the front
-> matter: `AUTH-CLINSAFETY` jointly with `AUTH-INTENDED-USE`, both currently
-> `UNASSIGNED — VALIDATION REQUIRED` in `authority-model.md` §1 (rodaquino-OMNI is the
-> candidate holder per GDEC-0003, but GDEC-0003 names a clinical-content reviewer role
-> for cycle-1 artifacts, not a ratified `authority-model.md` appointment to either
-> `AUTH-*` role).
+### 5.0 Decisão (GDEC-0007, 2026-08-15)
 
-### 5.1 Conditions that must be satisfied before this ADR can be accepted
+> *Bloco redigido em português (pt-BR) per DEC-G0-10; o restante deste documento
+> permanece em inglês como conteúdo pré-existente (tradução material adiada — P-4).*
+>
+> decided_by: **rodaquino-OMNI** (revisor clínico nomeado, GDEC-0003; também titular
+> interino de papéis `AUTH-*` de fase de projeto per GDEC-0004 onde pertinente).
+>
+> O invariante de enforcement, o vocabulário de gate (§4.0) e o locus de enforcement
+> (§4, Option A) são aceitos como decisão. Registro por questão, per a folha de
+> decisão do ciclo 1
+> (`docs/05-clinical-safety/cycle-1-review-decision-sheet.md` §8, linhas A27-1 a
+> A27-7):
+>
+> - **A27-1 →** limiar etário decidido: **≥18 produto-wide**; pisos por instrumento
+>   (ex.: NEWS2 ≥16) ficam **registrados, porém inativos** — um único gate, uma única
+>   verdade.
+> - **A27-2 →** política de gravidez decidida (= N-2/ADR-0028): sem documentação →
+>   escora com anotação "gravidez não verificada"; gravidez **documentada** →
+>   `not_evaluated` para o instrumento (não validado para gestação) — não fail-closed
+>   universal.
+> - **A27-3 →** care-setting gating confirmado no **mesmo locus** de enforcement do
+>   gate etário — um único choke point testável.
+> - **A27-4 →** os quatro carve-outs do IU-07 decididos: obstétrica → **fora** do
+>   gate (instrumentos próprios); ECMO/TSR → **dentro**, com flags por componente;
+>   pós-cardíaca → **dentro**, com anotação; paliativo → **dentro**, com
+>   escalonamento suprimido (HAZ-0044) — nenhuma exclusão silenciosa.
+> - **A27-5 →** A4 (ponto único de avaliação) **assumido para fins de design**;
+>   verificação de engenharia no primeiro slice de implementação permanece pendente
+>   (C6 abaixo).
+> - **A27-6 →** o híbrido (Option A como choke point aplicado, lendo tags de
+>   ingestão estilo Option C, hospedando metadados por instrumento estilo Option B) é
+>   **adotado como emenda deste ADR**, sem necessidade de ADR novo.
+> - **A27-7 →** nenhum teto de prevalência de `not_evaluated` é fixado agora; fica
+>   estabelecida a **obrigação de medição e revisão em shadow mode**.
+>
+> **rationale:** conforme folha de decisão do ciclo 1 (GDEC-0007); fundamentos por
+> linha na própria folha (`cycle-1-review-decision-sheet.md` §8).
+>
+> **supersessão:** rege-se pela própria seção de gatilhos de revisão desta ADR (§8) —
+> nenhum gatilho adicional é criado por esta transcrição.
+>
+> **Nota de escopo.** Esta decisão fecha as cláusulas CLÍNICAS listadas acima. A
+> ratificação formal de `AUTH-CLINSAFETY`/`AUTH-INTENDED-USE` em `authority-model.md`
+> (C1), a contratação de fonte demográfica confiável (C8) e a verificação cruzada com
+> o esquema do ADR-0007 (C7) permanecem OPEN e não são fechadas por esta aceitação.
+
+### 5.1 Conditions — status after the 2026-08-15 decision (GDEC-0007)
 
 | # | Condition | Owner | Evidence that would close it | Status |
 |---|---|---|---|---|
 | C1 | `AUTH-CLINSAFETY` and `AUTH-INTENDED-USE` are named and ratified in `authority-model.md` §1 (Gate G0). | Gate G0 | `authority-model.md` rows populated with named humans, not just a candidate declaration. | **OPEN** |
-| C2 | VAL-0006 and VAL-0007 (paediatric/neonatal scope) are resolved. | `AUTH-INTENDED-USE` + `AUTH-CLINSAFETY` | Recorded decision in `g1-validation-backlog.md` / `intended-use-statement.md` IU-06. | **OPEN — BLOCKING** |
-| C3 | The concrete age range(s), per instrument or per product boundary (§4.0), are set. | `AUTH-CLINSAFETY` | A DECIDED value replacing IU-05's ≥18 placeholder, with the NEWS2-≥16-style per-rule question in §4.0 explicitly answered. | **OPEN** |
-| C4 | The pregnancy-status-handling position (§4.0) is decided, not merely argued. | `AUTH-CLINSAFETY` | A DECIDED rule, with H3's data-availability question answered or explicitly deferred with an owner and date. | **OPEN** |
-| C5 | Each named sub-population carve-out (§4.0) has its own clinical decision or an explicit, dated deferral. | `AUTH-CLINSAFETY` | Recorded decisions per carve-out; HAZ-0044/SAF-0041 resolution for the palliative case specifically. | **OPEN** |
-| C6 | A4 (single evaluation entry point) is confirmed or refuted by the rule-runtime architecture. | Rule-runtime engineer (successor to `ADR-0002`) | Architecture evidence showing the evaluation call graph. | **OPEN** |
-| C7 | `ADR-0007`'s bundle schema design accommodates whichever population-metadata fields the accepted option requires. | `ADR-0007` author | Bundle schema draft reviewed against this ADR's requirements. | **OPEN — depends on ADR-0007** |
+| C2 | VAL-0006 and VAL-0007 (paediatric/neonatal scope) are resolved. | `AUTH-INTENDED-USE` + `AUTH-CLINSAFETY` | Recorded decision in `g1-validation-backlog.md` / `intended-use-statement.md` IU-06. | **PARTIALLY CLOSED — A27-1 fixes ≥18 product-wide; formal closure of VAL-0006/VAL-0007 in the backlog document itself is owned by that document, out of this transcription's write_scope** |
+| C3 | The concrete age range(s), per instrument or per product boundary (§4.0), are set. | `AUTH-CLINSAFETY` | A DECIDED value replacing IU-05's ≥18 placeholder, with the NEWS2-≥16-style per-rule question in §4.0 explicitly answered. | **CLOSED — see §5.0, GDEC-0007, 2026-08-15 (A27-1)** |
+| C4 | The pregnancy-status-handling position (§4.0) is decided, not merely argued. | `AUTH-CLINSAFETY` | A DECIDED rule, with H3's data-availability question answered or explicitly deferred with an owner and date. | **CLOSED — see §5.0, GDEC-0007, 2026-08-15 (A27-2)** |
+| C5 | Each named sub-population carve-out (§4.0) has its own clinical decision or an explicit, dated deferral. | `AUTH-CLINSAFETY` | Recorded decisions per carve-out; HAZ-0044/SAF-0041 resolution for the palliative case specifically. | **CLOSED — see §5.0, GDEC-0007, 2026-08-15 (A27-4)** |
+| C6 | A4 (single evaluation entry point) is confirmed or refuted by the rule-runtime architecture. | Rule-runtime engineer (successor to `ADR-0002`) | Architecture evidence showing the evaluation call graph. | **OPEN — A27-5 authorizes assuming A4 for design purposes; the engineering verification itself remains pending** |
+| C7 | `ADR-0007`'s bundle schema design accommodates whichever population-metadata fields the accepted option requires. | `ADR-0007` author | Bundle schema draft reviewed against this ADR's requirements. | **OPEN — ADR-0007 accepted 2026-08-15 (GDEC-0007); cross-check against this ADR's metadata requirements still pending** |
 | C8 | A trusted demographic source is contracted, or the "every instrument is `not_evaluated` until then" consequence (§6.2) is explicitly accepted as a launch condition by `AUTH-PRODUCT` + `AUTH-CLINSAFETY`. | `AUTH-DATA-PLATFORM` + `AUTH-PRODUCT` + `AUTH-CLINSAFETY` | A signed source contract, **or** a recorded, dated risk acceptance. | **OPEN** |
 
 ---
@@ -737,7 +786,7 @@ the verbatim placeholder is used.
 ## 11. Completeness checklist (reviewer's gate)
 
 - [x] Stable ID matches the filename (`ADR-0027-age-and-population-gating-enforcement.md`)
-- [x] Status is one of the permitted values (`proposed`) — **not yet reconciled against
+- [x] Status is one of the permitted values (`accepted (2026-08-15, GDEC-0007)`) — **not yet reconciled against
       `adr-index.md`, which lists "next free ID: ADR-0025" as of its last update; this
       task's `write_scope` explicitly excludes editing `adr-index.md`. Reconciling the
       `ADR-0025`–`ADR-0028` concurrent-allocation range is left to the traceability
@@ -766,6 +815,16 @@ the verbatim placeholder is used.
       this task's `write_scope`, which restricts changes to this file only**
 
 ### 11.1 Open questions for the reviewer (numbered)
+
+> **RESOLVED — 2026-08-15, GDEC-0007.** The seven questions below were answered by
+> the named authority in the cycle-1 review: 1→A27-1 (≥18 product-wide governs;
+> per-instrument floors recorded, inactive); 2→A27-2 (fail-closed only when pregnancy
+> is documented and unvalidated for the instrument; annotated, not blocked, when
+> undocumented); 3→A27-3 (confirmed — same locus); 4→A27-4 (per-carve-out
+> dispositions fixed); 5→A27-5 (assumed for design; engineering verification
+> pending); 6→A27-6 (hybrid adopted as amendment, no new ADR); 7→A27-7 (no ceiling
+> now; measurement + shadow-mode review obligatory). See §5.0 for the formal record.
+> Original text preserved below as a historical record of the questions asked.
 
 1. Is the *product-wide* population boundary (IU-05, placeholder ≥18) or the
    *per-instrument* validated range (e.g., NEWS2's ≥16, §4.0) authoritative when they

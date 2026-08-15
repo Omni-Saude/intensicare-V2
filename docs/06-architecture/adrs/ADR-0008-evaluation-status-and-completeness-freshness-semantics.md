@@ -1,7 +1,7 @@
 ---
 id: ADR-0008
 title: Semântica normativa do status de avaliação e das transições de completude/atualidade por escore — que álgebra torna a afirmação insegura irrepresentável?
-status: proposed
+status: accepted (2026-08-15, GDEC-0007)
 status_history:
   - status: not-started
     date: 2026-08-14
@@ -16,6 +16,14 @@ status_history:
       legado (ciclo 1, Tarefa 1) e do modelo de domínio (docs/03-domain/). NENHUMA
       decisão é registrada. Toda cláusula clínica é PROPOSAL — AWAITING NAMED CLINICAL
       REVIEW (reviewer: rodaquino-OMNI). Idioma pt-BR conforme DEC-G0-10.
+  - status: accepted (2026-08-15, GDEC-0007)
+    date: 2026-08-15
+    by: rodaquino-OMNI (revisor clínico nomeado, GDEC-0003) — transcrito pelo orquestrador clínico do ciclo 1 (escriba)
+    note: >
+      Decisão por escrito, em sessão, do titular nomeado, registrada em
+      decision-register.md GDEC-0007 (folha de decisão do ciclo 1, §5, linhas A8-1 a
+      A8-6). Opção C-com-default-A (Q1) e precedência P-a (Q2) tornam-se decisão; a
+      minuta normativa N1-N9 do §4.2 torna-se anexo normativo aceito. Ver §5.0.
 date: 2026-08-15
 owner: >
   rodaquino-OMNI — dono da decisão para as cláusulas CLÍNICAS deste ADR (candidato
@@ -89,15 +97,19 @@ provenance:
 
 # ADR-0008 — Semântica normativa do status de avaliação e das transições de completude/atualidade por escore
 
-> **Status: proposed. Este documento apresenta opções, drivers e uma minuta normativa.
-> Ele NÃO registra decisão alguma, e nada abaixo pode ser citado como assentado.**
-> Toda cláusula clínica está rotulada PROPOSAL e aguarda revisão nomeada
-> (reviewer: rodaquino-OMNI, GDEC-0003). Aprovadores não clínicos: UNASSIGNED.
+> **Status: `accepted (2026-08-15, GDEC-0007)`.** O revisor clínico nomeado
+> (rodaquino-OMNI, GDEC-0003) decidiu, por escrito, em sessão de 2026-08-15
+> (transcrição-mestre: `decision-register.md` GDEC-0007), a minuta normativa N1-N9 do
+> §4.2 e a escolha Opção C-com-default-A (Q1) + precedência P-a (Q2) como decisão — ver
+> §5.0 para o registro por questão (A8-1 a A8-6). Aprovadores não clínicos
+> (`AUTH-PRODUCT`, `AUTH-UX`) permanecem `UNASSIGNED — VALIDATION REQUIRED` e não são
+> fechados por esta aceitação.
 > Este ADR e o [ADR-0026 — Política clínica de insumo ausente por classe de escore](./ADR-0026-missing-input-clinical-policy-per-score-class.md)
-> foram redigidos em conjunto e devem ser lidos como um par: **este ADR fixa a álgebra
-> (estados, precedência, agregação, transições temporais); o ADR-0026 fixa a política
-> clínica por classe de escore que instancia essa álgebra.** Nenhum dos dois contradiz
-> o outro; onde a fronteira aparecer ambígua, a regra está em §1 ("fora de escopo").
+> foram redigidos e são aceitos **em conjunto**, como par acoplado: **este ADR fixa a
+> álgebra (estados, precedência, agregação, transições temporais); o ADR-0026 fixa a
+> política clínica por classe de escore que instancia essa álgebra.** Nenhum dos dois
+> contradiz o outro; onde a fronteira aparecer ambígua, a regra está em §1 ("fora de
+> escopo").
 
 ---
 
@@ -402,14 +414,18 @@ Células qualitativas; sem pesos — nenhum dono ratificou pesos.
 | D6 fidelidade definicional | máxima | violada salvo renomeação/evidência própria | satisfeita (política = definição separada) | — |
 | D7 custo | runtime simples; UI de componentes | validação humana por instrumento/superfície | camada de classe (já necessária p/ autoria) | custo de atraso crescente |
 
-**Recomendação (PROPOSAL — aguardando rodaquino-OMNI): Opção C com default A**, com
-vedação de total parcial para compostos multiorgânicos proposta no ADR-0026; e **Opção
-P-a** para a precedência. Nenhuma das duas recomendações é decisão.
+**Decisão (GDEC-0007, 2026-08-15): Opção C com default A**, com vedação de total
+parcial para compostos multiorgânicos ratificada no ADR-0026 (A26-2/A26-4); e **Opção
+P-a** para a precedência. Ambas eram recomendação do autor e são agora decisão do
+revisor clínico nomeado — ver §5.0.
 
-### 4.2 Minuta normativa proposta (PROPOSAL — o que a aceitação vincularia; nada disto vige antes)
+### 4.2 Minuta normativa aceita (GDEC-0007, 2026-08-15 — anexo normativo desta ADR)
 
-Cada cláusula N-x é uma proposta individual; a autoridade pode aceitar, emendar ou
-rejeitar cláusula a cláusula. Cláusulas clínicas marcadas ◆ aguardam rodaquino-OMNI.
+Cada cláusula N-x era uma proposta individual; todas foram aceitas como escritas pela
+decisão de 2026-08-15 (GDEC-0007), sem emenda cláusula a cláusula. Cláusulas
+originalmente marcadas ◆ (aguardando rodaquino-OMNI) estão, a partir desta aceitação,
+**decididas** — o marcador ◆ é preservado abaixo apenas como registro histórico de
+quais cláusulas eram clínicas.
 
 **N1 — Vocabulário e relação com a proposta da Onda 1.** ◆ Este ADR **ratifica-como-
 proposto** o documento `docs/05-clinical-safety/evaluation-status-semantics.md`
@@ -499,21 +515,53 @@ bem".
 
 ## 5. Decisão e escopo
 
-> **NENHUMA DECISÃO ESTÁ REGISTRADA.** Este ADR apresenta opções, drivers e minuta.
-> Preencher esta seção é reservado às autoridades nomeadas no front matter:
-> rodaquino-OMNI para as cláusulas clínicas (GDEC-0003); aprovadores não clínicos
-> UNASSIGNED. A recomendação em §4.1 é recomendação de autor, não decisão.
+### 5.0 Decisão (GDEC-0007, 2026-08-15)
 
-### 5.1 Condições que devem ser satisfeitas antes da aceitação
+> decided_by: **rodaquino-OMNI** (revisor clínico nomeado, GDEC-0003; também titular
+> interino de papéis `AUTH-*` de fase de projeto per GDEC-0004 onde pertinente).
+>
+> As cláusulas clínicas ◆ (N1, N2, N4-N7) e a escolha Q1/Q2 são aceitas como decisão.
+> Registro por questão, per a folha de decisão do ciclo 1
+> (`docs/05-clinical-safety/cycle-1-review-decision-sheet.md` §5, linhas A8-1 a A8-6):
+>
+> - **A8-1 →** precedência decidida: **Opção P-a** — `invalid > not_evaluated > stale >
+>   partial > valid` (N2).
+> - **A8-2 →** totais parciais decididos: **Opção C com default A** — `partial` só
+>   existe sob política parcial explícita, versionada e ratificada por classe
+>   (instanciada no ADR-0026); ausência de política ⇒ `not_evaluated`.
+> - **A8-3 →** `conflicted` decidido como **razão de `invalid`**
+>   (`conflicting_inputs`), não sexto estado de primeira classe (N3).
+> - **A8-4 →** confirmada a transição `stale` → `not_evaluated` no horizonte de
+>   expiração, razão `expired`; os dois limiares (janela e horizonte) permanecem
+>   `VALIDATION REQUIRED` por insumo e por versão de regra — nenhum número é decidido
+>   aqui (N5).
+> - **A8-5 →** confirmado: parâmetro-vermelho isolado escala com o total
+>   `not_evaluated` (coerente com INV-B, ratificado em A26-1/ADR-0026).
+> - **A8-6 →** redação pt-BR dos cinco estados decidida: válido / parcial / não
+>   avaliado / desatualizado / inválido → glossário normativo em ADR-0029; "não
+>   avaliado" nunca com vocabulário tranquilizador (N7).
+>
+> **rationale:** conforme folha de decisão do ciclo 1 (GDEC-0007); fundamentos por
+> linha na própria folha (`cycle-1-review-decision-sheet.md` §5).
+>
+> **supersessão:** rege-se pela própria seção de gatilhos de revisita desta ADR (§8.2)
+> — nenhum gatilho adicional é criado por esta transcrição.
+>
+> **Nota de escopo.** Esta decisão fecha as cláusulas CLÍNICAS. Aprovadores não
+> clínicos (`AUTH-PRODUCT` — ratificação arquitetural do ADR; `AUTH-UX` —
+> consequências de exibição) permanecem `UNASSIGNED — VALIDATION REQUIRED` e não são
+> nomeados por esta decisão (C2 abaixo permanece OPEN).
+
+### 5.1 Condições — situação após a decisão de 2026-08-15 (GDEC-0007)
 
 | # | Condição | Dono | Evidência que a fecha | Status |
 |---|---|---|---|---|
-| C1 | Revisão clínica nomeada das cláusulas ◆ (N1, N2, N4-N7) e da escolha Q1/Q2. | rodaquino-OMNI (GDEC-0003) | Registro de revisão com data e disposição por cláusula | OPEN |
+| C1 | Revisão clínica nomeada das cláusulas ◆ (N1, N2, N4-N7) e da escolha Q1/Q2. | rodaquino-OMNI (GDEC-0003) | Registro de revisão com data e disposição por cláusula | **FECHADA — ver §5.0, GDEC-0007, 2026-08-15** |
 | C2 | Aprovadores não clínicos nomeados (AUTH-PRODUCT; AUTH-UX para consequências de exibição). | Gate G0 residual | authority-model.md atualizado | OPEN |
-| C3 | Coerência com o ADR-0007 (formato de bundle): o schema comporta política de completude, janelas/horizontes por insumo e vocabulário de razões versionado (A2). | autor ADR-0007 + este autor | Referência cruzada verificada nos dois textos | OPEN — ADR-0007 em autoria concorrente |
-| C4 | Aceitação conjunta com o ADR-0026 (o par não pode divergir; ver §10). | mesmas autoridades | Aceitação registrada dos dois | OPEN |
-| C5 | Rota de VAL-0023 definida por versão de regra (janelas declaradas) ou risco aceito com registro. | rodaquino-OMNI | Registro em rule release ou risk-register | OPEN |
-| C6 | Prefixo da suíte de vetores (CRV) ratificado ou placeholder oficial adotado (GDEC-0002). | dono da traceability | GDEC-0002 resolvido | OPEN |
+| C3 | Coerência com o ADR-0007 (formato de bundle): o schema comporta política de completude, janelas/horizontes por insumo e vocabulário de razões versionado (A2). | autor ADR-0007 + este autor | Referência cruzada verificada nos dois textos | OPEN — verificação cruzada de schema ainda pendente, mesmo com ADR-0007 já aceito |
+| C4 | Aceitação conjunta com o ADR-0026 (o par não pode divergir; ver §10). | mesmas autoridades | Aceitação registrada dos dois | **FECHADA — ADR-0026 aceito na mesma decisão, GDEC-0007, 2026-08-15** |
+| C5 | Rota de VAL-0023 definida por versão de regra (janelas declaradas) ou risco aceito com registro. | rodaquino-OMNI | Registro em rule release ou risk-register | OPEN — números permanecem VALIDATION REQUIRED (A8-4) |
+| C6 | Prefixo da suíte de vetores (CRV) ratificado ou placeholder oficial adotado (GDEC-0002). | dono da traceability | GDEC-0002 resolvido | OPEN — GDEC-0002 continua PROPOSAL |
 
 ---
 
@@ -661,7 +709,12 @@ ato do orquestrador (escopo de escrita desta tarefa).
 
 ## 12. Questões abertas para o revisor nomeado (rodaquino-OMNI)
 
-Nenhuma pode ser fechada por agente.
+> **RESOLVIDO — 2026-08-15, GDEC-0007.** As seis questões abaixo foram respondidas
+> pelo titular na revisão do ciclo 1: 1→A8-1 (P-a); 2→A8-2 (Opção C-com-default-A);
+> 3→A8-3 (conflicted = razão de invalid); 4→A8-4 (confirmado, números seguem
+> VALIDATION REQUIRED); 5→A26-1/ADR-0026 (INV-B ratificado); 6→A8-6 (wording pt-BR
+> aceito). Ver §5.0 para o registro formal. O texto original é preservado abaixo como
+> registro histórico das perguntas feitas.
 
 1. **Precedência (Q2):** ratificar P-a (`invalid > not_evaluated > stale > partial >
    valid`)? A alternativa P-b privilegia a informação de "houve conclusão antiga" — se

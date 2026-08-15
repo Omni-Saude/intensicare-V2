@@ -5,7 +5,7 @@ title: >
   Sedation and neuro-assessment confounding policy — how consciousness-dependent
   scoring (GCS/SOFA CNS, qSOFA mentation, NEWS2/MEWS consciousness) must behave
   under sedation, intubation, and untestable components
-status: proposed            # no agent may write any later status
+status: accepted (2026-08-15, GDEC-0007)   # transcribed per GDEC-0007; agent is scribe, not decider
 status_history:
   - status: proposed
     date: 2026-08-15
@@ -16,6 +16,16 @@ status_history:
       evaluation-status-semantics.md. Records options and drivers only; NO
       decision. All clinical clauses are
       "PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)".
+  - status: accepted (2026-08-15, GDEC-0007)
+    date: 2026-08-15
+    by: rodaquino-OMNI (revisor clínico nomeado, GDEC-0003) — transcrito pelo orquestrador clínico do ciclo 1 (escriba)
+    note: >
+      Decisão por escrito, em sessão, do titular nomeado, registrada em
+      decision-register.md GDEC-0007 (folha de decisão do ciclo 1, §9, linhas A28-1 a
+      A28-8). Option A com gatilho por conjunção-com-exposição, RASS ≤ −3, política
+      intervalo-parcial aceita, e sedação desconhecida FAIL-CLOSED (overriding
+      qualquer default de escora-com-divulgação, inclusive o rascunho 0.1.0 da spec
+      SOFA). Ver §5.0. Bloco de decisão redigido em pt-BR per DEC-G0-10.
 date: 2026-08-15
 owner: >
   rodaquino-OMNI — candidate AUTH-CLINSAFETY holder for cycle-1 artifacts per
@@ -92,12 +102,16 @@ provenance:
 
 # ADR-0028 — Sedation and neuro-assessment confounding policy
 
-> **Status: proposed. This document presents an assessability model, consumer
-> behavior options, and decision drivers for consciousness-dependent scoring
-> under sedation, intubation, and untestable components. It records NO
-> decision.** Every clinical clause in this document is
-> **PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)**.
-> Nothing below may be cited as settled.
+> **Status: `accepted (2026-08-15, GDEC-0007)`.** O revisor clínico nomeado
+> (rodaquino-OMNI, GDEC-0003) decidiu, por escrito, em sessão de 2026-08-15
+> (transcrição-mestre: `decision-register.md` GDEC-0007), **Option A** (fail-closed
+> assessability gating) com o gatilho de confundimento por **conjunção-com-exposição**
+> (não a disjunção do REV-NS-01 §4), limiar **RASS ≤ −3**, a política intervalo-parcial
+> de §4.0.1 **aceita** como única forma de parcial ratificado, e a **sedação
+> desconhecida resolvendo FAIL-CLOSED** — ver §5.0 para o registro por questão
+> (A28-1 a A28-8). Esta última cláusula **substitui** (overrides) qualquer default de
+> "escora-com-divulgação" em qualquer especificação concorrente, inclusive o rascunho
+> 0.1.0 da spec SOFA citado em §4 Option A item 3.
 
 ---
 
@@ -471,36 +485,85 @@ Qualitative, evidence-labeled; no numeric scoring (weights unratified).
 | D5 executability today | RASS arm live if charted; infusion arm dormant (E12); unknown-sedation rule needed (OQ-2) | Executable | Executable | n/a |
 | D6 auditability | Gating inputs in the evaluation record | Auditable if imputation source recorded | No | n/a |
 
-### 4.2 Authoring recommendation
+### 4.2 Decisão de autoria (GDEC-0007, 2026-08-15)
 
-PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI). This
-author recommends **Option A**, as the operationalization of the cycle-1
-reviewer's own recommended policy (REV-NS-01 §4), with §4.0.1's
-interval-partial shape offered — not assumed — as the candidate ratified
-partial policy, and with Option B held available strictly as a *named
-clinical decision* that a future authority may take with its consequences on
-record. This recommendation is not a decision and §5 records none.
+**Option A** is decided, as the operationalization of the cycle-1 reviewer's own
+recommended policy (REV-NS-01 §4) — with two clarifications fixed by the decision,
+not left to the option's own framing: (1) the confounding trigger is the
+**exposure-conjunct** formulation (RASS ≤ −3 **and** sedative exposure; structural
+coma without sedation scores), not REV-NS-01's disjunction (A28-1); (2) unknown
+sedation state resolves **FAIL-CLOSED** to `not_evaluated (rass_unavailable)`
+(A28-2), not the score-with-disclosure alternative this option's own table had left
+open. §4.0.1's interval-partial shape is **accepted** as the sole ratified partial
+policy for the qSOFA/SOFA-CNS class (A28-3) — it is no longer merely offered.
+Option B (documented imputation) remains available only as a *named clinical
+decision* a future authority may take with its consequences on record — this
+decision does not adopt it. See §5.0 for the full per-question record.
 
 ---
 
 ## 5. Decision and scope
 
-> **NO DECISION IS RECORDED.** This ADR presents options and drivers only.
-> Filling this section is reserved to the named deciding authority in the
-> front matter (AUTH-CLINSAFETY — candidate holder rodaquino-OMNI per
-> GDEC-0003 — jointly with the ADR-ratification row of decision-rights.md §2).
+### 5.0 Decisão (GDEC-0007, 2026-08-15)
 
-### 5.1 Conditions that must be satisfied before this ADR can be accepted
+> *Bloco redigido em português (pt-BR) per DEC-G0-10; o restante deste documento
+> permanece em inglês como conteúdo pré-existente (tradução material adiada — P-4).*
+>
+> decided_by: **rodaquino-OMNI** (revisor clínico nomeado, GDEC-0003; também titular
+> interino de papéis `AUTH-*` de fase de projeto per GDEC-0004 onde pertinente).
+>
+> Option A (fail-closed assessability gating) é aceita como decisão, com as
+> especificações fixadas abaixo. Registro por questão, per a folha de decisão do
+> ciclo 1 (`docs/05-clinical-safety/cycle-1-review-decision-sheet.md` §9, linhas
+> A28-1 a A28-8):
+>
+> - **A28-1 →** gatilho de confundimento decidido como **conjunção-com-exposição**:
+>   RASS ≤ −3 **e** exposição sedativa → confundido; coma estrutural **sem** sedação
+>   escora. A disjunção do REV-NS-01 §4 não é adotada.
+> - **A28-2 →** sedação desconhecida decidida **FAIL-CLOSED** —
+>   `not_evaluated (rass_unavailable)`. **Esta cláusula substitui (overrides)
+>   qualquer default de "escora-com-divulgação" em qualquer spec concorrente**,
+>   inclusive o rascunho 0.1.0 da spec SOFA (§4 Option A item 3) — a mesma resposta
+>   vale para RULE-GCS G-2 e RULE-SOFA OQ-8.
+> - **A28-3 →** a política intervalo-parcial de §4.0.1 é **aceita** como única forma
+>   de parcial ratificado para a classe qSOFA-mentação/SOFA-CNS — não fabrica valor;
+>   decide apenas o que é decidível no intervalo.
+> - **A28-4 →** NEWS2/MEWS sob sedação: o escore é marcado **"confundido"**, nunca
+>   `valid` sem qualificação; **sem supressão** — o ACVPU observado sob sedação é
+>   estado real (direção do erro = mais alarme, aceitável por INV-B).
+> - **A28-5 →** limiar RASS decidido em **≤ −3** (PADIS), não o ≤ −4 do precedente
+>   CAM-ICU (que responde a outra pergunta — avaliabilidade de delirium).
+> - **A28-6 →** último GCS pré-sedação: **display-only**, idade máxima **72h**,
+>   timestamp visível; nunca entra em cômputo.
+> - **A28-7 →** janelas de frescor **ratificadas**: GCS 12h (staleness) / 24h
+>   (expiração); RASS dentro de 1h do GCS qualificante.
+> - **A28-8 →** convenções de exibição **ratificadas**: "GCS 10T" / "E4 M6 V-NT", com
+>   redação pt-BR "não testável — NT"; entrada de glossário via ADR-0029.
+>
+> **rationale:** conforme folha de decisão do ciclo 1 (GDEC-0007); fundamentos por
+> linha na própria folha (`cycle-1-review-decision-sheet.md` §9). A prioridade
+> máxima do titular ("uma resposta única de sedação... deliberadamente mais estrita
+> que o default 'escora-com-divulgação'") está registrada verbatim no resumo
+> executivo daquela folha.
+>
+> **supersessão:** rege-se pela própria seção de gatilhos de revisita desta ADR
+> (§8.2, T1–T6) — nenhum gatilho adicional é criado por esta transcrição.
+>
+> **Nota de escopo.** Esta decisão fecha as cláusulas CLÍNICAS. A aceitação conjunta
+> com o ADR-0008 (C2), a fonte confiável de infusão sedativa (C5) e a medição em
+> shadow mode (C6) permanecem OPEN e não são fechadas por esta aceitação.
+
+### 5.1 Conditions — status after the 2026-08-15 decision (GDEC-0007)
 
 | # | Condition | Owner | Evidence that would close it | Status |
 |---|---|---|---|---|
-| C1 | Named clinical review of the assessability model (§1.1) and of the chosen option's consumer table, clause by clause. | rodaquino-OMNI (GDEC-0003, cycle-1 scope) | Recorded review resolving OQ-1..OQ-8 (§11.1). | OPEN |
-| C2 | ADR-0008 reaches at least `under-review`, so "explicitly ratified partial policy" has settled semantics for this ADR to bind to. | AUTH-CLINSAFETY | ADR-0008 status change in adr-index.md. | OPEN (concurrent authoring) |
-| C3 | Freshness windows for GCS and paired RASS proposed and clinically ratified (A4; the concurrent SOFA spec's 12 h / 24 h / 1 h figures are proposals). | AUTH-CLINSAFETY | Ratified window table in the rule specifications. | OPEN |
-| C4 | The confounding trigger formulation is fixed (reviewer's REV-NS-01 disjunction vs the SOFA spec's exposure-conjunct refinement — H3/OQ-1), including the unknown-sedation case (OQ-2). | AUTH-CLINSAFETY | Recorded resolution; case vectors (structural coma, sedated coma) added to the CRV corpus. | OPEN |
+| C1 | Named clinical review of the assessability model (§1.1) and of the chosen option's consumer table, clause by clause. | rodaquino-OMNI (GDEC-0003, cycle-1 scope) | Recorded review resolving OQ-1..OQ-8 (§11.1). | **CLOSED — see §5.0, GDEC-0007, 2026-08-15** |
+| C2 | ADR-0008 reaches at least `under-review`, so "explicitly ratified partial policy" has settled semantics for this ADR to bind to. | AUTH-CLINSAFETY | ADR-0008 status change in adr-index.md. | **CLOSED — ADR-0008 accepted 2026-08-15 (GDEC-0007)** |
+| C3 | Freshness windows for GCS and paired RASS proposed and clinically ratified (A4; the concurrent SOFA spec's 12 h / 24 h / 1 h figures are proposals). | AUTH-CLINSAFETY | Ratified window table in the rule specifications. | **CLOSED — see §5.0 (A28-7)** |
+| C4 | The confounding trigger formulation is fixed (reviewer's REV-NS-01 disjunction vs the SOFA spec's exposure-conjunct refinement — H3/OQ-1), including the unknown-sedation case (OQ-2). | AUTH-CLINSAFETY | Recorded resolution; case vectors (structural coma, sedated coma) added to the CRV corpus. | **CLOSED as to formulation (A28-1/A28-2) — CRV case-vector addition remains an engineering follow-up, still open** |
 | C5 | The sedative-infusion and intubation-status source questions are answered — a named trusted source, or an explicit record that those trigger/NT arms are dormant at launch (E12, §1.1). | AUTH-DATA-PLATFORM + AUTH-CLINSAFETY | Per-trigger source-availability matrix (D5) published. | OPEN |
 | C6 | Shadow-mode (or retrospective) measurement of assessability-state frequencies and alert-burden delta exists, so D3's cost is known, not guessed (H1, H2). | Safety-focused test engineer + AUTH-CLINSAFETY | Measurement report attached to this ADR. | OPEN |
-| C7 | Population scope confirmed adult-only or otherwise (VAL-0006/VAL-0007) for every consumer named here (A3, HAZ-0036). | AUTH-CLINSAFETY + AUTH-INTENDED-USE | Gate G1/G2 record. | OPEN |
+| C7 | Population scope confirmed adult-only or otherwise (VAL-0006/VAL-0007) for every consumer named here (A3, HAZ-0036). | AUTH-CLINSAFETY + AUTH-INTENDED-USE | Gate G1/G2 record. | **CLOSED as to the adult-only default — see ADR-0027 §5.0 (A27-1); formal VAL-0006/VAL-0007 closure in the backlog document itself remains OPEN** |
 
 ---
 
@@ -659,7 +722,7 @@ document was invented; every cited ID was read from `docs/05-clinical-safety/`,
   0028 rows, next-free-ID advance past the stale "ADR-0025" note) is the
   adr-index steward's task and is recorded here as a known, intentional
   deviation from template rule 5 — not an oversight.
-- [x] Status `proposed`; no decision recorded anywhere
+- [x] Status `accepted (2026-08-15, GDEC-0007)`; decision recorded in §5.0, transcribed from decision-register.md GDEC-0007
 - [x] Owner, approvers, decision deadline present; no invented names (the only
   named human, rodaquino-OMNI, is named by DECIDED register entry GDEC-0003)
 - [x] Author is not an approver; independence pairs checked (§ front matter)
@@ -681,7 +744,15 @@ document was invented; every cited ID was read from `docs/05-clinical-safety/`,
 
 ### 11.1 Open questions for the named clinical reviewer (rodaquino-OMNI, per GDEC-0003)
 
-None of these may be closed by an agent.
+> **RESOLVED — 2026-08-15, GDEC-0007.** The eight questions below were answered by
+> the named authority in the cycle-1 review: OQ-1→A28-1 (exposure-conjunct
+> formulation); OQ-2→A28-2 (**fail-closed**, overriding any score-with-disclosure
+> default); OQ-3→A28-3 (interval-partial policy accepted as sole ratified partial);
+> OQ-4→A28-4 (marked "confounded", never unqualified `valid`, no suppression);
+> OQ-5→A28-5 (RASS ≤ −3, PADIS); OQ-6→A28-6 (display-only, max age 72h, timestamp
+> visible); OQ-7→A28-7 (windows ratified: GCS 12h/24h, RASS 1h); OQ-8→A28-8 (display
+> conventions ratified, pt-BR glossary entry via ADR-0029). See §5.0 for the formal
+> record. Original text preserved below as a historical record of the questions asked.
 
 1. **OQ-1 — Confounding trigger formulation.** Reviewer's REV-NS-01 §4
    disjunction ("RASS ≤ −3 **or** uninterrupted sedative infusion") vs the

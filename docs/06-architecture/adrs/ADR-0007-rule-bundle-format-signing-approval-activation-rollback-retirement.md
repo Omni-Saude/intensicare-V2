@@ -1,7 +1,7 @@
 ---
 id: ADR-0007
 title: Formato do bundle de regras clínicas, assinatura, fluxo de aprovação, ativação, rollback e retirada
-status: proposed
+status: accepted (2026-08-15, GDEC-0007)
 status_history:
   - status: not-started
     date: 2026-08-14
@@ -19,6 +19,16 @@ status_history:
       registrada. A separação autor≠aprovador (regra não negociável 10) é codificada
       estruturalmente no fluxo de aprovação proposto (§4.3), não apenas descrita em
       prosa — ver a nota de independência abaixo.
+  - status: accepted (2026-08-15, GDEC-0007)
+    date: 2026-08-15
+    by: rodaquino-OMNI (revisor clínico nomeado, GDEC-0003) — transcrito pelo orquestrador clínico do ciclo 1 (escriba)
+    note: >
+      Decisão por escrito, em sessão, do titular nomeado, registrada em
+      decision-register.md GDEC-0007 (folha de decisão do ciclo 1, §4, linhas
+      A7-1 a A7-5). As sete recomendações por eixo do §4.9 tornam-se decisão para as
+      cláusulas clínicas; ver §5.0 para o registro por questão. As cláusulas de
+      AUTH-SECURITY (custódia de chave, eixo 2) permanecem VALIDATION REQUIRED, não
+      fechadas por esta aceitação.
 date: 2026-08-15
 owner: rodaquino-OMNI — candidato AUTH-CLINSAFETY (GDEC-0003, escopo ciclo-1); ver nota de independência
 approvers:
@@ -120,11 +130,13 @@ provenance:
 
 # ADR-0007 — Formato do bundle de regras clínicas, assinatura, fluxo de aprovação, ativação, rollback e retirada
 
-> **Status: `proposed`. Este documento apresenta opções, drivers e uma recomendação
-> não vinculante por eixo. NENHUMA decisão é registrada.** Nenhum agente pode marcar
-> este ADR `accepted`. A seção 5 lê exatamente "NENHUMA DECISÃO É REGISTRADA" e nada
-> antes dela pode ser citado como decidido — inclusive as recomendações do §4.9, que
-> são PROPOSAL e não vinculam nenhum bundle real.
+> **Status: `accepted (2026-08-15, GDEC-0007)`.** O revisor clínico nomeado
+> (rodaquino-OMNI, GDEC-0003) decidiu, por escrito, em sessão de 2026-08-15
+> (transcrição-mestre: `docs/00-governance/registers/decision-register.md` GDEC-0007),
+> as sete recomendações por eixo do §4.9 como decisão vinculante para as cláusulas
+> clínicas — ver §5.0 para o registro por questão (A7-1 a A7-5). As cláusulas de
+> assinatura/custódia de chave sob `AUTH-SECURITY` (parte do eixo 2) permanecem
+> `UNASSIGNED — VALIDATION REQUIRED` e não são fechadas por esta aceitação.
 
 > **Nota de proveniência, dita uma vez e válida para todo o documento.** Esta ADR foi
 > redigida em paralelo a outros dois artefatos do ciclo 1 diretamente relevantes: (a)
@@ -862,53 +874,107 @@ em todos os sete eixos).
 | D8 custo operacional | Moderado-alto (infraestrutura nova) | Baixo (nada novo) | Mínimo agora |
 | D9 portabilidade | Alta se serialização aberta (adiado a ADR-0022) | N/A | Indefinido |
 
-### 4.9 Recomendação consolidada por eixo (PROPOSAL — não é decisão)
+### 4.9 Decisão consolidada por eixo (GDEC-0007, 2026-08-15)
 
-**Esta subseção é uma recomendação deste especialista, rotulada PROPOSAL. Não é
-autoexecutável, não vincula nenhum bundle real, e não substitui o §5, que permanece
-"NENHUMA DECISÃO É REGISTRADA".**
+**As sete recomendações por eixo abaixo, redigidas originalmente como PROPOSAL, foram
+aceitas como decisão pelo revisor clínico nomeado (rodaquino-OMNI, GDEC-0007,
+2026-08-15) — ver §5.0 para o registro formal por questão (A7-1 a A7-5). Onde a
+folha de decisão acrescentou uma especificação além da recomendação original, ela é
+marcada explicitamente abaixo.**
 
 1. **Formato do bundle:** Opção A (arquivo único assinado, endereçado por conteúdo) —
    alinha com o modelo de domínio já estabelecido e com o precursor real já em disco
    (E17); Opção B pode coexistir como implementação de armazenamento *desde que* as
    linhas carreguem o mesmo hash e assinatura da Opção A — não é uma alternativa
    independente suficiente por si só.
-2. **Assinatura e integridade:** Opção A (dupla assinatura estrutural) como alvo;
-   Opção B (atestação em banco) como caminho em estágios legítimo enquanto A3 não é
-   satisfeita, com gatilho de revisão explícito para migrar a A quando um segundo
-   revisor for alocado.
+2. **Assinatura e integridade:** Opção A (dupla assinatura estrutural) **decidida como
+   alvo** (A7-4) — slots do esquema agnósticos de mecanismo; a **custódia de chave
+   concreta permanece diferida à futura ADR-0022**, não decidida aqui. Opção B
+   (atestação em banco) permanece caminho em estágios legítimo enquanto a premissa A3
+   (segundo revisor) não é satisfeita, com gatilho de revisão explícito para migrar a
+   A quando um segundo revisor for alocado.
 3. **Fluxo de aprovação:** Opção A (máquina de estados com reclassificação
-   editor→autor) — é a única opção que codifica o resíduo de GDEC-0003
-   estruturalmente em vez de por convenção.
+   editor→autor) — **decidida como princípio permanente, sem processo de exceção**
+   mesmo durante o período de clínico único do ciclo 1 (A7-1); é a única opção que
+   codifica o resíduo de GDEC-0003 estruturalmente em vez de por convenção. Nenhum
+   bundle cujo conteúdo clínico rodaquino-OMNI redigir pode ser por ele aprovado — o
+   bloqueio resultante (§11.2) é intencional, não contornável.
 4. **Ativação:** Opção A (escopo de ambiente, autorização humana explícita, modo
-   shadow como estado distinto) — implementa a linguagem do Gate G2 literalmente.
+   shadow como estado distinto) — implementa a linguagem do Gate G2 literalmente. A
+   autorização de modo shadow é **decidida** (A7-5) como a **mesma autoridade clínica**
+   que autoriza ativação acionante, em instância de decisão própria, **mais**
+   co-autorização de privacidade/segurança exigida pelo Gate G2 — não uma autoridade
+   estruturalmente diferente.
 5. **Rollback:** Opção A (rollback-para-versão-aprovada + kill switch como primitiva
    separada) — única opção que satisfaz SAF-0021 por completo.
-6. **Retirada:** Opção A (campo e imposição obrigatórios agora; valores de cadência
-   VALIDATION REQUIRED por titular clínico, nunca inventados).
+6. **Retirada:** Opção A (campo e imposição obrigatórios agora); a cadência default é
+   **decidida** (A7-3) em **24 meses OU atualização de diretriz aplicável, o que
+   ocorrer primeiro**, com override registrado e justificado por bundle quando
+   necessário — não mais um número puramente `VALIDATION REQUIRED`, mas um teto de
+   segurança fixado pelo titular clínico.
 7. **Fronteira config-vs-conteúdo:** Opção A (envelope aperta-nunca-afrouxa, imposto
-   pelo mesmo carregador que verifica a assinatura) — responde diretamente a SF-4.
+   pelo mesmo carregador que verifica a assinatura) — responde diretamente a SF-4. A
+   taxonomia de direção "aperta" é **decidida** (A7-2) como **tabela por campo** no
+   esquema do bundle (banda→escala mais cedo; cooldown→menor; rate limit→maior), não
+   apenas por banda; o preenchimento completo dos valores da tabela permanece trabalho
+   de engenharia (C3 em §5.1 permanece OPEN quanto ao conteúdo, fechada quanto ao
+   formato exigido).
 
 ---
 
 ## 5. Decisão e escopo
 
-> **NENHUMA DECISÃO É REGISTRADA.**
->
-> Esta ADR apresenta opções, drivers, evidência e uma recomendação não vinculante por
-> eixo. Nenhuma opção é escolhida, preferida de forma vinculante, ou provisoriamente
-> adotada como bundle real. Preencher esta seção é reservado à autoridade decisora
-> nomeada no cabeçalho: `AUTH-CLINSAFETY` + `AUTH-SECURITY` (conjunta, por tópico —
-> `adr-index.md` §3), hoje `AUTH-CLINSAFETY` candidato (rodaquino-OMNI, GDEC-0003,
-> escopo ciclo-1) e `AUTH-SECURITY` `UNASSIGNED — VALIDATION REQUIRED`.
+### 5.0 Decisão (GDEC-0007, 2026-08-15)
 
-### 5.1 Condições que devem ser satisfeitas antes que esta ADR possa ser aceita
+> decided_by: **rodaquino-OMNI** (revisor clínico nomeado, GDEC-0003; também titular
+> interino de papéis `AUTH-*` de fase de projeto per GDEC-0004 onde pertinente a este
+> tópico).
+>
+> As sete recomendações por eixo do §4.9 são aceitas como decisão para as cláusulas
+> **clínicas** desta ADR (eixos 1, 3, 4, 5, 6, 7, e a parte de alvo do eixo 2).
+> Registro por questão, per a folha de decisão do ciclo 1
+> (`docs/05-clinical-safety/cycle-1-review-decision-sheet.md` §4, linhas A7-1 a A7-5):
+>
+> - **A7-1 →** autor≠aprovador é princípio **permanente, sem processo de exceção**
+>   para o período de clínico único do ciclo 1; um segundo revisor qualificado é o
+>   único caminho para destravar aprovação de conteúdo autorado por rodaquino-OMNI
+>   (eixo 3, Opção A).
+> - **A7-2 →** a taxonomia "aperta-nunca-afrouxa" (eixo 7) é decidida como **tabela
+>   por campo** no esquema do bundle (banda→escala mais cedo; cooldown→menor; rate
+>   limit→maior), não apenas por banda; o conteúdo completo da tabela permanece
+>   trabalho de engenharia (C3 abaixo).
+> - **A7-3 →** a cadência default de retirada (eixo 6) é decidida em **24 meses OU
+>   atualização de diretriz aplicável, o que ocorrer primeiro**, com override por
+>   bundle registrado e justificado quando necessário.
+> - **A7-4 →** o alvo de dupla assinatura estrutural (eixo 2, Opção A) é mantido;
+>   slots do esquema agnósticos de mecanismo; a **custódia de chave concreta
+>   permanece diferida à futura ADR-0022** — não decidida aqui.
+> - **A7-5 →** a autorização de modo shadow (eixo 4) é decidida como a **mesma
+>   autoridade clínica** que autoriza ativação acionante, em instância de decisão
+>   própria, **mais** co-autorização de privacidade/segurança exigida pelo Gate G2.
+>
+> **rationale:** conforme folha de decisão do ciclo 1 (GDEC-0007); fundamentos por
+> linha na própria folha (`cycle-1-review-decision-sheet.md` §4).
+>
+> **supersessão:** rege-se pela própria seção de gatilhos de revisita desta ADR (§8.2,
+> T1–T6) — nenhum gatilho adicional é criado por esta transcrição.
+>
+> **Nota de escopo, mantida com honestidade.** Esta decisão fecha as cláusulas
+> CLÍNICAS (`AUTH-CLINSAFETY`). As cláusulas de assinatura/custódia de chave (eixo 2,
+> parte de integridade) permanecem sob `AUTH-SECURITY`, hoje `UNASSIGNED — VALIDATION
+> REQUIRED` — a aceitação desta ADR não nomeia esse titular nem fecha C2/C5 abaixo.
+
+### 5.1 Condições — situação após a decisão de 2026-08-15 (GDEC-0007)
+
+Estas condições, antes gate de aceitação da própria ADR, passam a governar a
+**operacionalização** de bundles reais sob a decisão já registrada em §5.0. Nenhuma
+delas é fechada apenas pela aceitação — cada uma exige sua própria evidência.
 
 | # | Condição | Titular | Evidência que a fecharia | Status |
 |---|---|---|---|---|
-| C1 | Um segundo revisor clínico qualificado, distinto de rodaquino-OMNI, está alocado — ou uma exceção formal e registrada para bundles de revisor único existe. | Gate G0 / titular do programa | Entrada em `blockers-register.md` fechada, ou entrada GDEC nomeando o segundo revisor. | **OPEN — carga real hoje, ver §11.2** |
+| C1 | Um segundo revisor clínico qualificado, distinto de rodaquino-OMNI, está alocado — ou uma exceção formal e registrada para bundles de revisor único existe. | Gate G0 / titular do programa | Entrada em `blockers-register.md` fechada, ou entrada GDEC nomeando o segundo revisor. | **OPEN — carga real hoje, ver §11.2; A7-1 confirma que não haverá exceção** |
 | C2 | Um titular AUTH-SECURITY nomeado existe para as cláusulas de assinatura/custódia de chave. | Gate G0 | `authority-model.md` linha AUTH-SECURITY preenchida com humano. | **OPEN** |
-| C3 | A taxonomia de direção "aperta-nunca-afrouxa" por campo configurável (eixo 7) é ratificada pelo titular clínico. | AUTH-CLINSAFETY | Tabela publicada campo→direção, com justificativa. | **OPEN** |
+| C3 | A taxonomia de direção "aperta-nunca-afrouxa" por campo configurável (eixo 7) é ratificada pelo titular clínico. | AUTH-CLINSAFETY | Tabela publicada campo→direção, com justificativa. | **PARCIALMENTE FECHADA — A7-2 decide o formato (tabela por campo); os valores por campo permanecem OPEN** |
 | C4 | O portfólio de vias aprovado (Gate G2) existe, para que o formato do bundle seja pressionado contra formas reais de lógica clínica antes de aceitação. | AUTH-PRODUCT + AUTH-CLINSAFETY | Registro do Gate G2. | **OPEN** |
 | C5 | Um mecanismo de custódia de chave (futura ADR-0022) existe ou uma decisão explícita de escopo `dev`-apenas para o eixo 2 é registrada. | AUTH-SECURITY | ADR-0022 aceita, ou entrada GDEC de escopo restrito. | **OPEN** |
 | C6 | Um mecanismo de snapshot de terminologia/value-set (futura ADR-0013) existe para que o campo "versões de terminologia" do bundle seja referenciável, não incorporado ad hoc. | AUTH-DATA-PLATFORM + AUTH-CLINSAFETY | ADR-0013 aceita. | **OPEN** |
@@ -1067,7 +1133,7 @@ ADR-0001 §9.
 
 - [x] ID estável corresponde ao nome do arquivo (verificação pendente contra
       `adr-index.md`, que este agente está proibido de editar per escopo de tarefa)
-- [x] Status é um dos valores permitidos (`proposed`)
+- [x] Status é um dos valores permitidos (`accepted (2026-08-15, GDEC-0007)`)
 - [x] Titular, aprovadores, prazo de decisão presentes (placeholders permitidos;
       nomes inventados não)
 - [x] Autor não está listado como aprovador; pares de independência verificados
@@ -1110,6 +1176,12 @@ acima) e como bloqueio potencial em `blockers-register.md` quando o primeiro bun
 real de conteúdo (não precursor) tentar avançar além de `authored`.
 
 ### 11.3 Questões em aberto numeradas para o revisor nomeado (rodaquino-OMNI, AUTH-CLINSAFETY candidato) e para AUTH-SECURITY quando nomeado
+
+> **RESOLVIDO — 2026-08-15, GDEC-0007.** As cinco questões [AUTH-CLINSAFETY] abaixo
+> (1-3, 5) foram respondidas pelo titular na revisão do ciclo 1; ver §5.0 (A7-1 a
+> A7-5) para o registro formal. A questão 4 [AUTH-SECURITY] permanece OPEN — nenhum
+> titular AUTH-SECURITY foi nomeado por esta decisão. O texto original é preservado
+> abaixo como registro histórico das perguntas feitas.
 
 1. **[AUTH-CLINSAFETY]** A recomendação do eixo 3 (§4.3 Opção A) implica que nenhum
    bundle cujo conteúdo clínico você mesmo redigir pode ser aprovado por você. Isso é
