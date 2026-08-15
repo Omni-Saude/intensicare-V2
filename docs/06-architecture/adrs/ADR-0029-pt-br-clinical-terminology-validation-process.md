@@ -3,7 +3,7 @@ id: ADR-0029
 title: >
   Processo de validação da terminologia clínica em pt-BR e de sua consistência com os
   vínculos terminológicos de máquina (LOINC/SNOMED CT/UCUM)
-status: proposed
+status: accepted (2026-08-15, GDEC-0007)
 status_history:
   - status: not-started
     date: 2026-08-15
@@ -20,6 +20,15 @@ status_history:
       validação) e de `docs/03-domain/glossary.md` (35 termos, todos PROPOSAL, todas as
       candidatas de tradução VALIDATION REQUIRED). Nenhuma decisão é registrada; nenhum
       termo de glossário é ratificado por este documento.
+  - status: accepted (2026-08-15, GDEC-0007)
+    date: 2026-08-15
+    by: rodaquino-OMNI (revisor clínico nomeado, GDEC-0003) — transcrito pelo orquestrador clínico do ciclo 1 (escriba)
+    note: >
+      Decisão por escrito, em sessão, do titular nomeado, registrada em
+      decision-register.md GDEC-0007 (folha de decisão do ciclo 1, §10, linhas A29-1 a
+      A29-6). Opção A (glossário + revisor nomeado) fixada; verificação de consistência
+      terminológica prossegue LOINC/UCUM-only, pendente de verificação de licenciamento
+      SNOMED CT. Ver §5.0. Nenhum termo do glossário é ratificado por esta decisão.
 date: 2026-08-15
 owner: >
   rodaquino-OMNI — revisor clínico nomeado e aprovador de conteúdo clínico do ciclo 1
@@ -125,13 +134,17 @@ provenance:
 
 # ADR-0029 — Processo de validação da terminologia clínica em pt-BR e de sua consistência com os vínculos terminológicos de máquina
 
-> **Status: `proposed`. Este documento apresenta opções, evidências e condições de
-> aceitação para o PROCESSO pelo qual linguagem clínica pt-BR voltada ao clínico é
-> redigida, validada clinicamente e mantida consistente com os vínculos terminológicos de
-> máquina (LOINC/SNOMED CT/UCUM). Ele registra NENHUMA decisão, não ratifica nenhum termo
-> do glossário, não afirma nenhum fato de licenciamento terminológico, e não pode ser
-> citado como tendo resolvido a questão.** Todas as cláusulas são PROPOSAL —
-> AGUARDANDO REVISÃO CLÍNICA NOMEADA (revisor: rodaquino-OMNI, GDEC-0003).
+> **Status: `accepted (2026-08-15, GDEC-0007)`.** O revisor clínico nomeado
+> (rodaquino-OMNI, GDEC-0003) decidiu, por escrito, em sessão de 2026-08-15
+> (transcrição-mestre: `decision-register.md` GDEC-0007), o PROCESSO pelo qual
+> linguagem clínica pt-BR voltada ao clínico é redigida, validada clinicamente e
+> mantida consistente com os vínculos terminológicos de máquina — **Opção A**
+> (glossário em repositório + revisão por clínico nomeado por pacote), com a
+> verificação de consistência terminológica prosseguindo **LOINC/UCUM-only**,
+> licenciamento SNOMED CT permanecendo `VALIDATION REQUIRED` — ver §5.0 para o
+> registro por questão (A29-1 a A29-6). **Esta decisão não ratifica nenhum termo do
+> glossário** e não afirma nenhum fato de licenciamento terminológico — apenas o
+> processo pelo qual termos futuros serão validados.
 
 ---
 
@@ -272,7 +285,7 @@ Três alternativas — as duas explicitamente cotadas na tarefa mais o adiamento
 variante de reforço externo enumerada por completude. Nenhuma ordem de apresentação
 implica preferência.
 
-### Opção A — Glossário em repositório + revisão por clínico nomeado por pacote *(candidata recomendada nesta PROPOSTA — não decidida)*
+### Opção A — Glossário em repositório + revisão por clínico nomeado por pacote *(decidida — GDEC-0007, 2026-08-15)*
 
 **Descrição.** Um pipeline de quatro passos, executado por par de string a cada novo
 conteúdo clínico:
@@ -438,30 +451,56 @@ disciplina de `portfolio-method.md`).
 
 ## 5. Decisão e escopo
 
-> **NENHUMA DECISÃO É REGISTRADA.**
->
-> Este ADR apresenta opções, evidências e condições de aceitação apenas. Nenhuma opção é
-> escolhida, preferida ou adotada provisoriamente. A menção da Opção A como "candidata
-> recomendada" em §4 é uma caracterização do próprio rascunho, não uma decisão nem uma
-> aceitação branda — apenas a autoridade nomeada abaixo pode preencher esta seção.
->
-> Preencher esta seção é reservado à autoridade decisória nomeada no cabeçalho:
-> `AUTH-CLINSAFETY` (candidato interino: rodaquino-OMNI, GDEC-0003) em conjunto com
-> `AUTH-UX` (candidato interino: rodaquino-OMNI, DEC-G0-05), por
-> `docs/00-governance/decision-rights.md` §2. Ambos os papéis, no registro geral de
-> `authority-model.md`, permanecem `UNASSIGNED — VALIDATION REQUIRED`; apenas a nomeação
-> estreita do ciclo 1 (GDEC-0003) e a nomeação interina de UX (DEC-G0-05) existem hoje.
+### 5.0 Decisão (GDEC-0007, 2026-08-15)
 
-### 5.1 Condições que devem ser satisfeitas antes que este ADR possa ser aceito
+> decided_by: **rodaquino-OMNI** (revisor clínico nomeado, GDEC-0003; também titular
+> interino de papéis `AUTH-*` de fase de projeto per GDEC-0004/DEC-G0-05 onde
+> pertinente).
+>
+> A Opção A (§4) é aceita como decisão para o PROCESSO de validação terminológica.
+> Registro por questão, per a folha de decisão do ciclo 1
+> (`docs/05-clinical-safety/cycle-1-review-decision-sheet.md` §10, linhas A29-1 a
+> A29-6):
+>
+> - **A29-1 →** licenciamento SNOMED CT Brasil não verificado: **prossegue
+>   LOINC/UCUM-only** (passo 3 da Opção A roda apenas contra esses dois sistemas);
+>   verificação de licenciamento é **comissionada** separadamente (C2 abaixo).
+> - **A29-2 →** segundo revisor de linguagem pt-BR: **não exigido** na fase
+>   sintética atual; **obrigatório** antes de qualquer exposição de texto clínico
+>   pt-BR a clínico real.
+> - **A29-3 →** tradução retroativa do corpus de ciclo 0/1 (DEC-G0-10) é **paralela,
+>   não bloqueante** — traduzir na próxima revisão material de cada documento; o
+>   corpus EN permanece evidência válida.
+> - **A29-4 →** pinagem de terminologia (ADR-0013, `not-started`) é decidida: **semear
+>   o ADR-0013 apenas com versões LOINC/UCUM** no próximo ciclo, sem esperar pelo
+>   perfil FHIR completo.
+> - **A29-5 →** dono do lint de string em CI (D5): **backlog do engenheiro de
+>   supply-chain/CI**; não é trabalho imediato deste ADR.
+> - **A29-6 →** escopo do processo: **inclui todo texto visível a clínico**
+>   (inclusive MCP/alertas); **exclui** erros de API voltados a desenvolvedor — o
+>   critério é quem lê o texto, não onde ele vive.
+>
+> **rationale:** conforme folha de decisão do ciclo 1 (GDEC-0007); fundamentos por
+> linha na própria folha (`cycle-1-review-decision-sheet.md` §10).
+>
+> **supersessão:** rege-se pela própria seção de gatilhos de revisão desta ADR (§8) —
+> nenhum gatilho adicional é criado por esta transcrição.
+>
+> **Nota de escopo.** Esta decisão fixa o PROCESSO; nenhum termo do glossário é
+> ratificado. O segundo revisor pt-BR independente (C1), a verificação de
+> licenciamento SNOMED CT (C2) e a ratificação item-a-item da lista de ambiguidade
+> proibida (C6) permanecem OPEN e não são fechados por esta aceitação.
+
+### 5.1 Condições — situação após a decisão de 2026-08-15 (GDEC-0007)
 
 | # | Condição | Dono | Evidência que a encerraria | Status |
 |---|---|---|---|---|
-| C1 | Um segundo revisor clínico pt-BR independente é identificado ou uma justificativa explícita registra por que o processo pode operar com um único revisor durante o ciclo 1 (par de independência 1, decision-rights.md §3). | `AUTH-CLINSAFETY` | Nomeação registrada em decision-register.md, ou aceitação explícita do risco de fator único no risk-register. | **ABERTA** |
-| C2 | Determinação de licenciamento/distribuição do SNOMED CT no Brasil — se a V2 pretende usar nomes de exibição SNOMED CT no passo 3 da Opção A. | UNASSIGNED — VALIDATION REQUIRED (jurídico/licenciamento; possivelmente `AUTH-PRIVACY-LEGAL` ou um dono de licenciamento terminológico ainda não nomeado) | Parecer/registro de licenciamento nomeado. | **ABERTA** |
-| C3 | ADR-0013 fixa ao menos um sistema terminológico (LOINC no mínimo) para que o passo 3 da opção escolhida tenha um alvo real, não hipotético. | `AUTH-DATA-PLATFORM` + `AUTH-CLINSAFETY` | ADR-0013 alcança `accepted` ou ao menos `proposed` com um vínculo concreto. | **ABERTA** — ADR-0013 é `not-started` |
-| C4 | ADR-0007 define onde e como o texto de explicação é congelado por `RuleVersion` (Premissa A1). | `AUTH-CLINSAFETY` + `AUTH-SECURITY` | ADR-0007 alcança ao menos `proposed` com essa cláusula. | **ABERTA** — ADR-0007 é `not-started` |
-| C5 | A opção escolhida (A, B, C ou híbrida) é registrada por escrito pela autoridade nomeada, com a mesma disciplina de não-autoaprovação de `decision-rights.md` §1.2. | `AUTH-CLINSAFETY` + `AUTH-UX` | Este documento passa a `under-review` e depois `accepted` com a decisão escrita em §5. | **ABERTA** |
-| C6 | A lista semente de ambiguidade proibida (§4 Opção A) é revisada, corrigida e ratificada — ou explicitamente rejeitada — pelo revisor clínico nomeado antes de ser tratada como base de lint em CI. | `AUTH-CLINSAFETY` | Registro de revisão da lista, item a item. | **ABERTA** |
+| C1 | Um segundo revisor clínico pt-BR independente é identificado ou uma justificativa explícita registra por que o processo pode operar com um único revisor durante o ciclo 1 (par de independência 1, decision-rights.md §3). | `AUTH-CLINSAFETY` | Nomeação registrada em decision-register.md, ou aceitação explícita do risco de fator único no risk-register. | **PARCIALMENTE FECHADA — A29-2 aceita operar com revisor único na fase sintética; segundo revisor permanece obrigatório antes de exposição a clínico real** |
+| C2 | Determinação de licenciamento/distribuição do SNOMED CT no Brasil — se a V2 pretende usar nomes de exibição SNOMED CT no passo 3 da Opção A. | UNASSIGNED — VALIDATION REQUIRED (jurídico/licenciamento; possivelmente `AUTH-PRIVACY-LEGAL` ou um dono de licenciamento terminológico ainda não nomeado) | Parecer/registro de licenciamento nomeado. | **ABERTA — A29-1 comissiona a verificação; enquanto isso, LOINC/UCUM-only** |
+| C3 | ADR-0013 fixa ao menos um sistema terminológico (LOINC no mínimo) para que o passo 3 da opção escolhida tenha um alvo real, não hipotético. | `AUTH-DATA-PLATFORM` + `AUTH-CLINSAFETY` | ADR-0013 alcança `accepted` ou ao menos `proposed` com um vínculo concreto. | **ABERTA — ADR-0013 continua `not-started`; A29-4 decide semeá-lo com LOINC/UCUM no próximo ciclo** |
+| C4 | ADR-0007 define onde e como o texto de explicação é congelado por `RuleVersion` (Premissa A1). | `AUTH-CLINSAFETY` + `AUTH-SECURITY` | ADR-0007 alcança ao menos `proposed` com essa cláusula. | **FECHADA quanto à aceitação — ADR-0007 aceito em 2026-08-15 (GDEC-0007)** |
+| C5 | A opção escolhida (A, B, C ou híbrida) é registrada por escrito pela autoridade nomeada, com a mesma disciplina de não-autoaprovação de `decision-rights.md` §1.2. | `AUTH-CLINSAFETY` + `AUTH-UX` | Este documento passa a `under-review` e depois `accepted` com a decisão escrita em §5. | **FECHADA — ver §5.0, GDEC-0007, 2026-08-15 (Opção A)** |
+| C6 | A lista semente de ambiguidade proibida (§4 Opção A) é revisada, corrigida e ratificada — ou explicitamente rejeitada — pelo revisor clínico nomeado antes de ser tratada como base de lint em CI. | `AUTH-CLINSAFETY` | Registro de revisão da lista, item a item. | **ABERTA — não coberta item a item pela folha de decisão do ciclo 1** |
 
 ---
 
@@ -615,10 +654,11 @@ apenas onde GDEC-0003/DEC-G0-05 já o nomeiam por escrito, nunca inventado.
 
 ### 11.2 Registros de honestidade — o que um revisor deve olhar com desconfiança
 
-- **A Opção A é chamada de "candidata recomendada nesta PROPOSTA" em §4** porque a tarefa
-  que originou este rascunho pediu explicitamente essa recomendação. Isso é uma
-  caracterização do rascunho, não uma decisão — §5 permanece "NENHUMA DECISÃO É
-  REGISTRADA" e nenhum agente pode tratar essa recomendação como aceitação.
+- **A Opção A era chamada de "candidata recomendada nesta PROPOSTA" em §4** porque a
+  tarefa que originou este rascunho pediu explicitamente essa recomendação; essa
+  caracterização é agora superada — o revisor clínico nomeado aceitou a Opção A como
+  decisão em 2026-08-15 (GDEC-0007, ver §5.0). Registrado aqui como histórico honesto
+  do rascunho, não como um resíduo de indecisão.
 - **E12 é uma ausência de evidência, não uma confirmação de ausência de licença.** Uma
   busca exaustiva em `docs/` não encontrar menção ao licenciamento do SNOMED CT no Brasil
   não prova que o SNOMED CT seja livre de licenciamento no Brasil, nem que a organização

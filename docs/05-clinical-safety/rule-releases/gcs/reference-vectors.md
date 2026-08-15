@@ -1,18 +1,21 @@
 ---
 id: RULE-GCS-CRV-0100
-title: RULE-GCS v0.1.0 — vetores de referência clínica (conjunto DRAFT, precursor de pacote de release)
+title: RULE-GCS v0.2.0 — vetores de referência clínica (conjunto DRAFT, precursor de pacote de release)
 label: PROPOSAL
-status: PROPOSAL — pending independent clinical review (author ≠ approver applies to vectors)
+status: clinicamente revisado (GDEC-0007, 2026-08-15); evidência de execução pendente — vetores permanecem DRAFT para fins de execução
+last_updated: 2026-08-15
 statement: >
-  Dezoito vetores de referência clínica para RULE-GCS v0.1.0 conforme o
-  clinical-reference-vector-standard, cobrindo totais normais na faixa (limites 3 e 15),
-  NT por componente (com o caso canônico verbal-intubado E4 M6 V-NT → nenhum total, não
-  GCS 11 — a reversão do defeito legado), todos-NT, componente ausente, gate RASS
-  (−4 confundida; 0 testável; RASS ausente — comportamento sinalizado ao revisor; coma
-  não sedado escorável), pareamento RASS fora de janela, componentes stale, idade
-  desconhecida/<18, e enumerações inválidas (E=5, M=7). Todo vetor é DRAFT: autorado
-  pelo mesmo agente que autorou a especificação; independência de autoria NÃO
-  satisfeita; nenhum vetor pode ser citado como evidência de release.
+  Dezoito vetores ativos de referência clínica (mais dois aposentados/superseded pelas
+  decisões GDEC-0007) para RULE-GCS v0.2.0 conforme o clinical-reference-vector-standard,
+  cobrindo totais normais na faixa (limites 3 e 15), NT por componente (com o caso
+  canônico verbal-intubado E4 M6 V-NT → nenhum total, não GCS 11 — a reversão do defeito
+  legado), todos-NT, componente ausente, gate RASS (−4 confundida; 0 testável; sedação
+  desconhecida — FAIL-CLOSED decidido, GDEC-0007; coma não sedado escorável), pareamento
+  RASS fora de janela, componentes stale, idade desconhecida/<18, e enumerações
+  inválidas (E=5, M=7). Clinicamente revisado (GDEC-0007); evidência de execução
+  pendente. Todo vetor permanece DRAFT para fins de execução: autorado pelo mesmo agente
+  que autorou a especificação; independência de autoria NÃO satisfeita; nenhum vetor
+  pode ser citado como evidência de execução de release.
 provenance:
   source_repo: intensicare-V2
   path_or_url: docs/05-clinical-safety/rule-releases/gcs/reference-vectors.md
@@ -38,25 +41,35 @@ supersedes: null
 superseded_by: null
 ---
 
-# RULE-GCS v0.1.0 — vetores de referência clínica (DRAFT)
+# RULE-GCS v0.2.0 — vetores de referência clínica
 
-**PROPOSAL — pending independent clinical review (author ≠ approver applies to
-vectors).** Todos os 18 vetores são `status: DRAFT` conforme
-`docs/12-quality-validation-and-testing/clinical-reference-vector-standard.md` (o CRV
-standard). Todos os dados de paciente são sintéticos. Nenhum vetor pode ser citado como
-evidência de release clínico: per CRV standard §8, `authorship.independence_confirmed:
-false` para todo vetor aqui, porque o autor dos vetores é o mesmo agente autor da
-especificação. Um autor/revisor independente futuro deve re-derivar ou confirmar
-independentemente cada resultado esperado antes de qualquer vetor alcançar `RATIFIED`.
+**Clinicamente revisado (GDEC-0007, 2026-08-15); evidência de execução pendente —
+vetores permanecem DRAFT para fins de execução.** Os 18 vetores ativos (e 2
+aposentados/superseded pelas decisões) permanecem `status: DRAFT` para execução
+conforme `docs/12-quality-validation-and-testing/clinical-reference-vector-standard.md`
+(o CRV standard): a revisão nomeada decidiu as expectativas clínicas, mas evidência de
+execução e autoria independente continuam pendentes. Todos os dados de paciente são
+sintéticos. Nenhum vetor pode ser citado como evidência de execução de release: per CRV
+standard §8, `authorship.independence_confirmed: false` para todo vetor aqui, porque o
+autor dos vetores é o mesmo agente autor da especificação. Um autor/revisor
+independente futuro deve re-derivar ou confirmar independentemente cada resultado
+esperado antes de qualquer vetor alcançar `RATIFIED`.
 
 ## 0. Convenções deste arquivo
 
-1. **IDs de vetor.** `CRV-0201`..`CRV-0218`. O catálogo CRV ainda não existe e o próprio
-   prefixo `CRV` é proposta não ratificada; este arquivo reivindica provisoriamente o
-   bloco **CRV-0200–0299 para RULE-GCS**. OBSERVED: os conjuntos concorrentes de
-   RULE-SOFA (CRV-0101–0199) e RULE-NEWS2 (CRV-0101–0189) reivindicaram blocos
-   **colidentes** entre si; o bloco 02xx foi escolhido para não ampliar a colisão, que é
-   sinalizada ao steward de rastreabilidade para renumeração no registro do catálogo.
+1. **IDs de vetor.** `CRV-GCS-0201`..`CRV-GCS-0220` (18 ativos; aposentados:
+   CRV-GCS-0211 → superseded por CRV-GCS-0219; CRV-GCS-0213 → superseded por
+   CRV-GCS-0220 — a decisão fail-closed de sedação mudou as expectativas). **DECISÃO
+   (GDEC-0007, 2026-08-15, folha P-3 (a)):** esquema de prefixo por regra adotado —
+   `CRV-SOFA-####`, `CRV-NEWS2-####`, `CRV-GCS-####`; partes numéricas mantidas,
+   prefixo trocado — impossibilita a próxima colisão de namespace; renumeração
+   executada nesta revisão (0.2.0). História: os conjuntos concorrentes de RULE-SOFA e
+   RULE-NEWS2 reivindicaram blocos numéricos colidentes; a primeira renumeração
+   mecânica (steward, 2026-08-15) moveu SOFA para o bloco numérico 03xx e o GCS já
+   ocupava o 02xx disjunto; os prefixos por regra decididos tornam cada ID globalmente
+   inequívoco. Referências fora de `rule-releases/` que ainda citem IDs nus
+   `CRV-02xx` são renumeradas pelo steward na próxima revisão (per P-3). Ver
+   `../../../00-governance/traceability-policy.md` §1.1 para a tabela de faixas.
 2. **Compactação (desvio documentado).** Como em RULE-SOFA-CRV-0100 §0: bloco comum (§1)
    + painel de referência (§2); cada vetor declara identidade, cenário, deltas e o
    resultado esperado completo. Ausência é sempre explícita (`present: false`) — nunca
@@ -65,7 +78,7 @@ independentemente cada resultado esperado antes de qualquer vetor alcançar `RAT
 3. **Instante de avaliação** `T = 2026-08-15T12:00:00-03:00`. Janelas conforme
    `specification.md` §5.3 (componentes 12 h/24 h; pareamento RASS 1 h;
    contemporaneidade mútua 30 min).
-4. **`fires`.** RULE-GCS 0.1.0 não define condição de alerta/disparo; todo vetor afirma
+4. **`fires`.** RULE-GCS 0.2.0 não define condição de alerta/disparo; todo vetor afirma
    `fires: false` e a expectativa de escore/status carrega o conteúdo clínico.
    `no_fire_reason: criteria_not_met` aparece somente com
    `expected_evaluation_status: valid` (CRV standard §6).
@@ -76,7 +89,7 @@ independentemente cada resultado esperado antes de qualquer vetor alcançar `RAT
 pathway_id: "RULE-GCS (instrument; candidate-inventory binding pending)"
 rule_version:
   bundle: "RULE-GCS"
-  version: "0.1.0"
+  version: "0.2.0"
   content_hash: "unsigned-precursor — logic block inline in specification.md §9"
   status: draft
 context:
@@ -135,7 +148,7 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
 ### 3.1 Totais normais na faixa, incluindo limites 3 e 15 (3)
 
 ```yaml
-- vector_id: CRV-0201
+- vector_id: CRV-GCS-0201
   title: "E4 V5 M6 — total 15 (limite superior), valid"
   scenario_class: boundary
   boundary_edge_class: [threshold-exact-match]
@@ -147,7 +160,7 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
     fires: false
     no_fire_reason: criteria_not_met
 
-- vector_id: CRV-0202
+- vector_id: CRV-GCS-0202
   title: "E3 V3 M4 — total 10 (meio da faixa), valid"
   scenario_class: typical
   boundary_edge_class: []
@@ -163,7 +176,7 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
     fires: false
     no_fire_reason: criteria_not_met
 
-- vector_id: CRV-0203
+- vector_id: CRV-GCS-0203
   title: "E1 V1 M1 — total 3 (limite inferior), coma não sedado, valid"
   scenario_class: boundary
   boundary_edge_class: [threshold-exact-match]
@@ -184,7 +197,7 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
 ### 3.2 NT por componente e todos-NT (4)
 
 ```yaml
-- vector_id: CRV-0204
+- vector_id: CRV-GCS-0204
   title: "Ocular NT (trauma/edema orbitário) — E-NT V5 M6 → nenhum total; componentes testados exibidos"
   scenario_class: edge
   boundary_edge_class: [single-input-missing]   # tag mais próxima da taxonomia; NT ≠ missing é afirmado no detalhe
@@ -198,7 +211,7 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
     fires: false
     no_fire_reason: insufficient_data
 
-- vector_id: CRV-0205
+- vector_id: CRV-GCS-0205
   title: "CANÔNICO — intubado alerta: E4 M6 V-NT(intubação) → NENHUM total, NÃO GCS 11 (reversão do defeito legado)"
   scenario_class: adversarial
   boundary_edge_class: [single-input-missing]
@@ -217,7 +230,7 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
     fires: false
     no_fire_reason: insufficient_data
 
-- vector_id: CRV-0206
+- vector_id: CRV-GCS-0206
   title: "Motor NT (paralisia documentada, outra causa) — E4 V5 M-NT → nenhum total"
   scenario_class: edge
   boundary_edge_class: [single-input-missing]
@@ -231,7 +244,7 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
     fires: false
     no_fire_reason: insufficient_data
 
-- vector_id: CRV-0207
+- vector_id: CRV-GCS-0207
   title: "Todos NT (bloqueio neuromuscular ativo) — nenhum total, nenhum componente numérico"
   scenario_class: edge
   boundary_edge_class: [all-inputs-missing]
@@ -255,13 +268,13 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
 ### 3.3 Componente ausente (missing ≠ NT) (1)
 
 ```yaml
-- vector_id: CRV-0208
+- vector_id: CRV-GCS-0208
   title: "Verbal AUSENTE (nenhuma observação, sem registro NT) → not_evaluated(missing_required_input:verbal)"
   scenario_class: edge
   boundary_edge_class: [single-input-missing]
   description: >
     Distinção NT × missing (spec §3.4): aqui ninguém registrou nada para V — nem valor,
-    nem NT. O status e o motivo diferem do CRV-0205 e a explicação deve pedir a
+    nem NT. O status e o motivo diferem do CRV-GCS-0205 e a explicação deve pedir a
     avaliação faltante, não relatar impedimento.
   deltas:
     gcs_verbal: {value: null, token: null, present: false}
@@ -274,10 +287,10 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
     no_fire_reason: insufficient_data
 ```
 
-### 3.4 Gate RASS / confusão sedativa (4)
+### 3.4 Gate RASS / confusão sedativa (3 ativos + 1 aposentado)
 
 ```yaml
-- vector_id: CRV-0209
+- vector_id: CRV-GCS-0209
   title: "RASS -4 + infusão sedativa ativa → sedation_confounded; componentes exibidos, nenhum total"
   scenario_class: edge
   boundary_edge_class: [multi-criteria-combination]
@@ -295,7 +308,7 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
     fires: false
     no_fire_reason: insufficient_data
 
-- vector_id: CRV-0210
+- vector_id: CRV-GCS-0210
   title: "RASS 0 pareado, sem sedativo ativo → testável; total 15 valid"
   scenario_class: typical
   boundary_edge_class: []
@@ -307,29 +320,18 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
     fires: false
     no_fire_reason: criteria_not_met
 
-- vector_id: CRV-0211
-  title: "RASS ausente + exposição sedativa desconhecida → default 0.1.0: escora COM divulgação — comportamento SINALIZADO AO REVISOR (OQ-GCS-2/ADR-0028)"
-  scenario_class: edge
-  boundary_edge_class: [single-input-missing]
-  description: >
-    Este vetor codifica o DEFAULT proposto (idêntico a RULE-SOFA-0100 OQ-8), não uma
-    expectativa ratificada: estado de sedação desconhecido → total emitido com a
-    divulgação obrigatória "estado de sedação não avaliado". Se o ADR-0028 decidir
-    bloquear, este vetor é aposentado e substituído por um que espere
-    not_evaluated(sedation_state_unknown).
-  deltas:
-    rass:              {value: null, present: false}
-    sedative_infusion: {value: unknown}
-  expected:
-    components: {eye: 4, verbal: 5, motor: 6}
-    total: 15
-    evaluation_status: valid
-    mandatory_disclosure: "estado de sedação não avaliado / sedation state not assessed"
-    fires: false
-    no_fire_reason: criteria_not_met
-    review_flag: "OQ-GCS-2 — default não ratificado; pertence ao ADR-0028"
+- vector_id: CRV-GCS-0211
+  title: "APOSENTADO — RASS ausente + exposição desconhecida → escora-com-divulgação (expectativa 0.1.0, substituída por decisão)"
+  status: RETIRED
+  superseded_by: CRV-GCS-0219
+  retirement_note: >
+    DECISÃO (GDEC-0007, 2026-08-15, OQ-GCS-2 (b)): fail-closed — estado de sedação
+    desconhecido bloqueia o escore (not_evaluated, sedation_state_unknown). A descrição
+    original deste vetor previa exatamente este caminho: "este vetor é aposentado e
+    substituído por um que espere not_evaluated(sedation_state_unknown)". Ver
+    CRV-GCS-0219 (§3.8).
 
-- vector_id: CRV-0212
+- vector_id: CRV-GCS-0212
   title: "RASS -4 com AUSÊNCIA documentada de sedativo → coma genuíno; escora (total 5, valid)"
   scenario_class: edge
   boundary_edge_class: [multi-criteria-combination]
@@ -351,26 +353,20 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
     no_fire_reason: criteria_not_met
 ```
 
-### 3.5 Frescor — pareamento RASS e componentes stale (2)
+### 3.5 Frescor — pareamento RASS e componentes stale (1 ativo + 1 aposentado)
 
 ```yaml
-- vector_id: CRV-0213
-  title: "RASS 3 h antes da GCS (fora da janela de pareamento de 1 h) → estado de sedação desconhecido (caminho §4.4)"
-  scenario_class: boundary
-  boundary_edge_class: [freshness-window-edge]
-  deltas:
-    rass:              {value: -2, observed: "2026-08-15T06:00"}   # GCS às 09:00 → 3 h de defasagem
-    sedative_infusion: {value: unknown}
-  expected:
-    components: {eye: 4, verbal: 5, motor: 6}
-    total: 15
-    evaluation_status: valid
-    mandatory_disclosure: "estado de sedação não avaliado (RASS não pareado) / sedation state not assessed (RASS not paired)"
-    fires: false
-    no_fire_reason: criteria_not_met
-    review_flag: "mesmo default de CRV-0211 — OQ-GCS-2/ADR-0028; um RASS não contemporâneo NUNCA conta como gate satisfeito"
+- vector_id: CRV-GCS-0213
+  title: "APOSENTADO — RASS fora da janela de pareamento → escora-com-divulgação (expectativa 0.1.0, substituída por decisão)"
+  status: RETIRED
+  superseded_by: CRV-GCS-0220
+  retirement_note: >
+    DECISÃO (GDEC-0007, 2026-08-15, OQ-GCS-2 (b)): fail-closed. Um RASS não
+    contemporâneo NUNCA conta como gate satisfeito, e sem gate satisfeito o estado de
+    sedação é desconhecido → not_evaluated(sedation_state_unknown). Ver CRV-GCS-0220
+    (§3.8).
 
-- vector_id: CRV-0214
+- vector_id: CRV-GCS-0214
   title: "Componentes com 13 h (fora da janela de 12 h, dentro do expiry de 24 h) → stale; total não legível"
   scenario_class: boundary
   boundary_edge_class: [freshness-window-edge]
@@ -390,7 +386,7 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
 ### 3.6 Gate populacional (2)
 
 ```yaml
-- vector_id: CRV-0215
+- vector_id: CRV-GCS-0215
   title: "Idade desconhecida → not_evaluated(population_unverified); nunca assumir adulto"
   scenario_class: edge
   boundary_edge_class: [population-exclusion-boundary]
@@ -403,7 +399,7 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
     fires: false
     no_fire_reason: out_of_population_scope
 
-- vector_id: CRV-0216
+- vector_id: CRV-GCS-0216
   title: "Idade 15 (verificada) → not_evaluated(out_of_population_scope) — VAL-0006 BLOCKING"
   scenario_class: boundary
   boundary_edge_class: [population-exclusion-boundary]
@@ -420,7 +416,7 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
 ### 3.7 Enumerações inválidas (2)
 
 ```yaml
-- vector_id: CRV-0217
+- vector_id: CRV-GCS-0217
   title: "E=5 (fora da enumeração 1-4) → invalid(out_of_range); nunca clampar a 4"
   scenario_class: adversarial
   boundary_edge_class: [threshold-just-above]
@@ -433,7 +429,7 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
     fires: false
     no_fire_reason: invalid_data
 
-- vector_id: CRV-0218
+- vector_id: CRV-GCS-0218
   title: "M=7 (fora da enumeração 1-6) → invalid(out_of_range); nunca clampar a 6"
   scenario_class: adversarial
   boundary_edge_class: [threshold-just-above]
@@ -447,22 +443,71 @@ Esperado sob `PANEL-GCS-NORMAL` sem modificação: total 15, status `valid`.
     no_fire_reason: invalid_data
 ```
 
+### 3.8 Vetores decididos — sedação desconhecida FAIL-CLOSED (GDEC-0007, 2026-08-15) (2)
+
+```yaml
+- vector_id: CRV-GCS-0219
+  title: "RASS ausente + exposição sedativa desconhecida → not_evaluated(sedation_state_unknown) — FAIL-CLOSED (supersede CRV-GCS-0211; GDEC-0007 OQ-GCS-2 (b))"
+  scenario_class: edge
+  boundary_edge_class: [single-input-missing]
+  supersedes: CRV-GCS-0211
+  description: >
+    Política única de sedação fail-closed (GDEC-0007 OQ-GCS-2 = RULE-SOFA OQ-8 =
+    ADR-0028 Q2): estado de sedação desconhecido bloqueia o escore. Os componentes
+    observados continuam exibidos; nenhum total é emitido. O caminho 0.1.0
+    "escora com divulgação" foi removido.
+  deltas:
+    rass:              {value: null, present: false}
+    sedative_infusion: {value: unknown}
+  expected:
+    components: {eye: 4, verbal: 5, motor: 6}   # exibidos; nenhum total legível
+    total: null
+    evaluation_status: not_evaluated
+    reason: sedation_state_unknown
+    fires: false
+    no_fire_reason: insufficient_data
+
+- vector_id: CRV-GCS-0220
+  title: "RASS 3 h antes da GCS (fora da janela de pareamento de 1 h) + exposição desconhecida → not_evaluated(sedation_state_unknown) — FAIL-CLOSED (supersede CRV-GCS-0213; GDEC-0007 OQ-GCS-2 (b))"
+  scenario_class: boundary
+  boundary_edge_class: [freshness-window-edge]
+  supersedes: CRV-GCS-0213
+  description: >
+    Um RASS não contemporâneo NUNCA conta como gate satisfeito (§4.1); sem RASS pareado
+    e com exposição sedativa desconhecida, o estado de sedação é desconhecido →
+    fail-closed (GDEC-0007 OQ-GCS-2 (b)).
+  deltas:
+    rass:              {value: -2, observed: "2026-08-15T06:00"}   # GCS às 09:00 → 3 h de defasagem
+    sedative_infusion: {value: unknown}
+  expected:
+    components: {eye: 4, verbal: 5, motor: 6}   # exibidos; nenhum total legível
+    total: null
+    evaluation_status: not_evaluated
+    reason: sedation_state_unknown
+    fires: false
+    no_fire_reason: insufficient_data
+```
+
 ## 4. Contagem por categoria
 
 | Categoria | Vetores | Qtde |
 |---|---|---|
-| Totais normais na faixa (limites 3 e 15 inclusos) | CRV-0201, 0202, 0203 | 3 |
-| NT por componente + todos-NT | CRV-0204, 0205 (canônico), 0206, 0207 | 4 |
-| Componente ausente (missing ≠ NT) | CRV-0208 | 1 |
-| Gate RASS / confusão sedativa | CRV-0209, 0210, 0211 (sinalizado), 0212 | 4 |
-| Frescor (pareamento RASS; componentes stale) | CRV-0213, 0214 | 2 |
-| Gate populacional | CRV-0215, 0216 | 2 |
-| Enumeração inválida | CRV-0217, 0218 | 2 |
-| **Total** | | **18** |
+| Totais normais na faixa (limites 3 e 15 inclusos) | CRV-GCS-0201, 0202, 0203 | 3 |
+| NT por componente + todos-NT | CRV-GCS-0204, 0205 (canônico), 0206, 0207 | 4 |
+| Componente ausente (missing ≠ NT) | CRV-GCS-0208 | 1 |
+| Gate RASS / confusão sedativa | CRV-GCS-0209, 0210, 0212 | 3 |
+| Frescor (componentes stale) | CRV-GCS-0214 | 1 |
+| Gate populacional | CRV-GCS-0215, 0216 | 2 |
+| Enumeração inválida | CRV-GCS-0217, 0218 | 2 |
+| Decididos GDEC-0007 (sedação desconhecida fail-closed) | CRV-GCS-0219, 0220 | 2 |
+| Aposentados/superseded (registro histórico) | CRV-GCS-0211 → 0219; CRV-GCS-0213 → 0220 | (2) |
+| **Total ativo** | | **18** |
 
-Vetores de regressão direta do defeito legado (HAZ-0005): CRV-0205 (coerção V=1 →
-GCS 11), CRV-0207 (formulário vazio → 3.0), CRV-0208 (missing → 0 nos consumidores),
-CRV-0209 (sedado escorado sem gate) — ver `migration-notes.md`.
+Vetores de regressão direta do defeito legado (HAZ-0005): CRV-GCS-0205 (coerção V=1 →
+GCS 11), CRV-GCS-0207 (formulário vazio → 3.0), CRV-GCS-0208 (missing → 0 nos consumidores),
+CRV-GCS-0209 (sedado escorado sem gate), CRV-GCS-0219 (RASS ausente → nunca 0.0
+"alerta"; fail-closed GDEC-0007) — ver `migration-notes.md`.
 
-*Sem PHI; todos os valores sintéticos. Nenhum vetor é evidência de release; todos
-aguardam autoria/revisão independentes.*
+*Sem PHI; todos os valores sintéticos. Clinicamente revisado (GDEC-0007); evidência de
+execução pendente — nenhum vetor é evidência de execução de release; todos aguardam
+autoria/revisão independentes e replay.*

@@ -14,20 +14,30 @@ last_updated: 2026-08-15
 `INTENSICARE_V2_ORCHESTRATOR_PROMPT.md` §10 (lines 636–660), defines the lifecycle from
 §10 line 618, and records the dependency, gate, and phase structure between them.
 
-**Nothing in this file is itself a decision.** Ten ADRs are drafted. `ADR-0001` and
-`ADR-0002` are `proposed` and record no decision. **`ADR-0004` is `under-review`**: its
-*direction* was decided by a named human authority (rodaquino-OMNI) on 2026-08-15 and the
-written ADR now awaits that authority's acceptance — see
-`../../00-governance/registers/g0-resolucoes-2026-08-15.md`. Cycle 1 (2026-08-15) drafted
-`ADR-0007`, `ADR-0008` and the five new clinical ADRs `ADR-0025`–`ADR-0029`, all
-`proposed`, all clinical clauses labeled PROPOSAL — AWAITING NAMED CLINICAL REVIEW
-(reviewer: rodaquino-OMNI per GDEC-0003). The remaining nineteen floor IDs are
+**Nothing in this file is itself a decision.** Twelve ADRs are drafted. `ADR-0001` and
+`ADR-0002` are `proposed` and record no decision — `ADR-0001` was **revised 2026-08-15**
+(pt-BR addenda: the DECIDED constraints of AQ-3/4/5/6 as boundary-binding restrictions,
+OS-17/18/19 as binding v1-contract clauses, and the §7.0 hypothesis developed as a
+forwarded PROPOSAL in its §5.2 — still no decision). **`ADR-0004` is `under-review`**:
+its *direction* was decided by a named human authority (rodaquino-OMNI) on 2026-08-15
+and the written ADR now awaits that authority's acceptance — see
+`../../00-governance/registers/g0-resolucoes-2026-08-15.md`; its C2 reconciliation
+against the adjudication record was executed on 2026-08-15 (its §5.5). The
+boundary/canonical-model wave (2026-08-15) drafted **`ADR-0003`**
+(tenancy/resource-ownership) and **`ADR-0005`** (canonical observation/provenance/time),
+both `proposed`, both pt-BR. Cycle 1 (2026-08-15) drafted
+`ADR-0007`, `ADR-0008` and the five new clinical ADRs `ADR-0025`–`ADR-0029`; all seven
+were **accepted by the named clinical reviewer on 2026-08-15 (GDEC-0007)** — accepted
+does not mean implemented or verified; deferred clauses (ADR-0022 key custody, SNOMED
+licensing, numeric targets) remain open as recorded in each ADR. The remaining seventeen floor IDs are
 `not-started`: the ID and topic are reserved, no draft exists, and no position is implied
 by the reservation.
 
 **Language policy (SOURCE: DEC-G0-10, 2026-08-15).** Material produced from 2026-08-15
-onward is written in **pt-BR**. `ADR-0004` is therefore in pt-BR; `ADR-template.md`,
-this index, `ADR-0001` and `ADR-0002` remain in English as valid cycle-0 corpus.
+onward is written in **pt-BR**. `ADR-0003`, `ADR-0004` and `ADR-0005` are therefore in
+pt-BR; `ADR-template.md`, this index, `ADR-0001` and `ADR-0002` remain in English as
+valid cycle-0 corpus — the 2026-08-15 revision of `ADR-0001` deliberately kept the EN
+body intact for diff auditability and added its new content as pt-BR addenda.
 Retroactive translation is an open decision of the titular authority.
 
 This file is the **single source of truth for the `ADR` prefix's next-available number**
@@ -43,14 +53,16 @@ This file is the **single source of truth for the `ADR` prefix's next-available 
 | [`adr-index.md`](./adr-index.md) | This file — lifecycle, backlog, dependency graph | PROPOSAL |
 | [`ADR-0001-amh-platform-boundary.md`](./ADR-0001-amh-platform-boundary.md) | Options for the AMH platform boundary (§7.3) | proposed |
 | [`ADR-0002-modular-monolith-and-extraction-criteria.md`](./ADR-0002-modular-monolith-and-extraction-criteria.md) | Modular-monolith baseline and service-extraction criteria (§9.1 principle 8) | proposed |
-| [`ADR-0004-identidade-paciente-encontro-mpi.md`](./ADR-0004-identidade-paciente-encontro-mpi.md) | Patient/encounter/MPI identity, boundary identifier, merge/unmerge semantics (§7.4) — **pt-BR** | **under-review** (direction decided 2026-08-15) |
-| [`ADR-0007-rule-bundle-format-signing-approval-activation-rollback-retirement.md`](./ADR-0007-rule-bundle-format-signing-approval-activation-rollback-retirement.md) | Rule-bundle lifecycle; structurally encodes author ≠ approver (§6.4, §10 item 7) — **pt-BR** | proposed (cycle 1) |
-| [`ADR-0008-evaluation-status-and-completeness-freshness-semantics.md`](./ADR-0008-evaluation-status-and-completeness-freshness-semantics.md) | Five-state evaluation-status semantics; partial-score policy (§10 item 8) — **pt-BR**, coupled with ADR-0026 | proposed (cycle 1) |
-| [`ADR-0025-score-version-and-variant-selection-policy.md`](./ADR-0025-score-version-and-variant-selection-policy.md) | Canonical score editions (NEWS2/MEWS/SOFA/qSOFA) + update surveillance — **pt-BR** | proposed (cycle 1) |
-| [`ADR-0026-missing-input-clinical-policy-per-score-class.md`](./ADR-0026-missing-input-clinical-policy-per-score-class.md) | Missing-input clinical policy per score class — **pt-BR**, coupled with ADR-0008 | proposed (cycle 1) |
-| [`ADR-0027-age-and-population-gating-enforcement.md`](./ADR-0027-age-and-population-gating-enforcement.md) | Age/population gating enforcement (fail-closed; VAL-0006/0007) — **EN** (authored before DEC-G0-10 propagated; translation is an open item) | proposed (cycle 1) |
-| [`ADR-0028-sedation-and-neuro-assessment-confounding-policy.md`](./ADR-0028-sedation-and-neuro-assessment-confounding-policy.md) | Sedation/neuro-assessment confounding; GCS NT/assessability gating — **EN** (same translation caveat) | proposed (cycle 1) |
-| [`ADR-0029-pt-br-clinical-terminology-validation-process.md`](./ADR-0029-pt-br-clinical-terminology-validation-process.md) | pt-BR clinical-terminology validation process (prompt §11) — **pt-BR** | proposed (cycle 1) |
+| [`ADR-0003-tenancy-organizacao-facility-propriedade-de-recurso.md`](./ADR-0003-tenancy-organizacao-facility-propriedade-de-recurso.md) | Tenant grain, org/facility/unit/bed hierarchy, resource-ownership invariance (§10 item 3) — **pt-BR** | proposed (2026-08-15) |
+| [`ADR-0004-identidade-paciente-encontro-mpi.md`](./ADR-0004-identidade-paciente-encontro-mpi.md) | Patient/encounter/MPI identity, boundary identifier, merge/unmerge semantics (§7.4) — **pt-BR** | **under-review** (direction decided 2026-08-15; C2 reconciliation executed 2026-08-15) |
+| [`ADR-0005-modelo-canonico-observacao-proveniencia-qualidade-correcao-tempo.md`](./ADR-0005-modelo-canonico-observacao-proveniencia-qualidade-correcao-tempo.md) | Canonical observation model: provenance, quality dimensions, correction, time (§10 item 5) — **pt-BR** | proposed (2026-08-15) |
+| [`ADR-0007-rule-bundle-format-signing-approval-activation-rollback-retirement.md`](./ADR-0007-rule-bundle-format-signing-approval-activation-rollback-retirement.md) | Rule-bundle lifecycle; structurally encodes author ≠ approver (§6.4, §10 item 7) — **pt-BR** | **accepted** (2026-08-15, GDEC-0007) |
+| [`ADR-0008-evaluation-status-and-completeness-freshness-semantics.md`](./ADR-0008-evaluation-status-and-completeness-freshness-semantics.md) | Five-state evaluation-status semantics; partial-score policy (§10 item 8) — **pt-BR**, coupled with ADR-0026 | **accepted** (2026-08-15, GDEC-0007) |
+| [`ADR-0025-score-version-and-variant-selection-policy.md`](./ADR-0025-score-version-and-variant-selection-policy.md) | Canonical score editions (NEWS2/MEWS/SOFA/qSOFA) + update surveillance — **pt-BR** | **accepted** (2026-08-15, GDEC-0007) |
+| [`ADR-0026-missing-input-clinical-policy-per-score-class.md`](./ADR-0026-missing-input-clinical-policy-per-score-class.md) | Missing-input clinical policy per score class — **pt-BR**, coupled with ADR-0008 | **accepted** (2026-08-15, GDEC-0007) |
+| [`ADR-0027-age-and-population-gating-enforcement.md`](./ADR-0027-age-and-population-gating-enforcement.md) | Age/population gating enforcement (fail-closed; VAL-0006/0007) — **EN** (authored before DEC-G0-10 propagated; translation is an open item) | **accepted** (2026-08-15, GDEC-0007) |
+| [`ADR-0028-sedation-and-neuro-assessment-confounding-policy.md`](./ADR-0028-sedation-and-neuro-assessment-confounding-policy.md) | Sedation/neuro-assessment confounding; GCS NT/assessability gating — **EN** (same translation caveat) | **accepted** (2026-08-15, GDEC-0007) |
+| [`ADR-0029-pt-br-clinical-terminology-validation-process.md`](./ADR-0029-pt-br-clinical-terminology-validation-process.md) | pt-BR clinical-terminology validation process (prompt §11) — **pt-BR** | **accepted** (2026-08-15, GDEC-0007) |
 
 ---
 
@@ -144,14 +156,14 @@ Column meanings:
 
 | ID | §10 | Topic | Status | Blocks gate | Earliest phase | Decision owner | Candidate authority (PROPOSAL) |
 |---|---|---|---|---|---|---|---|
-| [ADR-0001](./ADR-0001-amh-platform-boundary.md) | 1 | Intended platform boundary with AMH-data | **proposed** | G3 | 3 | UNASSIGNED | `AUTH-DATA-PLATFORM` + `AUTH-AMH-OWNER` (joint) |
+| [ADR-0001](./ADR-0001-amh-platform-boundary.md) | 1 | Intended platform boundary with AMH-data | **proposed** (revised 2026-08-15 — DECIDED constraints incorporated; §7.0 hypothesis forwarded as PROPOSAL) | G3 | 3 | UNASSIGNED | `AUTH-DATA-PLATFORM` + `AUTH-AMH-OWNER` (joint) |
 | [ADR-0002](./ADR-0002-modular-monolith-and-extraction-criteria.md) | 2 | Modular monolith and service-extraction criteria | **proposed** | G4 | 4 | UNASSIGNED | `AUTH-PRODUCT` + `AUTH-OPERATIONS` |
-| ADR-0003 | 3 | Tenant / organization / facility and resource-ownership model | not-started | G3, G6 | 3 | UNASSIGNED | `AUTH-DATA-PLATFORM` + `AUTH-SECURITY` |
-| [ADR-0004](./ADR-0004-identidade-paciente-encontro-mpi.md) | 4 | Patient/encounter/MPI identity, boundary identifier and merge/unmerge handling | **under-review** (2026-08-15) | G3 | 3 | **rodaquino-OMNI** | `AUTH-DATA-PLATFORM` + `AUTH-AMH-OWNER` — both held by rodaquino-OMNI per DEC-G0-04 |
-| ADR-0005 | 5 | Canonical observation, provenance, quality, correction, and time model | not-started | G3, G4 | 3 | UNASSIGNED | `AUTH-DATA-PLATFORM` + `AUTH-CLINSAFETY` |
+| [ADR-0003](./ADR-0003-tenancy-organizacao-facility-propriedade-de-recurso.md) | 3 | Tenant / organization / facility and resource-ownership model | **proposed** (2026-08-15) | G3, G6 | 3 | UNASSIGNED | `AUTH-DATA-PLATFORM` + `AUTH-SECURITY` |
+| [ADR-0004](./ADR-0004-identidade-paciente-encontro-mpi.md) | 4 | Patient/encounter/MPI identity, boundary identifier and merge/unmerge handling | **under-review** (2026-08-15; C2 reconciliation executed — see its §5.5) | G3 | 3 | **rodaquino-OMNI** | `AUTH-DATA-PLATFORM` + `AUTH-AMH-OWNER` — both held by rodaquino-OMNI per DEC-G0-04 |
+| [ADR-0005](./ADR-0005-modelo-canonico-observacao-proveniencia-qualidade-correcao-tempo.md) | 5 | Canonical observation, provenance, quality, correction, and time model | **proposed** (2026-08-15) | G3, G4 | 3 | UNASSIGNED | `AUTH-DATA-PLATFORM` + `AUTH-CLINSAFETY` |
 | ADR-0006 | 6 | Operational versus analytical source-of-truth and reconciliation | not-started | G3 | 3 | UNASSIGNED | `AUTH-DATA-PLATFORM` + `AUTH-CLINSAFETY` |
-| [ADR-0007](./ADR-0007-rule-bundle-format-signing-approval-activation-rollback-retirement.md) | 7 | Rule bundle format, signing, approval, activation, rollback, retirement | **proposed** (2026-08-15) | G2, G6 | 2 | rodaquino-OMNI (clinical clauses, GDEC-0003); security clauses UNASSIGNED | `AUTH-CLINSAFETY` + `AUTH-SECURITY` |
-| [ADR-0008](./ADR-0008-evaluation-status-and-completeness-freshness-semantics.md) | 8 | Evaluation-status semantics; score/pathway completeness and freshness | **proposed** (2026-08-15) | G2, G4 | 2 | rodaquino-OMNI (clinical clauses, GDEC-0003) | `AUTH-CLINSAFETY` |
+| [ADR-0007](./ADR-0007-rule-bundle-format-signing-approval-activation-rollback-retirement.md) | 7 | Rule bundle format, signing, approval, activation, rollback, retirement | **accepted** (2026-08-15, GDEC-0007) | G2, G6 | 2 | rodaquino-OMNI (clinical clauses, GDEC-0003); security clauses UNASSIGNED | `AUTH-CLINSAFETY` + `AUTH-SECURITY` |
+| [ADR-0008](./ADR-0008-evaluation-status-and-completeness-freshness-semantics.md) | 8 | Evaluation-status semantics; score/pathway completeness and freshness | **accepted** (2026-08-15, GDEC-0007) | G2, G4 | 2 | rodaquino-OMNI (clinical clauses, GDEC-0003) | `AUTH-CLINSAFETY` |
 | ADR-0009 | 9 | Alert/work state machine, concurrency, idempotency, audit, escalation timers | not-started | G4 | 4 | UNASSIGNED | `AUTH-CLINSAFETY` + `AUTH-UX` |
 | ADR-0010 | 10 | Transaction/outbox/event backbone and delivery guarantees | not-started | G4, G7 | 4 | UNASSIGNED | `AUTH-PRODUCT` + `AUTH-OPERATIONS` |
 | ADR-0011 | 11 | Read projections and authorized real-time delivery | not-started | G4 | 4 | UNASSIGNED | `AUTH-PRODUCT` + `AUTH-SECURITY` |
@@ -181,11 +193,11 @@ these extend the floor rather than instantiate it.
 
 | ID | §10 | Topic | Status | Blocks gate | Earliest phase | Decision owner | Candidate authority (PROPOSAL) |
 |---|---|---|---|---|---|---|---|
-| [ADR-0025](./ADR-0025-score-version-and-variant-selection-policy.md) | — | Score version/variant selection policy and update surveillance | **proposed** (2026-08-15) | G2 | 2 | rodaquino-OMNI (GDEC-0003) | `AUTH-CLINSAFETY` |
-| [ADR-0026](./ADR-0026-missing-input-clinical-policy-per-score-class.md) | — | Missing-input clinical policy per score class (coupled with ADR-0008) | **proposed** (2026-08-15) | G2, G4 | 2 | rodaquino-OMNI (GDEC-0003) | `AUTH-CLINSAFETY` |
-| [ADR-0027](./ADR-0027-age-and-population-gating-enforcement.md) | — | Age/population gating enforcement (fail-closed) | **proposed** (2026-08-15) | G1, G2 | 2 | rodaquino-OMNI (GDEC-0003) | `AUTH-CLINSAFETY` + `AUTH-INTENDED-USE` |
-| [ADR-0028](./ADR-0028-sedation-and-neuro-assessment-confounding-policy.md) | — | Sedation/neuro-assessment confounding policy (GCS NT/assessability) | **proposed** (2026-08-15) | G2 | 2 | rodaquino-OMNI (GDEC-0003) | `AUTH-CLINSAFETY` |
-| [ADR-0029](./ADR-0029-pt-br-clinical-terminology-validation-process.md) | — | pt-BR clinical terminology validation process | **proposed** (2026-08-15) | G4 | 2 | rodaquino-OMNI (GDEC-0003) | `AUTH-CLINSAFETY` + `AUTH-UX` |
+| [ADR-0025](./ADR-0025-score-version-and-variant-selection-policy.md) | — | Score version/variant selection policy and update surveillance | **accepted** (2026-08-15, GDEC-0007) | G2 | 2 | rodaquino-OMNI (GDEC-0003) | `AUTH-CLINSAFETY` |
+| [ADR-0026](./ADR-0026-missing-input-clinical-policy-per-score-class.md) | — | Missing-input clinical policy per score class (coupled with ADR-0008) | **accepted** (2026-08-15, GDEC-0007) | G2, G4 | 2 | rodaquino-OMNI (GDEC-0003) | `AUTH-CLINSAFETY` |
+| [ADR-0027](./ADR-0027-age-and-population-gating-enforcement.md) | — | Age/population gating enforcement (fail-closed) | **accepted** (2026-08-15, GDEC-0007) | G1, G2 | 2 | rodaquino-OMNI (GDEC-0003) | `AUTH-CLINSAFETY` + `AUTH-INTENDED-USE` |
+| [ADR-0028](./ADR-0028-sedation-and-neuro-assessment-confounding-policy.md) | — | Sedation/neuro-assessment confounding policy (GCS NT/assessability) | **accepted** (2026-08-15, GDEC-0007) | G2 | 2 | rodaquino-OMNI (GDEC-0003) | `AUTH-CLINSAFETY` |
+| [ADR-0029](./ADR-0029-pt-br-clinical-terminology-validation-process.md) | — | pt-BR clinical terminology validation process | **accepted** (2026-08-15, GDEC-0007) | G4 | 2 | rodaquino-OMNI (GDEC-0003) | `AUTH-CLINSAFETY` + `AUTH-UX` |
 
 ---
 
@@ -234,9 +246,9 @@ flowchart LR
 
     A1["ADR-0001<br/>AMH boundary"]:::drafted
     A2["ADR-0002<br/>modular monolith"]:::drafted
-    A3["ADR-0003<br/>tenancy/ownership"]:::notstarted
+    A3["ADR-0003<br/>tenancy/ownership<br/>proposed"]:::drafted
     A4["ADR-0004<br/>identity/MPI<br/>under-review"]:::drafted
-    A5["ADR-0005<br/>observation/time"]:::notstarted
+    A5["ADR-0005<br/>observation/time<br/>proposed"]:::drafted
     A6["ADR-0006<br/>op vs analytical SoT"]:::notstarted
     A7["ADR-0007<br/>rule bundles"]:::notstarted
     A8["ADR-0008<br/>evaluation status"]:::notstarted
@@ -363,10 +375,16 @@ implies a commitment this program has no authority to make.
 3. **ADR-0001's acceptance conditions are still mostly external.** See §4.3. Two of its
    twelve conditions moved on 2026-08-15 (C2 closed, C1 partially closed); the Gate G3
    evidence layers, the AMH environment and the contradictions C-1/C-3/C-4 did not.
-4. **Twenty-one topics have no draft.** Their reservation here is bookkeeping. Any claim
-   that "the ADR program covers 24 decisions" would be false: it *reserves* 24 and
-   *drafts* 3 — of which **none is accepted**.
+4. **Seventeen floor topics have no draft** (updated 2026-08-15). Their reservation here
+   is bookkeeping. Any claim that "the ADR program covers 24 decisions" would be false:
+   it *reserves* 24 and *drafts* 7 of them (0001, 0002, 0003, 0004, 0005, 0007, 0008) —
+   of which two floor ADRs (0007, 0008) plus the five extension ADRs (0025–0029) are
+   accepted (GDEC-0007); **no boundary/identity/tenancy/canonical-model ADR is
+   accepted**.
 5. **ADR-0004 was drafted ahead of its stated prerequisites** (ADR-0001, ADR-0003) because
    the adjudication that unblocked it happened first. This is legitimate — the dependency
    table describes *acceptance* order, not drafting order — but ADR-0004's acceptance
    should be reconciled against ADR-0003's tenant/ownership model when that is written.
+   **Update 2026-08-15:** ADR-0003 is now drafted (`proposed`) and carries this
+   reconciliation as its own acceptance condition C2; ADR-0004's C2 reconciliation
+   against the adjudication record was executed the same day (ADR-0004 §5.5).

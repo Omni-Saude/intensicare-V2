@@ -130,7 +130,18 @@ ciclo_1_conteudo_clinico_2026_08_15:
   task_4_adrs: [ADR-0007, ADR-0008, ADR-0025, ADR-0026, ADR-0027, ADR-0028, ADR-0029]  # todos proposed; índice atualizado; próximo livre ADR-0030
   proveniencia: docs/archive/legacy-provenance/migration-manifest-cycle-1.md  # zero código copiado; só re-derivação
   portfolio: "candidate-inventory §8 (CAND-0010..0020 nomeados, NÃO admitidos); hard-gate-assessment §7; contagem acionável continua 0; gate 4 continua FAIL"
-  aguardando_assinatura_de_revisao_clinica:   # TUDO abaixo é PROPOSAL até revisão nomeada
+  revisao_clinica_concluida_2026_08_15: >-
+    GDEC-0007: o titular decidiu os 98 pontos da folha de decisão
+    (docs/05-clinical-safety/cycle-1-review-decision-sheet.md) — 97 aceitos,
+    K-8 modificado ("vidas_salvas" mantido como "altas vivas da UTI", KPIR-14).
+    Política única de sedação FAIL-CLOSED ratificada (SOFA OQ-8 = GCS OQ-2 =
+    ADR-0028). ADRs 0007/0008/0025-0029 → accepted. Specs → 0.2.0 com decisões
+    incorporadas; CRVs renumerados por regra (CRV-SOFA-/CRV-NEWS2-/CRV-GCS-).
+    K-10 COMISSIONADO: baseline pré-implantação autorizado a iniciar
+    (g2-validation-backlog G2-VAL-0025 — comissionado, não concluído).
+    Aprovação formal de bundle permanece pendente do mecanismo do ADR-0007
+    (assinatura); classificação NOT ACTIONABLE inalterada; gate 4 continua FAIL.
+  itens_decididos_na_revisao:   # histórico — decididos em GDEC-0007; lista original mantida abaixo
     - Verdictos de 100% dos registros de revisão legada (RETAIN..REJECT por regra/score/limiar/KPI)
     - RULE-SOFA 0.1.0 — 14 questões abertas (spec §11; destaque: janela de frescor por insumo, agregação pior-valor-24h, unidades canônicas)
     - RULE-NEWS2 0.1.0 — 10 questões (spec §11; destaque: faixa 16-17 anos, governança Scale 2, gravidez)

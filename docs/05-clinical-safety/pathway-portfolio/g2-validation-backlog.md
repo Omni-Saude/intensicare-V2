@@ -149,6 +149,16 @@ engineering.**"
 |---|---|---|---|---|---|
 | **G2-VAL-0024** | **Pre-register** the clinical definition of deterioration and its blinded adjudication rubric | VAL-0036. Without pre-registration, definitions can be fitted post hoc and every accuracy figure becomes unfalsifiable. Supplies MCDA **C1**, **C11** | A pre-registered definition and rubric | `AUTH-CLINSAFETY` | G2-VAL-0001 |
 | **G2-VAL-0025** | 🚩 **Measure the pre-V2 baseline** for alert burden, fatigue, interruption and time-to-recognition — **BEFORE ANY DEPLOYMENT** | **THE ONE IRREVERSIBLE ITEM.** `g1-validation-backlog.md` VAL-0035: "**Baselines are unobtainable once V2 is deployed.**" Without it, constraints K1/K2 can never be demonstrated and criterion C12 can never be scored — permanently | A completed baseline observational study, dated before deployment | `AUTH-PRODUCT` + `AUTH-UX` | G2-VAL-0001, G2-VAL-0026 |
+
+> **COMISSIONADO 2026-08-15 pelo titular (GDEC-0007, decisão K-10):** estudo
+> observacional de baseline pré-implantação autorizado a iniciar; execução requer
+> desenho do estudo (junto à pesquisa G1) e permanece pré-condição irreversível
+> antes de qualquer deployment. Status do item: comissionado — não concluído.
+> Fonte da decisão: `docs/00-governance/registers/decision-register.md` GDEC-0007;
+> `docs/05-clinical-safety/cycle-1-review-decision-sheet.md` K-10. Este item
+> continua bloqueado por `G2-VAL-0001` (nomeação de `AUTH-PRODUCT`/`AUTH-UX`) e
+> `G2-VAL-0026` (site e ética) — o comissionamento autoriza o início do desenho do
+> estudo; não os dispensa.
 | **G2-VAL-0026** | Identify a **site and named clinical sponsor**; obtain the ethics (CEP/CONEP) route and the LGPD basis for research, adjudication and subgroup analysis | **OBSERVED: no site has been identified or contacted** (VAL-0039). VAL-0040, VAL-0041, VAL-0037. Without a site there is no data, no baseline, no validation — hard gates 9 and 10 cannot close | A named site, named sponsor, and legal/ethics determinations | `AUTH-PRODUCT` + `AUTH-PRIVACY-LEGAL` | G2-VAL-0001 |
 | **G2-VAL-0027** | Author **boundary, exception, negative, delayed-data, missing, stale, conflicting and failure test vectors** per candidate version, and make them **blocking** in CI | Hard gate 8 fails for all. **The specific legacy trap: `LEGACY-TA:584` — a coverage gate that passed while validating "All 0" cases; "False-green gate; validates nothing"** (`HAZ-0031`). Any future gate-8 claim **must state the number of cases actually executed** | Executed vectors with counts, enforced as required checks | `AUTH-CLINSAFETY` + `AUTH-SECURITY` (CI enforcement) | G2-VAL-0001, G2-VAL-0008 |
 | **G2-VAL-0028** | Run **retrospective replay and shadow (non-actioning) evaluation** — with privacy, security and research/governance authorization | `PROMPT:349` permits shadow evaluation before G2 **only** with that authorization. Note the dependency trap: shadow evaluation still requires a **populated source**, which does not exist | Authorized shadow-mode results with measured alert volume and precision/recall over **valid patient-time** (SM-03) | `AUTH-CLINSAFETY` + `AUTH-PRIVACY-LEGAL` + `AUTH-SECURITY` | G2-VAL-0014, G2-VAL-0024, G2-VAL-0026 |

@@ -1,10 +1,14 @@
 # =============================================================================
-# RULE-SOFA v0.1.0 — deterministic logic specification (declarative sidecar)
+# RULE-SOFA v0.2.0 — deterministic logic specification (declarative sidecar)
 #
-# PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)
+# REVISADO CLINICAMENTE 2026-08-15 (GDEC-0007) — decisões incorporadas;
+# aprovação formal pendente do mecanismo de bundle assinado (ADR-0007);
+# NOT ACTIONABLE (inalterado).
 # Classification: NOT ACTIONABLE — no evidenced populated source (AMH
 # constraint); authorship artifact only. This is a 0.x PRECURSOR, explicitly
 # not a signed release. No runtime may load or execute this content.
+# Changelog: 0.2.0 — decisões da revisão clínica nomeada incorporadas
+# (GDEC-0007, 2026-08-15). 0.1.0 — proposta inicial (ciclo 1).
 #
 # This file is DATA, not code: declarative bands and predicates only. The
 # normative meaning of every key, every interpretation point (I-1..I-11), and
@@ -20,14 +24,16 @@
 
 rule:
   id: RULE-SOFA
-  version: 0.1.0
+  version: 0.2.0
   semver_meaning: "0.x precursor — unsigned, unapproved, not releasable"
-  status: "PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)"
+  status: "REVISADO CLINICAMENTE 2026-08-15 (GDEC-0007) — decisões incorporadas; aprovação formal pendente do mecanismo de bundle assinado (ADR-0007); NOT ACTIONABLE (inalterado)"
   classification: NOT_ACTIONABLE_AUTHORSHIP_ARTIFACT
   advisory_only: true
   emits:
     - per_component_scores_with_status
-    - total_score_0_to_24_only_when_all_six_components_valid
+    - total_score_0_to_24_only_when_all_six_components_readable   # readable = valid, or the single ratified
+                                                                  # declared partial class (renal worst-of-available,
+                                                                  # GDEC-0007 OQ-7); partial total carries mandatory disclosure
   never_emits:
     - partial_totals
     - mortality_risk_bands        # legacy D-18 REJECTED; no sourced banding exists
@@ -38,7 +44,10 @@ evaluation_semantics:
   assessment_window: PT24H                    # [T-24h, T]
   input_selection: worst_in_window            # most abnormal qualifying value per input — PROPOSAL I-9
   band_assignment: highest_satisfied_band     # assign the highest band whose full condition holds
-  partial_totals: forbidden                   # per partial-SOFA analysis (sofa-review.md §7)
+  partial_totals: forbidden                   # per partial-SOFA analysis (sofa-review.md §7): no k-of-6 sums.
+                                              # NOTE: the renal declared partial (GDEC-0007 OQ-7) is NOT a partial
+                                              # total — all six components contribute; the renal component itself
+                                              # is a ratified lower-bound partial with mandatory disclosure.
   zero_coercion: forbidden                    # HAZ-0005 control — absence is a status, never a number
   invalid_input_handling: poison_component    # an invalid in-window value makes the component invalid;
                                               # it is never silently dropped (evaluation-status-semantics.md §3.5)
@@ -47,11 +56,11 @@ population_gate:                              # VAL-0006 / VAL-0007 / HAZ-0036
   include: "age_years >= 18"
   age_unknown: "not_evaluated(reason: population_unverified)"   # NEVER assume adult
   age_below_18: "not_evaluated(reason: out_of_population_scope)"
-  carve_outs_pending_reviewer_decision:       # OQ-11; HAZ-0044
-    - palliative_or_goals_of_care_restriction
-    - ecmo
-    - chronic_organ_dysfunction_baseline
-    - renal_replacement_therapy
+  carve_outs_decided:                         # OQ-11 (b) DECIDIDO — GDEC-0007, 2026-08-15: computar com anotação, nunca excluir silenciosamente
+    palliative_or_goals_of_care_restriction: "evaluate; suppress escalation/work-item binding with visible reason (HAZ-0044)"
+    ecmo: "respiration component not_evaluated(reason: pf_not_interpretable_on_ecmo); other components evaluate"
+    chronic_organ_dysfunction_baseline: "evaluate measured physiology; mandatory annotation of documented chronic limitation; explanation must not claim acuity"
+    renal_replacement_therapy: "renal component evaluates with mandatory flag on_rrt (creatinine under RRT does not reflect native renal function)"
 
 canonical_units:
   bilirubin: "mg/dL"        # I-6; accepted alternate umol/L, convert: mg/dL = umol/L / 17.104
@@ -113,10 +122,15 @@ inputs:
     acceptable_range: [20, 200]
     freshness_window: PT4H
     expiry: PT8H
+    derived_fallback: "MAP = (SBP + 2*DBP) / 3 admissible when no device-reported MAP exists, with mandatory flag derived_map — DECIDIDO OQ-9 (a), GDEC-0007"
   - key: vasoactive_agent
     coding: "medication code — ATC candidates: norepinephrine C01CA03, epinephrine C01CA24, dopamine C01CA04, dobutamine C01CA07; RxNorm pin VALIDATION REQUIRED"
     tabulated_agents: [dopamine, dobutamine, epinephrine, norepinephrine]
-    untabulated_agent_behavior: "component not_evaluated(reason: vasoactive_agent_unmapped)"   # I-5 / OQ-5
+    untabulated_agent_behavior: >-
+      component floor score 3 with mandatory flag vasoactive_agent_untabulated
+      ("agente não tabelado"); a sourced tier mapping remains VALIDATION REQUIRED —
+      DECIDIDO OQ-5 (b), GDEC-0007 (not_evaluated tranquilizava indevidamente, INV-B);
+      combination with tabulated agents: max(3, tabulated tiers)   # I-5
   - key: vasoactive_dose_rate
     unit: "ug/kg/min"
     acceptable_ranges:
@@ -125,9 +139,24 @@ inputs:
       epinephrine: [0.01, 5]
       norepinephrine: [0.01, 5]
     duration_condition: ">= 1 h at the qualifying rate (Vincent 1996)"        # I-3
+    first_hour_provisional_tier: >-
+      during the first hour of a new qualifying infusion the tier is computed from
+      the dose IMMEDIATELY and emitted as a PROVISIONAL escalation-capable score with
+      mandatory flag provisional_infusion_lt_1h ("provisório — infusão <1h"); it never
+      lowers, only raises, versus the no-vasopressor reading; declared adaptation vs
+      Vincent verbatim — DECIDIDO OQ-3 (b), GDEC-0007
     freshness_window: "administration interval overlapping T; last rate confirmation <= 2 h"
     expiry: PT4H
-    missing_dose_with_agent_active: "component not_evaluated(reason: missing_dose)"  # rejects legacy D-10 guessing
+    missing_dose_with_agent_active: >-
+      DECISÃO DERIVADA (GDEC-0007, princípio 2 — escalar-nunca-tranquilizar;
+      aplicação da lógica de OQ-5 (b)) — sujeita a confirmação do revisor na
+      próxima revisão: tabulated agent present with missing/unusable dose ->
+      component FLOORS at the minimum band agent presence alone guarantees in
+      Vincent 1996 (dobutamine 2; dopamine 2; norepinephrine 3; epinephrine 3),
+      mandatory flag dose_missing_agent_presence_floor ("dose ausente — piso por
+      presença do agente"); never lowers an available dose-based score;
+      composable with provisional_infusion_lt_1h. Legacy D-10 exact-tier
+      guessing remains rejected (floor = declared lower bound with disclosure).
   - key: body_weight
     loinc_candidates: ["29463-7"]
     unit: "kg"
@@ -143,12 +172,15 @@ inputs:
     expiry: PT24H
     confounders:
       sedation: >-
-        active sedative infusion without documented interruption window ->
+        FAIL-CLOSED joint policy — DECIDIDO OQ-8 (b), GDEC-0007 (uma só resposta
+        com RULE-GCS OQ-GCS-2 e ADR-0028 Q2): paired RASS >= -2 -> CNS testable;
+        paired RASS <= -3 with active OR UNKNOWN sedative exposure ->
         component not_evaluated(reason: sedation_confounded); RASS <= -3 with
-        active sedation confirms; RASS <= -3 with documented absence of sedatives
-        is genuine coma and scores; sedative-exposure information unavailable ->
-        score with mandatory 'sedation state not assessed' disclosure — default
-        pending the sedation-confounding ADR (REV-NS-01-gcs.md §4); I-8 / OQ-8
+        documented absence of sedatives is genuine unsedated coma and scores;
+        active sedative infusion without documented interruption window ->
+        not_evaluated(sedation_confounded) regardless of RASS; RASS missing or
+        unpaired -> not_evaluated(reason: sedation_state_unknown) — missing
+        gating input; the former 'score with disclosure' default is REMOVED; I-8
       verbal_not_testable: "any untested E/V/M component -> component not_evaluated(reason: component_not_testable); no minimum-fill, no imputation"
   - key: rass
     loinc_candidates: []            # terminology pin VALIDATION REQUIRED
@@ -208,8 +240,14 @@ components:
       - {score: 2, predicate: "dopamine <= 5 OR dobutamine any dose"}
       - {score: 3, predicate: "dopamine > 5 OR epinephrine <= 0.1 OR norepinephrine <= 0.1"}
       - {score: 4, predicate: "dopamine > 15 OR epinephrine > 0.1 OR norepinephrine > 0.1"}
-    combination_therapy: "score = max of per-agent band across all active tabulated agents (I-4; PROPOSAL)"
-    untabulated_agent: "not_evaluated(reason: vasoactive_agent_unmapped) — I-5; never a guessed tier"
+    combination_therapy: "score = max of per-agent band across all active tabulated agents (I-4 — DECIDIDO OQ-4 (a), GDEC-0007)"
+    untabulated_agent: "floor score 3 with mandatory flag vasoactive_agent_untabulated — I-5, DECIDIDO OQ-5 (b), GDEC-0007; sourced mapping VALIDATION REQUIRED; still never a guessed exact tier (legacy D-10 remains rejected)"
+    first_hour_of_new_infusion: "provisional escalation-capable tier from dose, flag provisional_infusion_lt_1h; never lowers vs no-vasopressor reading — I-3, DECIDIDO OQ-3 (b), GDEC-0007 (declared adaptation vs Vincent verbatim)"
+    missing_dose_floor_by_agent_presence:   # DECISÃO DERIVADA (GDEC-0007, princípio 2); flag dose_missing_agent_presence_floor
+      dobutamine: 2       # any dose -> band 2
+      dopamine: 2         # <=5 band
+      norepinephrine: 3   # <=0.1 band
+      epinephrine: 3      # <=0.1 band
     missing_map_with_tabulated_agent: "scoreable from agent bands (positive severity evidence must dominate)"
     missing_map_without_agent: "not_evaluated(reason: missing_required_input:map)"
   cns:
@@ -222,7 +260,13 @@ components:
       - {score: 3, predicate: "gcs >= 6 AND gcs <= 9"}
       - {score: 4, predicate: "gcs < 6"}
   renal:
-    inputs_required: [creatinine, urine_output_24h]   # conservative default — OQ-7; creatinine-only scoring NOT admitted without a ratified partial policy
+    inputs_required_any_of: [creatinine, urine_output_24h]   # worst-of-available-criteria — DECIDIDO OQ-7 (b), GDEC-0007
+    single_criterion_behavior: >-
+      one criterion present -> component evaluates as a DECLARED component-level
+      partial (ratified class, GDEC-0007 OQ-7/A8-2): score = band of the available
+      criterion, mandatory absent-criterion flag (urine_output_not_assessed |
+      creatinine_not_assessed) and lower-bound disclosure; both absent ->
+      not_evaluated(reason: missing_required_input:renal)
     creatinine_bands:               # SOURCE: Vincent 1996 (mg/dL, continuous — no dead gap at 5.0)
       - {score: 0, predicate: "creatinine < 1.2"}
       - {score: 1, predicate: "creatinine >= 1.2 AND creatinine < 2.0"}
@@ -233,21 +277,26 @@ components:
       - {score: 0, predicate: "urine_output_24h >= 500"}
       - {score: 3, predicate: "urine_output_24h < 500"}
       - {score: 4, predicate: "urine_output_24h < 200"}
-    combination: "component score = max(creatinine_band, urine_output_band)"
+    combination: "component score = max over the AVAILABLE criterion bands (both present: max of the two; one present: that band, as declared partial per single_criterion_behavior)"
 
 status_algebra:
-  component_status_vocabulary: [valid, not_evaluated, stale, invalid]
-  component_partial: "unusable — no approved partial policy exists (evaluation-status-semantics.md §3.2 entry condition unmet)"
+  component_status_vocabulary: [valid, partial, not_evaluated, stale, invalid]
+  component_partial: >-
+    exactly ONE declared component-level partial class is ratified (GDEC-0007
+    OQ-7 / A8-2 C-com-default-A): renal worst-of-available-criteria, with
+    mandatory absent-criterion flag and lower-bound disclosure. No generic
+    partial exists; no other component may use partial.
   component_rules:
     - "all required inputs present, in-window, in-range, unit-mapped -> valid (score readable)"
-    - "any required input absent -> not_evaluated(reason: missing_required_input:<input>)"
+    - "any required input absent -> not_evaluated(reason: missing_required_input:<input>) — except renal single-criterion (declared partial, see components.renal)"
     - "required input present only outside window but inside expiry -> stale (value + age shown; score contribution NOT readable)"
     - "required input beyond expiry -> not_evaluated(reason: expired_input:<input>)"
     - "any in-window value out-of-range, unit-unmappable, or in unreconciled conflict -> invalid(reason) — never silently dropped"
   total_rules:
-    - "total (0-24) computed and emitted ONLY when all six components are valid"
+    - "total (0-24) computed and emitted ONLY when all six components are readable: valid, or renal declared partial (GDEC-0007 OQ-7)"
+    - "renal partial contributing -> total status partial, with the absent-criterion flag and lower-bound disclosure propagated to every display of the total"
     - "any component invalid -> total invalid (reasons enumerate offending components)"
-    - "otherwise any component not valid -> total not_evaluated (reasons enumerate every non-valid component; per-component detail remains available)"
-    - "numeric total is NEVER emitted alongside any non-valid status; no partial sums; no zero substitution (HAZ-0005)"
-  precedence: "invalid > not_evaluated > stale > valid (evaluation-status-semantics.md §3.6)"
+    - "otherwise any component not readable -> total not_evaluated (reasons enumerate every non-readable component; per-component detail remains available)"
+    - "numeric total is NEVER emitted alongside any non-readable status; no generic partial sums; no zero substitution (HAZ-0005)"
+  precedence: "invalid > not_evaluated > stale > partial > valid (P-a — DECIDIDO A8-1, GDEC-0007; evaluation-status-semantics.md §3.6)"
   fallback: "any condition not covered above -> not_evaluated(reason: unspecified_condition)"

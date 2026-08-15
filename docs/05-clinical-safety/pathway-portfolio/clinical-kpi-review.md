@@ -1,8 +1,8 @@
 ---
 doc_id: KPI-REVIEW-CYCLE1-TASK3
 title: Clinical KPI review — keep / drop / redefine for every legacy V1 KPI (cycle 1, Task 3)
-status: PROPOSAL
-label: PROPOSAL (every decision and every successor definition) — AWAITING NAMED CLINICAL REVIEW
+status: REVISADO 2026-08-15 (GDEC-0007) — decisões incorporadas
+label: REVISADO 2026-08-15 (GDEC-0007) — decisões do §8 incorporadas (ver "DECISÃO" por questão); as definições de §1/§3 e os pisos numéricos residuais permanecem PROPOSAL — VALIDATION REQUIRED, exceto onde §8 registra decisão em contrário
 owner: UNASSIGNED — VALIDATION REQUIRED
 reviewer: rodaquino-OMNI
 date_collected: 2026-08-15
@@ -45,6 +45,15 @@ superseded_by: null
 > (`AUTH-CLINSAFETY`, UNASSIGNED), or adopts a metric
 > (`success-and-harm-metrics.md` §0 rule 1). Successor IDs `KPIR-nn` are
 > document-local review handles, not catalog IDs.
+>
+> **REVISADO 2026-08-15 (GDEC-0007).** O revisor nomeado (rodaquino-OMNI) decidiu as
+> doze questões de §8: onze aceitas como recomendado; **K-8 MODIFICADO** — dos seis
+> macro-nomes legados, cinco permanecem DROP definitivo e "vidas_salvas" é MANTIDO,
+> redefinido como **KPIR-14 "Altas vivas da UTI"** (§3). Cada questão de §8 carrega
+> agora sua marca **DECISÃO**. Fora dessas doze decisões, o restante do documento —
+> as definições completas de §1/§3 e os pisos numéricos residuais — permanece
+> PROPOSAL — VALIDATION REQUIRED. Transcrição-mestre da decisão:
+> `docs/00-governance/registers/decision-register.md` GDEC-0007.
 
 ## 0. Scope, method, and decision vocabulary
 
@@ -140,7 +149,7 @@ to the definition block in §3 (kept/redefined) or requirement block in §4
 | RULE-INDICADORES-ETL-014 | Macro-indicator ETL keeping only current month, history destroyed | **DROP** (rejected) | incompatible with VAL-0035 | A KPI store that destroys history cannot support any trend, baseline, or audit — structurally incompatible with the programme's baseline obligations. | — |
 | RULE-INDICADORES-ETL-017 | Dashboard auto-reload interval | **OUT OF SCOPE** | — | Refresh cadence, not a KPI. | — |
 | RULE-INDICADORES-ETL-018 | Recursive hierarchy roll-up shape (empresa > estabelecimento > setor) | **REDEFINE** | aggregation constraint for all KPIs | The hierarchy concept is retained; the shape must carry per-status categories at every node so no aggregate is more reassuring than its least-evaluated member (P-3/P-8). | KPIR-11 |
-| RULE-INDICADORES-ETL-023 | Six macro-KPIs (`vidas_salvas`, `obitos`, `tempo_permanencia`, `tx_mortalidade`, `tx_ocupacao`, `admissao`) with no recorded formulas | **REDEFINE — CONDITIONAL (names only); DROP serving without ratified definitions** | candidate macro set | "Lives saved" served as a number with no recorded definition anywhere is an untraceable clinical claim; formulas live in unmounted Tasy sources (SOURCE NOT LOCATED — cannot review). | §4.5 |
+| RULE-INDICADORES-ETL-023 | Six macro-KPIs (`vidas_salvas`, `obitos`, `tempo_permanencia`, `tx_mortalidade`, `tx_ocupacao`, `admissao`) with no recorded formulas | **RESOLVIDO (GDEC-0007, K-8, MODIFICAÇÃO):** cinco nomes — `obitos`, `tempo_permanencia`, `tx_mortalidade`, `tx_ocupacao`, `admissao` — **DROP definitivo**; `vidas_salvas` **KEEP (redefinido)**, nome de missão/cultura preservado pelo titular | candidate macro set | Cinco nomes seguem sem fonte revisável (Tasy SOURCE NOT LOCATED) e sem valor clínico mensurável; `vidas_salvas` é preservado como KPI de missão institucional com definição mensurável nova e honesta (contagem, não alegação causal). | KPIR-14 (`vidas_salvas`); §4.5 (demais cinco, DROP) |
 | RULE-DOCUMENTACAO-FATURAMENTO-019 | Evolution-note counts by type | **KEEP** (refined) | operational/documentation only | Honest empty case; legitimate documentation-operations count — with a hard ban on reading it as care quality or individual performance (NIU-06). | KPIR-12 |
 | RULE-DOCUMENTACAO-FATURAMENTO-002 | "Glosa Zero" billing-documentation engine | **OUT OF SCOPE** | — | Pure billing mechanics; pointered to the billing/documentation reviewer. | — |
 
@@ -148,14 +157,18 @@ to the definition block in §3 (kept/redefined) or requirement block in §4
 
 | Decision | Count | Entries |
 |---|---|---|
-| KEEP (refined) | 6 | KPI-DASH-01, KPI-DASH-04, KPI-EFF-03, KPI-OPS-01, RULE-DOCUMENTACAO-FATURAMENTO-019, KPI-PPV-01(d) resolution-label capture |
+| KEEP (refined) | 7 | KPI-DASH-01, KPI-DASH-04, KPI-EFF-03, KPI-OPS-01, RULE-DOCUMENTACAO-FATURAMENTO-019, KPI-PPV-01(d) resolution-label capture, `vidas_salvas`→**KPIR-14** (RULE-INDICADORES-ETL-023, partial — GDEC-0007 K-8 MODIFICAÇÃO) |
 | REDEFINE | 9 | KPI-DASH-02, KPI-DASH-03, KPI-DASH-07, KPI-DASH-08, KPI-EFF-01, KPI-EFF-02, RULE-INDICADORES-ETL-001, RULE-INDICADORES-ETL-002, RULE-INDICADORES-ETL-018 |
-| REDEFINE — CONDITIONAL | 6 | KPI-DASH-05, KPI-EFF-04, KPI-OPS-02, RULE-INDICADORES-ETL-005, RULE-INDICADORES-ETL-023 (names), KPI-IND catalogue-as-candidate-list (31 concepts, individually) |
-| DROP | 10 (+31 members as implemented) | KPI-DASH-06, KPI-EFF-05, KPI-IND mechanism, KPI-PPV-01(a)(b)(c), KPI-OPS-03, RULE-INDICADORES-ETL-007, -013, -014; all 31 catalogue members as implemented (§5) |
+| REDEFINE — CONDITIONAL | 5 | KPI-DASH-05, KPI-EFF-04, KPI-OPS-02, RULE-INDICADORES-ETL-005, KPI-IND catalogue-as-candidate-list (31 concepts, individually) — RULE-INDICADORES-ETL-023 is no longer in this row: resolved 2026-08-15 by GDEC-0007 K-8 (see KEEP and DROP rows) |
+| DROP | 11 (+31 members as implemented) | KPI-DASH-06, KPI-EFF-05, KPI-IND mechanism, KPI-PPV-01(a)(b)(c), KPI-OPS-03, RULE-INDICADORES-ETL-007, -013, -014, plus `obitos`/`tempo_permanencia`/`tx_mortalidade`/`tx_ocupacao`/`admissao` (RULE-INDICADORES-ETL-023, partial — DROP definitivo per GDEC-0007 K-8); all 31 catalogue members as implemented (§5) |
 | OUT OF SCOPE | 3 | RULE-INDICADORES-ETL-006, RULE-INDICADORES-ETL-017, RULE-DOCUMENTACAO-FATURAMENTO-002 |
 
 Zero legacy computations are kept as implemented. Every KEEP is a rebuild with the
-stated refinements; every REDEFINE discards the legacy arithmetic entirely.
+stated refinements; every REDEFINE discards the legacy arithmetic entirely. The one
+exception to "zero legacy computations kept" remains true even after GDEC-0007:
+KPIR-14 keeps only the **name** `vidas_salvas` (a titular's mission/culture decision)
+— its measurable definition is new (§3, KPIR-14) and the legacy Tasy formula is not
+imported in any form.
 
 ## 2. Shared definitional rules for every kept or redefined KPI
 
@@ -607,6 +620,82 @@ ratification; none is adopted.
   precision/fatigue **baselines** its successor studies depend on are
   pre-deployment-only (§6, §7).
 
+### KPIR-14 — Altas vivas da UTI ("vidas_salvas") (succeeds part of RULE-INDICADORES-ETL-023; decision: K-8 MODIFICAÇÃO — GDEC-0007 — KEEP, redefinido)
+
+**PROPOSAL — AWAITING NAMED CLINICAL REVIEW on the numeric/procedural details below;
+the KEEP decision itself and the mission/culture name are already DECIDED**
+(`docs/00-governance/registers/decision-register.md` GDEC-0007, §8 K-8). The name
+`vidas_salvas` is the titular's decision, preserved for institutional mission and
+culture; the measurable definition below is what this KPI actually computes, and it
+is new — nothing of the legacy Tasy formula is imported. Of the six legacy
+macro-KPI names, the other five (`obitos`, `tempo_permanencia`, `tx_mortalidade`,
+`tx_ocupacao`, `admissao`) remain **DROP definitivo** — see §4.5.
+
+- **Numerator:** count of ICU episodes (encounters) ending in discharge alive from
+  the ICU in the reporting period.
+- **Denominator:** none — this is an absolute count, like KPIR-01/KPIR-12, **always
+  displayed jointly with two companion figures at equal prominence** (never as a
+  rate, a percentage, or a ratio of any kind):
+  1. total ICU discharges in the same period (alive + dead);
+  2. ICU deaths in the same period.
+
+  This triad is what forecloses reading "altas vivas" as a rate improving over time,
+  or as a proportion of anything — it is a count, displayed next to the two counts
+  that give it context.
+- **Exclusions:** none beyond §2.1; episodes with a missing or implausible discharge
+  anchor are `not_evaluated`/`invalid`, excluded from the count, and surfaced in
+  `DC(KPIR-14)` by reason. No episode is ever defaulted into "alive" or "dead" from
+  absent data.
+- **Anchors:** the discharge event is the **documented** ICU-discharge timestamp, in
+  the ratified site timezone, under the civil-day convention decided at K-6 (§8) and
+  the KPIR-09 admission/discharge anchor rules — never an administrative, billing, or
+  bed-management timestamp.
+- **Evaluation-status handling (SM-03):** an ICU episode without a `valid` discharge
+  anchor, or without a `valid` alive-vs-dead disposition at discharge, is excluded
+  from the count on both the numerator and both companion figures, and counted in
+  `DC(KPIR-14)` by reason — never silently pooled into either outcome.
+- **Companion DC metric:** `DC(KPIR-14)` = ICU episodes closed in the period with a
+  missing/invalid discharge anchor or a missing/invalid alive-vs-dead disposition /
+  all ICU episodes closed in the period, by reason — displayed with equal prominence
+  to the three headline counts, per the §2.2 DC rule.
+- **Aggregation:** unit → site → tenant; per period (monthly default (p) —
+  VALIDATION REQUIRED), under the KPIR-11 hierarchy constraint (no aggregate more
+  reassuring than its least-evaluated member).
+- **Cadence (p):** monthly; the two companion figures are computed and displayed at
+  the same cadence and the same visual level — never delayed or demoted relative to
+  the headline count.
+- **Honesty note — recorded as part of this definition, not a caveat placed
+  elsewhere:** "contagem de altas vivas — não é atribuição causal de vidas salvas
+  pelo sistema." KPIR-14 counts a clinical outcome (discharge alive from the ICU); it
+  is not an effect estimate, not a counterfactual, and not a comparison to any
+  baseline, expected-mortality model, or pre-V2 rate. It must never be displayed,
+  cited, or reported as evidence that the system "saved" the counted number of
+  patients.
+- **Sub-decisions — VALIDATION REQUIRED (`AUTH-CLINSAFETY`), not yet closed by
+  GDEC-0007:**
+  1. **Transfer-out-to-other-ICU handling** — whether a transfer to another ICU
+     (intra- or inter-facility) counts as a discharge-alive event, a censored/
+     excluded episode, or its own category. No default is adopted here.
+  2. **Readmission de-duplication window** — whether, and over what window, a
+     readmission to the same ICU is treated as a new episode (which would count the
+     same patient twice as "altas vivas") or linked back to a prior episode. No
+     default window is adopted here.
+
+  Until both close, KPIR-14 may be computed and displayed only with these two gaps
+  disclosed alongside it, never silently defaulted either way.
+- **Gaming/bias threats and mitigations:** *denominator-free inflation* — because
+  KPIR-14 has no denominator of its own, the two equal-prominence companion figures
+  (total discharges, deaths) are mandatory specifically to prevent the count from
+  being read in isolation as an improving rate without context; *transfer-out
+  gaming* — transferring unstable patients out before death could inflate the count
+  under an unfavourable default on sub-decision 1, which is exactly why no default is
+  adopted here; *readmission double-counting* — mitigated only once sub-decision 2
+  closes.
+- **Baseline:** not on the pre-deployment-only list of §7.1 (it is a clinical outcome
+  count, not an alert/alarm-burden or fatigue metric); retrospective reconstruction
+  from discharge records is possible in principle (⏱), subject to
+  `AUTH-PRIVACY-LEGAL` + `AUTH-CLINSAFETY`.
+
 ## 4. REDEFINE — CONDITIONAL entries: what must be closed, and by whom
 
 All entries: **PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).**
@@ -643,15 +732,21 @@ from scratch (numerator, denominator, bed-state model) before any display thresh
 is discussed; the 70/50 colour thresholds are unreferenced constants and are not
 carried.
 
-### 4.5 RULE-INDICADORES-ETL-023 — The six macro-KPI names
-**VALIDATION REQUIRED (`AUTH-CLINSAFETY` + `AUTH-PRODUCT`):** the six names
+### 4.5 RULE-INDICADORES-ETL-023 — The six macro-KPI names — RESOLVED 2026-08-15 (GDEC-0007, K-8 MODIFICAÇÃO)
+**Was VALIDATION REQUIRED; the titular decided K-8 as a MODIFICATION of the agent's
+recommendation** (`decision-register.md` GDEC-0007, §8 below). Of the six names
 (`vidas_salvas`, `obitos`, `tempo_permanencia`, `tx_mortalidade`, `tx_ocupacao`,
-`admissao`) are a candidate macro set only. Their formulas live in unmounted
-upstream Tasy Oracle objects — **SOURCE NOT LOCATED — cannot review**. Decision
-needed: obtain and review the Tasy definitions, or define V2-native successors, or
-drop permanently. **Serving any of them without a ratified definition is dropped
-now** — "vidas salvas" (lives saved) as an undefined served number is an
-untraceable clinical claim of the exact class this review exists to end.
+`admissao`), five — `obitos`, `tempo_permanencia`, `tx_mortalidade`, `tx_ocupacao`,
+`admissao` — are **DROP definitivo**: their formulas live in unmounted upstream Tasy
+Oracle objects (**SOURCE NOT LOCATED — cannot review**), and no V2-native successor
+is defined for any of them; they do not re-enter without a fresh decision. The
+sixth, `vidas_salvas`, is **KEPT** as a mission/culture display name (titular's
+decision) and **redefined** with a new, measurable, non-causal definition:
+**KPIR-14 "Altas vivas da UTI"** (§3). The legacy Tasy formula for `vidas_salvas` is
+not imported in any form — only the name survives, carrying a wholly new
+computation. Residual VALIDATION REQUIRED items for KPIR-14 (not closed by K-8) are
+listed in its §3 block: transfer-out-to-other-ICU handling, readmission
+de-duplication window, cadence ratification, and monthly aggregation window.
 
 ### 4.6 The 31 catalogue concepts
 Individually eligible for re-entry through this review's redefine path — see §5.3.
@@ -809,6 +904,7 @@ basis) existing first.
 | KPIR-11 roll-up constraint | n/a | n/a |
 | KPIR-12 note counts | None | No |
 | KPIR-13 feedback capture | Capture is V2-internal; its successor studies' fatigue/precision baselines are pre-deployment-only | **Successor studies: YES — §7.1** |
+| KPIR-14 altas vivas da UTI (`vidas_salvas`) | None on the §7.1 list (clinical outcome count, not alarm-burden/fatigue); retrospective reconstruction possible from discharge records (⏱, pending `AUTH-PRIVACY-LEGAL` + `AUTH-CLINSAFETY`) | No |
 
 ## 8. Open questions for the named reviewer
 
@@ -820,46 +916,106 @@ UNASSIGNED).**
    mapping of §0 and each row of §1 — in particular that no legacy computation
    survives unchanged, and that SUPERSEDE entries (KPI-DASH-06, KPI-PPV-01(a)) are
    correctly treated as DROP-with-named-successor. (Reviewer.)
+   **DECISÃO (GDEC-0007, 2026-08-15):** K-1 ratificado como recomendado — o
+   mapeamento de veredictos (34+31) e cada linha de §1 são confirmados; nenhum
+   cálculo legado sobrevive sem alteração; as entradas SUPERSEDE (KPI-DASH-06,
+   KPI-PPV-01(a)) permanecem corretamente tratadas como DROP com sucessor nomeado.
 2. **Transfusion criteria.** Resolve TF-002's direction (restrictive-trigger
    semantics); decide which of the twelve criterion themes survive; ratify or
    reject any composite aggregate to replace the 8/12 cutoff. (`AUTH-CLINSAFETY`.)
+   **DECISÃO (GDEC-0007, 2026-08-15):** K-2 aceito como recomendado — TF-002
+   resolvido na direção restritiva (alerta em transfusão ACIMA do gatilho
+   restritivo sem indicação documentada); o composto agregado (substituto do
+   corte 8/12) permanece suspenso até que `AUTH-CLINSAFETY` ratifique uma regra
+   de agregação própria — nenhum composto é computado antes disso.
 3. **Critical-census display semantics.** Should the attention-demanding headline
    be "critical" alone with equal-prominence not-assessed counts (as specified in
    KPIR-02), or a combined "critical OR not-assessed requires attention" count?
    This is a clinical display-priority judgement. (`AUTH-CLINSAFETY` + `AUTH-UX`.)
+   **DECISÃO (GDEC-0007, 2026-08-15):** K-3 aceito como recomendado — contagens
+   separadas com igual proeminência ("X críticos avaliados + Y não avaliáveis");
+   nunca combinadas em uma única contagem "requer atenção". Combinar reconstruiria
+   o HAZ-0005 como KPI.
 4. **Numeric floors.** Set every number this review deliberately left open: per-KPI
    minimum valid-fraction display floors (§2.2.2), minimum adjudicated n for
    precision display (§6.4), trend window/minimum samples (KPIR-04), frailty
    assessment window (KPIR-08), restraint duration limit (KPIR-07).
    (`AUTH-CLINSAFETY`.)
+   **DECISÃO (GDEC-0007, 2026-08-15):** K-4 aceito como recomendado — valores de
+   partida: fração válida mínima 70%, n mínimo 30 para taxas; permanecem
+   VALIDATION REQUIRED e serão calibrados em shadow mode antes de qualquer uso
+   operacional. Os demais pisos numéricos listados nesta questão seguem a mesma
+   regra: valor de partida declarado e revisável, nunca ausência de piso.
 5. **NEWS2 banding and staleness windows** (§4.1): ratify bands as a versioned rule
    artifact and set freshness/expiry windows per input. (`AUTH-CLINSAFETY`.)
+   **DECISÃO (GDEC-0007, 2026-08-15):** K-5 aceito como recomendado — reutilizar as
+   janelas de frescor do RULE-NEWS2 (1h/8h) como fonte única de verdade para
+   frescor nos KPIs; a ratificação das bandas como artefato de regra versionado
+   (§4.1) permanece VALIDATION REQUIRED.
 6. **Time conventions** (§4.3, KPIR-09): confirm the 7-to-7 operational day and
    site timezone with the site; ratify admission/discharge anchor events and
    fractional-day policy. (Site operations + `AUTH-CLINSAFETY`.)
+   **DECISÃO (GDEC-0007, 2026-08-15):** K-6 aceito como recomendado — dia civil
+   00:00–24:00 no fuso horário do sítio (não a convenção 7h-às-7h); as âncoras de
+   LOS (e de KPIR-14) são ancoradas em timestamps **documentados** de
+   admissão/alta; uma convenção censitária local divergente, se necessária, é
+   decisão de sítio a ser registrada separadamente, não um default do produto.
 7. **Catalogue re-entry.** Decide which of the 31 concepts (§5.3) are sponsored for
    re-entry, in what priority order, and against which referenced target sources.
    (`AUTH-CLINSAFETY` + `AUTH-PRODUCT`.)
+   **DECISÃO (GDEC-0007, 2026-08-15):** K-7 aceito como recomendado — nenhum dos 31
+   conceitos catalogados reentra no ciclo 2; reentrada individual só ocorre quando
+   existir fonte de dados própria para o conceito específico, com infecção/SMR
+   priorizados por último por exigirem ajuste de risco.
 8. **The six macro names** (§4.5): pursue the Tasy formulas for review, define
    V2-native successors, or drop permanently — explicitly including whether
    "vidas_salvas" should exist as a KPI at all. (`AUTH-CLINSAFETY` +
    `AUTH-PRODUCT`.)
+   **DECISÃO (GDEC-0007, 2026-08-15) — MODIFICAÇÃO:** dos seis macro-nomes legados,
+   cinco permanecem **DROP definitivo** (`obitos`, `tempo_permanencia`,
+   `tx_mortalidade`, `tx_ocupacao`, `admissao` — fórmulas Tasy inverificáveis, sem
+   sucessor V2-nativo definido). **`vidas_salvas` é MANTIDO**, por decisão do
+   titular, como nome de missão e cultura institucional — redefinido com uma
+   definição mensurável nova e honesta em **KPIR-14 "Altas vivas da UTI"** (§3): a
+   fórmula Tasy legada permanece descartada por inteiro; nada de sua aritmética é
+   importado. Sub-decisões de KPIR-14 (tratamento de transferência para outra UTI;
+   janela de deduplicação de readmissão) permanecem VALIDATION REQUIRED.
 9. **Adjudication preconditions** (§6): pre-register the deterioration definition
    and rubric (G2-VAL-0024) and resolve the lawful basis for adjudication and
    subgroup analysis (NIU-07 / VAL-0037). (`AUTH-CLINSAFETY` +
    `AUTH-PRIVACY-LEGAL`.)
+   **DECISÃO (GDEC-0007, 2026-08-15):** K-9 aceito como recomendado — a rubrica de
+   deterioração e sua base legal são comissionadas junto à pesquisa G1
+   (G2-VAL-0024); a definição e a rubrica devem ser pré-registradas antes de
+   qualquer estudo de adjudicação — sem rubrica pré-registrada o desfecho é
+   inauditável.
 10. **Commission the pre-deployment baseline study** (§7.1) before any deployment —
     the one irreversible scheduling item (G2-VAL-0025; requires G2-VAL-0026 site
     and ethics first). (`AUTH-PRODUCT` + `AUTH-UX`.)
+    **DECISÃO (GDEC-0007, 2026-08-15):** K-10 aceito como recomendado — o estudo de
+    baseline pré-implantação (§7.1; `g2-validation-backlog.md` G2-VAL-0025) é
+    **COMISSIONADO AGORA**, a única prioridade máxima da revisão e o único item
+    irreversível. Comissionamento não é conclusão: o estudo ainda requer desenho
+    (junto à pesquisa G1) e site/ética (G2-VAL-0026) antes de qualquer execução —
+    ver nota correspondente em `g2-validation-backlog.md` G2-VAL-0025.
 11. **Partial-policy scope.** For each kept KPI, decide whether `partial`-status
     patient-time is admissible in denominators at all, and under which approved
     partial policies — this review admits it only where such a policy exists, but
     whether any should exist per KPI is a clinical judgement.
     (`AUTH-CLINSAFETY`.)
+    **DECISÃO (GDEC-0007, 2026-08-15):** K-11 aceito como recomendado — nenhum
+    status `partial` é admissível em denominadores de KPI na v1; `DC(K)` já expõe a
+    incompletude sem necessidade de uma política de parcial por KPI. Parcial em KPI
+    é o denominador-que-encolhe com outro nome.
 12. **Restraint episode detection** (KPIR-07): approve an independent detection
     channel for undocumented restraint episodes, since the residual
     under-detection bias cannot be closed by computation. (`AUTH-CLINSAFETY` +
     nursing leadership.)
+    **DECISÃO (GDEC-0007, 2026-08-15):** K-12 aceito como recomendado — o canal
+    independente de detecção é diferido até existir fonte própria (ex.:
+    cruzamento com registro de enfermagem ou rondas de segurança da unidade);
+    KPIR-07 permanece documentation-based, com o viés de sub-detecção anotado
+    explicitamente onde o KPI é exibido. Sem fonte, "independente" seria ficção.
 
 ## 9. Cross-references
 
