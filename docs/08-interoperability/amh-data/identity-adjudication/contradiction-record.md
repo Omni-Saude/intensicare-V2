@@ -2,7 +2,7 @@
 id: IDN-CONTRA-001
 title: AMH patient-identity, tenant-grain and consent contradiction record
 label: OBSERVED
-status: OPEN — NOT ADJUDICATED
+status: ADJUDICADO em 2026-08-15 — ver ./adjudicacao-decisoes-2026-08-15.md (corpo em inglês preservado; resoluções em pt-BR)
 statement: >
   At the pinned AMH commit, six authoritative-or-quasi-authoritative AMH artifacts
   assert mutually incompatible semantics for the same field (`mpi_id` /
@@ -33,6 +33,27 @@ superseded_by: null
 ---
 
 # AMH Identity / Tenant / Consent — Formal Contradiction Record
+
+> ## ⚑ ADJUDICADO EM 2026-08-15 — LEIA ANTES DO CORPO
+>
+> As cinco contradições registradas neste documento (`IDN-C-1`…`IDN-C-5`) foram
+> **resolvidas** por decisão do titular nomeado **rodaquino-OMNI** em **2026-08-15**
+> (autoridade: `docs/00-governance/registers/g0-resolucoes-2026-08-15.md`, **DEC-G0-04**).
+>
+> **A ata de decisão é [`adjudicacao-decisoes-2026-08-15.md`](./adjudicacao-decisoes-2026-08-15.md).**
+>
+> **Como ler este documento agora:** o corpo em inglês abaixo permanece **válido e
+> inalterado** — ele é o registro da evidência que fundamentou a decisão, e continua sendo a
+> fonte para entender *por que* cada contradição existia. Cada eixo `IDN-C-n` recebeu, ao
+> final de sua seção, um bloco **"Resolução (2026-08-15)"** em pt-BR com a disposição
+> decidida. As seções **§4** (proibições) e **§5** (dono da decisão) receberam blocos de
+> atualização em pt-BR — leia-os antes de agir sobre o texto original em inglês, que
+> descreve o estado *anterior* à decisão.
+>
+> **Resumo em uma linha:** MPI é **por tenant** (ADR-041 §6 em vigor) + índice cross-PJ
+> governado (ADR-043 em vigor, travado em parecer DPO/jurídico); `identifier:mpiId` é o
+> elemento autoritativo; o identificador de fronteira é o `portable_subject_ref`. **O
+> `Observation` continua NÃO consumível** por três razões que nenhuma decisão resolveu.
 
 **Required by** `INTENSICARE_V2_ORCHESTRATOR_PROMPT.md` §7.4 (line 440): *"Create a
 formal contradiction record and owner decision for the conflict among ADR-006's
@@ -288,6 +309,29 @@ designed `2026-08-04`. No artifact examined marks P1 or P4 as superseded, deprec
 retired. **A later date is not a supersession**; only an AMH owner can say which is in
 force.
 
+#### Resolução (2026-08-15) — **AQ-1, Opção C**
+
+**Decidido por rodaquino-OMNI** (DEC-G0-04); ata em
+[`adjudicacao-decisoes-2026-08-15.md`](./adjudicacao-decisoes-2026-08-15.md) §2 AQ-1.
+
+**O `mpi_id` é POR TENANT.** O **ADR-041 §6 está EM VIGOR**. O cruzamento entre PJs existe
+apenas como o **índice de correspondência separado do ADR-043**, também **EM VIGOR**, cujo
+primeiro *apply* continua travado no parecer DPO/jurídico exigido pelo próprio ADR-043.
+
+Disposições: **ADR-006 SUPERSEDED quanto ao escopo de MPI**; **ADR-039 = registro
+histórico**; a **linguagem longitudinal do IG README** (L171, L240, L244–246, L257) é
+**defeito documental** a corrigir no **pacote IG 1.1.0**.
+
+**Consequência clínica aceita explicitamente:** o paciente multi-PJ — **4.220 pessoas
+(3,88%)**, ADR-041 L22 — aparece para a V2 como **sujeitos distintos, sem reconciliação**.
+Disso decorre um requisito vinculante de produto: a **UI da V2 DEVE exibir a limitação**
+("registro limitado a esta instituição"). É requisito de segurança clínica, não de UX.
+
+*A análise em inglês acima permanece válida: ela é a evidência que fundamentou esta escolha,
+e a razão de a alternativa não ser uma aproximação conservadora em nenhuma das direções.*
+
+---
+
 ### IDN-C-2 — Which FHIR element carries identity, and what the live producer actually emits
 
 **Declared side.** P2 (ADR-039 L65–67) names the **`identifier:mpiId` slice** as the
@@ -331,6 +375,28 @@ populated in practice, then "every Observation carries an MPI reference" is true
 *profile* and false of the *data*, and a V2 consumer that trusts the profile will read a
 missing identity as absent rather than as unverifiable. See **IDP-06** and DOM-0004.
 
+#### Resolução (2026-08-15) — **AQ-2, Opção B**
+
+**Decidido por rodaquino-OMNI**; ata §2 AQ-2.
+
+1. **`identifier:mpiId` é o elemento autoritativo** — o que o produtor de fato emite.
+2. **`extension:mpiId` e `extension:tenantId` são rebaixadas de `1..1`.** O tenant
+   autoritativo passa a ser derivado da **partição de URL + claim do token**.
+3. **URL de profile: padrão único e autoritativo `https://fhir.americashealth.com.br/…`.**
+   Os carimbos `amh.health/.../BR*` do produtor batch (L319–325, incl. `OBS_PROFILE` L325)
+   são **defeito do produtor**, a corrigir.
+4. Tudo publicado como **IG 1.1.0**; **a V2 pina 1.1.0**.
+
+**Efeito:** a contradição é resolvida na direção que **não** obriga a reescrever os 11,4
+milhões de recursos já produzidos, e alinha o contrato ao mecanismo de isolamento que
+realmente vigora (`partitioning-config.md` L34–37, L62–64).
+
+**Atenção — o desbloqueio é parcial:** isto elimina a *perna de identidade* do bloqueio sobre
+`Observation`. **Três outras pernas permanecem abertas** (fonte vazia, forma não conformante,
+carimbo de profile ainda não corrigido). Ver ata §6.1 e `interim-identity-policy.md` IDP-12.
+
+---
+
 ### IDN-C-3 — Consent: which gate is authoritative, and does it fail open or closed
 
 **Three statements, at one commit, that do not agree.**
@@ -370,6 +436,33 @@ split in two incompatible enumerations. Therefore the P1 position, as written, i
 presently satisfiable by the platform's own recorded state — which is itself a fact the
 adjudication must weigh, and which V2 must not paper over by assuming consent.
 
+#### Resolução (2026-08-15) — **AQ-3, Opção C**
+
+**Decidido por rodaquino-OMNI**; ata §2 AQ-3. **Cláusula de natureza jurídica — ver a regra
+de supersessão reforçada abaixo.**
+
+1. A base legal do **laço clínico single-tenant em contexto de tratamento** é a **LGPD
+   Art. 11, II, "f" — tutela da saúde**, em procedimento realizado por profissionais/serviços
+   de saúde.
+2. **O laço clínico NÃO tem portão de consentimento.** Seu portão exigível é
+   **propósito-de-uso + autorização de contexto profissional**.
+3. **Consentimento rege apenas usos secundários** (pesquisa, analytics, compartilhamento),
+   que ficam **BLOQUEADOS** até existir infraestrutura real.
+4. **`ie_perm_sms_email` JAMAIS é consentimento** — registrado em definitivo.
+
+**Por que isto dissolve a contradição sem fechá-la à força:** a divergência documentada acima
+(ADR-039 falha-aberta × código falha-fechada × ausência de portão no canal batch) deixa de
+bloquear o laço clínico, porque o consentimento **não é** o portão dele. A ausência de
+produtor em `mpi.consent_log` (ADR-045 L82–84) passa a ser o que sempre foi de fato: um
+bloqueio de **uso secundário**, não de tratamento.
+
+> **Regra de supersessão reforçada (DEC-G0-03).** Material jurídico produzido nesta fase é
+> **sugestão**. A qualificação da base legal **exige ratificação por advogados brasileiros
+> antes de qualquer tratamento de dados reais, operação sombra ou piloto** (G6/G8). Até lá, o
+> desenvolvimento prossegue **exclusivamente com dados sintéticos**.
+
+---
+
 ### IDN-C-4 — Tenant enumeration drift between the IG and the tenant-grain ADR
 
 **OBSERVED.** The IG README L204 records the `amh-tenant` CodeSystem as
@@ -387,6 +480,23 @@ tenants, then the *tenant* half of every subject reference is also unsettled —
 the *person* half. A V2 tenant-scoping rule cannot be built on a ValueSet whose contents
 the governing ADR has superseded. **VALIDATION REQUIRED:** the ValueSet JSON contents
 were not enumerated this cycle; only the README's description of them was read.
+
+#### Resolução (2026-08-15) — **AQ-6, Opção A** (parte 1 de 2)
+
+**Decidido por rodaquino-OMNI**; ata §2 AQ-6.
+
+**A enumeração autoritativa é o conjunto pós-ADR-041 — 12 tenants de negócio.** O
+**CodeSystem/ValueSet `amh-tenant`** (IG README L204, que ainda lista 10 tenants e inclui o
+aposentado `austa_clinicas`) e a **tabela de partições do HAPI**
+(`partitioning-config.md` L41–45) são **artefatos defasados**, a corrigir no **IG 1.1.0**.
+
+**Tenant piloto da V2:** nome **adiado** para a redação do contrato.
+
+*A ressalva registrada acima — de que o conteúdo JSON do ValueSet não foi enumerado neste
+ciclo, apenas a descrição no README — permanece verdadeira e continua sendo um item de
+verificação quando o IG 1.1.0 for publicado.*
+
+---
 
 ### IDN-C-5 — Two different tenant boundaries are enforced at two different layers
 
@@ -420,6 +530,26 @@ client-selectable partition) gives no evident way to express. Which is deployed 
 requires V2 to test the URL/claim rule empirically rather than trust either description.
 Recorded here because a "cross-tenant authorized role" is, if real, an identity-scope
 decision — not merely an auth detail.
+
+---
+
+#### Resolução (2026-08-15) — **AQ-6, Opção A** (parte 2 de 2)
+
+**Decidido por rodaquino-OMNI**; ata §2 AQ-6.
+
+**`cross_tenant_authorized` é deriva documental. NENHUM bypass existirá em ambiente
+implantado.** Os **testes negativos da V2 afirmam a impossibilidade** — não a mera ausência
+observada. A descrição do IG (L236, L279–280) é, portanto, texto a corrigir, e não uma
+capacidade a suportar.
+
+O mecanismo de fronteira vigente é o descrito em `partitioning-config.md`: **partição por URL
+com igualdade entre o tenant do token e o tenant da URL**, referências cross-partition
+desabilitadas, partição não selecionável pelo chamador. Este é também o mecanismo que o
+**AQ-2** elege como fonte autoritativa do tenant, no lugar de `extension:tenantId`.
+
+*Permanece verdadeiro e não decidido:* qual é o comportamento **implantado** — isto é
+evidência de Camada 2, que este ciclo não pôde obter, e que o prompt §7.4 exige testar
+empiricamente. A decisão fixa o contrato; ela não substitui a medição.
 
 ---
 
@@ -464,6 +594,24 @@ silently") and §7.4.** Each prohibition is operationalized as a rule in
 
 ---
 
+### Atualização de §4 após a adjudicação (2026-08-15)
+
+A tabela em inglês acima descreve o regime **anterior** à decisão. Regime vigente:
+
+| # | Estado após 2026-08-15 |
+|---|---|
+| **N-1** | **EXTINTA** — a seleção foi feita (AQ-1, Opção C). A obrigação que a substitui: todo artefato da V2 que trate de identidade AMH **cita a ata**, não mais a questão em aberto. |
+| **N-2** | **PERMANENTE, e agora por decisão e não por cautela.** `mpi_id` igual em dois tenants **não** significa mesma pessoa: o MPI é por tenant. |
+| **N-3** | **PERMANENTE.** Nenhum join cross-PJ por CPF ou qualquer identificador. O cruzamento é exclusividade do índice do ADR-043, interno à AMH e travado em parecer DPO/jurídico. |
+| **N-4** | **REENQUADRADA (AQ-3).** Não há portão de consentimento no laço clínico. A proibição sobre `ie_perm_sms_email` **permanece absoluta**; usos secundários seguem **bloqueados**. |
+| **N-5** | **PERMANECE.** `Observation` continua **não consumível**: AQ-2 resolveu a perna de identidade; fonte vazia, forma não conformante e carimbo de profile seguem abertos (ata §6.1). |
+| **N-6** | **PERMANENTE e reforçada (AQ-6).** Nenhum bypass existirá; os testes afirmam impossibilidade. |
+| **N-7** | **PERMANENTE.** Reforçada pelo AQ-2, que torna o par URL/claim a fonte autoritativa do tenant. |
+| **N-8** | **SUPERSEDED pelo AQ-4 — na direção mais estrita.** A V2 não cria chave interna paralela: adota o **`portable_subject_ref`** nativamente desde o dia um. Nenhum identificador cru da AMH atravessa a fronteira. |
+| **N-9** | **CUMPRIDA.** A questão foi fechada pela autoridade nomeada. Permanece válida a regra de que **nenhum agente** aplica `DECIDED` por conta própria. |
+
+---
+
 ## 5. Decision owner and required decision form
 
 **Decision owner: AMH owners + the V2 identity authority — UNASSIGNED — VALIDATION REQUIRED.**
@@ -490,6 +638,33 @@ unblock V2 Observation consumption — see the cross-cutting consequence in §3.
 
 The unblock request is written for AMH owners at
 [`adjudication-request-to-amh-owners.md`](./adjudication-request-to-amh-owners.md).
+
+---
+
+### Atualização de §5 após a adjudicação (2026-08-15)
+
+O texto em inglês acima registra que **nenhuma autoridade estava nomeada**. **Isso mudou.**
+
+| Campo | Valor vigente |
+|---|---|
+| `decided_by` | **rodaquino-OMNI** — CEO e acionista principal da OMNI e da AMH; médico intensivista |
+| `decided_date` | **2026-08-15** |
+| Registro da autoridade | `docs/00-governance/registers/g0-resolucoes-2026-08-15.md` — **DEC-G0-04** |
+| Autoridade AMH | Detida pelo mesmo titular, na qualidade de CEO/acionista principal |
+| Autoridade de identidade da V2 | **AUTH-DATA-PLATFORM**, mesmo titular (DEC-G0-04) |
+| Via | Delegação em sessão, transmitida pelo orquestrador de entrega |
+| Escriba | Analista de adjudicação de identidade e tenancy AMH (Onda 2) |
+| Ata | [`adjudicacao-decisoes-2026-08-15.md`](./adjudicacao-decisoes-2026-08-15.md) |
+
+**As duas lacunas que esta seção registrava estão fechadas** — a AMH e a V2 têm autoridade
+nomeada, e são a mesma pessoa. A ata cumpre a forma exigida por `evidence-notation.md` §4
+(`decided_by`, `decided_date`, `rationale`, `supersession_rule`), **por decisão**, e responde
+`IDN-C-1`…`IDN-C-5` individualmente, com a disposição de cada artefato — que era a exigência
+adicional registrada nesta seção.
+
+**Pendências de forma que permanecem** (ata §0.3 e §8): contra-assinatura do titular ou
+alocação de IDs `GDEC-nnnn` no `decision-register.md`; e, para o AQ-3, **ratificação por
+advogados antes de qualquer dado real** (DEC-G0-03).
 
 ---
 

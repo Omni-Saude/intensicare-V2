@@ -105,8 +105,204 @@ consumer:
   consumer_release: null
   consumer_release_status: NOT_SELECTED
 
+# =============================================================================
+# DECISOES DE ADJUDICACAO — 2026-08-15
+#
+# Acrescentado em 2026-08-15 (politica de idioma DEC-G0-10: material novo em
+# pt-BR). Registra a DIRECAO DECIDIDA e os pins que passarao a existir quando
+# os artefatos forem produzidos.
+#
+# LEITURA OBRIGATORIA: uma decisao de direcao NAO e evidencia de camada.
+# Nenhuma das seis resolucoes criou arquivo, publicou package, provisionou
+# ambiente ou mediu uma linha de dado. Os campos `pins_a_existir` abaixo sao
+# ALVOS, nao pins — cada um permanece `pinned: false` ate o artefato existir e
+# ter digest verificavel. Este lock continua DRAFT — NOT ACCEPTED.
+# =============================================================================
+decisions:
+  adjudication_date: "2026-08-15"
+  authority: rodaquino-OMNI — CEO e acionista principal (OMNI e AMH)
+  authority_basis: >-
+    docs/00-governance/registers/g0-resolucoes-2026-08-15.md DEC-G0-04 — o
+    titular declara deter a autoridade do lado AMH. As decisoes AQ-1..AQ-6 sao
+    do humano nomeado; este arquivo e registro de escriba.
+  language_policy: DEC-G0-10 — material novo em pt-BR
+
+  # ATA DE REFERENCIA das seis resolucoes (prevalece quanto ao teor):
+  ata_de_referencia:
+    path: docs/08-interoperability/amh-data/identity-adjudication/adjudicacao-decisoes-2026-08-15.md
+    doc_id: IDN-ADJ-2026-08-15
+    nota: >-
+      Lavrada pelo especialista de identidade. Em caso de divergencia entre
+      aquele documento e este bloco, a ata prevalece; este bloco e leitura de
+      consequencia para o pin de contratos.
+
+  # PENDENCIAS DE FORMA — VALIDACAO NECESSARIA
+  # Registradas pela propria ata (§0.3). Sao de forma, nao de merito.
+  registration_gap:
+    decision_register: >-
+      As AQ-1..AQ-6 ainda NAO constam de docs/00-governance/registers/
+      decision-register.md (verificado 2026-08-15: busca por "AQ-" nao retorna
+      entradas). A nota de integracao 2 de g0-resolucoes-2026-08-15.md preve a
+      alocacao de IDs GDEC-nnnn pelo steward de governanca.
+    contra_assinatura: >-
+      As decisoes chegaram aos especialistas por intermedio do orquestrador de
+      entrega, nao diretamente do titular. A ata recomenda contra-assinatura do
+      titular.
+    efeito: >-
+      A V2 opera sob a ata, que e registro fiel do que foi transmitido. Ambas as
+      pendencias devem estar fechadas antes do G3.
+  registration_gap_status: VALIDATION_REQUIRED
+
+  resolutions:
+    AQ-1:
+      resolucao: C
+      sintese: >-
+        MPI por tenant (ADR-041 §6) + indice de correspondencia cross-PJ
+        separado e governado (ADR-043). ADR-006 fica superado. A linguagem
+        "longitudinal cross-tenant" da IG e defeito de documentacao.
+      ordens: [OS-02, OS-06]
+    AQ-2:
+      resolucao: B
+      sintese: >-
+        identifier:mpiId e autoritativo; extensions rebaixadas de 1..1. URL de
+        profile unica = fhir.americashealth.com.br; amh.health/BR* e defeito do
+        produtor. IG package 1.1.0 a publicar e pinar.
+      ordens: [OS-01, OS-05, OS-07, OS-08]
+    AQ-3:
+      resolucao: C
+      sintese: >-
+        Base legal do loop clinico = tutela da saude (LGPD Art. 11, II, "f").
+        Sem gate de consentimento no loop clinico. Usos secundarios bloqueados.
+        ie_perm_sms_email jamais como consentimento. Ratificacao juridica antes
+        de dado real.
+      ordens: [OS-13, OS-16, OS-21]
+    AQ-4:
+      resolucao: A plena
+      sintese: >-
+        portable_subject_ref obrigatorio como identificador de fronteira do
+        contrato v1. PSR nativo na V2 desde o dia um, sintetico em dev.
+        SP-1..SP-7 viram itens de trabalho ordenados. Ref independente de
+        encontro, sempre qualificada por encontro.
+      ordens: [OS-10, OS-11, OS-12, OS-13, OS-14, OS-15, OS-16]
+    AQ-5:
+      resolucao: A vinculante
+      sintese: >-
+        Eventos de ciclo de vida de identidade + resolve(ref, as_of)
+        obrigatorios no contrato v1. Sem eles o G3 NAO passa.
+      ordens: [OS-17, OS-18]
+    AQ-6:
+      resolucao: A
+      sintese: >-
+        Bypass cross_tenant_authorized = deriva documental, nao existira.
+        Enumeracao autoritativa = 12 tenants pos-ADR-041. CodeSystem/ValueSet e
+        particoes HAPI a corrigir.
+      ordens: [OS-03, OS-04, OS-09]
+
+  # -------------------------------------------------------------------------
+  # PINS QUE PASSARAO A EXISTIR — ALVOS, NAO PINS
+  # Nenhum destes artefatos existe hoje. Cada entrada e um alvo declarado para
+  # que a V2 saiba o que pinar quando existir, e para que a ausencia seja
+  # legivel em vez de silenciosa.
+  # -------------------------------------------------------------------------
+  pins_a_existir:
+
+    fhir_package_1_1_0:
+      package_id: br.com.americashealth.fhir
+      package_version_alvo: 1.1.0
+      substitui: 1.0.0            # a versao OBSERVADA no commit pinado
+      conteudo_decidido:
+        - OS-01 — identifier:mpiId 0..1 -> 1..1 (autoritativo); extension:mpiId
+          e extension:tenantId rebaixadas de 1..1 para 0..1 em Patient-amh e
+          Observation-amh-laboratory
+        - OS-02 — remocao da linguagem de MPI longitudinal cross-tenant
+        - OS-03 — CodeSystem/ValueSet amh-tenant corrigido para 12 tenants
+          pos-ADR-041 (sem austa_clinicas, sem amh_landing)
+        - OS-04 — remocao do texto do bypass cross_tenant_authorized
+      compatibilidade_declarada_alvo: >-
+        MISTA e precisa ser dita, nao descoberta: rebaixar 1..1 -> 0..1 afrouxa
+        (compativel para tras); elevar identifier:mpiId 0..1 -> 1..1 APERTA e e
+        INCOMPATIVEL para tras para qualquer produtor que hoje omita o
+        identifier.
+      digest: null
+      pinned: false
+      status: NAO_PUBLICADO — depende de OS-05
+      bloqueia: >-
+        Enquanto nao existir, fhir_package.package_digest permanece null e este
+        lock nao sai de DRAFT.
+
+    portable_subject_ref:
+      formato_alvo: amh:psr:v1
+      papel_no_contrato: >-
+        Campo sujeito do contrato AMH×IntensiCare v1 — OBRIGATORIO (AQ-4).
+      escopo: "{amh_tenant, legal_entity}"
+      qualificacao_de_encontro: >-
+        Independente de encontro, sempre qualificada por encontro (decidido em
+        AQ-4; responde a sub-questao factual levantada na adjudicacao).
+      nativo_na_v2: true          # desde o dia um, sintetico em dev
+      exemplo_de_forma: null      # nenhuma ref mintada existe; nao inventar
+      pinned: false
+      status: NAO_EXISTE — depende da ONDA C (OS-10..OS-16)
+      dependencia_externa: OS-16 — parecer DPO/juridico (unica externa)
+
+    contrato_intensicare_v1:
+      caminho_proposto: schemas/contracts/intensicare/v1/contract-manifest.yaml
+      propriedade: AMH-owned — a V2 propoe, nao coloca (XRD-04)
+      clausulas_decididas:
+        campo_sujeito: portable_subject_ref (AQ-4)
+        ciclo_de_vida_de_identidade: >-
+          Eventos (alias, merge, unmerge/split, restore, reassignment, erasure)
+          + resolve(ref, as_of) — OBRIGATORIOS (AQ-5). Condicao declarada de
+          passagem do G3.
+        modelo_de_finalidade: >-
+          Tutela da saude, LGPD Art. 11, II, "f", no loop clinico. Sem gate de
+          consentimento. Usos secundarios bloqueados (AQ-3).
+        exclusoes_explicitas_minimas:
+          - sinais vitais — nenhum profile; category fixada em laboratory
+          - Observation laboratorial — enquanto OS-20 nao concluir pelo caminho
+            estruturado Diagnose/LIS
+      digest: null
+      pinned: false
+      status: NAO_EXISTE — depende de OS-19
+
+  # -------------------------------------------------------------------------
+  # O QUE AS RESOLUCOES NAO DECIDIRAM
+  # Registrado para que a ausencia nao seja lida como afirmacao.
+  # -------------------------------------------------------------------------
+  nao_decidido:
+    C-1_sinais_vitais: >-
+      As seis resolucoes NAO decidem a contradicao dos sinais vitais. O unico
+      profile de Observation da IG fixa category em laboratory por padrao,
+      excluindo estruturalmente sinais vitais de qualquer instancia conforme.
+      Exigiria novo profile e nova decisao de produto. Permanece a Q1 do
+      dossie — a pergunta de maior valor.
+    C-2_autenticacao_implantada: >-
+      AQ-6 elimina o bypass cross_tenant_authorized, mas o mecanismo de
+      autenticacao efetivamente implantado por ambiente permanece aberto (Q2).
+      Exige descoberta empirica, nao decisao.
+    ambientes: >-
+      Apenas dev provisionado. Nenhuma resolucao cria ambiente. A condicao de
+      ambiente similar a producao do G3 continua insatisfazivel por qualquer
+      parte (Q6).
+    transporte: >-
+      Nenhuma resolucao escolheu transporte. §7.5 continua exigindo comparacao
+      entre FHIR REST/Subscriptions, stream de eventos, batch controlado e
+      outras opcoes.
+    camada_4: >-
+      Nenhuma resolucao mede latencia, completude, ordenacao, disponibilidade,
+      replay ou recuperacao. Camada 4 permanece sem evidencia.
+
+  efeito_no_achado_de_compatibilidade: >-
+    O achado NAO muda para "compativel". Permanece: candidato a integracao;
+    compatibilidade nao demonstrada para avaliacao de UTI acionavel. O que
+    mudou e a natureza do bloqueio — de INDEFINICAO para EXECUCAO E AMBIENTE,
+    que e um estado melhor e mensuravel.
+
 # -----------------------------------------------------------------------------
 # FHIR PACKAGE — OBSERVED at schemas/fhir-profiles/README.md
+#
+# NOTA 2026-08-15: os valores abaixo permanecem os OBSERVADOS no commit pinado
+# (1.0.0). Nao foram alterados pela adjudicacao — a decisao aponta para 1.1.0,
+# que ainda nao existe. Ver decisions.pins_a_existir.fhir_package_1_1_0.
 # -----------------------------------------------------------------------------
 fhir_package:
   package_id: br.com.americashealth.fhir            # OBSERVED
@@ -529,6 +725,25 @@ acceptance:
     - An AMH x IntensiCare contract package is authored, owned, approved and published by AMH.
     - Evidence layers 2, 3 and 4 produce real evidence for every consumed interface.
     - Gate G3 conditions are met in full and compatibility is granted per interface, pathway, tenant/facility and operating mode.
+  # Progresso registrado em 2026-08-15 (ver bloco `decisions:` acima).
+  # A adjudicacao moveu a 2a precondicao parcialmente e nao moveu nenhuma outra.
+  progresso_2026_08_15:
+    precondicao_1_reverificar_blob_shas: NAO_MOVIDA — nenhum commit de execucao selecionado
+    precondicao_2_interfaces_autoritativas: >-
+      PARCIAL — AQ-2 designa identifier:mpiId como elemento autoritativo e a URL
+      de profile unica; AQ-6 fixa a enumeracao de tenants. Os ARTEFATOS que
+      carregam essas designacoes (IG 1.1.0) ainda nao existem.
+    precondicao_3_contradicoes: >-
+      PARCIAL — C-2 (parcial, o bypass cai por AQ-6; o mecanismo implantado
+      segue aberto), C-4 (encaminhada por OS-20 ao caminho estruturado).
+      C-1 (sinais vitais) NAO decidida. C-3 (status do manifesto Maezo) NAO
+      tratada pelas resolucoes.
+    precondicao_4_pacote_de_contrato: >-
+      NAO MOVIDA quanto ao artefato; direcao DECIDIDA quanto ao conteudo
+      (campo sujeito, clausula de ciclo de vida, modelo de finalidade).
+      Depende de OS-19.
+    precondicao_5_camadas_2_3_4: NAO_MOVIDA — nenhuma evidencia produzida
+    precondicao_6_gate_g3: NAO_MOVIDA
   note: >-
     Until accepted, the standing report is `integration candidate` and clinical
     evaluation remains non-actioning (prompt §7.5). No V2 component should read

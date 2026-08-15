@@ -5,7 +5,7 @@ owner: UNASSIGNED — VALIDATION REQUIRED
 source: INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §10 (ADR program, lifecycle, and the 24 minimum ADRs), §17 (execution phases and stage gates), gates G0–G8
 date_collected: 2026-08-14
 collector: candidate-architecture and ADR-program engineer (Wave 2)
-last_updated: 2026-08-14
+last_updated: 2026-08-15
 ---
 
 # ADR Index and Lifecycle — IntensiCare V2
@@ -14,9 +14,18 @@ last_updated: 2026-08-14
 `INTENSICARE_V2_ORCHESTRATOR_PROMPT.md` §10 (lines 636–660), defines the lifecycle from
 §10 line 618, and records the dependency, gate, and phase structure between them.
 
-**Nothing in this file is a decision.** Two ADRs are drafted (`ADR-0001`, `ADR-0002`) and
-both are `proposed`. The other twenty-two are `not-started`: the ID and topic are
-reserved, no draft exists, and no position is implied by the reservation.
+**Nothing in this file is itself a decision.** Three ADRs are drafted. `ADR-0001` and
+`ADR-0002` are `proposed` and record no decision. **`ADR-0004` is `under-review`**: its
+*direction* was decided by a named human authority (rodaquino-OMNI) on 2026-08-15 and the
+written ADR now awaits that authority's acceptance — see
+`../../00-governance/registers/g0-resolucoes-2026-08-15.md`. The other twenty-one are
+`not-started`: the ID and topic are reserved, no draft exists, and no position is implied
+by the reservation.
+
+**Language policy (SOURCE: DEC-G0-10, 2026-08-15).** Material produced from 2026-08-15
+onward is written in **pt-BR**. `ADR-0004` is therefore in pt-BR; `ADR-template.md`,
+this index, `ADR-0001` and `ADR-0002` remain in English as valid cycle-0 corpus.
+Retroactive translation is an open decision of the titular authority.
 
 This file is the **single source of truth for the `ADR` prefix's next-available number**
 (`docs/00-governance/traceability-policy.md` §2 rule 4). Next free ID: **ADR-0025**.
@@ -31,6 +40,7 @@ This file is the **single source of truth for the `ADR` prefix's next-available 
 | [`adr-index.md`](./adr-index.md) | This file — lifecycle, backlog, dependency graph | PROPOSAL |
 | [`ADR-0001-amh-platform-boundary.md`](./ADR-0001-amh-platform-boundary.md) | Options for the AMH platform boundary (§7.3) | proposed |
 | [`ADR-0002-modular-monolith-and-extraction-criteria.md`](./ADR-0002-modular-monolith-and-extraction-criteria.md) | Modular-monolith baseline and service-extraction criteria (§9.1 principle 8) | proposed |
+| [`ADR-0004-identidade-paciente-encontro-mpi.md`](./ADR-0004-identidade-paciente-encontro-mpi.md) | Patient/encounter/MPI identity, boundary identifier, merge/unmerge semantics (§7.4) — **pt-BR** | **under-review** (direction decided 2026-08-15) |
 
 ---
 
@@ -127,7 +137,7 @@ Column meanings:
 | [ADR-0001](./ADR-0001-amh-platform-boundary.md) | 1 | Intended platform boundary with AMH-data | **proposed** | G3 | 3 | UNASSIGNED | `AUTH-DATA-PLATFORM` + `AUTH-AMH-OWNER` (joint) |
 | [ADR-0002](./ADR-0002-modular-monolith-and-extraction-criteria.md) | 2 | Modular monolith and service-extraction criteria | **proposed** | G4 | 4 | UNASSIGNED | `AUTH-PRODUCT` + `AUTH-OPERATIONS` |
 | ADR-0003 | 3 | Tenant / organization / facility and resource-ownership model | not-started | G3, G6 | 3 | UNASSIGNED | `AUTH-DATA-PLATFORM` + `AUTH-SECURITY` |
-| ADR-0004 | 4 | Patient/encounter/MPI identity and merge/unmerge handling | not-started | G3 | 3 | UNASSIGNED | `AUTH-DATA-PLATFORM` + `AUTH-AMH-OWNER` (joint) |
+| [ADR-0004](./ADR-0004-identidade-paciente-encontro-mpi.md) | 4 | Patient/encounter/MPI identity, boundary identifier and merge/unmerge handling | **under-review** (2026-08-15) | G3 | 3 | **rodaquino-OMNI** | `AUTH-DATA-PLATFORM` + `AUTH-AMH-OWNER` — both held by rodaquino-OMNI per DEC-G0-04 |
 | ADR-0005 | 5 | Canonical observation, provenance, quality, correction, and time model | not-started | G3, G4 | 3 | UNASSIGNED | `AUTH-DATA-PLATFORM` + `AUTH-CLINSAFETY` |
 | ADR-0006 | 6 | Operational versus analytical source-of-truth and reconciliation | not-started | G3 | 3 | UNASSIGNED | `AUTH-DATA-PLATFORM` + `AUTH-CLINSAFETY` |
 | ADR-0007 | 7 | Rule bundle format, signing, approval, activation, rollback, retirement | not-started | G2, G6 | 2 | UNASSIGNED | `AUTH-CLINSAFETY` + `AUTH-SECURITY` |
@@ -169,7 +179,7 @@ cited in each ADR's topic; they are a proposed ordering, not a schedule.
 | ADR-0001 | — (evidence only: Gate G3 layers, AMH owner) | 0002, 0003, 0004, 0005, 0006, 0013, 0015, 0019 | The boundary fixes what V2 owns, hosts, and is accountable for (§7.3) |
 | ADR-0002 | 0001 (only option (b) materially changes it) | 0010, 0011, 0019, 0021, 0022 | Deployment unit shapes the backbone, projections, platform, supply chain (§9.1 p8) |
 | ADR-0003 | 0001 | 0004, 0011, 0015, 0016, 0017, 0018 | Tenant grain must match the boundary; AMH's grain is root CNPJ (§7.4, evidence 7) |
-| ADR-0004 | 0001, 0003 | 0005, 0009, 0013 | Identity is scoped by tenant; ADR-006/039/041 contradiction is unresolved (§7.4) |
+| ADR-0004 | 0001, 0003 (**drafted ahead of both** — see note below) | 0005, 0009, 0013, 0015, 0016, 0018 | Identity is scoped by tenant. The ADR-006/039/041/IG/043/042 six-way contradiction **was adjudicated 2026-08-15** and ADR-0004 records the resulting model |
 | ADR-0005 | 0003, 0004 | 0006, 0007, 0008, 0010, 0013, 0017, 0018, 0023 | Canonical facts need an owner, a subject, and a tenant before they have a shape (§9.3) |
 | ADR-0006 | 0001, 0005 | 0008, 0010, 0020 | Precedence/conflict/replay rules presuppose the boundary and the fact model (§7.3) |
 | ADR-0007 | 0005, 0022 | 0008, 0024 | Bundles carry terminology snapshots and require artifact signing (§6.4, §15.1) |
@@ -201,7 +211,7 @@ flowchart LR
     A1["ADR-0001<br/>AMH boundary"]:::drafted
     A2["ADR-0002<br/>modular monolith"]:::drafted
     A3["ADR-0003<br/>tenancy/ownership"]:::notstarted
-    A4["ADR-0004<br/>identity/MPI"]:::notstarted
+    A4["ADR-0004<br/>identity/MPI<br/>under-review"]:::drafted
     A5["ADR-0005<br/>observation/time"]:::notstarted
     A6["ADR-0006<br/>op vs analytical SoT"]:::notstarted
     A7["ADR-0007<br/>rule bundles"]:::notstarted
@@ -313,15 +323,26 @@ implies a commitment this program has no authority to make.
 
 ## 7. Open items for the orchestrator
 
-1. **No decision owner is named for any of the 24 ADRs.** Every "candidate authority" is a
-   role that is itself `UNASSIGNED — VALIDATION REQUIRED` in
-   `docs/00-governance/authority-model.md`. Until Gate G0 names humans, **no ADR can leave
-   `proposed`** — including the two drafted here.
-2. **No decision deadline is set for any ADR.** Deadlines are a scheduling authority this
-   program does not hold. Prompt §10 makes `decision deadline` a mandatory ADR field, so
-   every draft carries `UNSET — VALIDATION REQUIRED` and this is an open gap, not an
-   oversight.
-3. **ADR-0001's acceptance conditions are mostly external.** See §4.3.
-4. **Twenty-two topics have no draft.** Their reservation here is bookkeeping. Any claim
+1. **Decision owners exist as of 2026-08-15, and one human holds seven of them.** DEC-G0-01
+   through DEC-G0-08 assign `AUTH-PRODUCT`, `AUTH-SECURITY` (design-phase only),
+   `AUTH-DATA-PLATFORM`, the AMH-side authority, `AUTH-UX` and `AUTH-OPERATIONS` to
+   rodaquino-OMNI on an interim basis; `AUTH-PRIVACY-LEGAL` is deliberately **not** filled
+   and is reclassified to G6/G8 (DEC-G0-03), with development restricted to synthetic data
+   until a Brazilian legal opinion exists. The "candidate authority" column above therefore
+   resolves to a named human for every row except the privacy/legal ones. **Authority
+   concentration is a recorded risk** — see the DEC-G0 integration notes and ADR-0004 §11.2.
+   The implementer ≠ verifier pairs are untouched and remain the real control.
+2. **No decision deadline is set for any ADR except ADR-0004**, whose direction was decided
+   2026-08-15 and whose written acceptance must precede the AMH×IntensiCare v1 contract
+   package. Prompt §10 makes `decision deadline` a mandatory field, so every other draft
+   carries `UNSET — VALIDATION REQUIRED`: an open gap, not an oversight.
+3. **ADR-0001's acceptance conditions are still mostly external.** See §4.3. Two of its
+   twelve conditions moved on 2026-08-15 (C2 closed, C1 partially closed); the Gate G3
+   evidence layers, the AMH environment and the contradictions C-1/C-3/C-4 did not.
+4. **Twenty-one topics have no draft.** Their reservation here is bookkeeping. Any claim
    that "the ADR program covers 24 decisions" would be false: it *reserves* 24 and
-   *drafts* 2.
+   *drafts* 3 — of which **none is accepted**.
+5. **ADR-0004 was drafted ahead of its stated prerequisites** (ADR-0001, ADR-0003) because
+   the adjudication that unblocked it happened first. This is legitimate — the dependency
+   table describes *acceptance* order, not drafting order — but ADR-0004's acceptance
+   should be reconciled against ADR-0003's tenant/ownership model when that is written.
