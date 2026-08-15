@@ -92,6 +92,18 @@ adjudicacao_identidade_2026_08_15:
     - "ADR-0004 (identidade) em redação; aceitação formal na revisão do titular"
     - "Política de idioma DEC-G0-10: todo material novo em pt-BR"
 
+prompt_do_orquestrador_revisado_2026_08_15:
+  arquivo: INTENSICARE_V2_ORCHESTRATOR_PROMPT.md
+  commit: ffc8026
+  conteudo: >-
+    Seção §0 (LEIA PRIMEIRO) adicionada: leituras obrigatórias, decisões
+    fechadas (DEC-G0-01..10, AQ-1..AQ-6), mapa dos ciclos 0-1 (não duplicar o
+    trabalho clínico do orquestrador concorrente), 13 anti-padrões observados,
+    roteamento de modelos por classe de tarefa, caminho crítico §0.6.
+    Variáveis de runtime corrigidas; banners de estado em §2/G0/§7.4/§21.
+  proximo_orquestrador: inicia pelo §0 do prompt; HANDOFF.yaml continua sendo a
+    primeira leitura de estado.
+
 rules_for_any_resuming_agent:
   - Read docs/00-governance/evidence-notation.md before writing anything; front-matter is CI-enforced
   - Never name an owner, mark DECIDED, accept a risk, or resolve a contradiction — humans do that
