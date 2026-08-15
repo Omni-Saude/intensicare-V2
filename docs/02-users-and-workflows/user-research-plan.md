@@ -11,7 +11,15 @@ approver_roles:
   - AUTH-PRODUCT (funding and scheduling)
 owner: UNASSIGNED — VALIDATION REQUIRED
 validation_status: VALIDATION REQUIRED
-last_updated: 2026-08-14
+last_updated: 2026-08-15
+extended_by:
+  date: 2026-08-15
+  by: líder de pesquisa contextual de UTI (ciclo 2)
+  what: >
+    Acrescentada a §10 (ponteiro para o kit comissionável em g1-kit/). Nenhuma linha das
+    §§1–9 foi alterada, removida ou reescrita; o corpus do ciclo 0 permanece íntegro e em
+    inglês, conforme DEC-G0-10 (que se aplica a material NOVO). O campo last_updated foi
+    movido de 2026-08-14 para 2026-08-15 apenas por causa desse acréscimo.
 provenance:
   source_repo: intensicare-V2
   path_or_url: docs/02-users-and-workflows/user-research-plan.md
@@ -318,8 +326,43 @@ capable of overturning the documents that motivated it.
 
 ---
 
+## 10. Kit comissionável do G1 — acréscimo do ciclo 2 (pt-BR, DEC-G0-10)
+
+> **Nota de escopo:** esta seção é **conteúdo novo**, acrescentado em 2026-08-15. As §§1–9
+> acima são o corpus do ciclo 0 e **não foram alteradas**. Onde houver conflito aparente,
+> as §§1–9 prevalecem quanto ao **padrão epistêmico** (métodos excluídos, consentimento,
+> o que a pesquisa nunca pode ser representada como) e o kit prevalece quanto à
+> **mecânica de execução**.
+
+**PROPOSAL:** este plano descreve *o que* precisa ser observado e *por quê*. Ele não era
+executável por um terceiro sem redesenho — faltavam instrumentos, amostragem, critérios de
+inclusão de unidade e o mapeamento para os itens do backlog. O ciclo 2 acrescentou esse
+material em `g1-kit/`:
+
+| Documento | O que entrega |
+|---|---|
+| `g1-kit/protocolo-pesquisa-g1.md` | Desenho executável: fases, sítios e critérios de inclusão de unidade, papéis, amostragem mínima defensável, duração, controles de viés e o **mapeamento item-a-item dos 43 itens** de `g1-validation-backlog.md` (42 bloqueantes) |
+| `g1-kit/guias-de-observacao-e-entrevista.md` | Fichas de campo, roteiros de observação e de entrevista por papel, testes de compreensão de terminologia e as **regras de registro sem PHI** que operacionalizam a §5 C5 acima |
+| `g1-kit/protocolo-baselines-pereciveis.md` | Protocolo **autocontido** para `VAL-0035` / `G2-VAL-0025` — a única medição do programa que não pode ser feita depois |
+| `g1-kit/plano-de-recrutamento-e-etica.md` | Perfil e canal de recrutamento, consentimento com recusa invisível, guarda de material, compensação e a matriz de independência exigida por `DEC-G0-05` |
+| `g1-kit/pedido-de-comissionamento.md` | Texto de decisão para o titular: o que se pede, custo e duração com premissas explícitas, e o que fica bloqueado ou permanentemente perdido |
+
+**Restrição adicionada desde o ciclo 0 — SOURCE**
+(`../00-governance/registers/g0-resolucoes-2026-08-15.md:56-61`, `DEC-G0-05`): o conhecimento
+clínico do titular vale como insumo de hipótese de especialista, **nunca** como evidência de
+observação do Gate G1; o G1 continua exigindo participantes clínicos externos, com dono da
+aceitação ≠ moderador ≠ participante único. **INFERENCE:** isso reforça, e não substitui, o
+requisito de independência da §8 acima (par #5 de `decision-rights.md` §3).
+
+**OBSERVED (2026-08-15):** nada mudou quanto ao estado de execução declarado no topo deste
+documento — nenhum sítio, nenhum participante, nenhuma submissão ética, nenhum moderador.
+O kit torna a pesquisa **comissionável**; ele não a executa e não fecha nenhum item.
+
+---
+
 ## 9. Cross-references
 
+- `g1-kit/` — o kit comissionável descrito na §10 (protocolo, guias, baselines perecíveis, recrutamento/ética, pedido de comissionamento).
 - `user-roles-hypotheses.md`, `workflow-hypotheses.md` — the hypotheses under test.
 - `g1-validation-backlog.md` — the consolidated Gate G1 question list.
 - `../01-vision-and-intended-use/success-and-harm-metrics.md` — study types per metric.

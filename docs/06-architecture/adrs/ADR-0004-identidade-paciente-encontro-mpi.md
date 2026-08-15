@@ -20,6 +20,17 @@ status_history:
       Encaminhado para revisão do titular nomeado. A DIREÇÃO foi decidida por
       rodaquino-OMNI em 2026-08-15; a ACEITAÇÃO deste ADR escrito é ato separado e
       ainda não ocorreu. Nenhum agente marcará `accepted`.
+  - status: under-review
+    date: 2026-08-15
+    by: arquiteto de decisões de fronteira e modelo canônico
+    note: >
+      REVISÃO (sem mudança de status): a ata IDN-ADJ-2026-08-15 aterrissou em disco e
+      foi lida integralmente por este segundo especialista; a reconciliação item a item
+      exigida pela condição C2 foi EXECUTADA (ver §5.5). Divergências corrigidas a
+      favor da ata: enumeração e semântica de entrega dos eventos de D-08, formato
+      pleno do PSR em D-04, base legal com artigo em D-09, derivação de tenant em
+      D-03. Acrescidos: §5.2.1 (reatribuição/óbito/alta/duplicata) e o requisito de UI
+      vinculante de AQ-1 em §6.2.
 date: 2026-08-15
 owner: rodaquino-OMNI — CEO e acionista principal (OMNI e AMH), médico intensivista
 approvers:
@@ -61,9 +72,11 @@ links:
   gates: [G3]
   evidence:
     - docs/00-governance/registers/g0-resolucoes-2026-08-15.md
+    - docs/08-interoperability/amh-data/identity-adjudication/adjudicacao-decisoes-2026-08-15.md
     - docs/08-interoperability/amh-data/identity-adjudication/contradiction-record.md
     - docs/08-interoperability/amh-data/identity-adjudication/adjudication-request-to-amh-owners.md
     - docs/08-interoperability/amh-data/identity-adjudication/interim-identity-policy.md
+    - docs/08-interoperability/amh-data/ordens-de-servico-amh-2026-08-15.md
     - docs/08-interoperability/amh-data/compatibility-finding.md
 supersedes: "IDP-02 (regra da política interina de identidade, não um ADR) — ver §10"
 superseded_by: null
@@ -101,6 +114,13 @@ provenance:
 > **Ação obrigatória antes da aceitação:** reconciliar item a item a §5 deste ADR contra
 > aquele registro quando ele aterrissar. Divergência entre os dois documentos resolve-se
 > a favor do registro de adjudicação, e este ADR é corrigido.
+>
+> **ATUALIZAÇÃO 2026-08-15 (segunda revisão, mesmo dia).** A ata **aterrissou e foi lida
+> integralmente em disco** pelo arquiteto de decisões de fronteira e modelo canônico
+> (OBSERVED — E16). A reconciliação item a item foi **EXECUTADA**: resultado completo em
+> **§5.5**, divergências corrigidas neste texto a favor da ata, conforme a regra acima.
+> A condição C2 registra a execução; a confirmação final da reconciliação permanece do
+> titular no ato de aceitação.
 
 ---
 
@@ -190,7 +210,8 @@ verificou pode rotular `OBSERVED` (`docs/00-governance/evidence-notation.md` §2
 | E12 | SOURCE | Contradição sobre bypass cross-tenant: o IG descreve exceção por claim `cross_tenant_authorized`; o contrato de particionamento descreve mecanismo sem forma de expressá-la — identificação de tenant é por URL, com negação quando token e URL divergem e referências cross-partition desabilitadas | `adjudication-request-to-amh-owners.md` AQ-6 | alta |
 | E13 | SOURCE | `mpi.consent_log` tem **zero produtores** — o portão de consentimento em que o ADR-006 condiciona a federação **não tem dado** | `adjudication-request-to-amh-owners.md` AQ-1/AQ-3 | alta |
 | E14 | SOURCE | O `Observation` laboratorial da AMH permanece bloqueado por fonte vazia, e o único perfil de Observation exclui estruturalmente sinais vitais | `compatibility-finding.md` §3 | alta |
-| E15 | SOURCE (transmitido) | Insumos decididos em 2026-08-15, transmitidos pelo orquestrador citando o registro de adjudicação ainda não presente em disco | mensagem do orquestrador; ver aviso de proveniência acima | **média — pendente de reconciliação** |
+| E15 | SOURCE (transmitido) | Insumos decididos em 2026-08-15, transmitidos pelo orquestrador citando o registro de adjudicação ainda não presente em disco | mensagem do orquestrador; ver aviso de proveniência acima | ~~média — pendente de reconciliação~~ → **reconciliada por E16/§5.5** |
+| E16 | OBSERVED (revisão 2026-08-15) | A ata `IDN-ADJ-2026-08-15` **existe em disco e foi lida integralmente** por este segundo especialista: seis decisões com metadados DECIDED (decided_by rodaquino-OMNI, 2026-08-15), disposição consolidada dos artefatos AMH (§3), alvo de pinagem IG 1.1.0 **ainda não publicado** (§4), o que as decisões **não** desbloqueiam (§6 — `Observation` segue não consumível por três pernas; vitais seguem indisponíveis) e oito pendências de ratificação (§8), incluindo contra-assinatura da própria ata e o requisito de UI de AQ-1 | `identity-adjudication/adjudicacao-decisoes-2026-08-15.md`, lida em 2026-08-15 | alta |
 
 ### 2.2 Premissas
 
@@ -371,15 +392,15 @@ ADR-0005, o ADR-0013 e o pacote de contrato v1.
 |---|---|---|---|
 | **D-01** | **MPI por tenant.** A identidade de paciente é escopada ao tenant; não existe identidade de pessoa global inferida pela V2. | AQ-1 | P3 (ADR-041 §6) |
 | **D-02** | **Índice cross-PJ governado**, na forma do ADR-043, como **única** via de correspondência entre PJs — **gated em parecer DPO/jurídico** (SP-6). Enquanto o parecer não existir, não há correspondência cross-PJ de espécie alguma. | AQ-1 | P5 (ADR-043) |
-| **D-03** | **`identifier:mpiId` é o elemento autoritativo no wire**, com correção da cardinalidade do perfil e **bump de pacote — IG 1.1.0** (futura). A V2 valida sobre o identifier e trata a extensão como ausente por desenho. | AQ-2 | AQ-2 opção B |
-| **D-04** | **O identificador de fronteira é o `portable_subject_ref`, OBRIGATÓRIO**, no formato `amh:psr:v1`. Nenhum identificador cru — `mpi_id`, CPF, CNS, id de registro de origem ou hash destes — atravessa a fronteira para o domínio clínico da V2. | AQ-4 | P6 (ADR-042 XRD-05 / AMH-020b), opção A estendida à IntensiCare |
+| **D-03** | **`identifier:mpiId` é o elemento autoritativo no wire**, com correção da cardinalidade do perfil (extensões `mpiId`/`tenantId` **rebaixadas de `1..1`**) e **bump de pacote — IG 1.1.0** (futura). A V2 valida sobre o identifier e trata a extensão como ausente por desenho. **O tenant autoritativo é derivado da partição de URL + claim do token — nunca de extensão no recurso** (ata AQ-2 item 2); padrão único de URL de profile = `fhir.americashealth.com.br` (carimbos `amh.health/…/BR*` são defeito do produtor, a corrigir — OS-07). | AQ-2 | AQ-2 opção B |
+| **D-04** | **O identificador de fronteira é o `portable_subject_ref`, OBRIGATÓRIO**, no formato normativo **`amh:psr:v1:<uuidv4>`** (AMH-020b §1.1, citado pela ata). Nenhum identificador cru — `mpi_id`, CPF, CNS, id de registro de origem ou hash destes — atravessa a fronteira para o domínio clínico da V2. | AQ-4 | P6 (ADR-042 XRD-05 / AMH-020b), opção A estendida à IntensiCare |
 | **D-05** | **O PSR é independente de encontro e sempre qualificado por encontro.** A V2 **chaveia fatos clínicos pela tupla `(PSR, encontro)`.** Isto responde a sub-pergunta fática deixada em aberto no AQ-4. | AQ-4 | — (definição nova) |
 | **D-06** | **PSR sintético em dev/test; mintado pela AMH em produção.** Nenhum PSR de produção é fabricado pela V2. | AQ-4 | coerente com XRD-05 |
 | **D-07** | **Não existe chave interna de sujeito paralela na V2.** IDP-02 é superada. | AQ-4 | — |
-| **D-08** | **Eventos de ciclo de vida de identidade** (alias, merge, unmerge/split, restore, reatribuição, apagamento) **e `resolve(ref, as_of)` são obrigatórios no contrato v1.** **Sem eles o Gate G3 não passa**, porque o replay afetado por identidade não é certificável. | AQ-5 | AQ-5 opções A **e** B combinadas |
-| **D-09** | **Base legal do loop clínico = tutela da saúde.** Sem portão de consentimento no loop assistencial. **Propósito-de-uso + contexto profissional permanecem portões exigíveis.** **Usos secundários bloqueados.** | AQ-3 | — |
+| **D-08** | **Eventos de ciclo de vida de identidade e `resolve(ref, as_of)` são cláusulas OBRIGATÓRIAS do contrato v1.** A ata enumera **cinco tipos obrigatórios** — `alias`, `merge`, `unmerge`, `restore`, `erasure` — com **entrega at-least-once e ordenação por sujeito** (ata AQ-5 item 1); a ordem de serviço derivada **OS-17** expõe seis tipos, acrescentando *reassignment* (reatribuição) e detalhando *unmerge/split* — extensão de engenharia compatível, registrada como derivação e não como teor da decisão. `resolve(ref, as_of)` dá resolução ponto-no-tempo (OS-18). **Sem eventos + resolve, o Gate G3 não passa** — *"não se admite janela-teto como paliativo"* (ata). | AQ-5 | AQ-5 opção A vinculante (eventos **e** resolve) |
+| **D-09** | **Base legal do loop clínico = tutela da saúde — LGPD Art. 11, II, alínea "f"**, em procedimento realizado por profissionais/serviços de saúde (ata AQ-3 item 1). Sem portão de consentimento no loop assistencial. **Propósito-de-uso + contexto profissional permanecem portões exigíveis.** **Usos secundários bloqueados** até existir infraestrutura real de consentimento. **`ie_perm_sms_email` JAMAIS constitui consentimento — registrado em definitivo** (ata AQ-3 item 4). | AQ-3 | — |
 | **D-10** | **Não existe bypass cross-tenant.** Os testes negativos **afirmam a impossibilidade**, não apenas a ausência de ocorrência. | AQ-6 | contrato de particionamento (URL + igualdade de claim) |
-| **D-11** | **Enumeração de tenants = 12, pós-ADR-041**, pinada a partir da IG 1.1.0. O tenant aposentado e a zona técnica de aterrissagem não são tenants de negócio. | AQ-6 | ADR-041 + invariante I-8 do AMH-020b |
+| **D-11** | **Enumeração de tenants = 12, pós-ADR-041**, pinada a partir da IG 1.1.0. O tenant aposentado e a zona técnica de aterrissagem não são tenants de negócio. O CodeSystem/ValueSet `amh-tenant` e a tabela de partições HAPI vigentes são **artefatos defasados**, a corrigir na IG 1.1.0 (ata AQ-6 item 3). **Nome do tenant piloto da V2: adiado pelo titular para a redação do contrato** (ata AQ-6 item 4; pendência 8 da ata §8). | AQ-6 | ADR-041 + invariante I-8 do AMH-020b |
 
 ### 5.2 Semântica de merge/unmerge adotada (conforme AMH-020b)
 
@@ -395,6 +416,19 @@ SOURCE, E9. A V2 adota a semântica do produtor, sem reinterpretá-la:
 
 **Regra vinculante derivada:** um ref bem-formado porém desconhecido resulta em
 `not_evaluated` — nunca em suposição (DOM-0004, SAF-0002). Um ref jamais é reemitido.
+
+### 5.2.1 Eventos correlatos que NÃO são ciclo de vida de identidade (adendo da revisão 2026-08-15)
+
+O prompt §7.4 exige especificar também *duplicata, reatribuição, óbito (deceased) e
+alta (discharge)*, com consequências de replay. A distinção abaixo evita que estados de
+encontro sejam confundidos com mutações de identidade — cada linha é rotulada:
+
+| Evento | Natureza | Comportamento na V2 | Consequência de replay |
+|---|---|---|---|
+| **Reatribuição (reassignment)** — um encontro é re-vinculado a outro sujeito após correção de atribuição | Evento de ciclo de vida exposto por **OS-17** (derivação de engenharia sobre AQ-5; a ata enumera cinco tipos, OS-17 seis) — INFERENCE | Consumido como os demais eventos de D-08: ordenado por sujeito, idempotente, jamais reescreve fatos passados; o vínculo `(PSR, encontro)` anterior permanece na proveniência com a correção explícita (DOM-0002) | Avaliações históricas permanecem atribuídas como computadas; `resolve(ref, as_of)` responde a atribuição vigente no instante consultado |
+| **Óbito (deceased)** | **Fato clínico-administrativo do encontro/paciente — NÃO é evento de identidade** (PROPOSAL desta revisão; o modelo canônico é ADR-0005) | Flui pela lane normal de fatos com proveniência e tempos próprios; **jamais aposenta ou re-emite o PSR** (a aposentadoria de ref é exclusiva de *erasure* LGPD — E9); o efeito sobre elegibilidade de avaliação é política clínica (ADR-0026/0027), nunca inferência da camada de identidade | Replay vê o óbito como fato datado; avaliações anteriores ao fato permanecem válidas como história |
+| **Alta (discharge)** | Transição de estado do **encontro** — não de identidade (PROPOSAL desta revisão) | Fecha o escopo do encontro para novas avaliações conforme política de via; fato chega pela lane de encontro; alerta contra episódio encerrado é o hazard HAZ-0002 | Replay reconstrói o estado do encontro no instante consultado; avaliação pós-alta indevida é detectável por teste (V5/V7) |
+| **Duplicata confirmada** | Resolução de duplicidade é **capacidade AMH** (fila de steward do ADR-006, parte não superada — ata §2 AQ-1); **a V2 nunca resolve duplicatas** (IDP-04/IDP-09, permanentes) | Se a AMH resolver, a V2 vê `alias`/`merge` pelo contrato v1; até lá, dois refs = dois sujeitos, estado correto | Sem consequência de replay além da semântica de alias/merge já adotada em §5.2 |
 
 ### 5.3 Escopo do que este ADR vincula
 
@@ -412,13 +446,40 @@ elegibilidade de vias clínicas.
 | # | Condição | Responsável | Estado |
 |---|---|---|---|
 | C1 | O titular revisa **este texto** e o aceita (a direção já está decidida; a aceitação do ADR escrito é o ato pendente) | rodaquino-OMNI | **ABERTA** |
-| C2 | Reconciliação item a item da §5.1 contra `adjudicacao-decisoes-2026-08-15.md` quando este aterrissar | orquestrador + este autor | **ABERTA** |
+| C2 | Reconciliação item a item da §5.1 contra `adjudicacao-decisoes-2026-08-15.md` quando este aterrissar | orquestrador + este autor | **EXECUTADA 2026-08-15** pelo arquiteto de decisões de fronteira e modelo canônico (ver §5.5); divergências corrigidas a favor da ata; **confirmação do titular pendente no ato de aceitação** |
 | C3 | Registro da decisão no `decision-register.md` com ID `GDEC-nnnn`, evitando colisão (nota de integração 2 do DEC-G0) | steward de governança | **ABERTA** |
 | C4 | Atualização de `interim-identity-policy.md` marcando IDP-02 como superada por ADR-0004 (o dono daquele documento executa; este ADR não edita fora do seu escopo) | analista de adjudicação de identidade AMH | **ABERTA** |
 | C5 | Registro do risco de concentração de autoridade no `risk-register.md` | steward de governança | **ABERTA** |
 
 **Aceitar este ADR não torna o modelo verificado.** As condições de verificação estão em
 §9 e dependem de entregas da AMH que ainda não existem.
+
+### 5.5 Reconciliação executada contra a ata (2026-08-15)
+
+**OBSERVED (este revisor).** Cada item de §5.1 foi confrontado com o teor exato da ata
+`IDN-ADJ-2026-08-15` §2. Regra aplicada: **a ata prevalece**; divergência = correção
+neste texto, registrada abaixo.
+
+| Item | AQ da ata | Resultado da reconciliação |
+|---|---|---|
+| D-01 | AQ-1 | **CONFERE** — MPI por tenant; ADR-041 §6 em vigor |
+| D-02 | AQ-1 | **CONFERE** — índice ADR-043 em vigor, apply travado no parecer DPO/jurídico; reabertura = redesenho (ADR-041 L145–147, citado pela ata) |
+| D-03 | AQ-2 | **COMPLETADO** — acrescidos, do teor da ata: rebaixamento das extensões de `1..1`, derivação do tenant autoritativo por partição de URL + claim (item 2 da ata), padrão único de URL de profile (item 3) |
+| D-04 | AQ-4 | **CORRIGIDO (forma)** — formato pleno `amh:psr:v1:<uuidv4>`; teor inalterado |
+| D-05 | AQ-4 | **CONFERE** — ref independente de encontro, sempre qualificada; chave `(PSR, encontro)` literal na ata (item 4) |
+| D-06 | AQ-4 | **CONFERE** — sintético em dev/test, mintado pela AMH em produção (item 2) |
+| D-07 | AQ-4 | **CONFERE** — *"sem chave interna paralela"* literal; IDP-02 superseded |
+| D-08 | AQ-5 | **CORRIGIDO** — a ata enumera **cinco** tipos obrigatórios (`alias`, `merge`, `unmerge`, `restore`, `erasure`) com **at-least-once + ordenação por sujeito**, que faltavam; a lista anterior de seis tipos era a de OS-17 (derivação), agora distinguida como tal; *"não se admite janela-teto"* incorporado |
+| D-09 | AQ-3 | **COMPLETADO** — artigo legal (LGPD Art. 11, II, "f") e a cláusula definitiva sobre `ie_perm_sms_email` acrescidos do teor da ata |
+| D-10 | AQ-6 | **CONFERE** — deriva documental; testes afirmam impossibilidade |
+| D-11 | AQ-6 | **COMPLETADO** — artefatos defasados (CodeSystem/partições HAPI) e o adiamento do nome do tenant piloto acrescidos |
+| §5.2 | AQ-5 / E9 | **CONFERE** com a semântica AMH-020b citada pela ata; §5.2.1 acrescido para cobrir reatribuição/óbito/alta/duplicata exigidos pelo prompt §7.4, com rótulos honestos (derivação/PROPOSAL, não teor da ata) |
+| §6.2 | AQ-1 | **COMPLETADO** — o **requisito de produto vinculante** da ata (*"a UI da V2 DEVE exibir a limitação — 'registro limitado a esta instituição'"*) estava sub-representado como mitigação genérica; agora citado com fonte (ver §6.2) |
+
+**Itens da ata sem correspondência prévia neste ADR, agora registrados:** alvo de
+pinagem IG 1.1.0 *ainda não publicado* (ata §4 — já coberto por H1); pendências de
+ratificação da própria ata (§8), em particular a contra-assinatura do titular
+(pendência 1) — precondição de forma que este ADR herda e que aparece no gatilho T7.
 
 ---
 
@@ -447,12 +508,19 @@ elegibilidade de vias clínicas.
   do leito, isso significa que um clínico pode não ver, na V2, um atendimento anterior do
   mesmo paciente em outra PJ. **Esta consequência é conhecida, foi explicitada e é aceita
   pela autoridade decisora, que é médico intensivista** — a alternativa (Opção B) foi
-  julgada de exposição maior. **Mitigações obrigatórias:** (i) a interface **não pode**
-  sugerir completude longitudinal que não possui — a ausência precisa ser visível, não
-  presumida (DOM-0004, SAF-0005); (ii) o índice cross-PJ do ADR-043, quando liberado
-  juridicamente, restitui a correspondência de forma governada; (iii) **item de validação
-  do Gate G1/G4**: apresentar a fragmentação a clínicos em cenário simulado e medir se ela
-  é compreendida como fragmentação e não como ausência de história.
+  julgada de exposição maior. A população afetada é medida: **4.220 pacientes (3,88%)**
+  com atendimento em mais de uma PJ (ADR-041 L22, citado pela ata). **Mitigações
+  obrigatórias:** (i) **requisito de produto derivado e VINCULANTE (ata AQ-1):** *"a UI
+  da V2 DEVE exibir a limitação ao clínico — em linguagem equivalente a 'registro
+  limitado a esta instituição'. Esta é uma obrigação de segurança clínica, não uma
+  preferência de UX"* — a interface **não pode** sugerir completude longitudinal que não
+  possui; a ausência precisa ser visível, não presumida (DOM-0004, SAF-0005). A ata
+  encaminha este requisito ao especialista de UX/acessibilidade e ao
+  `hazard-log.md` **como entrada nova — ainda não cunhada** (pendência 6 da ata §8;
+  nenhum ID de hazard é inventado aqui); (ii) o índice cross-PJ do ADR-043, quando
+  liberado juridicamente, restitui a correspondência de forma governada; (iii) **item de
+  validação do Gate G1/G4**: apresentar a fragmentação a clínicos em cenário simulado e
+  medir se ela é compreendida como fragmentação e não como ausência de história.
 - **Dependência de três ordens de serviço da AMH.** IG 1.1.0 (H1), liberação dos portões
   SP-1…SP-7 do PSR (H3) e eventos de ciclo de vida + `resolve(ref, as_of)` (H4).
   **Enquanto essas três não aterrissarem, o modelo decidido não pode ser verificado — e,
@@ -598,8 +666,11 @@ tecnologia, nuvem, banco, broker ou framework escolhido**; nenhuma aprovação f
 1. **Concentração de autoridade.** Um único humano decide pelos dois lados de uma
    fronteira de integração. Legítimo e registrado (DEC-G0-04), mas remove a fricção que
    uma contraparte externa exerceria. Mitigação real: os pares implementador × verificador.
-2. **O registro de adjudicação não foi lido.** Ver o aviso de proveniência no topo. A
-   condição C2 é bloqueante para a aceitação.
+2. **O registro de adjudicação não foi lido pelo autor original** — ver o aviso de
+   proveniência no topo. **Resolvido em 2026-08-15:** a ata foi lida em disco por um
+   segundo especialista e a reconciliação C2 foi executada (§5.5). O que resta ao
+   revisor humano: confirmar a reconciliação no ato de aceitação, e notar que a própria
+   ata ainda aguarda contra-assinatura do titular (ata §0.3 e §8 pendência 1).
 3. **Item D-09 é leitura jurídica sem advogado**, tomada por autoridade de negócio e
    clínica. DEC-G0-03 mantém o parecer como gatilho obrigatório.
 4. **A consequência clínica de §6.2 foi aceita, não eliminada.** O paciente multi-PJ

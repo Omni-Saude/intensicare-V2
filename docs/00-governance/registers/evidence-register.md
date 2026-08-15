@@ -279,6 +279,148 @@ task's `decisions_prohibited`.
   retraduzido; esta entrada não o substitui, mas registra o fato que o
   supera na prática); `registers/decision-register.md` `GDEC-0004`.
 
+## EVID-0012 — Re-pinagem AMH 2026-08-15: commit `main` inalterado, sem deriva (pt-BR — conteúdo novo)
+
+- **Rótulo:** OBSERVED
+- **Declaração:** Em 2026-08-15, o orquestrador de entrega re-verificou o commit HEAD
+  de `Omni-Saude/amh-data-platform@main` via
+  `gh api repos/Omni-Saude/amh-data-platform/branches/main --jq '.commit.sha'`. O
+  resultado — `0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116` — é **idêntico** ao commit
+  pinado como evidência-base em `EVID-0005` (coletado 2026-08-14). Portanto: **commit
+  pinado confirmado, SEM DERIVA** entre 2026-08-14 e 2026-08-15. O acesso usado para
+  esta chamada foi o mecanismo OAuth `gh` já existente no usuário `rodaquino-OMNI`
+  (o mesmo de `EVID-0007`/`EVID-0011`), funcional **sem exigir novo login**.
+- **Proveniência:**
+  - `source_repo`: `intensicare-V2` (registro da verificação) / `Omni-Saude/amh-data-platform` (alvo verificado)
+  - `path_or_url`: saída de `gh api repos/Omni-Saude/amh-data-platform/branches/main --jq '.commit.sha'`
+  - `commit_sha_or_version`: `0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116`
+  - `section_or_lines`: n/a (resposta de API, campo `commit.sha` do branch `main`)
+  - `date_collected`: 2026-08-15
+  - `collector`: orquestrador de entrega (chamada de API observada); registrado neste
+    register pelo governance-and-traceability bootstrap steward
+  - `transformation`: resumida a partir da chamada de API relatada pelo orquestrador;
+    comparação byte-a-byte do SHA contra `EVID-0005` feita por este steward
+  - `confidence`: alta
+  - `owner`: UNASSIGNED — VALIDAÇÃO NECESSÁRIA
+  - `validation_status`: VALIDAÇÃO NECESSÁRIA — este steward não executou a chamada
+    `gh api` diretamente nesta integração; a observação é transcrita do relato do
+    orquestrador, não reverificada de forma independente. Uma correspondência de SHA
+    em dois pontos no tempo (2026-08-14, 2026-08-15) não garante ausência de deriva em
+    datas futuras — `ASM-0002` continua exigindo nova re-pinagem antes de qualquer
+    decisão dependente de compatibilidade (Gate G3 em diante).
+- **Consequência:** satisfaz `ASM-0002` **para a sessão de 2026-08-15** (a assunção
+  "AMH `main` não sofrerá deriva material" foi re-verificada, não apenas presumida,
+  nesta data). Não fecha `ASM-0002` de forma permanente — o item permanece
+  `VALIDATION REQUIRED (recurring)` para toda decisão futura, conforme já registrado
+  naquela entrada.
+- **Links:** `registers/assumptions-register.md` `ASM-0002`;
+  `registers/evidence-register.md` `EVID-0005` (baseline comparada);
+  `registers/blockers-register.md` `BLK-0009` (mesmo mecanismo de acesso, DEC-G0-07).
+
+## EVID-0013 — ADR-043, ADR-045 e AMH-020b lidos pelo engenheiro de privacidade/LGPD (pt-BR — conteúdo novo, 2026-08-15)
+
+- **Rótulo:** OBSERVED
+- **Declaração:** No commit pinado `0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116`
+  do repositório `Omni-Saude/amh-data-platform`, o engenheiro de privacidade,
+  LGPD e registros do ciclo 1 leu, somente leitura, os três artefatos que
+  fundamentam a minuta de parecer da OS-16:
+  `architecture/adrs/ADR-043-indice-de-correspondencia-de-identidade-entre-pjs.md`
+  (113 linhas, íntegra); `architecture/adrs/ADR-045-formato-do-log-de-consentimento.md`
+  (115 linhas, íntegra); `docs/plans/amh-020b-portable-subject-ref-design-2026-08-04.md`
+  (559 linhas; §0, §1, §5, §7, §8, §9 e Anexo A lidos). Nenhum dos três foi
+  escrito ou alterado; leitura apenas.
+- **Proveniência:**
+  - `source_repo`: `Omni-Saude/amh-data-platform` (artefatos lidos) / `intensicare-V2` (registro)
+  - `path_or_url`: `docs/11-security-privacy-compliance/lgpd-os16/minuta-parecer-os-16.md`
+  - `commit_sha_or_version`: `0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116`
+  - `section_or_lines`: "§1.4 (Proveniência dos artefatos AMH lidos para esta minuta)"
+  - `date_collected`: "2026-08-15"
+  - `collector`: engenheiro de privacidade, LGPD e registros (IntensiCare V2, ciclo 1); registrado neste register pelo governance-and-traceability steward
+  - `transformation`: resumida da tabela de proveniência da minuta
+  - `confidence`: alta
+  - `owner`: UNASSIGNED — VALIDAÇÃO NECESSÁRIA
+  - `validation_status`: VALIDAÇÃO NECESSÁRIA — esta entrada transcreve a leitura relatada pelo especialista; não reverificada de forma independente por este steward
+- **Links:** `registers/assumptions-register.md` `ASM-0004` (premissas P-1..P-7 da mesma minuta).
+
+## EVID-0014 — `bronze_to_fhir.py`: `EVOLUCAO_PACIENTE` → apenas `ClinicalImpression`; `map_observation` laboratorial de texto livre implementado (pt-BR — conteúdo novo, 2026-08-15)
+
+- **Rótulo:** OBSERVED
+- **Declaração:** `pipelines/batch/fhir/bronze_to_fhir.py` (1.118 linhas,
+  produtor de registro do canal FHIR segundo o ADR-040), lido no commit
+  pinado `0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116`: a função `map_clinimp`
+  (L~706–745) lê `tasy_hospital_evolucao_paciente` e emite exclusivamente
+  `ClinicalImpression` — não existe ramo de `Observation` a partir de
+  `EVOLUCAO_PACIENTE` no produtor. O único mapeador de `Observation`
+  (`map_observation`, L~766–787) é laboratorial e de texto livre: lê
+  `tasy_hospital_paciente_exame`, emite `category=laboratory` e
+  `valueString` (não estruturado). A URL de profile emitida diverge da IG
+  canônica. Consequência registrada pelo especialista: a contradição de
+  conformidade nomeada como C-4 (caminho de texto livre) está **IMPLEMENTADA
+  em código**, não apenas planejada em diagrama.
+- **Proveniência:**
+  - `source_repo`: `Omni-Saude/amh-data-platform` (artefato lido) / `intensicare-V2` (registro)
+  - `path_or_url`: `docs/08-interoperability/amh-data/vital-signs-decision/pacote-decisao-c1-sinais-vitais.md`
+  - `commit_sha_or_version`: `0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116`
+  - `section_or_lines`: "§2.4 (O que o produtor implementado realmente faz); §2.7 item E-5"
+  - `date_collected`: "2026-08-15"
+  - `collector`: especialista de decisão de sinais vitais (IntensiCare V2, ciclo 1); registrado neste register pelo governance-and-traceability steward
+  - `transformation`: resumida da leitura direta do código-fonte relatada pelo especialista
+  - `confidence`: alta
+  - `owner`: UNASSIGNED — VALIDAÇÃO NECESSÁRIA
+  - `validation_status`: VALIDAÇÃO NECESSÁRIA — não relida por este steward; transcrição fiel do achado relatado
+- **Links:** `registers/risk-register.md` `RISK-0003`, `RISK-0009`; `registers/blockers-register.md` `BLK-0012`.
+
+## EVID-0015 — `fhir_observation.sql`: terceiro artefato do "lado A", DDL autodeclarada nunca executada (pt-BR — conteúdo novo, 2026-08-15)
+
+- **Rótulo:** OBSERVED
+- **Declaração:** `schemas/iceberg/fhir/fhir_observation.sql` (tabela-espelho
+  analítica de `Observation`), lido no commit pinado: comentário de
+  cabeçalho reivindica cobertura de "lab results, vital signs, and
+  diagnostic observations"; comentário da coluna `category_code` enumera
+  `vital-signs` entre os valores possíveis. O próprio arquivo declara,
+  porém, que **esta DDL nunca foi executada** ("a tabela real foi criada
+  pelo job de espelho `fhir_resource_mirror.py`, com `createOrReplace` a
+  partir do schema do DataFrame — a DDL era documentação, nunca executada")
+  e atribui a origem a `Diagnose` — o LIS que, pelo próprio repositório, não
+  é ingerido.
+- **Proveniência:**
+  - `source_repo`: `Omni-Saude/amh-data-platform` (artefato lido) / `intensicare-V2` (registro)
+  - `path_or_url`: `docs/08-interoperability/amh-data/vital-signs-decision/pacote-decisao-c1-sinais-vitais.md`
+  - `commit_sha_or_version`: `0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116`
+  - `section_or_lines`: "§2.1 (Lado A — terceiro artefato); §2.7 item E-7"
+  - `date_collected`: "2026-08-15"
+  - `collector`: especialista de decisão de sinais vitais (IntensiCare V2, ciclo 1); registrado neste register pelo governance-and-traceability steward
+  - `transformation`: resumida da leitura direta do arquivo relatada pelo especialista
+  - `confidence`: alta
+  - `owner`: UNASSIGNED — VALIDAÇÃO NECESSÁRIA
+  - `validation_status`: VALIDAÇÃO NECESSÁRIA — não relida por este steward; transcrição fiel do achado relatado
+- **Links:** `registers/risk-register.md` `RISK-0003`.
+
+## EVID-0016 — Manifesto Maezo relido; disposição de 28→11 campos observada no manifesto pinado (pt-BR — conteúdo novo, 2026-08-15)
+
+- **Rótulo:** OBSERVED
+- **Declaração:** `schemas/contracts/maezo/v1/contract-manifest.yaml`, lido
+  somente leitura no commit pinado `0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116`,
+  para produzir a comparação campo a campo da minuta do contrato v1
+  AMH×IntensiCare: 28 campos do envelope Maezo dispostos contra os 11 campos
+  mínimos da minuta (6 mantidos com mesmo nome, 1 renomeado, 1 desdobrado em
+  dois, 1 campo novo acrescentado, os demais excluídos ou elevados ao nível
+  do manifesto, cada disposição justificada). Nenhum conteúdo do manifesto
+  Maezo foi reutilizado ou copiado — apenas a lista de nomes de campo foi
+  observada para produzir a disposição comparativa.
+- **Proveniência:**
+  - `source_repo`: `Omni-Saude/amh-data-platform` (artefato lido) / `intensicare-V2` (registro)
+  - `path_or_url`: `docs/08-interoperability/amh-data/contract-v1/memoria-de-desenho.md`
+  - `commit_sha_or_version`: `0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116`
+  - `section_or_lines`: "§5 (Minimização deliberada frente ao envelope Maezo — campo a campo); front matter (source)"
+  - `date_collected`: "2026-08-15"
+  - `collector`: steward de publicação de contrato AMH×IntensiCare (IntensiCare V2, ciclo 1); registrado neste register pelo governance-and-traceability steward
+  - `transformation`: resumida da tabela comparativa de 28→11 campos
+  - `confidence`: alta
+  - `owner`: UNASSIGNED — VALIDAÇÃO NECESSÁRIA
+  - `validation_status`: VALIDAÇÃO NECESSÁRIA — não relida por este steward; transcrição fiel do achado relatado
+- **Links:** `registers/blockers-register.md` `BLK-0015`; `registers/assumptions-register.md` `ASM-0006`.
+
 ## Index
 
 | ID | Statement (short) | Label | Validation status |
@@ -294,3 +436,8 @@ task's `decisions_prohibited`.
 | EVID-0009 | Branch protection on `main` not configured; CI gates not enforced | OBSERVED | VALIDATION REQUIRED |
 | EVID-0010 | Proteção de branch aplicada a `main` (2026-08-15) | OBSERVED | VALIDAÇÃO NECESSÁRIA |
 | EVID-0011 | Acesso AMH verificado sem novo login (2026-08-15) | OBSERVED | VALIDAÇÃO NECESSÁRIA |
+| EVID-0012 | Re-pinagem AMH 2026-08-15: SHA `0a07a6f1...` confirmado, sem deriva | OBSERVED | VALIDAÇÃO NECESSÁRIA |
+| EVID-0013 | ADR-043, ADR-045, AMH-020b lidos pelo engenheiro LGPD | OBSERVED | VALIDAÇÃO NECESSÁRIA |
+| EVID-0014 | `bronze_to_fhir.py`: `EVOLUCAO_PACIENTE`→só `ClinicalImpression`; C-4 implementada | OBSERVED | VALIDAÇÃO NECESSÁRIA |
+| EVID-0015 | `fhir_observation.sql`: terceiro artefato do lado A, DDL nunca executada | OBSERVED | VALIDAÇÃO NECESSÁRIA |
+| EVID-0016 | Manifesto Maezo relido; disposição 28→11 campos observada | OBSERVED | VALIDAÇÃO NECESSÁRIA |

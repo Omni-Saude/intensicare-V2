@@ -1,0 +1,18 @@
+{
+  "_fixture": {
+    "role": "valid",
+    "sintetica": true,
+    "descricao": "Evento de erasure valido: a ref e marcada retired — nunca deletada, nunca reutilizada — e continua resolvendo com status retired. subject_ref_nova = null e valido SOMENTE neste tipo. Valores 100% sinteticos."
+  },
+  "event_id": "11111111-1111-4111-8111-000000000006",
+  "event_type": "identity.erasure.v1",
+  "event_type_version": "1",
+  "idempotency_key": "SYNTH-IDEM-ERASURE-0001",
+  "amh_tenant": "SYNTH-TENANT-A",
+  "legal_entity": "SYNTH-LE-00000001",
+  "subject_ref_antiga": "amh:psr:v1:SYNTH-cccc0001-0000-4000-8000-000000000005",
+  "subject_ref_nova": null,
+  "occurred_at": "2026-08-16T12:00:00Z",
+  "emitted_at": "2026-08-16T12:00:06Z",
+  "correction_of": null
+}

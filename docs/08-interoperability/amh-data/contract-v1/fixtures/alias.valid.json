@@ -1,0 +1,18 @@
+{
+  "_fixture": {
+    "role": "valid",
+    "sintetica": true,
+    "descricao": "Evento de alias valido: a ref antiga passa a ser alias da ref sobrevivente; ambas continuam resolvendo. Todos os valores sao SINTETICOS (marcador SYNTH); nenhum identificador real."
+  },
+  "event_id": "11111111-1111-4111-8111-000000000001",
+  "event_type": "identity.alias.v1",
+  "event_type_version": "1",
+  "idempotency_key": "SYNTH-IDEM-ALIAS-0001",
+  "amh_tenant": "SYNTH-TENANT-A",
+  "legal_entity": "SYNTH-LE-00000001",
+  "subject_ref_antiga": "amh:psr:v1:SYNTH-aaaa0001-0000-4000-8000-000000000001",
+  "subject_ref_nova": "amh:psr:v1:SYNTH-aaaa0002-0000-4000-8000-000000000002",
+  "occurred_at": "2026-08-15T10:00:00Z",
+  "emitted_at": "2026-08-15T10:00:05Z",
+  "correction_of": null
+}

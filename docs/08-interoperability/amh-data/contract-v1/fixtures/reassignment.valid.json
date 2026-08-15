@@ -1,0 +1,18 @@
+{
+  "_fixture": {
+    "role": "valid",
+    "sintetica": true,
+    "descricao": "Evento de reassignment valido: a associacao de fatos a identidade subjacente foi corrigida — fatos migram da ref de origem para a ref de destino, sem unificacao de identidades (distinto de merge). Tipo presente na OS-17; confirmacao do titular pendente (ponto N-8). Valores 100% sinteticos."
+  },
+  "event_id": "11111111-1111-4111-8111-000000000005",
+  "event_type": "identity.reassignment.v1",
+  "event_type_version": "1",
+  "idempotency_key": "SYNTH-IDEM-REASSIGN-0001",
+  "amh_tenant": "SYNTH-TENANT-A",
+  "legal_entity": "SYNTH-LE-00000001",
+  "subject_ref_antiga": "amh:psr:v1:SYNTH-dddd0001-0000-4000-8000-000000000007",
+  "subject_ref_nova": "amh:psr:v1:SYNTH-dddd0002-0000-4000-8000-000000000008",
+  "occurred_at": "2026-08-17T08:30:00Z",
+  "emitted_at": "2026-08-17T08:30:02Z",
+  "correction_of": null
+}

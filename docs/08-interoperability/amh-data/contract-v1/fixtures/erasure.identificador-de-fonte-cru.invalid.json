@@ -1,0 +1,20 @@
+{
+  "_fixture": {
+    "role": "invalid",
+    "sintetica": true,
+    "motivo_de_invalidade": "Carrega identificador de fonte CRU (campo raw_source_identifier) — viola a invariante 1 e a decisao AQ-4/XRD-05: nenhum mpi_id cru, CPF ou identificador de fonte atravessa a fronteira; apenas refs opacas. A regra de tolerant reader NAO se aplica: a proibicao e de CONTEUDO, nao de estrutura. Mensagem DEVE ser rejeitada/quarentenada e o incidente registrado.",
+    "nota_sobre_o_valor_sintetico": "O valor cpf:00000000000 e deliberadamente INVALIDO (todos os digitos iguais reprovam no digito verificador de CPF) e nao formatado. Nenhum CPF real e representavel por ele."
+  },
+  "event_id": "22222222-2222-4222-8222-000000000004",
+  "event_type": "identity.erasure.v1",
+  "event_type_version": "1",
+  "idempotency_key": "SYNTH-IDEM-ERASURE-INV-0001",
+  "amh_tenant": "SYNTH-TENANT-A",
+  "legal_entity": "SYNTH-LE-00000001",
+  "subject_ref_antiga": "amh:psr:v1:SYNTH-caca0001-0000-4000-8000-000000000014",
+  "subject_ref_nova": null,
+  "raw_source_identifier": "cpf:00000000000",
+  "occurred_at": "2026-08-15T18:00:00Z",
+  "emitted_at": "2026-08-15T18:00:03Z",
+  "correction_of": null
+}

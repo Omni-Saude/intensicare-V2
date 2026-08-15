@@ -160,14 +160,14 @@ Registro de origem: `docs/05-clinical-safety/legacy-review/ews/news2-review.md`,
 | elemento | caminho + SHA-256 | classificação | log de transformação | artefato V2 | teste V2 (CRV) |
 |---|---|---|---|---|---|
 | Tabelas de banda por 7 parâmetros (RR, SpO2 Escala 1, O2 suplementar +2, PAS, pulso, temperatura, consciência) que batem com o gráfico RCP | `src/intensicare/services/news2.py:101-241` `d3399fe2bb9853222dde6b16167a4f6093c6daac7b1559474b628deeff246bc8` [pin] | **RETAIN** (como conteúdo publicado, re-especificado) | Re-derivado de RCP 2017 (Chart 1); nenhuma linha de código copiada | `rule-releases/news2/specification.md` | sem CRV citado no registro de revisão |
-| Cortes agregados 5/7 + modelo de 4 níveis, incl. o nível "low-medium" de parâmetro único vermelho | mesmo arquivo `d3399fe2bb...` [pin] | **RETAIN** | Re-derivado de RCP 2017 (Chart 2); nível low-medium ausente na implementação legada (D-5) | `rule-releases/news2/specification.md` | CRV-0189 (cobre D-6/SF-4, alerta apenas agregado) |
+| Cortes agregados 5/7 + modelo de 4 níveis, incl. o nível "low-medium" de parâmetro único vermelho | mesmo arquivo `d3399fe2bb...` [pin] | **RETAIN** | Re-derivado de RCP 2017 (Chart 2); nível low-medium ausente na implementação legada (D-5) | `rule-releases/news2/specification.md` | CRV-NEWS2-0189 (cobre D-6/SF-4, alerta apenas agregado) |
 | Guarda de arredondamento a 1 casa decimal antes da banda + ideia de `algorithm_registry` versionado | `news2.py:87-90,14` [pin] | **REFINE** (conceito apenas) | Prática de versionamento do V1 é seu próprio contraexemplo (string `NEWS2-v3.0.0` não mudou quando o comportamento da Escala 2 se inverteu) | `rule-releases/news2/specification.md`; ADR-0025 | sem CRV citado no registro de revisão |
 | Alerta por gatilho de borda (edge-triggered) com cooldown, intenção de desenho | `docs/plan/_work/alerts/early-warning-scores.yaml` `712d9ccde209d099f80c4d5abb11e77e33564e03f347f931a363537c1031e9b8` [reviewer-hash] | **VALIDATE** | Raciocínio de fadiga de alarme plausível; não implementado, não validado | não declarado no registro de revisão | sem CRV citado no registro de revisão |
-| Ambos os ramos de banda da Escala 2 hipercápnica (D-1: on-O2 ≤92→0 sub-pontua hipoxemia profunda; D-2: off-O2 desloca uma banda) | `news2.py:139-159` [pin] | **REJECT** | Substituído; Escala 2 re-especificada diretamente do Chart 1 RCP | `rule-releases/news2/specification.md` | CRV-0119/0120, CRV-0124–0137 |
-| Seleção de Escala 2 por parâmetro `hypercapnic: bool` sem superfície clínica (D-3) + seleção invertida no NRT runner (D-4) | `news2.py:118-122,275-284`; `ews_nrt_runner.py:209,220` [pin] | **REJECT** | Mecanismo de decisão clínica inexistente no V1; V2 exige fluxo de decisão nomeado antes de qualquer Escala 2 | `rule-releases/news2/specification.md` §4.5 (pendente ADR de confounding) | CRV-0121–0123 |
-| Coerção a zero de todos os 7 insumos ausentes (HAZ-0005, E1 confirmado) | `news2.py:84-85,213-224` [pin] | **REJECT** | Substituído pela álgebra de status de 5 estados; nenhuma coerção-a-zero, nenhum total parcial | `ADR-0008`; `rule-releases/news2/specification.md` §5 | CRV-0102–0109 |
-| Coerção de consciência via HL7 (D-7: "C"→None→0) e fallback não-"A"→3 sem distinção crônico/novo (D-8) | `mllp_listener.py:200-204`; `news2.py:219-224` [pin] | **REJECT** | Ambos os caminhos de ingestão devem concordar; ausência nunca é "Alert" | `rule-releases/news2/specification.md` §4.3 | CRV-0116, CRV-0172–0176 |
-| Ausência de gate populacional (D-9) — nenhum campo de idade/gestação em nenhum ponto do caminho | `news2.py`, `vitals.py`, `schemas/vitals.py` (varredura completa) [pin] | **REJECT** | RCP 2017 §2: "designed for use in patients aged 16 years and more..." | `ADR-0027` | CRV-0114/0115 |
+| Ambos os ramos de banda da Escala 2 hipercápnica (D-1: on-O2 ≤92→0 sub-pontua hipoxemia profunda; D-2: off-O2 desloca uma banda) | `news2.py:139-159` [pin] | **REJECT** | Substituído; Escala 2 re-especificada diretamente do Chart 1 RCP | `rule-releases/news2/specification.md` | CRV-NEWS2-0119/0120, CRV-NEWS2-0124–0137 |
+| Seleção de Escala 2 por parâmetro `hypercapnic: bool` sem superfície clínica (D-3) + seleção invertida no NRT runner (D-4) | `news2.py:118-122,275-284`; `ews_nrt_runner.py:209,220` [pin] | **REJECT** | Mecanismo de decisão clínica inexistente no V1; V2 exige fluxo de decisão nomeado antes de qualquer Escala 2 | `rule-releases/news2/specification.md` §4.5 (pendente ADR de confounding) | CRV-NEWS2-0121–0123 |
+| Coerção a zero de todos os 7 insumos ausentes (HAZ-0005, E1 confirmado) | `news2.py:84-85,213-224` [pin] | **REJECT** | Substituído pela álgebra de status de 5 estados; nenhuma coerção-a-zero, nenhum total parcial | `ADR-0008`; `rule-releases/news2/specification.md` §5 | CRV-NEWS2-0102–0109 |
+| Coerção de consciência via HL7 (D-7: "C"→None→0) e fallback não-"A"→3 sem distinção crônico/novo (D-8) | `mllp_listener.py:200-204`; `news2.py:219-224` [pin] | **REJECT** | Ambos os caminhos de ingestão devem concordar; ausência nunca é "Alert" | `rule-releases/news2/specification.md` §4.3 | CRV-NEWS2-0116, CRV-NEWS2-0172–0176 |
+| Ausência de gate populacional (D-9) — nenhum campo de idade/gestação em nenhum ponto do caminho | `news2.py`, `vitals.py`, `schemas/vitals.py` (varredura completa) [pin] | **REJECT** | RCP 2017 §2: "designed for use in patients aged 16 years and more..." | `ADR-0027` | CRV-NEWS2-0114/0115 |
 | Trilha de "ratificação" `NEWS2-v3.0.0` (migrações 0008/0021/0029) | `alembic/versions/0008_seed_news2_v2_0_0.py` `cb98588ea4460b355c2c3ac84d314c838f405903150b7019392e9a69db0d51c6`; `0021_activate_news2_v3_0_0.py` `2874d0306946472838a612ca73d78a311e8885cdbf5c11bf28172fcc36db15f4`; `0029_ratification_record.py` `cfd0e7e40d62f628fa6335018a547a6d418931ce5861f239bb3f2f5f7ce1afbe` [reviewer-hash] | **REJECT** | Reivindicação de ratificação não sobrevive: `RAT-NEWS2-SCALE-2` não aparece na tabela aprovada de `docs/audit/fullspectrum/CLINICAL_SIGNOFF.md` | `ADR-0025` | sem CRV citado no registro de revisão |
 
 **MEWS** (fonte: `mews-review.md` §2–§6):
@@ -215,18 +215,18 @@ MATCH (Q-01..Q-04)"):
 | elemento | caminho + SHA-256 | classificação | log de transformação | artefato V2 | teste V2 (CRV) |
 |---|---|---|---|---|---|
 | Constantes de corte e estrutura de banda (D-01,D-05,D-06 numérico,D-08,D-11,D-14,D-15) | `src/intensicare/services/sofa.py` `731b3507cc07b2d5318f4759229527d2eac1f45b62eba269168d43560739b84a` [pin]; `models/clinical_score.py` `fc987ad0d037b1f153451240178dc12ab988a1104d7bc4a88dc460972234ff43` [pin] | **VALIDATE** | Re-derivado de Vincent 1996 + Lambden 2019 | `rule-releases/sofa/specification.md` §3.1 | sem CRV citado no registro de revisão |
-| Tratamento de insumo ausente/inválido (§6, HAZ-0005 confirmado nos 6 componentes) | `sofa.py:168-427,468-469,504` [pin] | **REJECT** | Substituído pela álgebra de status de 5 estados | `ADR-0008` | CRV-0117–0123 |
-| Curto-circuito de PAM ausente no eixo cardiovascular (D-07, "o pior defeito único do arquivo") | `sofa.py:301-335` [pin] | **REJECT** | Invertido: evidência de vasopressor domina; PAM só exigida se nenhum agente tabulado ativo | `rule-releases/sofa/specification.md` §4.4 | CRV-0119 |
-| Defaults de dose/agente CV desconhecidos (D-10) | `sofa.py:301-335` [pin] | **REJECT** | Dose ausente → `not_evaluated(missing_dose)`; agente não tabulado → `not_evaluated(vasoactive_agent_unmapped)`; terapia combinada agora representável | `rule-releases/sofa/specification.md` §4.4 I-4/I-5 | CRV-0121/0122 |
-| Ambiguidade de unidade de bilirrubina, apenas mg/dL com docstring "mg/dL ou µmol/L" (D-06) | `sofa.py` [pin] | **SUPERSEDE** | Canônico mg/dL com conversão exata ÷17,104 antes da banda; unidade não mapeável → `invalid` | `rule-releases/sofa/specification.md` §3.1 I-6 | CRV-0110/0130 |
+| Tratamento de insumo ausente/inválido (§6, HAZ-0005 confirmado nos 6 componentes) | `sofa.py:168-427,468-469,504` [pin] | **REJECT** | Substituído pela álgebra de status de 5 estados | `ADR-0008` | CRV-SOFA-0317–0323 |
+| Curto-circuito de PAM ausente no eixo cardiovascular (D-07, "o pior defeito único do arquivo") | `sofa.py:301-335` [pin] | **REJECT** | Invertido: evidência de vasopressor domina; PAM só exigida se nenhum agente tabulado ativo | `rule-releases/sofa/specification.md` §4.4 | CRV-SOFA-0319 |
+| Defaults de dose/agente CV desconhecidos (D-10) | `sofa.py:301-335` [pin] | **REJECT** | Dose ausente → `not_evaluated(missing_dose)`; agente não tabulado → `not_evaluated(vasoactive_agent_unmapped)`; terapia combinada agora representável | `rule-releases/sofa/specification.md` §4.4 I-4/I-5 | CRV-SOFA-0321/0322 |
+| Ambiguidade de unidade de bilirrubina, apenas mg/dL com docstring "mg/dL ou µmol/L" (D-06) | `sofa.py` [pin] | **SUPERSEDE** | Canônico mg/dL com conversão exata ÷17,104 antes da banda; unidade não mapeável → `invalid` | `rule-releases/sofa/specification.md` §3.1 I-6 | CRV-SOFA-0310/0330 |
 | Banda de risco de mortalidade | `sofa.py:40-59,124-138` [pin] | **REJECT** | Não citada, internamente inconsistente (assemelha-se a Ferreira 2001, não citado) | não declarado no registro de revisão (precisa de fonte nomeada + ratificação) | sem CRV citado no registro de revisão |
-| Gate de ventilação e interpretação de teto-em-2 (D-02) | `sofa.py:190-195` [pin] | **VALIDATE** | Convenção comum mas não citada; decisão de escopo necessária | `rule-releases/sofa/specification.md` §4.3 | CRV-0105/0106/0107 |
-| Conceito `SOFAResult.missing_components` | `sofa.py:122`; `clinical_score.py:21,30` [pin] | **TRANSFORM** | Bom instinto, descartado na persistência (sem coluna de status) — D-17 | `ADR-0008` | CRV-0117/0118 |
-| Forma de persistência `clinical_score` | `clinical_score.py:21,30` [pin] | **REJECT** | Int não-nulo puro, sem coluna de status = metade-persistência do HAZ-0005 | `ADR-0008` | CRV-0117/0118 |
-| GCS sem tratamento de sedação (D-12), sem checagem de faixa (D-13) | `sofa.py` [pin] | **SUPERSEDE** | Faixa 3–15 obrigatória (`invalid` fora dela); confounding de sedação → `not_evaluated` default, subordinado à ADR de sedação pendente | `rule-releases/sofa/specification.md` §4.5 I-8; `REV-NS-01-gcs.md` §4; `ADR-0028` | CRV-0131/0133 |
-| Insumo único silencioso em renal (D-16); rótulo "24h" de débito urinário sem janela (D-15) | `sofa.py` [pin] | **SUPERSEDE** | Ambos os sub-insumos exigidos por padrão; janela explícita de 24h com frescor de fim-de-intervalo | `rule-releases/sofa/specification.md` §3.1 linha 14, §4.6 I-7 | CRV-0123/0134 |
-| Ausência de política de frescor (analógico a Q-10; HAZ-0006) | `sofa.py` (varredura completa) [pin] | **REJECT** | Janelas por insumo e horizontes de expiração propostos, descarrega VAL-0023 mediante ratificação | `rule-releases/sofa/specification.md` §3.2 | CRV-0124/0125 |
-| Conjunto de regras da era trilhas 001-012 (catálogo `docs/rules/clinical-scoring/RULE-CLINICAL-SCORING-*`) | manifesto `legacy-pin-cycle-1.md` linhas 453-461, 1078-1080 [pin]; código-fonte trilhas subjacente **SOURCE NOT LOCATED** | **REJECT** (retido como catálogo de falhas) | Substituído duas vezes; incoerência de unidade (regra 002/008 FiO2 %-vs-fração), defeitos de lacuna morta (regra 004 bilirrubina, regra 007 creatinina=5.0) | `HAZ-0032`; `rule-releases/sofa/reference-vectors.md` | CRV-0109 (regra 004); CRV-0115 (regra 007); CRV-0130 (regras 002/008); CRV-0132/0131 (regra 003/006); CRV-0105-0107 (regra 002) |
+| Gate de ventilação e interpretação de teto-em-2 (D-02) | `sofa.py:190-195` [pin] | **VALIDATE** | Convenção comum mas não citada; decisão de escopo necessária | `rule-releases/sofa/specification.md` §4.3 | CRV-SOFA-0305/0306/0307 |
+| Conceito `SOFAResult.missing_components` | `sofa.py:122`; `clinical_score.py:21,30` [pin] | **TRANSFORM** | Bom instinto, descartado na persistência (sem coluna de status) — D-17 | `ADR-0008` | CRV-SOFA-0317/0318 |
+| Forma de persistência `clinical_score` | `clinical_score.py:21,30` [pin] | **REJECT** | Int não-nulo puro, sem coluna de status = metade-persistência do HAZ-0005 | `ADR-0008` | CRV-SOFA-0317/0318 |
+| GCS sem tratamento de sedação (D-12), sem checagem de faixa (D-13) | `sofa.py` [pin] | **SUPERSEDE** | Faixa 3–15 obrigatória (`invalid` fora dela); confounding de sedação → `not_evaluated` default, subordinado à ADR de sedação pendente | `rule-releases/sofa/specification.md` §4.5 I-8; `REV-NS-01-gcs.md` §4; `ADR-0028` | CRV-SOFA-0331/0333 |
+| Insumo único silencioso em renal (D-16); rótulo "24h" de débito urinário sem janela (D-15) | `sofa.py` [pin] | **SUPERSEDE** | Ambos os sub-insumos exigidos por padrão; janela explícita de 24h com frescor de fim-de-intervalo | `rule-releases/sofa/specification.md` §3.1 linha 14, §4.6 I-7 | CRV-SOFA-0323/0334 |
+| Ausência de política de frescor (analógico a Q-10; HAZ-0006) | `sofa.py` (varredura completa) [pin] | **REJECT** | Janelas por insumo e horizontes de expiração propostos, descarrega VAL-0023 mediante ratificação | `rule-releases/sofa/specification.md` §3.2 | CRV-SOFA-0324/0325 |
+| Conjunto de regras da era trilhas 001-012 (catálogo `docs/rules/clinical-scoring/RULE-CLINICAL-SCORING-*`) | manifesto `legacy-pin-cycle-1.md` linhas 453-461, 1078-1080 [pin]; código-fonte trilhas subjacente **SOURCE NOT LOCATED** | **REJECT** (retido como catálogo de falhas) | Substituído duas vezes; incoerência de unidade (regra 002/008 FiO2 %-vs-fração), defeitos de lacuna morta (regra 004 bilirrubina, regra 007 creatinina=5.0) | `HAZ-0032`; `rule-releases/sofa/reference-vectors.md` | CRV-SOFA-0309 (regra 004); CRV-SOFA-0315 (regra 007); CRV-SOFA-0330 (regras 002/008); CRV-SOFA-0332/0331 (regra 003/006); CRV-SOFA-0305-0307 (regra 002) |
 | Reivindicações de ratificação legadas "RAT-*" (D-19) | `sofa.py:20` [pin]; `docs/plan/_work/ratification-decisions.yaml` `b90c3cbbf11f22e440d7258e1e9c8fd556009a4c572717b839f51e73f7ee4751` [reviewer-hash] | **REJECT** | Autoridade é "delegação do dono do repositório", não aprovador clínico nomeado; nula per `evidence-notation.md` §2 regra 3 | `ADR-0025` | sem CRV citado no registro de revisão |
 
 **SOFA fork** (fonte: `sofa-fork-domain-formularios-review.md` §3, "sofa-fork
@@ -337,7 +337,7 @@ revisão. Registrado como risco de proveniência em aberto (§4).
 
 | elemento | caminho + SHA-256 | classificação | log de transformação | artefato V2 | teste V2 (CRV) |
 |---|---|---|---|---|---|
-| GCS | `src/intensicare/services/domain_formularios.py` `61db0316a942ce3c1310be15ff0411b3f5bbbd58754aa4f58b2912f0230499d3` [pin]; `sofa.py`, `qsofa.py` [pin]; +15 outros, ver registro de revisão | **TRANSFORM** | Faixa 3-15 correta retida; armazenamento de total-apenas, coerção-a-1 do motor de formulários, e ausência de gate de sedação rejeitados | `rule-releases/gcs/specification.md` | CRV-0205, CRV-0207, CRV-0208, CRV-0209/0210/0212/0213, CRV-0215/0216, CRV-0217/0218 |
+| GCS | `src/intensicare/services/domain_formularios.py` `61db0316a942ce3c1310be15ff0411b3f5bbbd58754aa4f58b2912f0230499d3` [pin]; `sofa.py`, `qsofa.py` [pin]; +15 outros, ver registro de revisão | **TRANSFORM** | Faixa 3-15 correta retida; armazenamento de total-apenas, coerção-a-1 do motor de formulários, e ausência de gate de sedação rejeitados | `rule-releases/gcs/specification.md` | CRV-GCS-0205, CRV-GCS-0207, CRV-GCS-0208, CRV-GCS-0209/0210/0212/0213, CRV-GCS-0215/0216, CRV-GCS-0217/0218 |
 | RASS | `domain_sedacao.py` `f0be9ac1164b6e453e03d91fc36b66d5aa24b4db751f7010326d4307a9e17a13` [pin]; `domain_formularios.py` [pin]; `domain_pharmaco_delirium.py` `f6c48a1d9545d66da3a744e0087b090f3648cfe3eb8d6a817f164138f2d9a401` [pin]; +9 outros, ver registro de revisão | **REFINE** | Comportamento de clamping citado genericamente (`tests/test_domain_formularios.py:316-322`) | não declarado no registro de revisão | sem CRV citado no registro de revisão |
 | NRS (dor) | `domain_sedacao.py` [pin]; `domain_formularios.py` [pin]; `domain_respiratory.py` `51344a4db6e5e168e64a28ea371e308fc76d4291e3cbad8d91c93342414738b9` [pin]; +6 outros | **REFINE** | Defeito RULE-PIORA-CLINICA-006 (banda severa `7<=dor>10` insatisfazível, pontua dor severa como "0"); corrigido em `neuro-sedation.yaml` ALERT-NEUROSED-PAIN-08, deve virar teste negativo V2 | não declarado no registro de revisão | sem CRV citado no registro de revisão |
 | BPS | `domain_sedacao.py` [pin]; `domain_formularios.py` [pin]; `_work/alerts/pathways/sedacao.yaml` `21dfa0bd03b633a196e10de6f752c195d62448a86f5c72190a0dfab1a3675657` [pin]; +6 outros | **REFINE** | Defeito RULE-PIORA-CLINICA-007 (banda severa `10<=sinais>12` insatisfazível, BPS 10-12 pontua "0"), deve virar teste negativo V2 | não declarado no registro de revisão | sem CRV citado no registro de revisão |
@@ -658,16 +658,29 @@ acima.
    registro citante), não parte do pino original — re-hash e comparação são
    necessários antes de confiar em qualquer citação contra esses arquivos.
 
-4. **Colisão de namespace de CRV entre SOFA e NEWS2.** `rule-releases/gcs/reference-vectors.md`
-   §0.1 registra (OBSERVED): *"os conjuntos concorrentes de RULE-SOFA
-   (CRV-0101–0199) e RULE-NEWS2 (CRV-0101–0189) reivindicaram blocos"* —
-   sobrepostos. GCS reivindicou um bloco distinto (CRV-0200–0299)
-   especificamente para evitar a mesma colisão. Todos os IDs CRV citados neste
-   manifesto (§2.1, §2.2, §2.5) são **DRAFT, não ratificados, provisórios até
-   registro em catálogo** (per `RULE-SOFA-CRV-0100` §0.1); nenhum pode ser citado
-   como evidência de release até essa colisão ser resolvida e um autor
-   independente confirmar cada vetor (`reference-vectors.md` do SOFA, front
-   matter: *"authorship independence is NOT satisfied"*).
+4. **Colisão de namespace de CRV entre SOFA e NEWS2 — RESOLVIDA POR RENUMERAÇÃO
+   MECÂNICA (steward de rastreabilidade, 2026-08-15).** `rule-releases/gcs/reference-vectors.md`
+   §0.1 registrava (OBSERVED, teor histórico): *"os conjuntos concorrentes de
+   RULE-SOFA (CRV-0101–0199) e RULE-NEWS2 (CRV-0101–0189) reivindicaram blocos"* —
+   sobrepostos. GCS já havia reivindicado um bloco distinto (CRV-0200–0299)
+   especificamente para evitar a mesma colisão. **Resolução (2026-08-15):** RULE-SOFA
+   foi renumerado mecanicamente para o bloco **CRV-0300–0399** (34 vetores em uso,
+   `CRV-0301`–`CRV-0334`, cada ID antigo + 200); RULE-NEWS2 permanece no bloco
+   **CRV-0100–0199** (89 vetores em uso, `CRV-0101`–`CRV-0189`, sem alteração); GCS
+   permanece em **CRV-0200–0299** (sem alteração). SOFA foi o lado movido — não NEWS2
+   — por ter menos citações a renomear (medição de 2026-08-15: 35 IDs únicos / 67
+   ocorrências de grep para SOFA vs. 89 IDs únicos / 116 ocorrências para NEWS2 em
+   `rule-releases/{sofa,news2}/*.md`), tornando essa a direção mecanicamente menos
+   invasiva. Nenhum conteúdo clínico, cenário ou resultado esperado foi alterado —
+   apenas o sufixo numérico do ID. As faixas estão registradas em
+   `docs/00-governance/traceability-policy.md` §1.1 como atualização de escriba
+   datada. Todos os IDs CRV citados neste manifesto (§2.1, §2.2, §2.5) continuam
+   **DRAFT, não ratificados, provisórios até registro em catálogo** (per
+   `RULE-SOFA-CRV-0300` §0.1, antigo `RULE-SOFA-CRV-0100`); a renumeração resolve a
+   colisão de namespace, não o status de ratificação — nenhum vetor pode ser citado
+   como evidência de release até um autor independente confirmar cada um
+   (`reference-vectors.md` do SOFA, front matter: *"authorship independence is NOT
+   satisfied"*).
 
 5. **Inconsistências internas de contagem nos próprios registros de revisão**
    (OBSERVED, não corrigidas por este manifesto — flagradas como estão):

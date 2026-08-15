@@ -5,7 +5,7 @@ owner: UNASSIGNED — VALIDATION REQUIRED
 source: INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §14 ("independent clinical reference vectors, including no-fire reasons"; "missing/stale/invalid/partial/conflict/correction/out-of-order test matrices"), §6.4 (Clinical release package — "reference vectors, properties, boundary cases, and replay corpus"), §9.3 (RuleBundle → RuleVersion/TerminologySnapshot/TestPack/Approval), §3 rules 7/10/12
 date_collected: 2026-08-14
 collector: Safety-focused test architecture engineer
-last_updated: 2026-08-14
+last_updated: 2026-08-15
 ---
 
 # IntensiCare V2 — Clinical Reference-Vector Standard
@@ -88,6 +88,23 @@ citation everywhere.
 **This extension itself is a PROPOSAL requiring the same ratification path as
 `traceability-policy.md`'s prior extension** — it does not bind implementation
 until a named authority accepts it (`decision-rights.md`).
+
+**Scribe note (governance-and-traceability steward, 2026-08-15) — per-score
+`CRV-<RULE>-<NNNN>` harmonization check, no live reference found here.**
+`traceability-policy.md` §1.1 records that `GDEC-0007` (clinical review of the
+cycle-1 rule releases) established a per-score prefix for real vectors —
+`CRV-SOFA-03NN`, `CRV-NEWS2-01NN`, `CRV-GCS-02NN` — superseding this document's
+own bare `CRV-<NNNN>` illustration for those three scores specifically. This
+document's own `CRV-0000`/`CRV-0001` mentions (§3, §4.2, §7) were checked
+against that composed form and left **unchanged**: every one of them names the
+*generic schema placeholder*, not a real SOFA/NEWS2/GCS vector — `CRV-0000` is
+explicitly "reserved and permanently retired for illustration," and `CRV-0001`
+is the generic sequential-numbering example in the schema comment, neither
+tied to any specific score. There is no live reference in this file to
+mechanically rename. Future scores that do **not** collide on a numeric range
+may still mint plain `CRV-<NNNN>` IDs under this document's own scheme; the
+per-score prefix is a namespace-collision remedy recorded in
+`traceability-policy.md` §1.1, not a rewrite of this standard's base format.
 
 ## 4. The YAML vector format
 

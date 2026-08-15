@@ -1,0 +1,18 @@
+{
+  "_fixture": {
+    "role": "invalid",
+    "sintetica": true,
+    "motivo_de_invalidade": "SEM idempotency_key — viola a invariante 2 do envelope minimo (campo 1..1). Um consumidor at-least-once sem chave de deduplicacao nao pode garantir replay deterministico. Mensagem DEVE ser rejeitada/quarentenada.",
+    "descricao": "Identico a um alias valido, exceto pela ausencia deliberada de idempotency_key. Valores 100% sinteticos."
+  },
+  "event_id": "22222222-2222-4222-8222-000000000001",
+  "event_type": "identity.alias.v1",
+  "event_type_version": "1",
+  "amh_tenant": "SYNTH-TENANT-A",
+  "legal_entity": "SYNTH-LE-00000001",
+  "subject_ref_antiga": "amh:psr:v1:SYNTH-eeee0001-0000-4000-8000-000000000009",
+  "subject_ref_nova": "amh:psr:v1:SYNTH-eeee0002-0000-4000-8000-000000000010",
+  "occurred_at": "2026-08-15T15:00:00Z",
+  "emitted_at": "2026-08-15T15:00:01Z",
+  "correction_of": null
+}

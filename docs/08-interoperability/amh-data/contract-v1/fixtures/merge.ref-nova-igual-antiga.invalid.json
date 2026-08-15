@@ -1,0 +1,19 @@
+{
+  "_fixture": {
+    "role": "invalid",
+    "sintetica": true,
+    "motivo_de_invalidade": "MERGE com subject_ref_nova IDENTICA a subject_ref_antiga — viola a invariante 3: um merge sem transicao de ref e evento sem efeito e indica defeito do produtor. Mensagem DEVE ser rejeitada/quarentenada.",
+    "descricao": "Valores 100% sinteticos."
+  },
+  "event_id": "22222222-2222-4222-8222-000000000002",
+  "event_type": "identity.merge.v1",
+  "event_type_version": "1",
+  "idempotency_key": "SYNTH-IDEM-MERGE-INV-0001",
+  "amh_tenant": "SYNTH-TENANT-A",
+  "legal_entity": "SYNTH-LE-00000001",
+  "subject_ref_antiga": "amh:psr:v1:SYNTH-ffff0001-0000-4000-8000-000000000011",
+  "subject_ref_nova": "amh:psr:v1:SYNTH-ffff0001-0000-4000-8000-000000000011",
+  "occurred_at": "2026-08-15T16:00:00Z",
+  "emitted_at": "2026-08-15T16:00:02Z",
+  "correction_of": null
+}
