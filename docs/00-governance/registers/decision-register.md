@@ -51,7 +51,7 @@ provenance:
 ```yaml
 id: GDEC-0001
 title: Adopt cycle-0/spark-foundation as the Phase 0 work branch and docs/ as the canonical documentation hierarchy
-status: PROPOSAL
+status: DECIDED  # ratified by the titular via GDEC-0008 item 7, 2026-08-15; decided_by/rationale/supersession recorded there
 statement: >
   Propose that IntensiCare V2 Phase 0 (Authority/access/bootstrap) work
   proceeds on branch `cycle-0/spark-foundation`, and that the documentation
@@ -91,7 +91,7 @@ provenance:
 ```yaml
 id: GDEC-0002
 title: Ratify or reject the proposed ID-prefix extensions to traceability-policy.md §1
-status: PROPOSAL
+status: DECIDED  # option (a) — all listed prefix extensions RATIFIED as permanent, incl. the per-rule CRV format CRV-<REGRA>-NNNN settled in practice; ratified via GDEC-0008 item 7, 2026-08-15; traceability-policy.md §1.1 update = follow-up task
 statement: >
   Multiple specialists have minted ID prefixes beyond the 17-prefix taxonomy
   in ../traceability-policy.md §1 (which already documents this steward's own
@@ -459,12 +459,74 @@ provenance:
   validation_status: "N/A — decisão já tomada pelo titular nomeado"
 ```
 
+## GDEC-0008 — Sessão de decisão do titular 2026-08-15: fila do ciclo 2 + pendências (8 itens)
+
+Transcrição de decisões tomadas **por escrito, em sessão**, pelo titular
+(rodaquino-OMNI). O orquestrador é escriba, não decisor.
+
+```yaml
+id: GDEC-0008
+title: Fila de decisão pós-ciclo-2 decidida — OS-16, C-1, G1, ADRs, contrato v1, lacunas de classe, housekeeping, tradução retroativa
+status: DECIDED
+statement: >
+  (1) OS-16: enviar ao CONSELHO JURÍDICO INTERNO da organização; escopo da
+  consulta inclui cobertura ética da pesquisa G1 (BLK-0013); envio físico e
+  nome do jurista pendentes de ato do titular. (2) C-1: opção O3 (híbrida) com
+  RE-PONDERAÇÃO AUTOMÁTICA para O1-first se a sonda "tabela de vitais do Tasy
+  no Bronze" for positiva — sonda é a ordem de execução zero. (3) G1:
+  comissionar TUDO agora (instrumentos, protocolo, baseline K-10); campo
+  gateado apenas na cobertura ética do item 1. (4) ADRs: ADR-0004 ACEITO +
+  ata AQ-1..6 contra-assinada; ADR-0001 ACEITO com formulação do titular —
+  "a V2 SEMPRE consome dados da AMH; nunca ingestão direta" — INTERPRETAÇÃO
+  DE COMPOSIÇÃO REGISTRADA (sujeita a confirmação): a trilha curta de
+  monitores da O3 é implementada como capacidade de ingestão DO LADO AMH,
+  preservando ponto único de ingresso; ADR-0003/0005/0009/0010/0011 ACEITOS
+  nas opções recomendadas; ADR-0006 permanece proposed (não decidido);
+  decisão derivada dos pisos de vasopressor com dose ausente CONFIRMADA.
+  (5) Emendas N-11..N-14 do contrato v1 RATIFICADAS agora (emenda
+  compatível); nomeação do dono AMH (BLK-0015) permanece aberta. (6) Abrir
+  AGORA as novas OS/perguntas Q11+ ao lado AMH para MedicationAdministration
+  (BLK-0012) e contrato de ordem clínica (BLK-0016). (7) Housekeeping:
+  GDEC-0001 e GDEC-0002 RATIFICADOS; merge seguro do PR para main via checks
+  e higiene de branches (deletar branches já mergeadas). (8) Tradução
+  retroativa EN→pt-BR: SIM — supersede a posição oportunista de A29-3/P-4;
+  execução em tranches (tranche 1: ADR-0027/0028; demais em backlog).
+decided_by: rodaquino-OMNI (titular; revisor clínico nomeado GDEC-0003; papéis interinos GDEC-0004)
+decided_date: "2026-08-15"
+rationale: >
+  Fila dependency-ordered do relatório do ciclo 2 §8 + pendências dos ciclos
+  anteriores, decididas em sessão única sobre pacotes de decisão prontos;
+  fundamentos por item na resposta de análise do orquestrador e nos pacotes
+  citados (vital-signs-decision/, relatório ciclo 2, folha do ciclo 1).
+supersession_rule: >
+  Item 2: a re-ponderação O1-first dispara sozinha com sonda positiva (sem
+  novo ciclo de decisão). Item 4: a interpretação de composição AMH-side da
+  O3 deve ser confirmada ou corrigida pelo titular na próxima sessão; ADRs
+  aceitos seguem seus próprios gatilhos de revisão. Item 8: tranches
+  seguintes de tradução são execução, não nova decisão.
+links:
+  requirements: []
+  hazards: [HAZ-0043, HAZ-0047]
+  adrs: [ADR-0001, ADR-0003, ADR-0004, ADR-0005, ADR-0009, ADR-0010, ADR-0011]
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-15); pacotes em docs/08-interoperability/amh-data/vital-signs-decision/ e docs/15-release-evidence/cycle-2-delivery-orchestrator-report.md §8
+  commit_sha_or_version: d233d87 (estado ao decidir)
+  section_or_lines: "itens 1-8 da mensagem do titular"
+  date_collected: "2026-08-15"
+  collector: orquestrador clínico — escriba
+  transformation: "transcrita; interpretação de composição do item 4 explicitada e sinalizada"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisão do titular; exceção: interpretação de composição O3×ADR-0001 marcada para confirmação"
+```
+
 ## Index
 
 | ID | Title | Status | Decided by | Decided date |
 |---|---|---|---|---|
-| GDEC-0001 | Adopt `cycle-0/spark-foundation` branch and `docs/` hierarchy | PROPOSAL | UNASSIGNED — VALIDATION REQUIRED | n/a |
-| GDEC-0002 | Ratify or reject proposed ID-prefix extensions (THR, CRV, QAS, IDP/IDN, NIU/SM/HM/WF/UR) | PROPOSAL | UNASSIGNED — VALIDATION REQUIRED | n/a |
+| GDEC-0001 | Adopt `cycle-0/spark-foundation` branch and `docs/` hierarchy | DECIDED (ratified via GDEC-0008 item 7) | rodaquino-OMNI | 2026-08-15 |
+| GDEC-0002 | Ratify or reject proposed ID-prefix extensions (THR, CRV, QAS, IDP/IDN, NIU/SM/HM/WF/UR) | DECIDED (ratified via GDEC-0008 item 7) | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0003 | Named clinical reviewer / clinical-content approver for cycle-1 artifacts | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0004 | Resoluções do Gate G0 — DEC-G0-01 a DEC-G0-09 | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0005 | Adjudicação de identidade e tenancy AMH×IntensiCare — AQ-1 a AQ-6 | DECIDED | rodaquino-OMNI | 2026-08-15 |
@@ -488,3 +550,6 @@ provenance:
 - **Nota (2026-08-15, mais tarde):** `GDEC-0007` alocado pelo orquestrador
   clínico (transcrição da revisão do ciclo 1). Próximo ID disponível:
   `GDEC-0008`.
+- **Nota (2026-08-15, sessão de decisão):** `GDEC-0008` alocado (fila do
+  ciclo 2 decidida; GDEC-0001/0002 ratificados por ela). Próximo ID
+  disponível: `GDEC-0009`.

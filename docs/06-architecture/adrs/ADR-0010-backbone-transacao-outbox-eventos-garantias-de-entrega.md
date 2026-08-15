@@ -1,7 +1,7 @@
 ---
 id: ADR-0010
 title: Backbone de transação/outbox/eventos e garantias de entrega
-status: proposed
+status: accepted (2026-08-15, GDEC-0008)
 status_history:
   - status: not-started
     date: 2026-08-14
@@ -15,14 +15,19 @@ status_history:
       classes de tecnologia aparecem com critérios de avaliação, jamais como
       seleção (§3 regra 14). NENHUMA decisão é registrada e nenhum agente pode
       registrá-la.
+  - status: accepted (2026-08-15, GDEC-0008)
+    date: 2026-08-15
+    by: rodaquino-OMNI (titular) — transcrito por escriba de decisão-transcrição de ADR
+    note: >
+      Aceito por escrito pelo titular na sessão de decisão GDEC-0008 (item 4;
+      `docs/00-governance/registers/decision-register.md`), na opção recomendada —
+      Opção A (outbox transacional + relay) — e na minuta B1–B10 de §5.2. Ver §5.0.
+      Nenhum agente decidiu — transcrição de decisão já tomada.
 date: 2026-08-15
-owner: >
-  UNASSIGNED — VALIDATION REQUIRED (candidatos por adr-index.md §3:
-  AUTH-PRODUCT e AUTH-OPERATIONS — ambos detidos interinamente por rodaquino-OMNI
-  via DEC-G0-01/DEC-G0-06; a confirmação como dono é ato humano, não deste autor)
+owner: rodaquino-OMNI — AUTH-PRODUCT e AUTH-OPERATIONS interinos (DEC-G0-01/DEC-G0-06); ADR aceito por escrito em GDEC-0008 item 4
 approvers:
-  - UNASSIGNED — VALIDATION REQUIRED   # role: AUTH-PRODUCT (forma do backbone e contrato de entrega)
-  - UNASSIGNED — VALIDATION REQUIRED   # role: AUTH-OPERATIONS (operação, DLQ, replay, recuperação)
+  - rodaquino-OMNI — AUTH-PRODUCT interino (forma do backbone e contrato de entrega, DEC-G0-01); aceito em GDEC-0008 item 4
+  - rodaquino-OMNI — AUTH-OPERATIONS interino (operação, DLQ, replay, recuperação, DEC-G0-06); aceito em GDEC-0008 item 4
 decision_deadline: >
   UNSET — VALIDATION REQUIRED. Restrição de ordem: os Gates G4 e G7 listam este
   ADR (adr-index.md §5); a fatia vertical G7 exige "durable alert/work item plus
@@ -78,18 +83,23 @@ provenance:
     DOM-0005/0006; nenhum benchmark foi executado e nenhum número de desempenho é
     citado como medido.
   confidence: medium
-  owner: UNASSIGNED — VALIDATION REQUIRED
-  validation_status: VALIDATION REQUIRED
+  owner: rodaquino-OMNI
+  validation_status: >
+    N/A — ADR aceito pelo titular (GDEC-0008 item 4), na opção recomendada. As
+    condições de §5.1 seguem VALIDATION REQUIRED conforme registradas.
 ---
 
 # ADR-0010 — Backbone de transação/outbox/eventos e garantias de entrega
 
-> **Status: `proposed`. Este documento apresenta opções, drivers e uma minuta
-> normativa proposta (§5.2). NÃO registra decisão.** Duas restrições não são
-> alternativas em avaliação: DOM-0006 (*durabilidade precede imediatismo*) e a
-> regra §3-9 (entrega em tempo real deriva de estado/eventos duráveis e
-> replayáveis). Elas vinculam toda opção abaixo. **Nenhum broker, banco ou
-> tecnologia é selecionado aqui** (§3 regra 14) — classes aparecem com critérios.
+> **Status: `accepted (2026-08-15, GDEC-0008)`.** O titular aceitou este ADR por
+> escrito na sessão de decisão GDEC-0008 (item 4), na opção recomendada — Opção A
+> (outbox transacional + relay) — e na minuta normativa B1–B10 de §5.2. Ver §5.0.
+> Duas restrições não são alternativas em avaliação: DOM-0006 (*durabilidade
+> precede imediatismo*) e a regra §3-9 (entrega em tempo real deriva de
+> estado/eventos duráveis e replayáveis). **Nenhum broker, banco ou tecnologia é
+> selecionado por esta decisão** (§3 regra 14) — classes permanecem com critérios,
+> não seleção. **Aceito não significa implantado nem verificado** — as condições
+> de §5.1 continuam a governar a operacionalização.
 
 ---
 
@@ -354,24 +364,41 @@ listado em **dois** gates (G4 e G7).
 
 ## 5. Decisão e escopo
 
-> **NENHUMA DECISÃO ESTÁ REGISTRADA.** Este ADR apresenta opções, drivers e a
-> minuta §5.2. Preencher esta seção é reservado à autoridade decisora nomeada no
-> front matter. A minuta abaixo é o que a aceitação **vincularia** — nada dela
-> vige antes.
+> **DECISÃO REGISTRADA (GDEC-0008, 2026-08-15).** O titular aceitou este ADR na
+> opção recomendada, incluindo a minuta §5.2 integral — ver §5.0.
+
+### 5.0 Decisão (GDEC-0008, 2026-08-15)
+
+> **decided_by:** rodaquino-OMNI (titular; `AUTH-PRODUCT` + `AUTH-OPERATIONS`
+> interinos, DEC-G0-01/DEC-G0-06).
+>
+> **Opção aceita:** **Opção A — outbox transacional + relay para transporte
+> durável** (§4), elaboração do baseline §9.4, com a **minuta normativa B1–B10 de
+> §5.2 aceita integralmente** — fronteira transacional única (B1), at-least-once
+> com consumidores idempotentes (B2), ordenação por escopo declarado (B3), janela
+> de replay declarada (B4), crash-points enumerados e testados (B5), DLQ/quarentena
+> visível (B6), ACK na fronteira de persistência (B7), envelope interno mínimo
+> (B8), classes de transporte com critérios sem seleção de tecnologia (B9) e
+> produtor autorizado único (B10).
+>
+> **rationale:** conforme sessão de decisão GDEC-0008.
+>
+> **supersessão:** rege-se pelos próprios gatilhos de revisita desta ADR (§8.2,
+> T1–T6) — nenhum gatilho adicional é criado por esta transcrição.
 
 ### 5.1 Condições que devem ser satisfeitas antes da aceitação
 
 | # | Condição | Dono | Evidência que a fecha | Estado |
 |---|---|---|---|---|
-| C1 | ADR-0005 aceito — o backbone publica eventos sobre fatos/correções cuja forma vem de lá (M1/M3/M9). | titular | Aceitação registrada | ABERTA (0005 `proposed`) |
+| C1 | ADR-0005 aceito — o backbone publica eventos sobre fatos/correções cuja forma vem de lá (M1/M3/M9). | titular | Aceitação registrada | **FECHADA** — DECISÃO (GDEC-0008): ADR-0005 aceito na mesma sessão (item 4) |
 | C2 | ADR-0002 com direção confirmada (monólito modular) — B9 pressupõe transporte operável dentro de um deployable; extração muda o cálculo D5. | titular | Aceitação registrada ou direção confirmada | ABERTA (0002 `proposed`) |
 | C3 | Esquema de envelope interno rascunhado (B8) e conferido contra o envelope externo do contrato v1 — compatibilidade de propagação (E8), não cópia. | autoridade deste ADR + steward do contrato | Nota de conferência | ABERTA |
 | C4 | Harness de crash-point especificado (H2) como parte da arquitetura de teste — aceitar sem rota de teste tornaria D4 inverificável. | verificador independente (a nomear) | Especificação de harness registrada | ABERTA |
 | C5 | Janela de replay e política de poda do outbox/transporte declaradas (A4) — valores VALIDATION REQUIRED; a *estrutura* da declaração é condição. | AUTH-OPERATIONS | Anexo de retenção ratificado (interage com ADR-0018) | ABERTA |
 
-### 5.2 Minuta normativa proposta (PROPOSAL — o que a aceitação vincularia)
+### 5.2 Minuta normativa proposta (DECISÃO — GDEC-0008: minuta B1–B10 aceita integralmente)
 
-Cláusulas marcadas ◆ têm consequência clínica direta e exigem AUTH-CLINSAFETY.
+Cláusulas marcadas ◆ têm consequência clínica direta e permanecem sob AUTH-CLINSAFETY.
 
 **B1 — Fronteira transacional única.** Todo comando que muda estado grava efeito,
 `AuditEvidence` e registro(s) de saída de evento **na mesma transação local**
@@ -580,5 +607,6 @@ numérico inventado** (janelas/limiares VALIDATION REQUIRED); oito linhas
 transversais presentes; reversibilidade, gatilhos e kill/rollback presentes;
 validação com IDs reais verificados; supersessão declarada; **nenhuma tecnologia
 selecionada** (B9 traz classes com critérios e gatilho, não escolha); nenhuma
-aprovação fabricada; nenhum dono nomeado. **Nota da janela concorrente:**
-`adr-index.md` NÃO foi atualizado por este autor — linha de índice no handoff.
+aprovação fabricada; nenhum dono nomeado. **Nota da aceitação (GDEC-0008,
+2026-08-15):** `adr-index.md` atualizado na mesma mudança da transcrição de
+decisão.

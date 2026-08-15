@@ -1,7 +1,7 @@
 ---
 id: ADR-0004
 title: Identidade de paciente/encontro, escopo do MPI, identificador de fronteira e semântica de merge/unmerge
-status: under-review
+status: accepted (2026-08-15, GDEC-0008)
 status_history:
   - status: not-started
     date: 2026-08-14
@@ -31,6 +31,14 @@ status_history:
       pleno do PSR em D-04, base legal com artigo em D-09, derivação de tenant em
       D-03. Acrescidos: §5.2.1 (reatribuição/óbito/alta/duplicata) e o requisito de UI
       vinculante de AQ-1 em §6.2.
+  - status: accepted (2026-08-15, GDEC-0008)
+    date: 2026-08-15
+    by: rodaquino-OMNI (titular) — transcrito por escriba de decisão-transcrição de ADR
+    note: >
+      Aceito por escrito pelo titular na sessão de decisão GDEC-0008 (item 4;
+      `docs/00-governance/registers/decision-register.md`). C1 (revisão do titular)
+      fecha por este ato; a reconciliação C2 (§5.5) permanece confirmada como
+      executada. Nenhum agente decidiu — transcrição de decisão já tomada.
 date: 2026-08-15
 owner: rodaquino-OMNI — CEO e acionista principal (OMNI e AMH), médico intensivista
 approvers:
@@ -95,16 +103,21 @@ provenance:
     consequências foram redigidos a partir dos documentos de adjudicação lidos em disco.
   confidence: medium
   owner: rodaquino-OMNI
-  validation_status: VALIDATION REQUIRED — aceitação do ADR escrito pelo titular
+  validation_status: >
+    N/A — ADR aceito pelo titular (GDEC-0008 item 4). Pendências específicas
+    permanecem VALIDATION REQUIRED conforme §5.4 (C4, C5) e §5.1 do parecer
+    DPO/jurídico (item D-02).
 ---
 
 # ADR-0004 — Identidade de paciente/encontro, escopo do MPI, identificador de fronteira e semântica de merge/unmerge
 
-> **Status: `under-review`.** A **direção** foi decidida por humano nomeado
-> (rodaquino-OMNI) em 2026-08-15; este documento a formaliza com todos os campos
-> obrigatórios da §10 do prompt para revisão e aceitação. **Enquanto o status for
-> `under-review`, a decisão não está aceita como ADR** — nenhum agente pode marcá-la
-> `accepted`, e nada aqui é evidência de implementação ou de verificação.
+> **Status: `accepted (2026-08-15, GDEC-0008)`.** A **direção** foi decidida por
+> humano nomeado (rodaquino-OMNI) em 2026-08-15, e o **ADR escrito foi aceito pelo
+> mesmo titular** na sessão de decisão GDEC-0008 (item 4;
+> `docs/00-governance/registers/decision-register.md`). **Aceito não significa
+> implantado nem verificado** — nada aqui é evidência de implementação ou de
+> verificação; as condições de §5.4 que seguem abertas continuam a governar a
+> operacionalização.
 
 > **Aviso de proveniência, dito uma vez e válido para todo o documento.** O registro
 > `docs/08-interoperability/amh-data/identity-adjudication/adjudicacao-decisoes-2026-08-15.md`
@@ -382,9 +395,25 @@ ADR-0005, o ADR-0013 e o pacote de contrato v1.
 ## 5. Decisão e escopo
 
 > **Direção DECIDIDA por rodaquino-OMNI em 2026-08-15** (CEO e acionista principal de
-> OMNI e AMH, médico intensivista), sob DEC-G0-04. **A aceitação deste ADR escrito é ato
-> separado e ainda não ocorreu** — o status permanece `under-review` até que o titular
-> revise este texto. Nenhum agente participou da decisão; este documento a formaliza.
+> OMNI e AMH, médico intensivista), sob DEC-G0-04. **Este ADR escrito foi ACEITO pelo
+> mesmo titular na sessão de decisão GDEC-0008 (item 4, 2026-08-15)** — ver §5.0.
+> Nenhum agente participou da decisão; este documento a formaliza e transcreve a
+> aceitação.
+
+### 5.0 Decisão (GDEC-0008, 2026-08-15)
+
+> **decided_by:** rodaquino-OMNI (titular; papéis interinos GDEC-0004).
+>
+> O modelo de identidade decidido em §5.1 (D-01 a D-11), a semântica de merge/unmerge
+> de §5.2, o adendo de §5.2.1 e a reconciliação executada de §5.5 são **aceitos
+> integralmente** como a decisão formal deste ADR. Nenhuma cláusula é reaberta por
+> esta aceitação; nenhum dos itens ABERTA em §5.4 (C4, C5) fecha por ela — cada
+> um exige sua própria evidência, listada na própria tabela.
+>
+> **rationale:** conforme sessão de decisão GDEC-0008.
+>
+> **supersessão:** rege-se pelos próprios gatilhos de revisão desta ADR (§8.2,
+> T1–T8) — nenhum gatilho adicional é criado por esta transcrição.
 
 ### 5.1 O modelo decidido
 
@@ -445,9 +474,9 @@ elegibilidade de vias clínicas.
 
 | # | Condição | Responsável | Estado |
 |---|---|---|---|
-| C1 | O titular revisa **este texto** e o aceita (a direção já está decidida; a aceitação do ADR escrito é o ato pendente) | rodaquino-OMNI | **ABERTA** |
-| C2 | Reconciliação item a item da §5.1 contra `adjudicacao-decisoes-2026-08-15.md` quando este aterrissar | orquestrador + este autor | **EXECUTADA 2026-08-15** pelo arquiteto de decisões de fronteira e modelo canônico (ver §5.5); divergências corrigidas a favor da ata; **confirmação do titular pendente no ato de aceitação** |
-| C3 | Registro da decisão no `decision-register.md` com ID `GDEC-nnnn`, evitando colisão (nota de integração 2 do DEC-G0) | steward de governança | **ABERTA** |
+| C1 | O titular revisa **este texto** e o aceita (a direção já está decidida; a aceitação do ADR escrito é o ato pendente) | rodaquino-OMNI | **FECHADA (GDEC-0008, 2026-08-15)** — DECISÃO (GDEC-0008): opção recomendada aceita; ver §5.0 |
+| C2 | Reconciliação item a item da §5.1 contra `adjudicacao-decisoes-2026-08-15.md` quando este aterrissar | orquestrador + este autor | **EXECUTADA 2026-08-15** pelo arquiteto de decisões de fronteira e modelo canônico (ver §5.5); divergências corrigidas a favor da ata; **confirmada pelo titular no ato de aceitação (GDEC-0008)** |
+| C3 | Registro da decisão no `decision-register.md` com ID `GDEC-nnnn`, evitando colisão (nota de integração 2 do DEC-G0) | steward de governança | **FECHADA** — GDEC-0005 (AQ-1..AQ-6) e GDEC-0008 item 4 (aceitação deste ADR) |
 | C4 | Atualização de `interim-identity-policy.md` marcando IDP-02 como superada por ADR-0004 (o dono daquele documento executa; este ADR não edita fora do seu escopo) | analista de adjudicação de identidade AMH | **ABERTA** |
 | C5 | Registro do risco de concentração de autoridade no `risk-register.md` | steward de governança | **ABERTA** |
 
@@ -590,7 +619,8 @@ ratificação da própria ata (§8), em particular a contra-assinatura do titula
 
 ### 8.3 Kill switch / rollback
 
-Enquanto `under-review`, não há o que desligar. As restrições vigentes são:
+Aceito, porém não implantado: não há código a desligar. As restrições vigentes
+(controle real enquanto não há implementação) são:
 
 1. **Nenhum fato clínico de produção é persistido antes de a AMH mintar PSRs** (D-06).
    Este é, na prática, o kill switch: sem PSR de produção, não há base a reverter.
@@ -643,9 +673,10 @@ literal. Os IDs `TST-IDP-*` e `TST-DOM-*` foram **lidos** de
   passa a ser propósito + contexto profissional) e permanece vigente quanto a usos
   secundários e a falhar fechado.
 - **Superado por:** nenhum.
-- **Relação com o ADR-0001:** este ADR **melhora a linha de base de evidência** do
-  ADR-0001 sem decidi-lo — a incerteza de identidade deixou de ser uma incógnita da
-  fronteira. O ADR-0001 permanece `proposed`.
+- **Relação com o ADR-0001:** este ADR **melhorou a linha de base de evidência** do
+  ADR-0001 — a incerteza de identidade deixou de ser uma incógnita da fronteira. O
+  ADR-0001 foi **aceito** em 2026-08-15 (GDEC-0008), com a formulação do titular sobre
+  a fronteira; ver ADR-0001 §5.0/§2.4 para a interação entre as duas decisões.
 
 ---
 
@@ -668,9 +699,10 @@ tecnologia, nuvem, banco, broker ou framework escolhido**; nenhuma aprovação f
    uma contraparte externa exerceria. Mitigação real: os pares implementador × verificador.
 2. **O registro de adjudicação não foi lido pelo autor original** — ver o aviso de
    proveniência no topo. **Resolvido em 2026-08-15:** a ata foi lida em disco por um
-   segundo especialista e a reconciliação C2 foi executada (§5.5). O que resta ao
-   revisor humano: confirmar a reconciliação no ato de aceitação, e notar que a própria
-   ata ainda aguarda contra-assinatura do titular (ata §0.3 e §8 pendência 1).
+   segundo especialista e a reconciliação C2 foi executada (§5.5), **confirmada pelo
+   titular no ato de aceitação deste ADR (GDEC-0008)**. A própria ata registra
+   contra-assinatura em 2026-08-15 (GDEC-0008 item 4; ata §0.3) — a ratificação
+   jurídica (ata §8) permanece pendente do parecer OS-16 (BLK-0014).
 3. **Item D-09 é leitura jurídica sem advogado**, tomada por autoridade de negócio e
    clínica. DEC-G0-03 mantém o parecer como gatilho obrigatório.
 4. **A consequência clínica de §6.2 foi aceita, não eliminada.** O paciente multi-PJ

@@ -1,7 +1,7 @@
 ---
 id: ADR-0011
 title: Projeções de leitura reconstruíveis e entrega em tempo real autorizada
-status: proposed
+status: accepted (2026-08-15, GDEC-0008)
 status_history:
   - status: not-started
     date: 2026-08-14
@@ -15,15 +15,20 @@ status_history:
       autorização por tenant/encontro avaliada em CADA push; WebSocket/SSE jamais
       fonte de verdade. NENHUMA decisão é registrada e nenhum agente pode
       registrá-la.
+  - status: accepted (2026-08-15, GDEC-0008)
+    date: 2026-08-15
+    by: rodaquino-OMNI (titular) — transcrito por escriba de decisão-transcrição de ADR
+    note: >
+      Aceito por escrito pelo titular na sessão de decisão GDEC-0008 (item 4;
+      `docs/00-governance/registers/decision-register.md`), na opção recomendada —
+      Opção A (projeções server-side + gateway único autorizado por push) — e na
+      minuta P1–P10 de §5.2. Ver §5.0. Nenhum agente decidiu — transcrição de
+      decisão já tomada.
 date: 2026-08-15
-owner: >
-  UNASSIGNED — VALIDATION REQUIRED (candidatos por adr-index.md §3:
-  AUTH-PRODUCT e AUTH-SECURITY — AUTH-PRODUCT detido interinamente por
-  rodaquino-OMNI via DEC-G0-01; AUTH-SECURITY de fase de projeto via DEC-G0-02;
-  a confirmação como dono é ato humano, não deste autor)
+owner: rodaquino-OMNI — AUTH-PRODUCT interino (DEC-G0-01) e AUTH-SECURITY interino de fase de projeto (DEC-G0-02); ADR aceito por escrito em GDEC-0008 item 4
 approvers:
-  - UNASSIGNED — VALIDATION REQUIRED   # role: AUTH-PRODUCT (forma das projeções e do gateway)
-  - UNASSIGNED — VALIDATION REQUIRED   # role: AUTH-SECURITY (autorização por push, escopo de subscrição, superfície de PHI)
+  - rodaquino-OMNI — AUTH-PRODUCT interino (forma das projeções e do gateway, DEC-G0-01); aceito em GDEC-0008 item 4
+  - rodaquino-OMNI — AUTH-SECURITY interino (autorização por push, escopo de subscrição, superfície de PHI, DEC-G0-02); aceito em GDEC-0008 item 4
 decision_deadline: >
   UNSET — VALIDATION REQUIRED. Restrição de ordem: o Gate G4 lista este ADR
   (adr-index.md §5); a fatia G7 exige "authorized read model and real-time
@@ -78,18 +83,24 @@ provenance:
     do precedente legado registrado em hazard/threat (WS/SSE sem autorização de
     canal); nenhum artefato legado foi reverificado.
   confidence: medium
-  owner: UNASSIGNED — VALIDATION REQUIRED
-  validation_status: VALIDATION REQUIRED
+  owner: rodaquino-OMNI
+  validation_status: >
+    N/A — ADR aceito pelo titular (GDEC-0008 item 4), na opção recomendada. As
+    condições de §5.1 seguem VALIDATION REQUIRED conforme registradas.
 ---
 
 # ADR-0011 — Projeções de leitura reconstruíveis e entrega em tempo real autorizada
 
-> **Status: `proposed`. Este documento apresenta opções, drivers e uma minuta
-> normativa proposta (§5.2). NÃO registra decisão.** Três restrições não são
-> alternativas em avaliação: regra §3-9 (tempo real deriva de estado durável;
-> WebSocket/SSE/MCP jamais são o registro clínico), regra §3-6 (contexto de
-> tenant jamais inferido de valor controlado pelo chamador) e DOM-0006
-> (projeções rebuildáveis). Elas vinculam toda opção abaixo.
+> **Status: `accepted (2026-08-15, GDEC-0008)`.** O titular aceitou este ADR por
+> escrito na sessão de decisão GDEC-0008 (item 4), na opção recomendada — Opção A
+> (projeções server-side reconstruíveis + gateway único de tempo real com
+> autorização por push, cursores e reconciliação por polling) — e na minuta
+> normativa P1–P10 de §5.2. Ver §5.0. Três restrições não são alternativas em
+> avaliação: regra §3-9 (tempo real deriva de estado durável; WebSocket/SSE/MCP
+> jamais são o registro clínico), regra §3-6 (contexto de tenant jamais inferido
+> de valor controlado pelo chamador) e DOM-0006 (projeções rebuildáveis).
+> **Aceito não significa implantado nem verificado** — as condições de §5.1
+> continuam a governar a operacionalização.
 
 ---
 
@@ -344,27 +355,46 @@ variante de aceitação por cláusula, sem novo ADR.
 
 ## 5. Decisão e escopo
 
-> **NENHUMA DECISÃO ESTÁ REGISTRADA.** Este ADR apresenta opções, drivers e a
-> minuta §5.2. Preencher esta seção é reservado à autoridade decisora nomeada no
-> front matter. A minuta abaixo é o que a aceitação **vincularia** — nada dela
-> vige antes.
+> **DECISÃO REGISTRADA (GDEC-0008, 2026-08-15).** O titular aceitou este ADR na
+> opção recomendada, incluindo a minuta §5.2 integral — ver §5.0.
+
+### 5.0 Decisão (GDEC-0008, 2026-08-15)
+
+> **decided_by:** rodaquino-OMNI (titular; `AUTH-PRODUCT` + `AUTH-SECURITY`
+> interinos, DEC-G0-01/DEC-G0-02).
+>
+> **Opção aceita:** **Opção A — projeções server-side reconstruíveis + gateway
+> único de tempo real com autorização por push, cursores e reconciliação por
+> polling** (§4), elaboração do baseline §9.4, com a **minuta normativa P1–P10 de
+> §5.2 aceita integralmente** — reconstruibilidade (P1), escopo em toda chave
+> (P2), autorização a cada push (P3), cursores de retomada (P4), filas limitadas
+> com shed honesto (P5), estado de conexão/frescor no contrato (P6), fidelidade de
+> status (P7), reconciliação por polling (P8), notificação externa derivada (P9) e
+> incerteza de entrega jamais oculta (P10). A relação estrutural §4.1 (Opção A
+> contém a Opção B como caminho de reconciliação) é aceita como registrada — a
+> ativação plena do gateway (P3–P6) permanece condicionada ao alvo G1 (C4).
+>
+> **rationale:** conforme sessão de decisão GDEC-0008.
+>
+> **supersessão:** rege-se pelos próprios gatilhos de revisita desta ADR (§8.2,
+> T1–T7) — nenhum gatilho adicional é criado por esta transcrição.
 
 ### 5.1 Condições que devem ser satisfeitas antes da aceitação
 
 | # | Condição | Dono | Evidência que a fecha | Estado |
 |---|---|---|---|---|
-| C1 | ADR-0010 com direção registrada — projeções derivam do backbone (janela de replay B4 determina o rebuild H1). | autoridade do ADR-0010 | ADR-0010 aceito ou direção registrada | ABERTA (0010 `proposed` na mesma data) |
-| C2 | ADR-0016 (autorização/isolamento) com direção registrada — P3 fixa *quando* a decisão é avaliada; o mecanismo é de lá. O `adr-index.md` §4.1 já registra esta dependência. | autoridade do ADR-0016 | ADR-0016 aceito ou direção registrada | ABERTA (0016 `not-started`) |
-| C3 | Reconciliação declarada com o texto aceito do ADR-0008 (N4/N5/N7) — as projeções implementam recomputação e roll-ups de lá. | autoridade deste ADR | Nota de reconciliação na aceitação | ABERTA |
-| C4 | Alvo G1 de latência gerado→visível existente, OU aceitação registrando explicitamente decisão estrutural com alvo pendente (afeta a escolha A×B, não as cláusulas P1/P2/P7/P8). | AUTH-INTENDED-USE + AUTH-CLINSAFETY | Registro G1 | ABERTA — nenhum alvo existe (VALIDATION REQUIRED) |
+| C1 | ADR-0010 com direção registrada — projeções derivam do backbone (janela de replay B4 determina o rebuild H1). | autoridade do ADR-0010 | ADR-0010 aceito ou direção registrada | **FECHADA** — DECISÃO (GDEC-0008): ADR-0010 aceito na mesma sessão (item 4) |
+| C2 | ADR-0016 (autorização/isolamento) com direção registrada — P3 fixa *quando* a decisão é avaliada; o mecanismo é de lá. O `adr-index.md` §4.1 já registra esta dependência. | autoridade do ADR-0016 | ADR-0016 aceito ou direção registrada | ABERTA — genuinamente pendente (ADR-0016 `not-started`, fora do escopo desta sessão de decisão) |
+| C3 | Reconciliação declarada com o texto aceito do ADR-0008 (N4/N5/N7) — as projeções implementam recomputação e roll-ups de lá. | autoridade deste ADR | Nota de reconciliação na aceitação | **FECHADA** — DECISÃO (GDEC-0008): compatibilidade declarada — P7 implementa N4/N5/N7 do texto aceito do ADR-0008 |
+| C4 | Alvo G1 de latência gerado→visível existente, OU aceitação registrando explicitamente decisão estrutural com alvo pendente (afeta a escolha A×B, não as cláusulas P1/P2/P7/P8). | AUTH-INTENDED-USE + AUTH-CLINSAFETY | Registro G1 | **PARCIALMENTE FECHADA** — DECISÃO (GDEC-0008): opção recomendada aceita com estrutura decidida e alvo de latência explicitamente pendente (cláusula "OU" desta condição); P1/P2/P7/P8 vigentes desde já, ativação plena do gateway (P3–P6) aguarda G1 |
 | C5 | Evidência adversarial de isolamento planejada para o gateway/projeções (G6 exigirá; o desenho de teste precisa existir na aceitação). | AUTH-SECURITY | Especificação de testes adversariais registrada | ABERTA |
 | C6 | Validação de fatores humanos H3 (estados degradados compreensíveis) executada ou explicitamente pendente como condição de G4. | AUTH-UX | Registro de validação | ABERTA |
 
-### 5.2 Minuta normativa proposta (PROPOSAL — o que a aceitação vincularia)
+### 5.2 Minuta normativa proposta (DECISÃO — GDEC-0008: minuta P1–P10 aceita integralmente)
 
-Cláusulas marcadas ◆ têm consequência clínica direta e exigem AUTH-CLINSAFETY;
-cláusulas marcadas ● têm consequência de segurança primária e exigem
-AUTH-SECURITY.
+Cláusulas marcadas ◆ têm consequência clínica direta e permanecem sob
+AUTH-CLINSAFETY; cláusulas marcadas ● têm consequência de segurança primária e
+permanecem sob AUTH-SECURITY.
 
 **P1 — Reconstruibilidade.** Toda projeção de leitura é derivada exclusivamente
 dos eventos duráveis do backbone (ADR-0010) e é deletável e reconstruível por
@@ -580,5 +610,5 @@ limites de fila e alvos de latência VALIDATION REQUIRED); oito linhas
 transversais presentes; reversibilidade, gatilhos e kill/rollback presentes;
 validação com IDs reais verificados; supersessão declarada; **nenhuma tecnologia
 selecionada** (transporte push explicitamente diferido); nenhuma aprovação
-fabricada; nenhum dono nomeado. **Nota da janela concorrente:** `adr-index.md`
-NÃO foi atualizado por este autor — linha de índice no handoff.
+fabricada; nenhum dono nomeado. **Nota da aceitação (GDEC-0008, 2026-08-15):**
+`adr-index.md` atualizado na mesma mudança da transcrição de decisão.

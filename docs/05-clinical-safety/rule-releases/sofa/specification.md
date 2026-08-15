@@ -48,7 +48,7 @@ superseded_by: null
 | Classification | **NOT ACTIONABLE — no evidenced populated source (AMH constraint); authorship artifact only** |
 | Clinical owner | UNASSIGNED — VALIDATION REQUIRED |
 | Independent approver | UNASSIGNED — VALIDATION REQUIRED (author ≠ approver; the author of this spec approves nothing) |
-| Machine-readable logic | `logic.yaml` (this directory), SHA-256 `c13b22b3e9fada466a160fe0b263435fb809dff95cc3061d257fe90645a75a24` |
+| Machine-readable logic | `logic.yaml` (this directory), SHA-256 `44d140f58488cbcb75ebd6b508dbfd9b374bc429181b236967f498fe38e5eb76` |
 | Reference vectors | `reference-vectors.md` (this directory) — clinicamente revisados (GDEC-0007); evidência de execução pendente; DRAFT para fins de execução |
 | Rule-local migration summary | `migration-notes.md` (this directory) |
 
@@ -368,8 +368,8 @@ Deterministic rules (each labeled):
   tabulated agents the component is max(3, tabulated tiers).
 - **Tabulated agent active + dose missing/unparseable → floor by agent presence.**
   **DECISÃO DERIVADA (GDEC-0007, princípio 2 — escalar-nunca-tranquilizar, declarado
-  prevalecente pelo titular; aplicação da lógica de OQ-5 (b)) — sujeita a confirmação
-  do revisor na próxima revisão:** when a tabulated agent is affirmatively present but
+  prevalecente pelo titular; aplicação da lógica de OQ-5 (b)) — CONFIRMADA pelo titular
+  em 2026-08-15 (GDEC-0008 item 4):** when a tabulated agent is affirmatively present but
   no usable dose-based band is computable (dose absent; or dose not normalizable —
   missing weight, unconvertible dose unit), the component no longer yields
   `not_evaluated` (`missing_dose`): it **floors at the minimum band that agent
@@ -521,7 +521,7 @@ the ADR-0007 bundle mechanism.
 The declarative logic (bands, predicates, windows, status algebra — data, no code) is
 `logic.yaml` in this directory.
 
-- Content hash (SHA-256): `c13b22b3e9fada466a160fe0b263435fb809dff95cc3061d257fe90645a75a24`
+- Content hash (SHA-256): `44d140f58488cbcb75ebd6b508dbfd9b374bc429181b236967f498fe38e5eb76`
   (0.2.0 — recomputed after incorporating the GDEC-0007 decisions and the derived
   missing-dose floor; the 0.1.0 hash was
   `ccac846e1525e8cddb946ade9801bd48edd9191449148100b57c787c71455a4d`)
@@ -689,7 +689,7 @@ each decision is transcribed below by the scribe — the decision is the named h
    REQUIRED. `not_evaluated` *tranquilizava* indevidamente (viola INV-B). Implementado
    em §4.4 I-5 (substitui o default not_evaluated).
    **DECISÃO DERIVADA (GDEC-0007, princípio 2; aplicação da lógica de OQ-5 (b)) —
-   2026-08-15, sujeita a confirmação do revisor na próxima revisão:** a mesma lógica
+   2026-08-15, CONFIRMADA pelo titular em GDEC-0008 item 4:** a mesma lógica
    aplica-se a agente TABELADO presente com dose ausente/inutilizável — piso pelo
    mínimo que a presença do agente garante em Vincent 1996 (dobutamina → 2; dopamina →
    2; noradrenalina/adrenalina → 3), flag "dose ausente — piso por presença do

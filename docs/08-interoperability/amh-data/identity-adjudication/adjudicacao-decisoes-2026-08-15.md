@@ -14,7 +14,9 @@ collector: analista de adjudicação de identidade e tenancy AMH (Onda 2), atuan
 transformation: decisões transcritas e estruturadas no formato exigido; nenhuma decisão tomada por agente
 confidence: alta quanto ao conteúdo transmitido; média quanto à cadeia de transmissão (ver §0)
 last_updated: 2026-08-15
-validation_status: VALIDAÇÃO NECESSÁRIA — contra-assinatura do titular (§0.3) e ratificação jurídica (§8)
+validation_status: >
+  Contra-assinatura do titular REGISTRADA em 2026-08-15 (GDEC-0008 item 4; ver
+  §0.3) — VALIDAÇÃO NECESSÁRIA remanescente: ratificação jurídica (§8)
 ---
 
 # Ata de Adjudicação — Identidade, Tenancy e Consentimento AMH×IntensiCare
@@ -79,6 +81,10 @@ assim, e por disciplina de registro:
 > `decision-register.md` pelo steward de governança, conforme a nota de integração 2 do
 > `g0-resolucoes-2026-08-15.md`. Até lá, a ata vale como registro fiel do que foi
 > transmitido, e a V2 opera sob ela.
+
+> **Contra-assinatura registrada em 2026-08-15 por decisão escrita do titular
+> (GDEC-0008 item 4), transcrita por escriba; a ratificação jurídica (§8) permanece
+> pendente do parecer OS-16 (BLK-0014).**
 
 **Nenhuma decisão desta ata foi tomada por agente.** O escriba transcreveu, estruturou,
 verificou a autoridade contra o registro e apontou as consequências e pendências.

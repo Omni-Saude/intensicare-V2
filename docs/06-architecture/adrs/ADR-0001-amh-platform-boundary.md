@@ -1,7 +1,7 @@
 ---
 id: ADR-0001
 title: Intended platform boundary between IntensiCare V2 and the AMH data platform
-status: proposed
+status: accepted (2026-08-15, GDEC-0008)
 status_history:
   - status: not-started
     date: 2026-08-14
@@ -25,16 +25,22 @@ status_history:
       (C-1 vitais, só `dev` existe, camada 4 sem evidência). A hipótese §7.0 é
       desenvolvida como proposta encaminhada ao titular em §5.2. Corpo original em EN
       preservado para auditabilidade do diff; conteúdo novo em pt-BR (DEC-G0-10).
+  - status: accepted (2026-08-15, GDEC-0008)
+    date: 2026-08-15
+    by: rodaquino-OMNI (titular) — transcrito por escriba de decisão-transcrição de ADR
+    note: >
+      Aceito por escrito pelo titular na sessão de decisão GDEC-0008 (item 4;
+      `docs/00-governance/registers/decision-register.md`), com a formulação própria
+      do titular como a posição decidida — ver §5.0 e a nota de composição obrigatória
+      ali registrada (interação com GDEC-0008 item 2, C-1 = O3). Nenhum agente decidiu
+      — transcrição de decisão já tomada.
 date: 2026-08-15
-owner: >
-  UNASSIGNED — VALIDATION REQUIRED (candidato factual: rodaquino-OMNI, que detém
-  AUTH-DATA-PLATFORM e a autoridade do lado AMH por DEC-G0-04; a confirmação como dono
-  deste ADR é ato do titular, não deste autor)
+owner: rodaquino-OMNI — detém AUTH-DATA-PLATFORM e a autoridade do lado AMH (DEC-G0-04); ADR aceito por escrito em GDEC-0008 item 4
 approvers:
-  - UNASSIGNED — VALIDATION REQUIRED   # role: AUTH-DATA-PLATFORM — detido por rodaquino-OMNI (DEC-G0-04); aceitação pendente
-  - UNASSIGNED — VALIDATION REQUIRED   # role: AUTH-AMH-OWNER — detido por rodaquino-OMNI (DEC-G0-04, DEC-G0-08); aceitação pendente
-  - UNASSIGNED — VALIDATION REQUIRED   # candidate role: AUTH-CLINSAFETY (safety-loop consequences)
-  - UNASSIGNED — VALIDATION REQUIRED   # candidate role: AUTH-PRIVACY-LEGAL (controller/processor consequences)
+  - rodaquino-OMNI — AUTH-DATA-PLATFORM (DEC-G0-04); aceito em GDEC-0008 item 4
+  - rodaquino-OMNI — AUTH-AMH-OWNER (DEC-G0-04, DEC-G0-08); aceito em GDEC-0008 item 4
+  - UNASSIGNED — VALIDATION REQUIRED   # candidate role: AUTH-CLINSAFETY (safety-loop consequences) — não exigido pela deciding_authority_rule desta ADR
+  - UNASSIGNED — VALIDATION REQUIRED   # candidate role: AUTH-PRIVACY-LEGAL (controller/processor consequences) — não exigido pela deciding_authority_rule desta ADR
 decision_deadline: UNSET — VALIDATION REQUIRED
 deciding_authority_rule: >
   docs/00-governance/decision-rights.md §2, row "AMH contract / boundary acceptance":
@@ -86,18 +92,22 @@ provenance:
     dossier. This ADR performed NO independent verification of any AMH artifact and made
     no network call to any AMH environment.
   confidence: medium
-  owner: UNASSIGNED — VALIDATION REQUIRED
-  validation_status: VALIDATION REQUIRED
+  owner: rodaquino-OMNI
+  validation_status: >
+    N/A — ADR aceito pelo titular (GDEC-0008 item 4). A nota de composição sobre a
+    interação com GDEC-0008 item 2 (C-1 = O3) permanece marcada "sujeita a confirmação
+    do titular" — ver §5.0. Demais condições de §5.1 seguem VALIDATION REQUIRED.
 ---
 
 # ADR-0001 — Intended platform boundary between IntensiCare V2 and the AMH data platform
 
-> **Status: proposed. This document presents options, drivers, and acceptance conditions.
-> It records NO decision, expresses no preference among the options, and may not be cited
-> as settling the boundary, the transport, the hosting model, or the source of clinical
-> signals.** The starting hypothesis quoted in §2.3 is a *hypothesis to test*, supplied by
-> the orchestrator prompt — it is explicitly **not** a provisional decision and must not
-> be read as one.
+> **Status: `accepted (2026-08-15, GDEC-0008)`.** O titular (rodaquino-OMNI) aceitou
+> este ADR por escrito na sessão de decisão GDEC-0008 (item 4), com sua própria
+> formulação — **"a V2 SEMPRE consome dados da AMH; nunca ingestão direta"** — como a
+> posição decidida da fronteira. Ver §5.0 para o registro completo, incluindo a nota de
+> composição obrigatória sobre a interação com GDEC-0008 item 2 (C-1 = O3). **Aceito não
+> significa implantado nem verificado** — as doze condições de §5.1 continuam a governar
+> a operacionalização.
 
 > **Adendo de revisão — 2026-08-15 (pt-BR).** Esta revisão incorpora o estado de
 > 2026-08-15 **sem alterar o status `proposed`**: (i) as restrições **DECIDED** de
@@ -501,17 +511,55 @@ it would be the error.
 
 ## 5. Decision and scope
 
-> **NO DECISION IS RECORDED.**
+> **DECISÃO REGISTRADA (GDEC-0008, 2026-08-15).** O titular aceitou este ADR com sua
+> própria formulação como a posição decidida da fronteira — ver §5.0. A hipótese de
+> partida do §7.0/§2.3 é, por esta aceitação, **ratificada** na forma da formulação do
+> titular, que é mais estrita do que qualquer opção redigida em §4 — ver a nota de
+> composição obrigatória em §5.0.
+
+### 5.0 Decisão (GDEC-0008, 2026-08-15)
+
+> **decided_by:** rodaquino-OMNI (titular; `AUTH-DATA-PLATFORM` + `AUTH-AMH-OWNER`,
+> ambos por DEC-G0-04; papéis interinos GDEC-0004).
 >
-> This ADR presents options, drivers, evidence, and acceptance conditions only. No option
-> is chosen, preferred, or provisionally adopted. The §7.0 starting hypothesis in §2.3 is a
-> hypothesis to test, not a decision, and its presence here must not be read as a
-> soft acceptance of option (a) or (c).
+> **Posição decidida — formulação própria do titular:** **"a V2 SEMPRE consome dados
+> da AMH; nunca ingestão direta."**
 >
-> Filling this section is reserved to the deciding authority named in the front matter:
-> `AUTH-DATA-PLATFORM` jointly with `AUTH-AMH-OWNER`, per
-> `docs/00-governance/decision-rights.md` §2. Both roles are currently
-> `UNASSIGNED — VALIDATION REQUIRED`.
+> Esta formulação é aceita como a decisão da fronteira. Ela ratifica o núcleo da
+> Opção A (§4 — consumidor com armazenamento operacional crítico próprio, camada
+> anticorrupção versionada) tal como elaborada em §5.2 (proposta P1–P5, em particular
+> P1: consumo exclusivo de identidade/contexto governados da AMH), na variante
+> estagiada Opção D-3 (começar como A, com opção contratada sobre C — preserva
+> reversibilidade enquanto as condições externas de E11 resolvem). **A formulação do
+> titular é mais estrita do que qualquer opção redigida em §4**: ela fecha
+> definitivamente a Opção D-1 (sinais clínicos por fonte não-AMH — dispositivo, HL7
+> v2, EHR direto) como caminho para a V2 — nenhuma ingestão direta pela V2, sob
+> nenhuma circunstância, supera o texto de §4 onde D-1 era listada como variante a
+> considerar. A Opção B (módulo interno à AMH) permanece rejeitada pelas razões já
+> registradas em §4 (conflito com a regra não-negociável §3-1); a Opção C (lane
+> híbrida) permanece disponível **apenas como capacidade do lado AMH**, nunca como
+> ingestão direta da V2 — ver a nota de composição abaixo.
+>
+> **Nota de composição (GDEC-0008), obrigatória.** Porque o item 2 da mesma sessão de
+> decisão (GDEC-0008) decidiu simultaneamente C-1 = O3 (híbrida, trilha de monitor de
+> curto prazo) para a contradição de sinais vitais, a interpretação registrada —
+> marcada **"interpretação de composição registrada (GDEC-0008), sujeita a
+> confirmação do titular"** — é que a trilha de monitor/dispositivo da O3 é
+> implementada como capacidade de ingestão DO LADO AMH, preservando a AMH como ponto
+> único de ingresso; o contrato de consumo da V2 permanece inalterado.
+>
+> **rationale:** conforme sessão de decisão GDEC-0008.
+>
+> **supersessão:** rege-se pelos gatilhos de revisão já registrados nesta ADR (§8.2,
+> T1–T10); em particular T6 (Gate G2 aprovar portfólio cujos insumos obrigatórios a
+> AMH não pode suprir) e T9 (publicação da IG 1.1.0) continuam a reabrir a avaliação
+> operacional, mas não reabrem "nunca ingestão direta" por si sós — flexibilizar essa
+> cláusula exige nova decisão do titular, nunca inferência de um gatilho.
+>
+> **O que esta decisão NÃO fecha:** as doze condições de §5.1 seguem regendo a
+> operacionalização — em particular C3–C7 (camadas de evidência do Gate G3, ambiente
+> production-like) e C11 (determinação jurídica de privacidade). Decidido ≠
+> implantado ≠ verificado.
 
 ### 5.1 Conditions that must be satisfied before this ADR can be accepted
 
@@ -520,7 +568,7 @@ it would be the error.
 
 | # | Condition | Owner | Evidence that would close it | Status |
 |---|---|---|---|---|
-| C1 | A named, reachable AMH owner exists and has approved the responsibility boundary in writing. | `AUTH-AMH-OWNER` | Recorded approval naming the boundary, the responsibilities on each side, and the escalation route. | **PARTIALLY CLOSED 2026-08-15** — the owner is named and reachable (E12); the **boundary approval itself is still outstanding**, and it is this ADR's own acceptance |
+| C1 | A named, reachable AMH owner exists and has approved the responsibility boundary in writing. | `AUTH-AMH-OWNER` | Recorded approval naming the boundary, the responsibilities on each side, and the escalation route. | **CLOSED 2026-08-15** — DECISÃO (GDEC-0008): the owner is named and reachable (E12) and has approved the boundary in writing — this ADR's own acceptance (§5.0), GDEC-0008 item 4 |
 | C2 | A named V2 data-platform decision owner exists. | Gate G0 | `authority-model.md` row populated with a human. | **CLOSED 2026-08-15** — rodaquino-OMNI, DEC-G0-04 (note: same human as C1; authority concentration recorded in ADR-0004 §11.2) |
 | C3 | Gate G3 **Layer 2** (deployed capability): a V2-reachable AMH environment, credentials, network path and designated tenant scope. | AMH owners + provisioning + budget | Discovery against a named environment; authorized reachable interface. | **OPEN** — no environment access; only `dev` provisioned (E7) |
 | C4 | Gate G3 **Layer 3** (populated data): representative coverage, non-empty resources, measured null/invalid distributions for every input the approved portfolio requires. | AMH-data compatibility architect (measurement) | Pathway-to-source eligibility matrix filled with measurements, not schema presence. | **OPEN** — zero OBSERVED Layer-3 entries (E2) |
@@ -529,7 +577,7 @@ it would be the error.
 | C7 | A production-like environment exists in which conformance tests can pass (Gate G3 explicitly requires this). | AMH budget decision | The environment exists and is reachable. | **OPEN — currently unsatisfiable by anyone** (E7; reconfirmado 2026-08-15: nenhuma ordem de serviço cria ambiente — ordens §9.2) |
 | C8 | The approved clinical pathway portfolio (Gate G2) is known, so the boundary can be evaluated against the inputs actually required. | `AUTH-CLINSAFETY` + `AUTH-PRODUCT` | Gate G2 record. | **OPEN** |
 | C9 | Validated user/safety latency needs exist (Gate G1), so D1 has a target rather than a guess. | `AUTH-INTENDED-USE` + `AUTH-CLINSAFETY` | Gate G1 record; quality-attribute targets replaced from `VALIDATION REQUIRED`. | **OPEN** |
-| C10 | If option (b) is under consideration: an explicit recorded exception to prompt §3 rule 1 (independent repository, environments, databases, pipeline, release identity), granted by the authority that owns that rule. | Orchestrator authority | The recorded exception, or the option's removal. | **OPEN — conditional** |
+| C10 | If option (b) is under consideration: an explicit recorded exception to prompt §3 rule 1 (independent repository, environments, databases, pipeline, release identity), granted by the authority that owns that rule. | Orchestrator authority | The recorded exception, or the option's removal. | **N/A** — DECISÃO (GDEC-0008): option (b) is not part of the decided boundary (§5.0); no exception is sought |
 | C11 | Privacy/legal determination of the controller/processor posture under the candidate boundary (A6). | `AUTH-PRIVACY-LEGAL` | Recorded legal determination; prompt §13 forbids asserting compliance without one. | **OPEN** (reforçada por AQ-3: a base legal decidida exige ratificação por advogados antes de dado real — OS-16) |
 | C12 | An AMH×IntensiCare contract package is authored, owned, approved and published by AMH, and pinned by V2 — for whichever option requires a contract. | `AUTH-AMH-OWNER` + AMH contract-publication steward | Published manifest with digests, fixtures, approvals; V2-side lock file. | **OPEN — com cláusulas decididas (2026-08-15)**: campo sujeito = PSR (R1), eventos + `resolve(ref, as_of)` obrigatórios (R2), modelo de finalidade AQ-3 (R4), exclusões mínimas vitais/`Observation` (OS-19). O pacote em si **não existe**; a IG 1.1.0 a pinar **não foi publicada** (E20) |
 
@@ -539,12 +587,12 @@ primarily through AMH.
 
 ### 5.2 Hipótese §7.0 desenvolvida como proposta encaminhada ao titular (adendo pt-BR, 2026-08-15)
 
-**PROPOSAL — não é decisão, não é preferência do programa, e a seção §5 acima permanece
-integralmente válida: NENHUMA DECISÃO ESTÁ REGISTRADA.** O prompt §7.0 fornece uma
+**DECISÃO (GDEC-0008): proposta aceita cláusula a cláusula, com a formulação do
+titular (§5.0) prevalecendo onde for mais estrita.** O prompt §7.0 fornece uma
 hipótese de partida e manda *"ratificá-la ou rejeitá-la através de evidência e ADRs"*.
-Com as restrições DECIDED de §2.4 e a evidência E16–E20, este revisor **desenvolve a
-hipótese na forma de uma proposta** para que o titular tenha um objeto concreto a
-ratificar, emendar ou rejeitar — cláusula a cláusula:
+Com as restrições DECIDED de §2.4 e a evidência E16–E20, este revisor **desenvolveu a
+hipótese na forma de uma proposta**, que o titular ratificou por escrito em
+GDEC-0008 (item 4) — cláusula a cláusula:
 
 | # | Cláusula proposta (PROPOSAL) | Mapeamento nas opções §4 | Base |
 |---|---|---|---|
@@ -709,9 +757,12 @@ present; reversibility, triggers, and kill/rollback present; validation methods 
 honest placeholders; supersession present; **no technology selected**; no approval
 fabricated; `adr-index.md` updated in the same change.
 
-**Autoverificação da revisão de 2026-08-15 (pt-BR):** o status permanece `proposed` e a
-seção 5 permanece "NO DECISION IS RECORDED" — §5.2 é PROPOSAL encaminhada, não decisão;
-as restrições de §2.4 são DECIDED **do titular, citadas com fonte e data**, jamais
-auto-aplicadas; nenhum dono foi nomeado por este revisor (candidaturas citam DEC-G0-04);
-nenhum ID de hazard/SAF/QAS foi inventado; corpo EN preservado, conteúdo novo em pt-BR
-(DEC-G0-10).
+**Autoverificação da revisão de 2026-08-15 (pt-BR):** o status desta revisão era
+`proposed` e a seção 5 registrava "NO DECISION IS RECORDED" — §5.2 era PROPOSAL
+encaminhada, não decisão; as restrições de §2.4 eram DECIDED do titular, citadas com
+fonte e data, jamais auto-aplicadas; nenhum dono foi nomeado por este revisor
+(candidaturas citavam DEC-G0-04); nenhum ID de hazard/SAF/QAS foi inventado; corpo EN
+preservado, conteúdo novo em pt-BR (DEC-G0-10). **Atualização (GDEC-0008,
+2026-08-15):** o titular aceitou este ADR na sessão de decisão GDEC-0008 (item 4) com
+a formulação própria registrada em §5.0 — a proposta de §5.2 tornou-se decisão; ver
+§5.0 para o registro completo e a nota de composição obrigatória.

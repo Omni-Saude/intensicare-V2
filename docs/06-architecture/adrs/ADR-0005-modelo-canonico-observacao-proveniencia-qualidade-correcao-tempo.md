@@ -1,7 +1,7 @@
 ---
 id: ADR-0005
 title: Modelo canônico de observação clínica — proveniência, qualidade, correção e tempo
-status: proposed
+status: accepted (2026-08-15, GDEC-0008)
 status_history:
   - status: not-started
     date: 2026-08-14
@@ -16,14 +16,19 @@ status_history:
       as restrições DECIDED de 2026-08-15 (chave de fato = (PSR, encontro), AQ-4) e o
       acoplamento com o ADR-0008. Opções e drivers apenas; NENHUMA decisão é registrada
       e nenhum agente pode registrá-la.
+  - status: accepted (2026-08-15, GDEC-0008)
+    date: 2026-08-15
+    by: rodaquino-OMNI (titular) — transcrito por escriba de decisão-transcrição de ADR
+    note: >
+      Aceito por escrito pelo titular na sessão de decisão GDEC-0008 (item 4;
+      `docs/00-governance/registers/decision-register.md`), na opção recomendada —
+      Opção A (fato canônico imutável, append-only) e a minuta normativa M1–M10 de
+      §5.2. Ver §5.0. Nenhum agente decidiu — transcrição de decisão já tomada.
 date: 2026-08-15
-owner: >
-  UNASSIGNED — VALIDATION REQUIRED (candidatos por adr-index.md:
-  AUTH-DATA-PLATFORM — detido por rodaquino-OMNI via DEC-G0-04 — e AUTH-CLINSAFETY —
-  clínico: rodaquino-OMNI via GDEC-0003; a confirmação como dono é ato humano)
+owner: rodaquino-OMNI — AUTH-DATA-PLATFORM (DEC-G0-04) e AUTH-CLINSAFETY (GDEC-0003); ADR aceito por escrito em GDEC-0008 item 4
 approvers:
-  - UNASSIGNED — VALIDATION REQUIRED   # role: AUTH-DATA-PLATFORM (DEC-G0-04)
-  - UNASSIGNED — VALIDATION REQUIRED   # role: AUTH-CLINSAFETY (cláusulas com consequência clínica)
+  - rodaquino-OMNI — AUTH-DATA-PLATFORM (DEC-G0-04); aceito em GDEC-0008 item 4
+  - rodaquino-OMNI — AUTH-CLINSAFETY (cláusulas com consequência clínica, GDEC-0003); aceito em GDEC-0008 item 4
 decision_deadline: >
   UNSET — VALIDATION REQUIRED. Restrição de ordem: este ADR deve ser aceito antes de
   qualquer desenho físico em docs/07-data-and-provenance (aquele diretório declara-se
@@ -82,17 +87,22 @@ provenance:
     documentos de domínio do ciclo 0; nenhum artefato AMH foi reverificado (linhas AMH
     são SOURCE por citação do dossiê e da ata).
   confidence: medium
-  owner: UNASSIGNED — VALIDATION REQUIRED
-  validation_status: VALIDATION REQUIRED
+  owner: rodaquino-OMNI
+  validation_status: >
+    N/A — ADR aceito pelo titular (GDEC-0008 item 4), na opção recomendada. As
+    condições de §5.1 seguem VALIDATION REQUIRED conforme registradas.
 ---
 
 # ADR-0005 — Modelo canônico de observação clínica: proveniência, qualidade, correção e tempo
 
-> **Status: `proposed`. Este documento apresenta opções, drivers e uma minuta normativa
-> proposta (§5.2). NÃO registra decisão.** Duas regras não-negociáveis do prompt §3 —
-> regra 7 (jamais coerção de ausente/stale/inválido a zero/normal/no-fire silencioso) e
-> regra 8 (jamais inventar timestamp de fonte) — **não são alternativas em avaliação**:
-> vinculam toda opção abaixo e nenhuma aceitação pode enfraquecê-las.
+> **Status: `accepted (2026-08-15, GDEC-0008)`.** O titular aceitou este ADR por
+> escrito na sessão de decisão GDEC-0008 (item 4), na opção recomendada — Opção A
+> (fato canônico imutável, append-only) e a minuta normativa M1–M10 de §5.2. Ver §5.0.
+> Duas regras não-negociáveis do prompt §3 — regra 7 (jamais coerção de
+> ausente/stale/inválido a zero/normal/no-fire silencioso) e regra 8 (jamais inventar
+> timestamp de fonte) — vinculam a decisão e nenhuma aceitação as enfraquece.
+> **Aceito não significa implantado nem verificado** — as condições de §5.1 continuam
+> a governar a operacionalização.
 
 ---
 
@@ -325,24 +335,41 @@ como pré-requisito) e torna-se migração no primeiro armazenamento.
 
 ## 5. Decisão e escopo
 
-> **NENHUMA DECISÃO ESTÁ REGISTRADA.** Este ADR apresenta opções, drivers e a minuta
-> §5.2. Preencher esta seção é reservado à autoridade decisora nomeada no front matter.
-> A minuta abaixo é o que a aceitação **vincularia** — nada dela vige antes.
+> **DECISÃO REGISTRADA (GDEC-0008, 2026-08-15).** O titular aceitou este ADR na
+> opção recomendada, incluindo a minuta §5.2 integral — ver §5.0.
+
+### 5.0 Decisão (GDEC-0008, 2026-08-15)
+
+> **decided_by:** rodaquino-OMNI (titular; `AUTH-DATA-PLATFORM` + `AUTH-CLINSAFETY`,
+> DEC-G0-04/GDEC-0003).
+>
+> **Opção aceita:** **Opção A — fato canônico imutável, append-only, com
+> correções/conflitos explícitos e duas dimensões de status** (§4), elaboração do
+> baseline §9.3, com a **minuta normativa M1–M10 de §5.2 aceita integralmente** —
+> chave do fato `(tenant, PSR, encontro)` (M2), preservação temporal completa (M3),
+> matriz de admissibilidade (M4), UCUM como sistema canônico (M5), quarentena para
+> código desconhecido (M6), não-coerção (M7), correção/conflito sem sobrescrita (M8),
+> idempotência/ordem (M9) e aptidão contínua (M10).
+>
+> **rationale:** conforme sessão de decisão GDEC-0008.
+>
+> **supersessão:** rege-se pelos próprios gatilhos de revisita desta ADR (§8.2,
+> T1–T6) — nenhum gatilho adicional é criado por esta transcrição.
 
 ### 5.1 Condições que devem ser satisfeitas antes da aceitação
 
 | # | Condição | Dono | Evidência que a fecha | Estado |
 |---|---|---|---|---|
-| C1 | ADR-0003 (grão de tenant) e ADR-0004 (identidade/chave `(PSR, encontro)`) aceitos — a chave do fato canônico consome ambos. | titular | Aceitações registradas | ABERTA (0003 `proposed`; 0004 `under-review`) |
-| C2 | Compatibilidade declarada com o **texto aceito** do ADR-0008 (aceito 2026-08-15, GDEC-0007; N5 — base de tempo; N8 — dimensões; N3 — razões que o modelo alimenta), incluindo quaisquer emendas de aceitação. | autoridade decisora deste ADR | Nota de reconciliação na aceitação | ABERTA |
+| C1 | ADR-0003 (grão de tenant) e ADR-0004 (identidade/chave `(PSR, encontro)`) aceitos — a chave do fato canônico consome ambos. | titular | Aceitações registradas | **FECHADA** — DECISÃO (GDEC-0008): ADR-0003 e ADR-0004 aceitos na mesma sessão (item 4) |
+| C2 | Compatibilidade declarada com o **texto aceito** do ADR-0008 (aceito 2026-08-15, GDEC-0007; N5 — base de tempo; N8 — dimensões; N3 — razões que o modelo alimenta), incluindo quaisquer emendas de aceitação. | autoridade decisora deste ADR | Nota de reconciliação na aceitação | **FECHADA** — DECISÃO (GDEC-0008): compatibilidade declarada na aceitação; M3/M4 mantêm-se consistentes com N5/N8 do texto aceito do ADR-0008 (A1) |
 | C3 | A matriz §5.2-M4 revisada pelos donos designados em `status-dimensions.md` (arquiteto de compatibilidade AMH + engenheiro de segurança clínica nomeado). | donos designados | Ratificação ou emenda da matriz | ABERTA |
 | C4 | Direção do ADR-0007 quanto ao snapshot de terminologia (A4 — veículo das tabelas de conversão). | titular (cláusulas clínicas GDEC-0003) | ADR-0007 aceito ou direção registrada | **FECHADA NA DIREÇÃO** — ADR-0007 aceito 2026-08-15 (GDEC-0007, conforme `adr-index.md`); resta conferir na reconciliação C2 que o snapshot aceito comporta as tabelas de conversão de M5 |
 | C5 | Resposta a H1 (a lane FHIR carrega ou não `_dq_status`) obtida, ou a aceitação registra explicitamente a operação sob qualidade-de-fonte ausente (M10). | AMH clinical-signal contract engineer | Inspeção em ambiente nomeado, ou registro da limitação | ABERTA — sem ambiente |
 
-### 5.2 Minuta normativa proposta (PROPOSAL — o que a aceitação vincularia)
+### 5.2 Minuta normativa proposta (DECISÃO — GDEC-0008: minuta M1–M10 aceita integralmente, sem emenda)
 
-Cada cláusula M-x é individualmente aceitável, emendável ou rejeitável. Cláusulas
-marcadas ◆ têm consequência clínica direta e exigem AUTH-CLINSAFETY.
+Cada cláusula M-x abaixo é agora vinculante conforme aceita. Cláusulas marcadas ◆
+têm consequência clínica direta e permanecem sob AUTH-CLINSAFETY.
 
 **M1 — Fato imutável, cadeia única.** Todo fato clínico canônico é imutável após
 persistido, com exatamente **uma** cadeia de proveniência (fonte, envelope, transformação,

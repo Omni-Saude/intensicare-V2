@@ -1,8 +1,8 @@
 ---
 doc_id: AMH-C1-PORTFOLIO-IMPACT
 title: Impacto das opções O1–O4 de C-1 sobre o portfólio de vias candidatas
-status: PROPOSAL
-label: PROPOSAL
+status: PROPOSAL — decisão do titular registrada 2026-08-15 (GDEC-0008 item 2); ver "Registro da decisão" abaixo. Este documento permanece material de apoio, não autoridade de decisão.
+label: PROPOSAL — decisão do titular registrada 2026-08-15 (GDEC-0008 item 2)
 owner: UNASSIGNED — VALIDATION REQUIRED
 decisor_designado: rodaquino-OMNI
 source: >
@@ -42,6 +42,37 @@ superseded_by: null
 Companheiro de [`pacote-decisao-c1-sinais-vitais.md`](./pacote-decisao-c1-sinais-vitais.md).
 Responde a uma pergunta só: **para cada candidato do inventário, o que cada opção de C-1
 muda no portão 4 (elegibilidade de insumos)?**
+
+---
+
+## Registro da decisão (transcrição — GDEC-0008 item 2, 2026-08-15)
+
+**Nota de escriba.** O titular decidiu C-1 em sessão de 2026-08-15, **após** a redação
+deste documento. Esta seção é transcrição da decisão, feita por escriba — o corpo do
+documento (§0–§5, abaixo) permanece **inalterado** como registro histórico do material
+de apoio que sustentou a decisão; nenhuma linha da tabela de §2 foi recalculada.
+Transcrição-mestre: `docs/00-governance/registers/decision-register.md` **GDEC-0008**,
+item 2.
+
+> **DECISÃO (GDEC-0008 item 2, 2026-08-15):** opção **O3** adotada, com
+> **RE-PONDERAÇÃO AUTOMÁTICA para O1-first** se a sonda "tabela de vitais do Tasy já
+> povoada no Bronze" for positiva (sem novo ciclo de decisão); ordem de execução zero
+> = a sonda. **Interpretação de composição registrada (sujeita a confirmação):** a
+> trilha de monitores da O3 é capacidade de ingestão **DO LADO AMH** — a V2 sempre
+> consome da AMH (ADR-0001, GDEC-0008 item 4); nunca ingestão direta na V2.
+
+Decidido por **rodaquino-OMNI** (titular; autoridade dos dois lados, DEC-G0-04), em
+sessão de 2026-08-15. O orquestrador/escriba não decidiu nada aqui.
+
+**Leitura desta decisão contra a tabela de §2 (não recalculada):** a coluna **O3** de
+§2 passa a ser o cenário de curto prazo operativo; se a sonda comissionada como ordem
+de execução zero (ver `../ordens-de-servico-amh-2026-08-15.md`, seção de ordens
+comissionadas em 2026-08-15) resultar positiva, a leitura de médio prazo desloca-se
+automaticamente para a coluna **O1** (amplo, se a face D-c amplo for confirmada) sem
+nova sessão de decisão. A interpretação de composição (trilha de monitores da O3 como
+capacidade **do lado AMH**, não ingestão direta na V2) está sujeita a confirmação do
+titular e, se confirmada, **não altera** a contagem de §3 — muda apenas quem
+implementa a via de curto prazo, não a classe de insumo que ela supre.
 
 ---
 
