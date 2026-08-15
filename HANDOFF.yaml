@@ -13,15 +13,21 @@ written_by: delivery orchestrator (cycle 0)
 governing_directive: INTENSICARE_V2_ORCHESTRATOR_PROMPT.md
 full_cycle_report: docs/15-release-evidence/cycle-0-first-cycle-report.md
 
-repository_state:
-  branch: cycle-0/spark-foundation
-  base_branch: main            # untouched at cb35521
-  cycle_0_commit: 4f35eba      # 66 files; stubs + this handoff follow in a second commit
-  pushed: false                # local only; push/PR requires user instruction
+repository_state:               # atualizado 2026-08-15 (fechamento do ciclo 1)
+  branch: cycle-1/clinical-content          # branch de trabalho ativo (ciclo 1, a partir de cycle-0/spark-foundation)
+  base_branch: main            # em cb35521 no remoto; protegido (DEC-G0-09)
+  cycle_0_commit: 4f35eba      # 66 files; stubs + handoff em ddac9bc (pushed em cycle-0/spark-foundation)
+  cycle_1_commits:
+    - 856209d                  # adjudicação AQ-1..6 + resoluções G0 (sessão de governança)
+    - ffc8026                  # prompt do orquestrador revisado (§0)
+    - 01e42e3                  # HANDOFF: referência ao prompt revisado
+    - 63092ed                  # ciclo 1: forense clínica + precursores + ADRs (94 arquivos)
+  pushed: "cycle-1/clinical-content enviado a origin em 2026-08-15 (fechamento de sessão); PR para main é decisão do titular"
+  remote: https://github.com/Omni-Saude/intensicare-V2
   ci_gates:                    # both BLOCKING, both green at handoff time
     - python3 scripts/check_doc_conventions.py
     - python3 scripts/check_forbidden_content.py
-  branch_protection: NOT CONFIGURED (BLK-0011; settings in docs/14-devsecops-and-delivery/branch-protection-request.md)
+  branch_protection: "CONFIGURADA em main (DEC-G0-09, 2026-08-15): checks doc-conventions + forbidden-content obrigatórios, enforce_admins, histórico linear, PR obrigatório"
 
 pinned_evidence:               # re-verify before relying on any of it
   amh_repository: Omni-Saude/amh-data-platform (private; license NOASSERTION -> BLK-0010)
