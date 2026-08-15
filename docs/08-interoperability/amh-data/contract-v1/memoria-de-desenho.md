@@ -153,6 +153,22 @@ exigirá evidência de camada 2/4 que hoje não existe.
 | **N-9** | **Valores de SLO** | AMH declara E mede disponibilidade, frescor, latência de eventos e de `resolve` (OS-17 crit. 3; OS-18 crit. 5) | manifesto `slos` |
 | **N-10** | **Tenant piloto** | Decisão do titular, adiada para a redação do contrato (AQ-6 item 4; ata §8 pendência 8) | AQ-6 |
 
+### 8.1 Pontos N-11..N-14 — acrescentados pela análise adversarial do ciclo 2 (PROPOSAL)
+
+**Todos os quatro pontos abaixo são PROPOSAL.** Nenhum decide, nenhum altera N-1..N-10, e
+nenhum é ato desta minuta — são achados da modelagem de ameaças do ciclo 2
+(`docs/11-security-privacy-compliance/threat-model.md` §12) e da matriz de conformidade
+(`docs/08-interoperability/conformance/contract-v1/mapeamento-semantico.md`) sobre a
+superfície que esta minuta já desenha, transcritos aqui como pontos de negociação novos por
+instrução de integração — não cunhados por este documento.
+
+| # | Ponto | O que precisa acontecer | Referência |
+|---|---|---|---|
+| **N-11** | **Prova de origem + referência de contrato (digest) por mensagem** | O envelope mínimo de 11 campos não carrega assinatura de produtor, digest de payload nem digest de manifesto (§5 acima) — a autenticidade de origem depende inteiramente do transporte, ainda `null`, e nenhuma mensagem prova qual versão de contrato a produziu. Acrescentar campos opcionais de prova de origem e de referência de digest do manifesto é **emenda compatível hoje**; tornar qualquer um deles obrigatório seria **mudança major depois** | `threat-model.md` §12.3.3/§12.3.5, THR-0068, THR-0083; SEC-0051, SEC-0059 |
+| **N-12** | **Token de continuidade da lane (sequência/marca-d'água por escopo)** | O envelope mínimo não tem número de sequência, marca-d'água nem heartbeat — sem ele, a perda de um evento de identidade é **indetectável**, e o que hoje é lacuna de disponibilidade vira, na prática, um controle de **integridade** ausente (um `merge` nunca aplicado não produz sinal algum). Acrescentar um token de continuidade por escopo é **emenda compatível hoje** (campo opcional novo); depender dele para aceitar mensagens seria **mudança major depois** | `threat-model.md` §12.5.1 item 1, §12.8 item 11, THR-0070; SEC-0052 |
+| **N-13** | **Alcance de `identity.reassignment.v1` indefinido** | O envelope carrega apenas ref de origem e ref de destino, sem campo de encontro — mas `eventos-ciclo-de-vida-identidade.md` §1 descreve o evento como correção da associação da ref à identidade subjacente ("fatos reatribuídos"), enquanto o `ADR-0004` §5.2.1 descreve "um encontro é re-vinculado a outro sujeito": duas descrições diferentes, sem campo que resolva qual é a correta. Posição V2 **proposta**: **quarentena fail-closed** do tipo `identity.reassignment.v1` até que o alcance seja definido e o campo exista — os fatos da ref de origem ficam marcados como "identidade em revisão" (visíveis, não avaliáveis), nunca reatribuídos silenciosamente por presunção de alcance total | conformance `mapeamento-semantico.md` L-10, CONF-Q-08; `ADR-0004` §5.2.1 |
+| **N-14** | **Emendas de forma — tempo e qualidade de fonte** | (i) Campos temporais completos: o contrato hoje declara `occurred_at`/`emitted_at` apenas como *timestamp UTC*, enquanto o `ADR-0005` M3 exige UTC normalizado **+ offset original + precisão original + valor-fonte cru**; sem isso um fato originado com precisão de dia chega indistinguível de um com precisão de segundo. (ii) Dimensão de qualidade de fonte: o envelope não tem campo de qualidade (`valid \| warning \| quarantined`) — a V2 recebe hoje **nenhuma** dimensão 1 para os eventos de identidade, o que exige `quality: unknown` explícito e fail-closed na proveniência, nunca default silencioso a `valid`. Ambas são candidatas a **emenda compatível hoje** (campos opcionais novos) | `ADR-0005` M3; conformance `mapeamento-semantico.md` L-01/L-02, CONF-Q-05 |
+
 ## 9. Critérios de aceitação da OS-19 — correspondência na minuta
 
 | Critério OS-19 | Onde está | Estado |

@@ -1,11 +1,16 @@
 ---
 id: SAFETY-REQUIREMENTS-V2
-title: IntensiCare V2 Safety Requirements (SAF-0001..SAF-0041)
+title: IntensiCare V2 Safety Requirements (SAF-0001..SAF-0042)
 label: PROPOSAL
 statement: >
-  Forty-one safety requirements derived from the seeded hazard log. Every requirement
+  Forty-two safety requirements derived from the seeded hazard log. Every requirement
   is status PROPOSAL, owner UNASSIGNED, and unverified. None is implemented; none is
   accepted. A requirement here is a claim about what V2 must do, not evidence that it does.
+  SAF-0042 was added on 2026-08-15 (in pt-BR per DEC-G0-10, cycle-0 English body not
+  rewritten) as the clinical-safety face of SEC-0057, closing the declared analysis defect
+  that HAZ-0045 had no SAF child. It is DET-only and explicitly insufficient: it records
+  that HAZ-0045 (S5) does not satisfy the single-barrier rule and that no V2-side control
+  can make it satisfy it, because the preventive barrier is owned outside this organization.
 provenance:
   source_repo: intensicare-V2
   path_or_url: docs/05-clinical-safety/safety-requirements.md
@@ -36,6 +41,13 @@ superseded_by: null
 > **2026-08-15:** SAF-0038/0039 added with HAZ-0041/0042 (minted from the Wave 2 threat
 > model); SAF-0040/0041 added with HAZ-0043/0044 (minted from the pathway portfolio's
 > portfolio-level hazards). See `hazard-log.md` §4. All four are in §H.
+>
+> **2026-08-15 (ciclo 1, extensão do contrato AMH):** **SAF-0042** acrescentado com
+> **HAZ-0045**, em **§C** (identidade) e em **pt-BR** por `DEC-G0-10`. Ele fecha o defeito de
+> análise declarado — HAZ-0045 sem filho `SAF` — e é a face de segurança clínica de
+> **SEC-0057**. Nenhum `SAF` novo foi cunhado para **HAZ-0046** nem para **HAZ-0047**: o
+> primeiro é coberto por SAF-0005/0034/0035/0023; o segundo depende de uma **determinação
+> jurídica que nenhum agente pode autorar** — ver §I e `hazard-log.md`.
 
 ## 0. Reading key
 
@@ -221,6 +233,73 @@ silent non-association are both prohibited.
 - **Barrier:** `PREV` + `DET`
 - **Basis:** SOURCE `PROMPT:447`, `PROMPT:494`; SOURCE `LEGACY-TA:455`
 - **Verification:** merge/unmerge replay scenario suite; reconciliation report proving no silent loss
+- **Status:** PROPOSAL · **Owner:** UNASSIGNED — VALIDATION REQUIRED
+
+### SAF-0042 — Telemetria de anomalia de identidade: detecção compensatória, explicitamente insuficiente
+
+> *Requisito acrescentado em 2026-08-15, redigido em **pt-BR** conforme `DEC-G0-10` (material
+> novo em pt-BR; o corpo em inglês dos §§A–J **não é reescrito**). Alojado em §C por ser
+> controle de identidade — junto de SAF-0009 e SAF-0029, com que forma cadeia — e não em §H,
+> onde SAF-0038..0041 foram agrupados por conveniência de ordem de cunhagem.*
+
+A V2 DEVE medir e alarmar anomalias **com forma de identidade**, observáveis **sem** manter
+qualquer estrutura de correspondência cross-PJ e **sem** identificadores de fonte:
+
+1. mudança brusca do perfil demográfico/clínico transportado no encontro para uma **mesma
+   ref** (faixa etária, sexo, tipo sanguíneo quando presente, degrau de peso/altura
+   fisiologicamente implausível);
+2. `merge`/`alias` que unifica refs cujas histórias de encontro **se sobrepõem no tempo** em
+   unidades ou estabelecimentos distintos;
+3. taxa de eventos de identidade por tenant, por tipo e por janela **fora de limites
+   declarados** — incluindo explicitamente o caso **"nenhum evento"**, que é o sinal de perda
+   silenciosa de evento de identidade (HAZ-0027, condição estendida);
+4. descontinuidade fisiologicamente implausível na série de fatos de uma ref **após** uma
+   transição de identidade;
+5. `resolve` que muda de resposta para o **mesmo** `(ref, as_of)` entre duas chamadas —
+   violação direta do determinismo exigido pela cláusula de contrato.
+
+A resposta ao alarme DEVE ser **revisão clínica humana + suspensão da reatribuição
+automática**. A V2 **NÃO DEVE** desfazer merge, resolver duplicata nem inferir identidade —
+isso é capacidade AMH e permanece proibida à V2 (`IDP-04`, `IDP-09`; ADR-0004 §5.2.1).
+**Restrição de desenho vinculante:** este controle **NÃO PODE** persistir, derivar ou inferir
+correspondência entre sujeitos de PJs distintas — isso recriaria dentro da V2 exatamente a
+estrutura que AQ-4 mantém fora (`SEC-0010`).
+
+- **Hazards:** HAZ-0045 (primário), HAZ-0027, HAZ-0047, HAZ-0001
+- **Barrier:** `DET` — **e somente `DET`**
+- **Basis:** SOURCE `lgpd-os16/minuta-parecer-os-16.md` §3.6 **R-a5** (contaminação silenciosa
+  da V2) e **R-a3** (falso-positivo cross-PJ = dano de privacidade **e** perigo clínico
+  simultâneos); SOURCE `threat-model.md` §12.3.4 **THR-0080** e §12.5.1 item 3; SOURCE
+  `security-controls-catalog.md` **SEC-0057**, do qual este requisito é a face de segurança
+  clínica — os cinco sinais e a restrição de desenho são os mesmos, deliberadamente, para que
+  segurança e segurança clínica não especifiquem controles divergentes sob o mesmo nome
+- **Limites declarados — leia-os antes de citar este requisito** (SEC-0057 §"Limites"):
+  1. **Não previne nada.** Detecta *depois* que a atribuição errada já entrou e já pôde ser
+     avaliada, alertada e agida.
+  2. **Não detecta o caso difícil.** Um par falso-positivo entre dois pacientes de perfil
+     demográfico e clínico **semelhante** — que é precisamente o caso em que o par errado é
+     *mais* provável — passa invisível.
+  3. **Taxa de falso-positivo desconhecida e não medida, e isso é um conflito entre dois
+     perigos deste log:** em UTI, alarme com FP alto produz fadiga de alarme, que é
+     **HAZ-0016**. Calibrar exige dados que não existem. Um limiar não calibrado troca
+     HAZ-0045 por HAZ-0016 em vez de reduzir risco líquido.
+  4. **Não transfere a propriedade do controle preventivo para dentro da V2.** O preventivo
+     pertence à governança do índice do ADR-043 e ao parecer jurídico da OS-16
+     (`AUTH-AMH-OWNER`, `AUTH-PRIVACY-LEGAL`, ambos UNASSIGNED).
+  5. **Conformidade com a restrição de desenho é VALIDATION REQUIRED** por revisor
+     independente — não é asseverável por quem implementa.
+- **Consequência para a regra de barreira única (§0), declarada e não contornada:** HAZ-0045 é
+  **S5** e, do lado da V2, tem **apenas `DET`**. A regra PROPOSAL de `safety-plan.md` §6.4 —
+  um perigo S4/S5 não pode depender de barreira única — **não é satisfeita para HAZ-0045, e
+  nenhum controle da V2 pode satisfazê-la**, porque a barreira preventiva tem dono fora desta
+  organização de software. Isto é registro de uma lacuna estrutural, **não** um pedido de
+  dispensa e **não** aceitação de risco: fechar exige ato humano nomeado sobre a governança do
+  índice, não mais engenharia na V2.
+- **Verification:** detecção com anomalias **plantadas** em dados sintéticos, por sinal (os
+  cinco acima); medição da taxa de falso-positivo antes de qualquer exposição a clínico;
+  teste negativo de que nenhum caminho de código persiste, deriva ou infere correspondência
+  entre PJs; asserção de que o alarme **não** dispara reatribuição automática; revisão
+  independente da restrição de desenho. **NOT PERFORMED · TST: UNASSIGNED**
 - **Status:** PROPOSAL · **Owner:** UNASSIGNED — VALIDATION REQUIRED
 
 ---
@@ -662,6 +741,20 @@ hazard parent (`safety-plan.md` §8).
 | HAZ-0042 destructive attack, backups in blast radius | SAF-0039, SAF-0036, SAF-0024, SAF-0023 |
 | HAZ-0043 premature admission → permanent `not_evaluated` | SAF-0040, SAF-0035, SAF-0033, SAF-0025, SAF-0006 |
 | HAZ-0044 escalation contrary to goals of care | SAF-0041, SAF-0035, SAF-0022, SAF-0017, SAF-0023 |
+| HAZ-0045 contaminação de identidade a montante (cross-PJ) | **SAF-0042** (`DET`, compensatório), SAF-0009, SAF-0029, SAF-0008, SAF-0023, SAF-0033 — **preventivo: nenhum controle da V2** |
+| HAZ-0046 ausência do rótulo "registro limitado a esta instituição" | SAF-0005, SAF-0034, SAF-0035, SAF-0023 |
+| HAZ-0047 tombstone de erasure não aplicado, ou aplicado amplo demais | SAF-0014, SAF-0023, SAF-0026, SAF-0033, SAF-0042 — **nenhum define a semântica de aplicação; ver nota abaixo** |
+
+*(Linhas acrescentadas em 2026-08-15, ciclo 1, pt-BR por `DEC-G0-10`.)*
+
+**Nota sobre HAZ-0047 — lacuna declarada, não disfarçada.** A linha tem filhos `SAF`, logo
+não há defeito de análise no sentido de `safety-plan.md` §8. Mas **nenhum deles define o que
+"aplicar o tombstone de erasure" significa** — eliminar, bloquear, ou reter sob obrigação
+clínica/regulatória. Essa determinação é de `AUTH-PRIVACY-LEGAL` (`UNASSIGNED`, `BLK-0004`),
+e **este agente não a autora**: escrever um `SAF` que fixasse a semântica seria fabricar uma
+decisão jurídica sob aparência de requisito de engenharia. O `SAF` que falta só pode ser
+escrito **depois** da determinação, e a ausência dele é a razão pela qual HAZ-0047 não pode
+avançar.
 
 ### Single-barrier check (PROPOSAL rule, `safety-plan.md` §6.4)
 
@@ -670,6 +763,19 @@ relies on `PROC` alone. SAF-0024 and SAF-0037 include a `PROC` component but are
 paired with `DET`/`PREV` controls. **VALIDATION REQUIRED:** barrier independence is claimed
 by construction here and has not been analysed for common-cause failure — that analysis is
 owed before G6.
+
+> **Exceção declarada, 2026-08-15 (pt-BR, `DEC-G0-10`) — a regra acima NÃO é satisfeita por
+> HAZ-0045.** HAZ-0045 é **S5** e, **do lado da V2**, dispõe apenas de `DET` (SAF-0042).
+> SAF-0009/0029/0008 endereçam a resolução de identidade *interna* à V2 e **não alcançam** um
+> par falso-positivo decidido a montante, que chega válido pelo contrato. A barreira
+> preventiva pertence à governança do índice do ADR-043 e ao parecer jurídico da OS-16 —
+> **fora desta organização de software**. Consequências, registradas sem atenuação:
+> (i) a frase de abertura desta subseção passa a ter **uma exceção conhecida**, e não deve
+> ser citada como se não tivesse; (ii) a exceção **não pode ser fechada por engenharia da
+> V2**, apenas por ato humano nomeado sobre a governança do índice; (iii) isto **não é**
+> dispensa da regra nem aceitação de risco — é o registro de que o registro de perigos
+> precisa poder representar um perigo cujo controle preventivo não pertence a quem o
+> registra (`threat-model.md` §12.5.1 item 3).
 
 ## J. What this document does not do
 

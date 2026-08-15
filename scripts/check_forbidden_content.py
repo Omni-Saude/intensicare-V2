@@ -14,6 +14,9 @@ for text patterns that must never appear in this repository:
   4. The literal synthetic-data canary string reserved for proving this
      scanner works, which must never appear in real committed content
      (see PHI_CANARY below).
+  5. Real (UUID-shaped) portable_subject_ref values (`amh:psr:v1:<uuidv4>`)
+     — a real PSR in any doc is a data leak. `amh:psr:v1:SYNTH-*` fixture
+     refs are legitimate and excluded (see REAL_PSR_PATTERN below).
 
 Design notes
 ------------
@@ -68,6 +71,20 @@ CPF_PATTERN = re.compile(r"\b\d{3}\.\d{3}\.\d{3}-\d{2}\b")
 
 EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 
+# Real portable_subject_ref (PSR) leak detector — added ciclo 2, 2026-08-15,
+# per docs/11-security-privacy-compliance/threat-model.md §12.8 item 14
+# ("O gate check_forbidden_content.py não reconhece o padrão de PSR").
+# A PSR is `amh:psr:v1:<uuidv4>` (see contract-v1/memoria-de-desenho.md §3);
+# any UUID-shaped PSR in a doc is a real-data leak, never a fixture. The
+# negative lookahead excludes `amh:psr:v1:SYNTH-*`, the sanctioned form for
+# 100%-synthetic fixture refs (see contract-v1/fixtures/) — same
+# minimum-length-token discipline as CREDENTIAL_PATTERNS above: the prefix
+# alone does not match, only a full UUIDv4-shaped token after it.
+REAL_PSR_PATTERN = re.compile(
+    r"\bamh:psr:v1:(?!SYNTH-)"
+    r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b"
+)
+
 
 def iter_target_files(repo_root: str):
     for root_name in SCAN_ROOTS:
@@ -119,6 +136,12 @@ def scan_file(path: str) -> list[str]:
             findings.append(
                 f"{path}:{lineno}: email-address not on allowlist: "
                 f"{redact(addr, keep=2)}"
+            )
+
+        for m in REAL_PSR_PATTERN.finditer(line):
+            findings.append(
+                f"{path}:{lineno}: real-PSR-shaped-pattern (amh:psr:v1: "
+                f"UUID, not SYNTH-): {redact(m.group(0), keep=12)}"
             )
 
         if PHI_CANARY in line:

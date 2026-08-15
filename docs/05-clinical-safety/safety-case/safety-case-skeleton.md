@@ -6,7 +6,16 @@ statement: >
   Claims-argument-evidence skeleton for the IntensiCare V2 clinical safety case. The
   argument structure is proposed; the evidence slots are deliberately EMPTY. This is
   NOT a safety case. It is the shape a safety case would have to take, and a register
-  of what is missing.
+  of what is missing. Cycle-1 additions (2026-08-15, written in pt-BR per DEC-G0-10,
+  cycle-0 English body not rewritten): HAZ-0045 attached to C-3 with evidence slot E-3.8
+  and defeater D-3.2; HAZ-0046 attached to C-6 with evidence slot E-6.9 and defeater
+  D-6.3; a C-5 note recording that ADR-0005's PROPOSED controls advance no evidence slot;
+  HAZ-0047 attached to C-3 with evidence slot E-3.9 and defeater D-3.3; E-3.8 rewritten to
+  cite SAF-0042; E-9.1 recount from 44 to 47 OPEN rows. The declared analysis defect
+  (HAZ-0045 with no SAF child) is CLOSED by SAF-0042 and replaced by a larger declared gap:
+  HAZ-0045 is S5 with a DET-only V2-side barrier, so the single-barrier rule cannot be
+  satisfied by any V2 control. No slot was promoted above EMPTY, no defeater was retired,
+  no argument was closed, and the maturity state remains M0.
 provenance:
   source_repo: intensicare-V2
   path_or_url: docs/05-clinical-safety/safety-case/safety-case-skeleton.md
@@ -163,8 +172,8 @@ external system (`PROMPT:746`; `LEGACY-TA:600`: "Existing mocks do not establish
 ---
 
 ### C-3 — Identity, encounter, tenant, provenance and quality are validated fail-closed (loop stage P2)
-*Hazards:* HAZ-0001, HAZ-0002, HAZ-0003, HAZ-0004, HAZ-0008, HAZ-0013, HAZ-0014, HAZ-0027, HAZ-0040
-*Controls:* SAF-0007, SAF-0008, SAF-0009, SAF-0029, SAF-0032
+*Hazards:* HAZ-0001, HAZ-0002, HAZ-0003, HAZ-0004, HAZ-0008, HAZ-0013, HAZ-0014, HAZ-0027, HAZ-0040, **HAZ-0045**, **HAZ-0047** (acrescentados 2026-08-15; HAZ-0047 também toca C-8 — auditoria e retenção)
+*Controls:* SAF-0007, SAF-0008, SAF-0009, SAF-0029, SAF-0032; **+ SAF-0042** (telemetria de anomalia de identidade — `DET` e **somente** `DET`, compensatório e explicitamente insuficiente)
 
 | Evidence slot | Would be | Status |
 |---|---|---|
@@ -175,9 +184,27 @@ external system (`PROMPT:746`; `LEGACY-TA:600`: "Existing mocks do not establish
 | E-3.5 AMH tenant/MPI contradiction record with an approved decision | Human decision (ADR-006 / ADR-039 / ADR-041 / FHIR-IG) | **EMPTY — VALIDATION REQUIRED**, blocked per `PROMPT:438-451` |
 | E-3.6 DQ↔evaluation-status mapping matrix, tested | Matrix + test | **EMPTY** |
 | E-3.7 Independent penetration-test acceptance | Human acceptance, verifier ≠ implementer | **EMPTY — VALIDATION REQUIRED** |
+| E-3.8 Detecção de par de identidade errado **a montante**: **SAF-0042** implementado e verificado (os cinco sinais, com anomalias plantadas), **mais** taxa de falso-positivo **medida** — a do índice cross-PJ, fornecida por quem o opera, **e** a do próprio detector, antes de qualquer exposição a clínico (limite 3 de SEC-0057: um limiar não calibrado troca HAZ-0045 por HAZ-0016), **mais** o instrumento entre controladores que o parecer OS-16 cobra (R-a6) | Telemetria V2 + medição AMH + instrumento contratual | **EMPTY — VALIDATION REQUIRED** (acrescentado 2026-08-15 com HAZ-0045; SAF-0042 escrito em 2026-08-15 — **um requisito escrito não move este slot**) |
+| E-3.9 Semântica de aplicação do tombstone de *erasure* determinada por `AUTH-PRIVACY-LEGAL`, **e** prova de que a aplicação alcança **todas** as cópias (projeções, caches, cache de `resolve`, índices, exports, telemetria) **sem** destruir registro clínico nem trilha de auditoria de paciente sob cuidado | Determinação jurídica nomeada + suíte de propagação + teste negativo de não-destruição | **EMPTY — VALIDATION REQUIRED** (acrescentado 2026-08-15 com HAZ-0047; bloqueado em `BLK-0004`, `AUTH-PRIVACY-LEGAL` UNASSIGNED) |
 
 **Defeater D-3.1:** authorization is enforced in application code while the data model
 still permits unowned rows (`LEGACY-TA:305`, `LEGACY-TA:632`).
+**Defeater D-3.2 (acrescentado 2026-08-15, HAZ-0045):** a V2 valida a **forma** do `ref` de
+sujeito e não tem, por construção, como validar sua **correção** — a barreira decisiva fica
+**fora** da fronteira da V2, num índice que a V2 não hospeda e cuja decisão de pareamento não
+observa. Consequência para o argumento: **C-3 não pode ser sustentada por evidência
+exclusivamente interna à V2.** Por mais completa que seja a suíte adversarial de E-3.1–E-3.3,
+sem E-3.8 a sub-alegação permanece indemonstrável para a classe de falha em que o insumo chega
+correto pelo contrato e errado pelo fato.
+**Defeater D-3.3 (acrescentado 2026-08-15, HAZ-0047):** a propagação do tombstone de *erasure*
+é demonstrada em teste e, em produção, **uma cópia não enumerada** — um cache, uma projeção,
+um export, um sink de telemetria dentro da retenção — permanece. Uma prova de propagação vale
+exatamente para o conjunto de cópias que **alguém se lembrou de listar**, e o inventário de
+cópias não é ele próprio verificado por nada. O simétrico também derruba C-3: uma aplicação
+ampla o bastante para alcançar tudo alcança **também** o registro clínico e a trilha de
+auditoria de um paciente sob cuidado. **Enquanto `AUTH-PRIVACY-LEGAL` estiver `UNASSIGNED`
+(`BLK-0004`), nenhuma das duas metades tem critério de correção** — e um teste sem critério de
+correção não é evidência.
 
 ---
 
@@ -219,6 +246,17 @@ the failure that *already happened* (`LEGACY-TA:469-478`) and because it is invi
 wrong `normal` produces no error, no exception, and no alert. **C-5 must not be argued from
 code review alone; E-5.1 is mandatory and mechanical.**
 
+INFERENCE (acrescentado 2026-08-15, pt-BR/DEC-G0-10): o **ADR-0005** (`proposed`) propõe, em
+**M7** (não-coerção) e **M4** (duas dimensões independentes com falha fechada), exatamente as
+cláusulas que tornariam HAZ-0005 estruturalmente impossível, e o `hazard-log.md` passou a
+registrar esse vínculo. **Nenhum *slot* E-5.x avança por causa disso, e nenhum deve avançar.**
+Um ADR proposto — com duas condições de aceitação ainda **ABERTAS** (C3: a matriz M4 é
+*placeholder*; C5: sem ambiente para inspecionar a *lane*) e uma hipótese **UNTESTED** (H3) —
+é a **intenção** de uma barreira, não a barreira. Promover qualquer *slot* acima de `EMPTY`
+com base nele seria **D-9.1** em ação, e D-9.1 é o *defeater* que este produto **já
+materializou uma vez**: o legado documentou `HAZ-030` exigindo `not evaluated` e mesmo assim
+retornou zero.
+
 **Defeater D-5.1:** status is present in the domain model but lost in a projection, cache,
 export, or UI cell. **Defeater D-5.2:** clinicians see the status and do not act on it —
 i.e. E-5.6 fails even though E-5.1–E-5.5 pass.
@@ -226,8 +264,8 @@ i.e. E-5.6 fails even though E-5.1–E-5.5 pass.
 ---
 
 ### C-6 — Warranted alerts are durable, explainable, and actually reach a responsible human (loop stage P5)
-*Hazards:* HAZ-0015, HAZ-0016, HAZ-0017, HAZ-0018, HAZ-0022, HAZ-0030, HAZ-0041
-*Controls:* SAF-0015, SAF-0016, SAF-0018, SAF-0022, SAF-0025, SAF-0031, SAF-0038
+*Hazards:* HAZ-0015, HAZ-0016, HAZ-0017, HAZ-0018, HAZ-0022, HAZ-0030, HAZ-0041, **HAZ-0046** (acrescentado 2026-08-15)
+*Controls:* SAF-0015, SAF-0016, SAF-0018, SAF-0022, SAF-0025, SAF-0031, SAF-0038, **SAF-0005, SAF-0034** (via HAZ-0046)
 
 | Evidence slot | Would be | Status |
 |---|---|---|
@@ -238,12 +276,19 @@ i.e. E-5.6 fails even though E-5.1–E-5.5 pass.
 | E-6.4 Suppression audit and escalation-breakthrough tests | Scenario test | **EMPTY** |
 | E-6.5 Alert-burden measurement (alerts per patient-day, per shift) against a ratified budget | Measured study | **EMPTY — VALIDATION REQUIRED** |
 | E-6.6 Explanation quality: inputs, missing inputs, source time, rule version, rationale | Human-factors evidence | **EMPTY — VALIDATION REQUIRED** |
-| E-6.7 Latency budget vs. measured lane capability per pathway | Measured comparison | **EMPTY** — currently contradicted by `LEGACY-TA:231,239` and `PROMPT:95` |
+| E-6.7 Latency budget vs. measured lane capability per pathway | Measured comparison | **EMPTY** — currently contradicted by `LEGACY-TA:231,239` and `PROMPT:95`; **desde 2026-08-15 há um caso concreto e quantificado** — janela de 1 h da `RULE-NEWS2-0100` × canal FHIR não-near-real-time (`vital-signs-decision/pacote-decisao-c1-sinais-vitais.md` §4/O1 risco 2), *"inteiramente não medido"* |
+| E-6.9 Rótulo de limitação institucional (*"registro limitado a esta instituição"*) presente em **toda** superfície que exiba registro de paciente, perceptível **sem depender de cor** e anunciado a tecnologia assistiva — **e compreendido**: cenário simulado que meça se o clínico lê a fragmentação **como fragmentação** e não como ausência de história | Teste de componente + a11y + estudo de compreensão (item de validação G1/G4 exigido por `ADR-0004` §6.2) | **EMPTY — VALIDATION REQUIRED** (acrescentado 2026-08-15 com HAZ-0046) |
 
 **Defeater D-6.1:** delivery is measured at the server and not at the clinician's display
 (`LEGACY-TA:560`: no SLI measured generated-to-visible latency or missed display).
 **Defeater D-6.2:** the alert arrives correctly but too late for the clinical window
 (HAZ-0030) — a correct system that is architecturally too slow still fails C-0.
+**Defeater D-6.3 (acrescentado 2026-08-15, HAZ-0046):** o rótulo de limitação institucional
+existe na tela e o clínico **não o incorpora à decisão** — o requisito vinculante da ata AQ-1
+é satisfeito na letra e o dano permanece intacto. É o mesmo modo de falha de **D-5.2**,
+transposto do *status de avaliação* para o *escopo do registro*; por isso E-6.9 exige
+**medição de compreensão**, e não apenas a presença do componente. Presença do rótulo não é
+evidência de que a completude longitudinal deixou de ser presumida.
 
 ---
 
@@ -288,7 +333,7 @@ and misdirects future clinical change (HAZ-0035).
 
 | Evidence slot | Would be | Status |
 |---|---|---|
-| E-9.1 Hazard log with every row at `VERIFIED` or `RESIDUAL-RISK ACCEPTED` | Register state | **EMPTY** — all 44 rows are `OPEN` |
+| E-9.1 Hazard log with every row at `VERIFIED` or `RESIDUAL-RISK ACCEPTED` | Register state | **EMPTY** — all **47** rows are `OPEN` (44 do ciclo 0 + HAZ-0045/HAZ-0046/HAZ-0047 cunhados em 2026-08-15). **O contador subiu, não desceu:** um ciclo de trabalho que acrescenta hazards e não fecha nenhum afasta este *slot* do preenchimento, e é assim que deve aparecer |
 | E-9.2 Residual-risk acceptance records (named human, date, rationale, review trigger) | Human decisions | **EMPTY — VALIDATION REQUIRED** |
 | E-9.3 Threat-model P0/P1 findings closed or accepted | Wave 2 output + security acceptance | **EMPTY — VALIDATION REQUIRED.** The *input* now exists — `docs/11-security-privacy-compliance/threat-model.md` (THR-0001..THR-0067, 27 rated P0 and 39 P1) — and its THR↔HAZ links are integrated into the hazard log. **Zero findings are closed or accepted**, so this slot does not advance: the slot asks for closure/acceptance, not for the model. |
 | E-9.4 Per-pathway hazard rows (false-positive/false-negative harm, alert burden, subgroup risk) | Portfolio output (G2) | **PARTIAL** — the portfolio-*level* portion is integrated (HAZ-0043, HAZ-0044, plus PH-11 mapped to HAZ-0036). The **per-pathway** portion remains EMPTY and cannot be filled until pathways are admitted at G2; candidates PH-01..PH-09 are staged in `pathway-portfolio/candidate-inventory.md` §5. See `hazard-log.md` §4 gap G-2 |
@@ -297,6 +342,25 @@ and misdirects future clinical change (HAZ-0035).
 
 **Defeater D-9.1:** a hazard is closed because a mitigating document exists rather than an
 executed test or a named acceptance — the exact legacy failure (`safety-plan.md` §6.2).
+
+**Nota de defeito declarado (2026-08-15, pt-BR/DEC-G0-10) — RESOLVIDO, e substituído por uma
+lacuna diferente e maior.** A versão anterior desta nota registrava que **HAZ-0045 estava sem
+filho `SAF`** (defeito de análise, `safety-plan.md` §8). **Isso foi fechado no mesmo dia:**
+`SAF-0042` foi escrito, e o triângulo `HAZ-0045 ↔ SAF-0042 ↔ SEC-0057` está fechado, sem
+referência pendurada. **O que ficou no lugar é pior, e não deve ser lido como progresso:**
+
+1. **HAZ-0045 (S5) não satisfaz a regra de barreira única** de `safety-plan.md` §6.4, e
+   **nenhum controle da V2 pode fazê-la satisfazer**, porque a barreira preventiva pertence à
+   governança do índice do ADR-043 e ao parecer jurídico da OS-16 — fora desta organização de
+   software. SAF-0042 é `DET` e **somente** `DET`, por desenho. A exceção está declarada em
+   `safety-requirements.md` §I. **Escrever o requisito tornou a lacuna precisa; não a reduziu.**
+2. **HAZ-0047 tem filhos `SAF`, mas nenhum define a semântica de aplicação** do tombstone de
+   *erasure* — isso é determinação de `AUTH-PRIVACY-LEGAL` (`UNASSIGNED`, `BLK-0004`), e
+   nenhum agente pode autorá-la sem fabricar uma decisão jurídica.
+
+**Consequência para C-9:** a cadeia hazard → controle → evidência deixou de estar *rompida* e
+passou a estar **completa e insuficiente** — que é um estado mais honesto e não mais
+tranquilizador. E-9.1 continua `EMPTY`.
 
 ---
 

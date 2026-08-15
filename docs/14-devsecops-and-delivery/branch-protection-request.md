@@ -1,14 +1,97 @@
 ---
 doc_id: DEVSECOPS-BRANCH-PROTECTION-REQUEST
-status: PROPOSAL
+status: OBSERVED
 owner: UNASSIGNED — VALIDATION REQUIRED
-source: INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §15.1 (Repository foundation — "branch protection and required status checks"), §3 rule 13; .github/workflows/docs-gates.yml (this repository)
+source: >
+  INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §15.1 (Repository foundation — "branch
+  protection and required status checks"), §3 rule 13;
+  .github/workflows/docs-gates.yml (this repository). RESOLUÇÃO (2026-08-15)
+  acrescentada com fonte adicional: docs/00-governance/registers/g0-resolucoes-2026-08-15.md
+  (DEC-G0-09); docs/00-governance/registers/evidence-register.md (EVID-0010);
+  docs/00-governance/registers/blockers-register.md (BLK-0011); verificação
+  direta via `gh api repos/Omni-Saude/intensicare-V2/branches/main/protection`
+  nesta sessão (2026-08-15).
 date_collected: 2026-08-14
-collector: repository-foundation and CI-policy engineer
-last_updated: 2026-08-14
+collector: repository-foundation and CI-policy engineer; RESOLUÇÃO (2026-08-15) acrescentada pelo engenheiro de política de CI e conformidade documental
+last_updated: 2026-08-15
 ---
 
 # Branch Protection Request — `main`
+
+## RESOLUÇÃO (2026-08-15)
+
+> Esta seção é acrescentada **no topo** do documento para registrar que o
+> estado abaixo — "BLOCKED — requires repository admin action" — deixou de
+> ser o estado vigente em 2026-08-15. **O texto original (§1–§5, a partir da
+> primeira linha "Status: BLOCKED") permanece integralmente abaixo, sem
+> nenhuma edição de conteúdo: é registro histórico fiel da solicitação e do
+> estado então vigente em 2026-08-14.** Nada foi apagado ou reescrito.
+
+### R.1 — Estado aplicado
+
+**SOURCE** (`docs/00-governance/registers/g0-resolucoes-2026-08-15.md`,
+`DEC-G0-09`; ecoado em `docs/00-governance/registers/evidence-register.md`,
+`EVID-0010`): em 2026-08-15 o titular nomeado (rodaquino-OMNI) aplicou
+proteção de branch a `main` do repositório `Omni-Saude/intensicare-V2`:
+checks de status obrigatórios `doc-conventions` + `forbidden-content` em
+modo `strict`; `enforce_admins` ativo; histórico linear obrigatório;
+force-push proibido; deleção proibida; pull request obrigatório com **0
+(zero) aprovações** requeridas.
+
+**OBSERVED** (verificação direta, somente leitura, executada nesta sessão em
+2026-08-15): comando
+
+```text
+gh api repos/Omni-Saude/intensicare-V2/branches/main/protection --jq \
+  '{required_status_checks: .required_status_checks.contexts, strict: .required_status_checks.strict, enforce_admins: .enforce_admins.enabled, linear: .required_linear_history.enabled, force_pushes: .allow_force_pushes.enabled, deletions: .allow_deletions.enabled, reviews: .required_pull_request_reviews.required_approving_review_count}'
+```
+
+resposta obtida (JSON de resposta da API — nenhuma credencial, token ou
+segredo transcrito):
+
+```json
+{"deletions":false,"enforce_admins":true,"force_pushes":false,"linear":true,"required_status_checks":["doc-conventions","forbidden-content"],"reviews":0,"strict":true}
+```
+
+Esta resposta **confirma de forma independente**, para o slug
+`Omni-Saude/intensicare-V2`, cada item do parágrafo SOURCE acima: os dois
+checks exigidos em modo `strict`, `enforce_admins` ativo, histórico linear
+obrigatório, force-push e deleção proibidos, e **0** aprovações requeridas.
+Na prática, este estado aplicado substitui a coluna "Requested value" de §2
+abaixo — mas §2 **não** foi reescrita; permanece como registro do que foi
+pedido, não do que está em vigor.
+
+### R.2 — O parâmetro de 0 aprovações: justificativa
+
+**SOURCE** (`g0-resolucoes-2026-08-15.md`, `DEC-G0-09`): o parâmetro de
+contagem de aprovações exigidas — que §2/§3 abaixo deixaram deliberadamente
+em aberto (`<VALIDATION REQUIRED — no reviewer pool named yet>`) — foi
+decidido pelo titular como **0 (zero)**. Justificativa registrada na fonte:
+o GitHub proíbe autoaprovação de pull request, e há, no momento, **um único
+revisor humano** disponível. Exigir ≥1 aprovação nessas condições criaria um
+bloqueio estrutural — nenhum PR poderia jamais ser aprovado. O parâmetro
+**será elevado quando houver um segundo revisor humano**; não é uma posição
+permanente. **OBSERVED** (verificação desta sessão): `"reviews":0` no JSON
+de R.1 confirma que o parâmetro efetivamente em vigor é 0.
+
+### R.3 — Discrepância de slug: registrada, VALIDAÇÃO NECESSÁRIA, não resolvida aqui
+
+**OBSERVED** (`docs/00-governance/registers/blockers-register.md`,
+`BLK-0011`, nota do steward de 2026-08-15): o registro de decisão-fonte
+(`g0-resolucoes-2026-08-15.md`, `DEC-G0-09`) identifica o repositório como
+`Omni-Saude/intensicare-V2`, enquanto o próprio `BLK-0011` e seu campo
+`who_must_act` (redigidos em 2026-08-14, antes desta resolução) usam
+`rodaquino-OMNI/intensicare-V2`. Ambas as grafias são citadas textualmente
+aqui, exatamente como o `BLK-0011` já faz. **Qual delas é o slug real do
+repositório remoto de destino permanece VALIDAÇÃO NECESSÁRIA.** Este
+documento não adjudica a discrepância — apenas a repete fielmente, para que
+quem leia esta seção não precise abrir `BLK-0011` separadamente para ver as
+duas grafias. A verificação de R.1 foi executada contra
+`Omni-Saude/intensicare-V2` porque foi o slug fornecido ao especialista para
+esta tarefa; isso não constitui, por si só, adjudicação de qual grafia é a
+correta — apenas confirma que a proteção está aplicada **naquele** slug.
+
+---
 
 **Status: BLOCKED — requires repository admin action.** No agent may
 configure branch protection: it requires `admin` rights on the GitHub

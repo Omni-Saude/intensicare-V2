@@ -452,6 +452,64 @@ provenance:
   validation_status: "VALIDAÇÃO NECESSÁRIA — mitigação depende da aceitação formal de ADR-0001 e ADR-0003 por AUTH-DATA-PLATFORM antes do Gate G7"
 ```
 
+## RISK-0011 — THR-0080 sem barreira preventiva na V2, agravada por concentração de autoridade (pt-BR — conteúdo novo, ciclo 2, 2026-08-15)
+
+```yaml
+id: RISK-0011
+title: THR-0080 (contaminação cross-PJ a montante) é a única ameaça do modelo sem barreira preventiva na V2
+status: OPEN
+statement: >
+  THR-0080 (par falso-positivo no índice cross-PJ do ADR-043 atribui fatos
+  clínicos ao paciente errado, sem que a V2 tenha como detectar) é a única
+  ameaça de todo o modelo de ameaças cujo controle **preventivo** não
+  pertence à V2 nem à OMNI-como-fornecedora de software: a barreira
+  preventiva pertence à governança do índice cross-PJ, do lado AMH, e ao
+  parecer jurídico da OS-16 — hoje `AUTH-AMH-OWNER` e `AUTH-PRIVACY-LEGAL`,
+  ambos UNASSIGNED. O único movimento disponível à V2 é detecção
+  compensatória parcial (SEC-0057, PROPOSAL), que não previne o dano e cuja
+  taxa de falso-positivo é desconhecida e não medida. Este risco é agravado
+  por R-a7 (concentração de autoridade, minuta-parecer-os-16.md §3.6): a
+  mesma pessoa (rodaquino-OMNI) decide pelos dois lados do contrato
+  AMH×IntensiCare, o que remove o atrito controlador↔controlador que
+  normalmente funciona como controle entre controladores distintos —
+  tornando a nomeação explícita de um dono humano para este risco específico
+  mais necessária, não menos.
+impact: >
+  Se o índice cross-PJ entrar em operação e a resolução de identidade a
+  montante passar a depender dele, um par falso-positivo produz história
+  clínica de duas pessoas fundida numa só: escore computado sobre valores de
+  dois pacientes, alerta emitido sobre o paciente errado, ausência de alerta
+  para quem precisava, e evento de privacidade cross-PJ simultâneo. A
+  contaminação persiste, porque nada na V2 a contradiz e o registro
+  contaminado passa a ser a linha de base contra a qual toda leitura
+  seguinte é julgada (HAZ-0045). Sem dono humano nomeado, nenhuma decisão de
+  operar com o índice ligado tem accountability explícita — e a
+  concentração de autoridade (RISK-0007) significa que, sem esta nomeação
+  específica, a mesma pessoa que decide ligar o índice é também quem
+  arbitraria, dos dois lados, qualquer disputa sobre um par
+  falso-positivo já ocorrido.
+likelihood: unknown — condicionada a três pré-condições ainda não satisfeitas
+  (índice cross-PJ em operação; resolução a montante dependente dele; um par
+  falso-positivo aceito); a taxa de falso-positivo do limiar de
+  correspondência não está medida em nenhum documento lido.
+gate_relevance: [G0, G3, G6]
+owner: UNASSIGNED — VALIDATION REQUIRED
+links:
+  evidence: []
+  blockers: [BLK-0017]
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: "docs/11-security-privacy-compliance/threat-model.md; docs/11-security-privacy-compliance/lgpd-os16/minuta-parecer-os-16.md; docs/05-clinical-safety/hazard-log.md"
+  commit_sha_or_version: "working tree não commitado sobre cycle-1/clinical-content @ 3530295 (threat-model.md, minuta-parecer-os-16.md, hazard-log.md modificados por sessão paralela nesta mesma janela)"
+  section_or_lines: "threat-model.md §12.3.4 ('Declaração de propriedade do controle') e §12.3.3 THR-0080; minuta-parecer-os-16.md §3.6 R-a5/R-a7; hazard-log.md HAZ-0045"
+  date_collected: "2026-08-15"
+  collector: governance-and-traceability steward (ciclo 2 — consolidação de três fontes independentes já registradas, nenhuma medição nova)
+  transformation: "risco derivado (INFERENCE) da leitura direta de THR-0080 §12.3.4 combinada com R-a7 da minuta LGPD e com HAZ-0045 do hazard-log; nenhuma das três fontes está no write scope deste steward"
+  confidence: high
+  owner: UNASSIGNED — VALIDATION REQUIRED
+  validation_status: "VALIDAÇÃO NECESSÁRIA — exige dono humano nomeado antes de qualquer operação com o índice cross-PJ ligado (threat-model.md §12.8 item 15); nenhum gatilho de nomeação existe hoje"
+```
+
 ## Index
 
 | ID | Title | Status | Gate relevance | Owner |
@@ -466,3 +524,4 @@ provenance:
 | RISK-0008 | Janela de baseline perecível aberta e sem data de fechamento | OPEN | G1, G2 | UNASSIGNED |
 | RISK-0009 | Frescor — canal AMH em lote × janela de 1h do NEWS2 | OPEN | G2, G3 | UNASSIGNED |
 | RISK-0010 | Fronteira/grão decididos por omissão se ADR-0001/0003/0005 estagnarem | OPEN | G3, G7 | UNASSIGNED |
+| RISK-0011 | THR-0080 sem barreira preventiva na V2, agravada por concentração de autoridade (R-a7) | OPEN | G0, G3, G6 | UNASSIGNED |

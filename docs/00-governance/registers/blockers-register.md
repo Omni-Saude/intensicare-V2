@@ -450,6 +450,27 @@ de medicamento | sem profile `MedicationAdministration` na IG (E-3)") e
 de efeito por candidato, §2, linhas 0003/0010/0013/0014/0015/0016/0019).
 Escrito por escriba de governança; nenhum mérito decidido aqui.
 
+**Extensão (2026-08-15, ciclo 2, pt-BR — achado novo da matriz §7.2):** a ausência
+de profile `MedicationAdministration` não bloqueia apenas os sete candidatos do
+portfólio listados acima — ela bloqueia a **RULE-GCS inteira**, não só um
+componente dela. GCS-07 (estado de infusão sedativa) depende desta classe; o
+gate sedativo da RULE-GCS é **fail-closed** (spec §3.3/§6.1: "qualquer
+componente NT → nenhum total"), de modo que, sem estado de exposição
+sedativa, o total sai `not_evaluated` **mesmo com os três componentes E, V e M
+perfeitamente povoados e testados**. Uma decisão de C-1 em escopo amplo
+desbloquearia E/V/M/RASS e ainda assim não produziria um total avaliável — é
+o achado mais importante da matriz §7.2 quanto à RULE-GCS ("o que separa
+'componentes disponíveis' de 'regra utilizável'"). Isto não substitui os sete
+candidatos já registrados; soma-se a eles como consequência adicional, não
+antes nomeada, da mesma lacuna de classe.
+**Fonte da extensão:** `docs/08-interoperability/amh-data/pathway-source-matrix/matriz-leitura.md`
+§3.3 ("O achado mais importante desta seção, e o menos óbvio... a RULE-GCS é
+bloqueada pela classe D... tanto quanto pela classe B") e
+`docs/08-interoperability/amh-data/pathway-source-matrix/lacunas-e-proximas-evidencias.md`
+L-4 ("Linhas afetadas... GCS-07 — e, por GCS-07, a RULE-GCS inteira, via gate
+sedativo fail-closed"). Escrito por escriba de governança; nenhum mérito
+decidido aqui.
+
 ## BLK-0013 — Cobertura jurídica/ética de pesquisa com participantes humanos não coberta por `DEC-G0-03` (pt-BR — conteúdo novo, 2026-08-15)
 
 ```yaml
@@ -563,6 +584,91 @@ ponto N-1 (§8, "Dono AMH do contrato | AMH nomeia o dono produtor (critério
 contornado"). Escrito por escriba de governança; nenhum mérito decidido
 aqui.
 
+## BLK-0016 — Contrato de ordem clínica sem dono (pt-BR — conteúdo novo, ciclo 2, 2026-08-15)
+
+```yaml
+id: BLK-0016
+title: Contrato de ordem clínica sem dono
+status: OPEN
+what_is_blocked: >
+  Três linhas das três regras clínicas precisam de uma ordem clínica
+  atribuível e estruturada, não de uma medida: a atribuição de escala-alvo de
+  SpO2 do NEWS2 (NEWS2 Scale 2, com autor, horário e indicação registrados) e
+  a ordem de limitação terapêutica/paliativa (decidida em RULE-SOFA e
+  RULE-NEWS2, apenas sinalizada em RULE-GCS). Nenhuma das duas é uma
+  `Observation`, e nenhuma leitura possível da decisão C-1 (sinais vitais) —
+  em escopo estreito ou amplo — as alcança, porque corrigir o profile de
+  `Observation` não alcança uma ordem clínica. Nenhuma ordem de serviço AMH
+  cobre esta classe e nenhuma pergunta aberta aos donos AMH a registra.
+who_must_act: AUTH-DATA-PLATFORM / titular — decidir se este achado vira ordem
+  de serviço nova ou pergunta aberta numerada endereçada aos donos AMH; nomear
+  quem a conduz. Mesma forma estrutural do BLK-0012 (achado sem dono, sem OS,
+  sem pergunta aberta).
+unblock_request: >
+  "Duas linhas das três regras clínicas exigem um contrato de ordem clínica
+  atribuível — atribuição de escala-alvo de SpO2 (NEWS2 Scale 2) e ordem de
+  limitação terapêutica/paliativa — e nenhuma delas é alcançável por
+  correção de profile `Observation`, por nenhum escopo da decisão C-1. Hoje
+  não existe ordem de serviço, pergunta aberta nem item de caminho crítico
+  para esta classe. Por favor decida se este achado abre uma ordem de
+  serviço nova ou é registrado como pergunta aberta ao quadro existente de
+  perguntas para os donos AMH, e nomeie quem a conduz."
+gate: G2
+links: [RISK-0003, BLK-0012]
+```
+
+**Fonte:** `docs/08-interoperability/amh-data/pathway-source-matrix/lacunas-e-proximas-evidencias.md`
+L-6 ("Não existe contrato de ordem clínica... Nenhum contrato desse tipo foi
+inventariado em nenhuma camada... **Ninguém, hoje** — não há ordem de serviço
+nem pergunta aberta. Precisa de dono nomeado") e §1 (quadro de orientação,
+linha L-6: "quem age: titular precisa nomear"). Linhas afetadas citadas na
+fonte: NEWS2-G, NEWS2-D3, SOFA-D3, GCS-D3. Escrito por escriba de governança;
+nenhum mérito decidido aqui.
+
+## BLK-0017 — SAF-0042 ausente — defeito de análise declarado de HAZ-0045 (pt-BR — conteúdo novo, ciclo 2, 2026-08-15)
+
+```yaml
+id: BLK-0017
+title: SAF-0042 ausente — defeito de análise declarado de HAZ-0045
+status: OPEN
+what_is_blocked: >
+  HAZ-0045 (contaminação de identidade a montante via índice cross-PJ do
+  ADR-043, sem que a V2 tenha como detectar) não tem requisito de segurança
+  filho `SAF`. `safety-plan.md` §8 exige que todo hazard tenha filho `SAF`;
+  HAZ-0045 está, portanto, com defeito de análise declarado e aberto —
+  registrado como tal pelo próprio hazard-log, não descoberto por este
+  escriba. O controle candidato de HAZ-0045 (telemetria de anomalia de
+  identidade) não recebeu ID porque `safety-requirements.md` estava fora do
+  escopo de escrita da sessão que cunhou HAZ-0045; cunhar um ID sem escrever
+  o requisito criaria referência pendurada.
+who_must_act: AUTH-CLINSAFETY — cunhar SAF-0042 (ou ID equivalente) com o
+  requisito de telemetria de anomalia de identidade, ou determinar disposição
+  alternativa.
+unblock_request: >
+  "HAZ-0045 está registrado no hazard-log com defeito de análise declarado:
+  nenhum requisito de segurança filho `SAF` existe para o controle candidato
+  de telemetria de anomalia de identidade. Por favor cunhe o ID `SAF`
+  correspondente em safety-requirements.md, ou determine outra disposição."
+gate: G6
+links: []
+```
+
+**Nota do steward — EM RESOLUÇÃO NESTA MESMA SESSÃO:** um especialista de
+safety-case está, em paralelo a este registro, trabalhando exatamente
+`docs/05-clinical-safety/{hazard-log.md,safety-requirements.md,safety-case/}`
+— escopo fora do write scope deste steward. Este `BLK-0017` é registrado como
+**OPEN** porque, no momento em que este arquivo foi lido, a lacuna ainda
+constava aberta no hazard-log; **verificar hazard-log.md e
+safety-requirements.md antes de agir sobre este bloqueador** — é possível que
+já tenha sido fechado ou alterado pela sessão paralela.
+
+**Fonte:** `docs/05-clinical-safety/hazard-log.md` HAZ-0045, nota (i) ("O
+controle candidato de HAZ-0045 não recebe ID `SAF` aqui, e isso é
+deliberado... `safety-plan.md` §8 exige que todo hazard tenha filho `SAF`,
+logo HAZ-0045 está com defeito de análise declarado e aberto até que o
+requisito exista") e §4 ("Pendência aberta gerada por esta disposição").
+Escrito por escriba de governança; nenhum mérito decidido aqui.
+
 ## Index
 
 | ID | Title | Gate | Who must act | Status (2026-08-15) |
@@ -582,6 +688,8 @@ aqui.
 | BLK-0013 | Cobertura jurídica/ética de pesquisa com participantes humanos não coberta por `DEC-G0-03` | G1 | rodaquino-OMNI | OPEN |
 | BLK-0014 | OS-16 — pedido de parecer redigido, NÃO ENVIADO; destinatário jurídico não definido | G6, G8 | rodaquino-OMNI | OPEN |
 | BLK-0015 | Contrato v1 — dono AMH não nomeado (critério 6 da OS-19 insatisfazível pela minuta) | G3 | rodaquino-OMNI (lado AMH) | OPEN |
+| BLK-0016 | Contrato de ordem clínica sem dono | G2 | AUTH-DATA-PLATFORM / titular | OPEN |
+| BLK-0017 | SAF-0042 ausente — defeito de análise declarado de HAZ-0045 | G6 | AUTH-CLINSAFETY | OPEN — verificar hazard-log/safety-requirements (em resolução paralela) |
 
 **Nota do steward (2026-08-15, segunda integração, pt-BR — conteúdo novo):**
 `BLK-0012`..`BLK-0015` não são bloqueadores do Gate G0 — são bloqueadores de
