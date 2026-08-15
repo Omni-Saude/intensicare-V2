@@ -1,0 +1,19 @@
+{
+  "_fixture": {
+    "role": "invalid",
+    "sintetica": true,
+    "motivo_de_invalidade": "emitted_at ANTERIOR a occurred_at — viola a invariante 4 (emitted_at >= occurred_at). Um evento nao pode ser publicado antes de o fato existir; indica relogio quebrado ou defeito do produtor. Mensagem DEVE ser rejeitada/quarentenada.",
+    "descricao": "Valores 100% sinteticos."
+  },
+  "event_id": "22222222-2222-4222-8222-000000000003",
+  "event_type": "identity.unmerge.v1",
+  "event_type_version": "1",
+  "idempotency_key": "SYNTH-IDEM-UNMERGE-INV-0001",
+  "amh_tenant": "SYNTH-TENANT-A",
+  "legal_entity": "SYNTH-LE-00000001",
+  "subject_ref_antiga": "amh:psr:v1:SYNTH-abab0001-0000-4000-8000-000000000012",
+  "subject_ref_nova": "amh:psr:v1:SYNTH-abab0002-0000-4000-8000-000000000013",
+  "occurred_at": "2026-08-15T17:00:00Z",
+  "emitted_at": "2026-08-15T16:59:00Z",
+  "correction_of": null
+}

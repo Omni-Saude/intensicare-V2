@@ -409,6 +409,160 @@ strings são citadas textualmente aqui; **qual delas é o slug real do
 repositório remoto é VALIDAÇÃO NECESSÁRIA** — não presumido por este
 steward.
 
+## BLK-0012 — Classe D — ausência de profile `MedicationAdministration` na IG AMH (pt-BR — conteúdo novo, 2026-08-15)
+
+```yaml
+id: BLK-0012
+title: Classe D — ausência de profile MedicationAdministration na IG AMH
+status: OPEN
+what_is_blocked: >
+  Sete candidatos do portfólio permanecem PARCIAIS ou SEM EFEITO em todos os
+  cenários avaliados de C-1 (sinais vitais) porque a Implementation Guide da
+  AMH não tem nenhum profile MedicationAdministration: 0003 SOFA (componente
+  cardiovascular — identidade e taxa de dose de vasoativo), 0010 sepse, 0013
+  estabilidade hemodinâmica, 0014 sedação, 0015 profilaxia, 0016
+  antimicrobiano, 0019 delirium. OBSERVADO: dos 21 arquivos JSON de nível
+  superior de schemas/fhir-profiles/@0a07a6f1, existem Medication,
+  MedicationRequest e MedicationDispense — mas dispensação não é
+  administração titulada, e nenhum profile de administração existe.
+who_must_act: AUTH-DATA-PLATFORM — decidir se a Classe D vira uma ordem de
+  serviço nova (análoga às 21 já emitidas para C-1) ou uma pergunta aberta
+  numerada endereçada aos donos AMH; nenhuma das duas existe hoje.
+unblock_request: >
+  "A classe D (administração de medicamentos, com ênfase em identidade e taxa
+  de dose de vasoativo/sedativo/antimicrobiano/haloperidol) bloqueia sete
+  candidatos do portfólio clínico e não tem, hoje, nenhuma ordem de serviço,
+  nenhuma pergunta aberta e nenhum item de caminho crítico associado — a
+  mesma forma estrutural de C-1 (um recurso FHIR que o consumidor precisa e
+  para o qual a IG não tem profile). Por favor decida se este achado abre uma
+  ordem de serviço nova (no padrão das 21 já emitidas) ou se é registrado
+  como pergunta aberta (candidata a Q11) no quadro existente de perguntas
+  para os donos AMH, e nomeie quem a conduz."
+gate: G2
+links: [RISK-0003]
+```
+
+**Fonte:** `docs/08-interoperability/amh-data/vital-signs-decision/pacote-decisao-c1-sinais-vitais.md`
+§2.7 (item 9 da tabela RULE-SOFA-0100: "Taxa de dose do vasoativo | administração
+de medicamento | sem profile `MedicationAdministration` na IG (E-3)") e
+`docs/08-interoperability/amh-data/vital-signs-decision/impacto-no-portfolio.md`
+§1 e §4 (achado "a classe D é a segunda C-1, e ninguém a nomeou ainda"; tabela
+de efeito por candidato, §2, linhas 0003/0010/0013/0014/0015/0016/0019).
+Escrito por escriba de governança; nenhum mérito decidido aqui.
+
+## BLK-0013 — Cobertura jurídica/ética de pesquisa com participantes humanos não coberta por `DEC-G0-03` (pt-BR — conteúdo novo, 2026-08-15)
+
+```yaml
+id: BLK-0013
+title: Cobertura jurídica/ética de pesquisa com participantes humanos não coberta por DEC-G0-03
+status: OPEN
+what_is_blocked: >
+  TODO o campo do kit de pesquisa do Gate G1 — sítio, recrutamento,
+  consentimento, observação à beira do leito, entrevistas — inclusive a
+  cápsula de baselines perecíveis (B1 carga de alarmes, B2 interrupções, B3
+  fadiga, B4a tempo até reconhecimento observacional) do protocolo
+  VAL-0035/G2-VAL-0025, que é a única medição do programa que não pode ser
+  feita depois. O fundamento "desenvolvimento prossegue exclusivamente com
+  dados sintéticos" que permitiu reclassificar AUTH-PRIVACY-LEGAL de G0 para
+  pré-condição de G6/G8 (DEC-G0-03) não cobre pesquisa com participantes
+  humanos: a pesquisa do G1 trata dados pessoais de profissionais de saúde e
+  ocorre em ambiente com exposição incidental a dados de paciente — isto não
+  é dado sintético.
+who_must_act: rodaquino-OMNI — estender o escopo do parecer jurídico já
+  encomendado pela OS-16 para cobrir pesquisa com participantes humanos, ou
+  nomear um titular AUTH-PRIVACY-LEGAL específico para este escopo.
+unblock_request: >
+  "A pesquisa de campo do Gate G1 (kit de recrutamento, consentimento e
+  baselines perecíveis) trata dados pessoais de profissionais de saúde e tem
+  exposição incidental a dados de paciente — o fundamento de DEC-G0-03 (só
+  dados sintéticos) não a alcança. Nenhum sítio pode ser contatado, nenhum
+  participante recrutado e nenhuma medição de baseline perecível pode
+  começar até que exista cobertura jurídica/ética para este escopo
+  específico. Por favor decida se o parecer da OS-16 é estendido para cobrir
+  esta pesquisa, ou nomeie um titular para este escopo em separado."
+gate: G1
+links: [RISK-0008, BLK-0004]
+```
+
+**Fonte:** `docs/02-users-and-workflows/g1-kit/plano-de-recrutamento-e-etica.md`
+(cabeçalho do documento, "⚠️ BLOQUEIO VIGENTE" e §5, tabela E1–E6) e
+`docs/02-users-and-workflows/g1-kit/protocolo-baselines-pereciveis.md` §7.2
+(pré-condições mínimas, item 3: "Posição jurídica sobre observação de
+profissionais e exposição incidental a dado de paciente — VAL-0041, hoje sem
+titular"). Escrito por escriba de governança; nenhum mérito decidido aqui.
+
+## BLK-0014 — OS-16 — pedido de parecer redigido, NÃO ENVIADO; destinatário jurídico não definido (pt-BR — conteúdo novo, 2026-08-15)
+
+```yaml
+id: BLK-0014
+title: OS-16 — pedido de parecer redigido, NÃO ENVIADO; destinatário jurídico não definido
+status: OPEN
+what_is_blocked: >
+  O caminho crítico externo do parecer jurídico LGPD ainda não começou a
+  contar. A OS-16 é a única dependência externa do pacote AMH e trava,
+  simultaneamente: o primeiro apply do índice do ADR-043; o apply dos DDLs do
+  portable_subject_ref; o backfill de minting; a forma final do
+  consent_decision_ref; a reativação da OS-21; e todos os Gates G6/G8 (per
+  DEC-G0-03, gatilho obrigatório de parecer jurídico brasileiro antes de
+  qualquer teste de conformidade com dados reais, operação sombra ou piloto).
+  O texto da solicitação está redigido e revisado (minuta-parecer-os-16.md,
+  25 questões Q-01..Q-25), mas nenhum envio foi feito: o destinatário
+  (advogado(a) habilitado em direito brasileiro, com experiência em proteção
+  de dados no setor de saúde) permanece PENDENTE — item 1 da lista de
+  verificação pré-envio.
+who_must_act: rodaquino-OMNI — definir o destinatário jurídico e autorizar o
+  envio (o envio é ato de humano nomeado per DEC-G0-03; agentes redigem
+  material jurídico apenas como sugestão).
+unblock_request: >
+  "O pedido de parecer jurídico da OS-16 está redigido e pronto para envio
+  (docs/11-security-privacy-compliance/lgpd-os16/pedido-de-parecer.md), mas
+  o destinatário ainda não foi definido e o envio ainda não ocorreu. Este é o
+  item de maior prazo de espera de todo o pacote AMH e o único que nenhuma
+  equipe de engenharia pode acelerar — a data de início do prazo é a data do
+  envio, não a data desta minuta. Por favor nomeie o(a) advogado(a) ou banca
+  destinatária e autorize o envio."
+gate: G6, G8
+links: [BLK-0004]
+```
+
+**Fonte:** `docs/11-security-privacy-compliance/lgpd-os16/pedido-de-parecer.md`
+§3 (lista de verificação, item 1: "Destinatário definido... PENDENTE") e §4
+("O que este pedido não faz", item 6: "Não foi enviado"). Escrito por
+escriba de governança; nenhum mérito decidido aqui.
+
+## BLK-0015 — Contrato v1 — dono AMH não nomeado (critério 6 da OS-19 insatisfazível pela minuta) (pt-BR — conteúdo novo, 2026-08-15)
+
+```yaml
+id: BLK-0015
+title: Contrato v1 — dono AMH não nomeado (critério 6 da OS-19 insatisfazível pela minuta)
+status: OPEN
+what_is_blocked: >
+  Aceitação do contrato AMH×IntensiCare v1. A minuta do lado V2
+  (contract-manifest.draft.yaml) satisfaz cinco dos seis critérios de
+  aceitação da OS-19 (manifesto completo, sujeito = PSR, cláusula de
+  eventos + resolve, modelo de finalidade AQ-3, exclusões explícitas), mas o
+  critério 6 — dono AMH nomeado — não é satisfazível por uma minuta redigida
+  do lado V2: o campo producer.owner permanece UNASSIGNED — VALIDATION
+  REQUIRED até que a própria AMH nomeie seu titular produtor. É ponto de
+  negociação N-1 da memória de desenho, não coberto por nenhuma outra
+  decisão já tomada.
+who_must_act: rodaquino-OMNI (lado AMH) — nomear o dono AMH do contrato.
+unblock_request: >
+  "A minuta do contrato AMH×IntensiCare v1 satisfaz cinco dos seis critérios
+  de aceitação da OS-19; o sexto — dono AMH nomeado (producer.owner) — só
+  pode ser satisfeito pelo lado AMH, nunca pela minuta que o lado V2
+  redigiu. Por favor nomeie o titular AMH responsável pelo contrato."
+gate: G3
+links: []
+```
+
+**Fonte:** `docs/08-interoperability/amh-data/contract-v1/memoria-de-desenho.md`
+ponto N-1 (§8, "Dono AMH do contrato | AMH nomeia o dono produtor (critério
+6 da OS-19 — a minuta NÃO o satisfaz; campo UNASSIGNED)") e §9 (critério 6:
+"NÃO satisfazível pela minuta — só a AMH nomeia (N-1). Registrado, não
+contornado"). Escrito por escriba de governança; nenhum mérito decidido
+aqui.
+
 ## Index
 
 | ID | Title | Gate | Who must act | Status (2026-08-15) |
@@ -424,6 +578,17 @@ steward.
 | BLK-0009 | GitHub App installation access not revalidated | G0 | AUTH-DATA-PLATFORM + AUTH-SECURITY | RESOLVIDO POR RATIFICAÇÃO |
 | BLK-0010 | AMH license/ownership authority unestablished | G0 | AUTH-DATA-PLATFORM + AUTH-AMH-OWNER | RESOLVIDO POR CONCESSÃO ESCRITA |
 | BLK-0011 | Branch protection for `main` not configured | G0 | AUTH-SECURITY + repo admin | EXECUTADO |
+| BLK-0012 | Classe D — ausência de profile `MedicationAdministration` na IG AMH | G2 | AUTH-DATA-PLATFORM | OPEN |
+| BLK-0013 | Cobertura jurídica/ética de pesquisa com participantes humanos não coberta por `DEC-G0-03` | G1 | rodaquino-OMNI | OPEN |
+| BLK-0014 | OS-16 — pedido de parecer redigido, NÃO ENVIADO; destinatário jurídico não definido | G6, G8 | rodaquino-OMNI | OPEN |
+| BLK-0015 | Contrato v1 — dono AMH não nomeado (critério 6 da OS-19 insatisfazível pela minuta) | G3 | rodaquino-OMNI (lado AMH) | OPEN |
+
+**Nota do steward (2026-08-15, segunda integração, pt-BR — conteúdo novo):**
+`BLK-0012`..`BLK-0015` não são bloqueadores do Gate G0 — são bloqueadores de
+gates posteriores (G1/G2/G3/G6/G8) identificados pelos especialistas da onda
+de entrega do ciclo 1 e transcritos aqui por este escriba, sem decisão de
+mérito. Nenhum dos quatro estava presente na verificação anterior; nenhum
+`BLK-*` foi renumerado ou removido.
 
 **Veredito do Gate G0 em 2026-08-15 (pós-integração):** de onze bloqueadores,
 **nove foram resolvidos, reclassificados ou executados** em 2026-08-15 por

@@ -15,11 +15,24 @@ status_history:
       prompt §7.0/§7.3 and the Wave-1 AMH dossier. NO decision is recorded and none
       may be inferred. This ADR cannot advance past `proposed` until a human owner is
       named (Gate G0).
-date: 2026-08-14
-owner: UNASSIGNED — VALIDATION REQUIRED
+  - status: proposed
+    date: 2026-08-15
+    by: arquiteto de decisões de fronteira e modelo canônico
+    note: >
+      REVISÃO (sem mudança de status): incorpora o estado de 2026-08-15 — a ata de
+      adjudicação AQ-1..AQ-6 lida em disco, as ordens de serviço AMH (OS-17/18/19 como
+      cláusulas vinculantes do contrato v1) e as dependências que seguem abertas
+      (C-1 vitais, só `dev` existe, camada 4 sem evidência). A hipótese §7.0 é
+      desenvolvida como proposta encaminhada ao titular em §5.2. Corpo original em EN
+      preservado para auditabilidade do diff; conteúdo novo em pt-BR (DEC-G0-10).
+date: 2026-08-15
+owner: >
+  UNASSIGNED — VALIDATION REQUIRED (candidato factual: rodaquino-OMNI, que detém
+  AUTH-DATA-PLATFORM e a autoridade do lado AMH por DEC-G0-04; a confirmação como dono
+  deste ADR é ato do titular, não deste autor)
 approvers:
-  - UNASSIGNED — VALIDATION REQUIRED   # candidate role: AUTH-DATA-PLATFORM
-  - UNASSIGNED — VALIDATION REQUIRED   # candidate role: AUTH-AMH-OWNER (external, not yet reachable)
+  - UNASSIGNED — VALIDATION REQUIRED   # role: AUTH-DATA-PLATFORM — detido por rodaquino-OMNI (DEC-G0-04); aceitação pendente
+  - UNASSIGNED — VALIDATION REQUIRED   # role: AUTH-AMH-OWNER — detido por rodaquino-OMNI (DEC-G0-04, DEC-G0-08); aceitação pendente
   - UNASSIGNED — VALIDATION REQUIRED   # candidate role: AUTH-CLINSAFETY (safety-loop consequences)
   - UNASSIGNED — VALIDATION REQUIRED   # candidate role: AUTH-PRIVACY-LEGAL (controller/processor consequences)
 decision_deadline: UNSET — VALIDATION REQUIRED
@@ -54,17 +67,20 @@ links:
     - docs/08-interoperability/amh-data/contract-inventory.md
     - docs/08-interoperability/amh-data/open-questions-for-amh-owners.md
     - docs/08-interoperability/amh-data/claim-verification-matrix.md
+    - docs/08-interoperability/amh-data/identity-adjudication/adjudicacao-decisoes-2026-08-15.md
+    - docs/08-interoperability/amh-data/ordens-de-servico-amh-2026-08-15.md
 supersedes: null
 superseded_by: null
 provenance:
   source_repo: intensicare-V2
   path_or_url: docs/06-architecture/adrs/ADR-0001-amh-platform-boundary.md
-  commit_sha_or_version: cb35521 (repo HEAD at authoring; this file is uncommitted)
+  commit_sha_or_version: 0c36f03 (repo HEAD at 2026-08-15 revision; this revision is uncommitted)
   section_or_lines: >
     INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §7.0 (lines 355-367), §7.3 (lines 422-436),
-    §7.4, §7.5, §7.6, Gate G3 (lines 504-515), §9.1, §10 item 1
+    §7.4, §7.5, §7.6, Gate G3 (lines 504-515), §9.1, §10 item 1; ata IDN-ADJ-2026-08-15
+    §2, §4, §6; ordens de serviço AMH §6 (OS-17/18/19), §9 (o que segue aberto)
   date_collected: 2026-08-14
-  collector: candidate-architecture and ADR-program engineer (Wave 2)
+  collector: candidate-architecture and ADR-program engineer (Wave 2); revisão 2026-08-15 pelo arquiteto de decisões de fronteira e modelo canônico
   transformation: >
     reasoned-from — options and drivers derived from the prompt and from the Wave-1 AMH
     dossier. This ADR performed NO independent verification of any AMH artifact and made
@@ -82,6 +98,20 @@ provenance:
 > signals.** The starting hypothesis quoted in §2.3 is a *hypothesis to test*, supplied by
 > the orchestrator prompt — it is explicitly **not** a provisional decision and must not
 > be read as one.
+
+> **Adendo de revisão — 2026-08-15 (pt-BR).** Esta revisão incorpora o estado de
+> 2026-08-15 **sem alterar o status `proposed`**: (i) as restrições **DECIDED** de
+> AQ-3/AQ-4/AQ-5/AQ-6 passam a vincular *todas* as opções de fronteira — ver §2.4;
+> (ii) as ordens de serviço AMH tornam OS-17 (eventos de ciclo de vida), OS-18
+> (`resolve(ref, as_of)`) e OS-19 (pacote de contrato v1) cláusulas vinculantes do
+> contrato, com efeito direto no Gate G3; (iii) as dependências honestas permanecem
+> registradas: a contradição **C-1 (sinais vitais) segue aberta**, **apenas `dev`
+> existe** do lado AMH, e a **camada 4 (aptidão operacional) segue sem evidência**;
+> (iv) a hipótese §7.0 é desenvolvida como **proposta encaminhada ao titular** em §5.2 —
+> rotulada PROPOSAL, jamais decisão. **Política de idioma (DEC-G0-10):** o corpo EN do
+> ciclo 0 é preservado intacto para auditabilidade do diff; todo conteúdo novo desta
+> revisão está em pt-BR. A tradução retroativa do corpo permanece decisão em aberto do
+> titular (registrada no `adr-index.md`).
 
 ---
 
@@ -155,7 +185,11 @@ the error the dossier itself declines to repeat (`four-layer-dossier.md` §0).
 | E13 | SOURCE | V2 must exist in a new repository with independent history, namespace, secrets, environments, databases, pipeline and release identity; AMH and legacy are mounted read-only and never modified. | prompt §3 rules 1–2 | high |
 | E14 | SOURCE | "Never create two ungoverned clinical sources of truth. Define precedence, conflict, correction, replay, and reconciliation behavior." | prompt §7.3 lines 434–436 | high |
 | E15 | SOURCE | Nothing may be written to the AMH repository; creating an AMH×IntensiCare contract requires separate AMH-owner authority and review. That authority is now named (E12), but the prohibition on V2 writing to the AMH repository stands. | prompt §7.5; `compatibility-finding.md` §6; DEC-G0-08 | high |
-| E16 | SOURCE | **The identity/tenant/MPI uncertainty that clouded every boundary option has been adjudicated** (2026-08-15): MPI per tenant, governed cross-PJ index gated on a DPO/legal opinion, `identifier:mpiId` authoritative on the wire under a future IG 1.1.0, and a mandatory opaque `portable_subject_ref` at the boundary with V2 keying clinical facts by `(PSR, encounter)`. **This improves this ADR's evidence baseline without deciding it** — the boundary options are now evaluated against a known identity model rather than a six-way contradiction. Note that it also *adds* AMH-side dependencies (IG 1.1.0, PSR gates SP-1…SP-7, identity lifecycle events), reinforcing E11's critical-path finding. | [`ADR-0004`](./ADR-0004-identidade-paciente-encontro-mpi.md) §5.1; `g0-resolucoes-2026-08-15.md` DEC-G0-04 | medium — pending reconciliation against the adjudication record (ADR-0004 C2) |
+| E16 | SOURCE | **The identity/tenant/MPI uncertainty that clouded every boundary option has been adjudicated** (2026-08-15): MPI per tenant, governed cross-PJ index gated on a DPO/legal opinion, `identifier:mpiId` authoritative on the wire under a future IG 1.1.0, and a mandatory opaque `portable_subject_ref` at the boundary with V2 keying clinical facts by `(PSR, encounter)`. **This improves this ADR's evidence baseline without deciding it** — the boundary options are now evaluated against a known identity model rather than a six-way contradiction. Note that it also *adds* AMH-side dependencies (IG 1.1.0, PSR gates SP-1…SP-7, identity lifecycle events), reinforcing E11's critical-path finding. | [`ADR-0004`](./ADR-0004-identidade-paciente-encontro-mpi.md) §5.1; `g0-resolucoes-2026-08-15.md` DEC-G0-04 | high — reconciliação item a item executada em 2026-08-15 contra a ata lida em disco (ADR-0004 §5.5) |
+| E17 | OBSERVED (esta revisão, pt-BR) | A **ata de adjudicação existe em disco e foi lida integralmente** por este revisor em 2026-08-15 (`doc_id: IDN-ADJ-2026-08-15`). Ela registra as seis decisões do titular com metadados DECIDED, a disposição consolidada dos artefatos AMH (§3), o alvo de pinagem **IG 1.1.0 — decidido, AINDA NÃO PUBLICADO** (§4) e, em §6, **o que as decisões NÃO desbloqueiam**: `Observation` segue não consumível (três pernas abertas), sinais vitais seguem indisponíveis, Gate G3 segue inalcançável. | `identity-adjudication/adjudicacao-decisoes-2026-08-15.md` §2–§6 | alta |
+| E18 | SOURCE (pt-BR) | As ordens de serviço AMH derivadas das resoluções tornam **OS-17 (eventos de ciclo de vida de identidade) e OS-18 (`resolve(ref, as_of)`) cláusulas OBRIGATÓRIAS do contrato v1** — *"sem OS-17+OS-18, G3 NÃO PASSA"* — e **OS-19** define o pacote de contrato v1 (campo sujeito = PSR; exclusões explícitas mínimas: sinais vitais e `Observation` laboratorial enquanto não houver evidência aceita). | `ordens-de-servico-amh-2026-08-15.md` §2 (ONDA D), §6 (OS-17/18/19) | alta |
+| E19 | SOURCE (pt-BR) | **O que segue aberto após as decisões** (ordens §9): a contradição **C-1 (sinais vitais) permanece aberta** — *"mesmo com todas as 21 ordens executadas, a V2 continua sem sinais vitais da AMH"*; **apenas `dev` está provisionado** (Q6) e nenhuma ordem cria ambiente; a **camada 4 permanece intocada** — nenhuma ordem mede latência, completude, ordenação, disponibilidade, replay ou recuperação. O achado permanece `candidato a integração`. | `ordens-de-servico-amh-2026-08-15.md` §9.1–§9.3, §10 | alta |
+| E20 | SOURCE (pt-BR) | **Alvo de pinagem decidido, artefato inexistente:** a V2 pina a **IG 1.1.0**, que **ainda não foi publicada** — *"a V2 não pode pinar o que não existe"*. O commit `0a07a6f1` permanece base de evidência histórica, não alvo de pin. Consequência de calendário registrada pela própria ata. | ata §4 | alta |
 
 ### 2.2 Assumptions
 
@@ -191,6 +225,26 @@ ADRs."*
 **Standing report until Gate G3 (SOURCE, prompt §7.3/§7.5):** the relationship is
 `integration candidate` and clinical evaluation remains **non-actioning**. Accepting any
 option below does not change that.
+
+### 2.4 Restrições DECIDED de 2026-08-15 que vinculam todas as opções (adendo pt-BR)
+
+As decisões abaixo foram tomadas por **rodaquino-OMNI em 2026-08-15** (autoridade
+verificada em DEC-G0-04; teor na ata `IDN-ADJ-2026-08-15` §2). Este ADR **não as
+re-litiga**: elas entram aqui como **restrições de contorno** que qualquer opção de
+fronteira — A, B, C, D ou Z — precisa satisfazer. Nenhuma delas decide a fronteira.
+
+| # | Restrição (DECIDED, 2026-08-15, rodaquino-OMNI) | Fonte | Efeito sobre as opções deste ADR |
+|---|---|---|---|
+| R1 | **PSR obrigatório na fronteira** (AQ-4, Opção A plena): o `portable_subject_ref` (`amh:psr:v1:<uuidv4>`) é o identificador de fronteira do contrato v1; nativo na V2 desde o dia um; sintético em dev; **nenhum `mpi_id` cru, CPF ou identificador de fonte atravessa a fronteira**; fatos clínicos chaveados por `(PSR, encontro)`. | ata §2 AQ-4 | Toda opção que mova dados clínicos através da fronteira usa PSR. Nenhuma opção pode propor chave interna paralela (IDP-02 superada — ADR-0004 D-07). |
+| R2 | **Eventos de ciclo de vida de identidade + `resolve(ref, as_of)` obrigatórios no contrato v1** (AQ-5, vinculante): entrega at-least-once, ordenação por sujeito; *"Sem eles, replay afetado por identidade NÃO é certificável e o Gate G3 NÃO passa. Não se admite janela-teto como paliativo."* | ata §2 AQ-5; ordens OS-17/OS-18 | Nenhuma opção passa no G3 sem as duas capacidades. A opção B (módulo interno) não as dispensa: co-locação não substitui contrato de replay. |
+| R3 | **12 tenants pós-ADR-041, sem bypass cross-tenant** (AQ-6): `cross_tenant_authorized` é deriva documental — *nenhum bypass existirá*; testes negativos da V2 **afirmam a impossibilidade**; enumeração autoritativa pinada a partir da IG 1.1.0. | ata §2 AQ-6 | Fixa o grão AMH que toda opção consome (insumo do ADR-0003) e o modelo de ameaça da fronteira (D2). |
+| R4 | **Base legal do laço clínico = tutela da saúde** (LGPD Art. 11, II, "f"); sem portão de consentimento no laço; usos secundários **bloqueados**; ratificação por advogados antes de qualquer dado real (DEC-G0-03). | ata §2 AQ-3 | Restringe D7 em toda opção: nenhuma lane pode condicionar o laço clínico a consentimento, e nenhuma opção habilita usos secundários. |
+
+**Dependências honestas que as restrições NÃO removem (OBSERVED/SOURCE, E17–E20):**
+a IG 1.1.0 é alvo decidido **não publicado**; os portões SP-1…SP-7 do PSR seguem com
+parecer DPO/jurídico pendente (OS-16, única dependência externa); **C-1 (vitais) segue
+aberta**; **só `dev` existe**; **camada 4 sem evidência**. As restrições mudaram o
+bloqueio de *indefinição* para *execução* — não o removeram (ordens §1.1, §10).
 
 ---
 
@@ -471,17 +525,44 @@ it would be the error.
 | C3 | Gate G3 **Layer 2** (deployed capability): a V2-reachable AMH environment, credentials, network path and designated tenant scope. | AMH owners + provisioning + budget | Discovery against a named environment; authorized reachable interface. | **OPEN** — no environment access; only `dev` provisioned (E7) |
 | C4 | Gate G3 **Layer 3** (populated data): representative coverage, non-empty resources, measured null/invalid distributions for every input the approved portfolio requires. | AMH-data compatibility architect (measurement) | Pathway-to-source eligibility matrix filled with measurements, not schema presence. | **OPEN** — zero OBSERVED Layer-3 entries (E2) |
 | C5 | Gate G3 **Layer 4** (operational fitness): measured end-to-end latency, completeness, ordering, correction, availability, replay and recovery. | Platform reliability + AMH owners | Measured percentiles against a G1-validated need. | **OPEN** — nothing measured (E2, E6) |
-| C6 | Contradictions C-1 (vital signs), C-2 (authentication), C-3 (manifest status), C-4 (Observation shape) resolved by AMH owners. | `AUTH-AMH-OWNER` | Written resolution per contradiction. | **OPEN** (E5, E9, E4) |
-| C7 | A production-like environment exists in which conformance tests can pass (Gate G3 explicitly requires this). | AMH budget decision | The environment exists and is reachable. | **OPEN — currently unsatisfiable by anyone** (E7) |
+| C6 | Contradictions C-1 (vital signs), C-2 (authentication), C-3 (manifest status), C-4 (Observation shape) resolved by AMH owners. | `AUTH-AMH-OWNER` | Written resolution per contradiction. | **PARCIALMENTE ABERTA (2026-08-15)** — as resoluções AQ-1..AQ-6 e as ordens de serviço dão direção decidida a C-2/C-3/C-4, cujo **fechamento depende de execução AMH e verificação** (OS-01..OS-09, OS-20); **C-1 permanece integralmente aberta — nenhuma decisão a resolve** (E19; ordens §9.1) |
+| C7 | A production-like environment exists in which conformance tests can pass (Gate G3 explicitly requires this). | AMH budget decision | The environment exists and is reachable. | **OPEN — currently unsatisfiable by anyone** (E7; reconfirmado 2026-08-15: nenhuma ordem de serviço cria ambiente — ordens §9.2) |
 | C8 | The approved clinical pathway portfolio (Gate G2) is known, so the boundary can be evaluated against the inputs actually required. | `AUTH-CLINSAFETY` + `AUTH-PRODUCT` | Gate G2 record. | **OPEN** |
 | C9 | Validated user/safety latency needs exist (Gate G1), so D1 has a target rather than a guess. | `AUTH-INTENDED-USE` + `AUTH-CLINSAFETY` | Gate G1 record; quality-attribute targets replaced from `VALIDATION REQUIRED`. | **OPEN** |
 | C10 | If option (b) is under consideration: an explicit recorded exception to prompt §3 rule 1 (independent repository, environments, databases, pipeline, release identity), granted by the authority that owns that rule. | Orchestrator authority | The recorded exception, or the option's removal. | **OPEN — conditional** |
-| C11 | Privacy/legal determination of the controller/processor posture under the candidate boundary (A6). | `AUTH-PRIVACY-LEGAL` | Recorded legal determination; prompt §13 forbids asserting compliance without one. | **OPEN** |
-| C12 | An AMH×IntensiCare contract package is authored, owned, approved and published by AMH, and pinned by V2 — for whichever option requires a contract. | `AUTH-AMH-OWNER` + AMH contract-publication steward | Published manifest with digests, fixtures, approvals; V2-side lock file. | **OPEN** (E10, E15) |
+| C11 | Privacy/legal determination of the controller/processor posture under the candidate boundary (A6). | `AUTH-PRIVACY-LEGAL` | Recorded legal determination; prompt §13 forbids asserting compliance without one. | **OPEN** (reforçada por AQ-3: a base legal decidida exige ratificação por advogados antes de dado real — OS-16) |
+| C12 | An AMH×IntensiCare contract package is authored, owned, approved and published by AMH, and pinned by V2 — for whichever option requires a contract. | `AUTH-AMH-OWNER` + AMH contract-publication steward | Published manifest with digests, fixtures, approvals; V2-side lock file. | **OPEN — com cláusulas decididas (2026-08-15)**: campo sujeito = PSR (R1), eventos + `resolve(ref, as_of)` obrigatórios (R2), modelo de finalidade AQ-3 (R4), exclusões mínimas vitais/`Observation` (OS-19). O pacote em si **não existe**; a IG 1.1.0 a pinar **não foi publicada** (E20) |
 
 **Six of these twelve conditions are AMH-side** (C1, C3, C6, C7, C12, and partly C4),
 consistent with `compatibility-finding.md` §5's finding that the critical path runs
 primarily through AMH.
+
+### 5.2 Hipótese §7.0 desenvolvida como proposta encaminhada ao titular (adendo pt-BR, 2026-08-15)
+
+**PROPOSAL — não é decisão, não é preferência do programa, e a seção §5 acima permanece
+integralmente válida: NENHUMA DECISÃO ESTÁ REGISTRADA.** O prompt §7.0 fornece uma
+hipótese de partida e manda *"ratificá-la ou rejeitá-la através de evidência e ADRs"*.
+Com as restrições DECIDED de §2.4 e a evidência E16–E20, este revisor **desenvolve a
+hipótese na forma de uma proposta** para que o titular tenha um objeto concreto a
+ratificar, emendar ou rejeitar — cláusula a cláusula:
+
+| # | Cláusula proposta (PROPOSAL) | Mapeamento nas opções §4 | Base |
+|---|---|---|---|
+| P1 | A V2 consome identidade/contexto governados da AMH **exclusivamente** através de camada anticorrupção versionada, com o PSR como identificador de fronteira (R1) e validação sobre `identifier:mpiId` pinado na IG 1.1.0. | Núcleo da Opção A; compatível com D-3 | §7.0 hipótese 1; AQ-2/AQ-4; §7.6 |
+| P2 | A V2 é **dona do estado operacional crítico de segurança**: armazenamento operacional, registros de avaliação, alertas/itens de trabalho, auditoria e replay determinístico. | Opção A / D-3; exclui a Opção B sem exceção registrada à regra §3-1 | §7.0 hipótese 2; DOM-0003, DOM-0006 |
+| P3 | Saídas Gold/analíticas da AMH servem **reconciliação, backfill, desfechos, vigilância de qualidade e analytics — nunca o laço vivo de segurança**. Precedência, conflito, correção e replay entre lanes são matéria do ADR-0006. | Metade analítica da Opção C, sem exigir hoje a lane NRT | §7.0 hipótese 3; E6; E14 |
+| P4 | Uma **lane clínica durável AMH×IntensiCare** é desenhada e publicada **se e somente se** o portfólio aprovado (G2) exigir frescor ou observações que os contratos atuais não fornecem — na forma da Opção D-3 (começar como A, com opção contratada sobre C), preservando reversibilidade (D5) enquanto as condições externas (E11) resolvem. | D-3 explícita | §7.0 hipótese 4; A2/A3 |
+| P5 | Nenhuma via clínica torna-se acionável antes de G2 + G3 (H5) — restrição já vinculante, restatada para que a proposta não seja lida como atalho. | Todas | §7.0 hipótese 5 |
+
+**O que esta proposta NÃO faz:** não escolhe transporte (ADR-0013/§7.5), não fixa grão
+interno de tenant (ADR-0003), não declara compatibilidade (G3), não dispensa nenhuma das
+doze condições de §5.1 — em particular C7 (ambiente production-like inexistente) e C6
+(C-1 aberta). **Risco honesto da proposta, registrado:** a variante D-3 carrega o risco,
+já nomeado em §4, de tornar-se A permanentemente enquanto descrita como C — o gatilho T5
+(necessidade de latência validada no G1) é o teste objetivo que decide se a lane NRT é
+necessária. **Quem decide:** exclusivamente o titular (`AUTH-DATA-PLATFORM` +
+`AUTH-AMH-OWNER`, ambos detidos por rodaquino-OMNI via DEC-G0-04), e a aceitação plena
+continua condicionada às condições de §5.1.
 
 ---
 
@@ -559,7 +640,9 @@ option (a); reversibility is one driver among nine, and D1/D6 may legitimately o
 | T5 | Gate G1 establishes a validated latency need. | Gate G1 record | `AUTH-CLINSAFETY` | D1 gains a target; option (c)'s necessity becomes testable (A3) |
 | T6 | Gate G2 approves a portfolio whose mandatory inputs AMH cannot supply. | Gate G2 record | `AUTH-PRODUCT` | Option D-1 moves from enumerated to required-to-analyse |
 | T7 | Measured reconciliation divergence between operational and analytical lanes exceeds the (not yet set) tolerance. | QAS-0010 | `AUTH-DATA-PLATFORM` | Re-open ADR-0006 and this ADR |
-| T8 | An AMH owner is named and reachable. | Governance register | Orchestrator | C1 becomes actionable; this ADR can move toward `under-review` |
+| T8 | An AMH owner is named and reachable. | Governance register | Orchestrator | **DISPARADO 2026-08-15** — DEC-G0-04 (E12); C1 tornou-se acionável; a revisão desta data responde a este gatilho |
+| T9 | *(novo, 2026-08-15)* Publicação da IG 1.1.0 com digest citável (OS-05). | Detecção de deriva de contrato (QAS-0013); rota de notificação AMH | `AUTH-DATA-PLATFORM` | Pinar o pacote; reavaliar C12; verificar enumeração de 12 tenants (R3) |
+| T10 | *(novo, 2026-08-15)* Contra-assinatura da ata pelo titular ou alocação de IDs `GDEC-nnnn` para AQ-1..AQ-6 (pendência 1 da ata §8). | Registro de governança (`decision-register.md`) | Orquestrador + steward de governança | Eleva a cadeia de custódia das restrições de §2.4 de "ata de escriba" para registro ratificado — pré-condição de forma do G3 (ordens §0.2) |
 
 ### 8.3 Kill switch / rollback strategy
 
@@ -625,3 +708,10 @@ quality-attribute scenarios; **no numeric target invented**; all eight cross-cut
 present; reversibility, triggers, and kill/rollback present; validation methods carry
 honest placeholders; supersession present; **no technology selected**; no approval
 fabricated; `adr-index.md` updated in the same change.
+
+**Autoverificação da revisão de 2026-08-15 (pt-BR):** o status permanece `proposed` e a
+seção 5 permanece "NO DECISION IS RECORDED" — §5.2 é PROPOSAL encaminhada, não decisão;
+as restrições de §2.4 são DECIDED **do titular, citadas com fonte e data**, jamais
+auto-aplicadas; nenhum dono foi nomeado por este revisor (candidaturas citam DEC-G0-04);
+nenhum ID de hazard/SAF/QAS foi inventado; corpo EN preservado, conteúdo novo em pt-BR
+(DEC-G0-10).

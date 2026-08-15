@@ -748,3 +748,47 @@ acceptance:
     Until accepted, the standing report is `integration candidate` and clinical
     evaluation remains non-actioning (prompt §7.5). No V2 component should read
     this file.
+
+# =============================================================================
+# ENTRADA ACRESCENTADA 2026-08-15 — MINUTA DO CONTRATO v1 (lado V2)
+#
+# Acrescentada pelo steward de publicacao de contrato AMH×IntensiCare.
+# Nenhuma entrada anterior deste arquivo foi alterada. Esta entrada registra a
+# EXISTENCIA DA MINUTA V2 do manifesto (OS-19) — nao um contrato, nao um pin.
+# A minuta e insumo de negociacao; o artefato publicavel e AMH-owned e ainda
+# NAO existe no repositorio AMH.
+# =============================================================================
+contract_v1_draft:
+  status: VALIDATION_REQUIRED
+  pinned: false
+  digest: null
+  digest_nota: >-
+    O digest so existira sobre o manifesto PUBLICADO pela AMH; a minuta V2 nao
+    se auto-pina (mesma regra do manifest_sha256 no padrao Maezo).
+  minuta_v2:
+    path: docs/08-interoperability/amh-data/contract-v1/contract-manifest.draft.yaml
+    prepared_at: "2026-08-15"
+    prepared_by: steward de publicacao de contrato AMH×IntensiCare
+    consumer_commit_at_drafting: fc8c98f18f8553253627bfb0f6493d782a43c93d
+    companion_docs:
+      - docs/08-interoperability/amh-data/contract-v1/memoria-de-desenho.md
+      - docs/08-interoperability/amh-data/contract-v1/eventos-ciclo-de-vida-identidade.md
+      - docs/08-interoperability/amh-data/contract-v1/fixtures/README.md
+    fixtures: 6 validas + 4 invalidas, 100% sinteticas (marcador SYNTH)
+  artefato_amh_alvo:
+    caminho_proposto: schemas/contracts/intensicare/v1/contract-manifest.yaml
+    propriedade: AMH-owned — a V2 propoe, nao coloca (XRD-04)
+    existe: false
+    depende_de: OS-19 (e, para publicacao pinavel, OS-05 + ONDA C + OS-17 + OS-18)
+  clausulas_decididas_incorporadas:
+    - "AQ-4 = A plena — sujeito = PSR amh:psr:v1, sempre qualificado por encontro"
+    - "AQ-5 = A vinculante — eventos de ciclo de vida + resolve(ref, as_of); sem eles G3 nao passa"
+    - "AQ-3 = C — tutela da saude no loop clinico; usos secundarios bloqueados"
+  divergencia_registrada: >-
+    Ata IDN-ADJ-2026-08-15 §2 (AQ-5) lista cinco tipos de evento; OS-17 e o
+    bloco decisions deste arquivo listam seis (inclui reassignment). A minuta
+    segue os seis da OS-17; confirmacao do titular registrada como ponto de
+    negociacao N-8 (memoria-de-desenho.md §8).
+  efeito_no_achado: >-
+    NENHUM sobre compatibilidade: permanece candidato a integracao. A minuta
+    especifica; nao evidencia. Este lock continua DRAFT — NOT ACCEPTED.

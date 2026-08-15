@@ -1,0 +1,481 @@
+# =============================================================================
+# contract-manifest.draft.yaml — MINUTA V2 do manifesto do contrato
+# AMH×IntensiCare v1
+# =============================================================================
+#
+#   status: MINUTA (DRAFT) — PROPOSAL — NAO ACEITO, NAO PUBLICADO, NAO PINADO
+#
+# O QUE ESTE ARQUIVO E
+#   A proposta COMPLETA, do lado V2, do conteudo do manifesto de contrato que a
+#   AMH criara no repositorio dela (OS-19; caminho proposto:
+#   schemas/contracts/intensicare/v1/contract-manifest.yaml). O contrato e
+#   AMH-owned (XRD-04): a V2 PROPOE, nao coloca. Este arquivo e a minuta para
+#   negociacao — nada aqui vincula nenhuma das partes.
+#
+# O QUE ESTE ARQUIVO NAO E
+#   - NAO e um contrato aceito. Aceitacao exige donos AMH e V2 nomeados; o
+#     steward que redigiu esta minuta NAO aceita contrato.
+#   - NAO e evidencia de compatibilidade. O achado permanece: candidato a
+#     integracao; compatibilidade nao demonstrada para avaliacao de UTI
+#     acionavel (compatibility-finding.md).
+#   - NAO escolhe transporte. Nenhum transporte e implicito (ver secao
+#     `transport` abaixo e memoria-de-desenho.md §7).
+#   - NAO pina nada: todo digest esta null; pinned: false em tudo.
+#
+# PADRAO SEGUIDO
+#   Maezo-equivalente: o PADRAO de publicacao do manifesto Maezo
+#   (schemas/contracts/maezo/v1/contract-manifest.yaml@0a07a6f1, OBSERVADO em
+#   2026-08-15 via API de conteudo, somente leitura) e seguido em estrutura e
+#   rigor. Topicos, payloads e o envelope congelado de 28 campos do Maezo NAO
+#   sao copiados (proibicao do §7.5 do prompt; envelope menor e rigorosamente
+#   governado — ver memoria-de-desenho.md §5 para o racional da minimizacao).
+#
+# ROTULOS EPISTEMICOS: DECIDIDO refere-se exclusivamente a decisoes de
+# rodaquino-OMNI em 2026-08-15, lavradas na ata
+# identity-adjudication/adjudicacao-decisoes-2026-08-15.md (IDN-ADJ-2026-08-15).
+# Tudo o mais e PROPOSAL, OBSERVADO ou VALIDATION_REQUIRED, conforme marcado.
+#
+# Sem PHI, credenciais, tokens, endpoints ou segredos. Dados de exemplo 100%
+# sinteticos (fixtures/). Idioma pt-BR (DEC-G0-10).
+# =============================================================================
+
+manifest_version: 0.1.0-draft
+status: DRAFT                          # ciclo de vida: draft -> proposed -> published
+lifecycle_status: draft
+contract_name: amh-intensicare-boundary
+contract_semver_alvo: 1.0.0            # PROPOSAL — semver do contrato quando publicado
+canonical_schema_version: null         # sera fixada na publicacao pela AMH
+
+# Digest do proprio manifesto: como no padrao Maezo, nao pode viver dentro
+# dele — e calculado sobre o arquivo PUBLICADO e registrado no pin imutavel do
+# consumidor (contracts.lock da V2). Nesta minuta: null por definicao.
+manifest_sha256: null
+manifest_sha256_status: VALIDATION_REQUIRED — calculado somente na publicacao AMH
+
+language_policy: pt-BR (DEC-G0-10)
+
+authority_basis:
+  - "AQ-3 = C — DECIDIDO por rodaquino-OMNI em 2026-08-15 (ata IDN-ADJ-2026-08-15 §2): tutela da saude no loop clinico; usos secundarios bloqueados"
+  - "AQ-4 = A plena — DECIDIDO 2026-08-15 (mesma ata): PSR obrigatorio como identificador de fronteira, sempre qualificado por encontro"
+  - "AQ-5 = A vinculante — DECIDIDO 2026-08-15 (mesma ata): eventos de ciclo de vida de identidade + resolve(ref, as_of) obrigatorios; sem eles o G3 nao passa"
+  - "OS-19 — ordens-de-servico-amh-2026-08-15.md §6 (criterios de aceitacao do manifesto)"
+  - "INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §7.5 — conteudo exigido do pacote de contrato e Gate G3"
+
+# -----------------------------------------------------------------------------
+# PRODUTOR — AMH
+# -----------------------------------------------------------------------------
+producer:
+  name: AMH Data Platform
+  repository: Omni-Saude/amh-data-platform
+  # Campo presente conforme OS-19 criterio 1; valor so existira quando a AMH
+  # publicar o pacote a partir de um commit dela.
+  amh_commit_sha: VALIDATION_REQUIRED  # ate publicacao pela AMH
+  amh_commit_sha_nota: >-
+    O commit de EVIDENCIA desta minuta e 0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116
+    (snapshot pinado do dossie) — ele NAO e o commit produtor do contrato, que
+    ainda nao existe.
+  owner: UNASSIGNED — VALIDATION REQUIRED   # dono AMH: criterio 6 da OS-19; ponto de negociacao N-1
+  proposed_manifest_path: schemas/contracts/intensicare/v1/contract-manifest.yaml
+  proposed_manifest_path_status: PROPOSAL — caminho no repo AMH e ponto de negociacao N-2
+
+# -----------------------------------------------------------------------------
+# CONSUMIDOR — IntensiCare V2
+# -----------------------------------------------------------------------------
+consumer:
+  name: IntensiCare V2
+  repository: Omni-Saude/intensicare-V2
+  branch_at_drafting: cycle-1/clinical-content            # OBSERVADO localmente
+  consumer_commit_at_drafting: fc8c98f18f8553253627bfb0f6493d782a43c93d  # OBSERVADO (git rev-parse HEAD, 2026-08-15)
+  consumer_commit_nota: >-
+    Commit da V2 no qual esta minuta foi redigida. O commit consumidor do
+    contrato ACEITO sera o commit da V2 que pinar o manifesto publicado.
+  owner: UNASSIGNED — VALIDATION REQUIRED
+  pin_location_alvo: docs/08-interoperability/amh-data/contracts.lock.draft.yaml
+  pin_location_nota: >-
+    O lock draft da V2 ja carrega a entrada contract_v1_draft (pinned: false,
+    digest: null). Um lock ACEITO e ato separado e gateado.
+
+# -----------------------------------------------------------------------------
+# PAPEIS DE GOVERNANCA (OS-19 criterio 1)
+# -----------------------------------------------------------------------------
+governance_roles:
+  clinical_data_steward: UNASSIGNED — VALIDATION REQUIRED
+  producer_owner: UNASSIGNED — VALIDATION REQUIRED       # espelha producer.owner
+  consumer_owner: UNASSIGNED — VALIDATION REQUIRED       # espelha consumer.owner
+  nota: >-
+    Nenhum agente nomeia donos (decisao proibida ao steward desta minuta).
+    A aceitacao do contrato exige os tres papeis nomeados por humanos.
+
+# -----------------------------------------------------------------------------
+# DEPENDENCIA DE PACOTE FHIR — pinagem por digest (decisao do titular)
+# -----------------------------------------------------------------------------
+ig_dependency:
+  package_id: br.com.americashealth.fhir
+  package_version_alvo: 1.1.0          # DECIDIDO (AQ-2): a V2 pina a 1.1.0, nao a 1.0.0
+  package_version_observada_no_snapshot: 1.0.0   # OBSERVADO @0a07a6f1 — NAO e o alvo
+  package_digest: null
+  package_digest_status: VALIDATION_REQUIRED — IG 1.1.0 ainda nao publicada (OS-05)
+  pinned: false
+  nota: >-
+    A pinagem e por DIGEST criptografico do artefato publicado (nao apenas
+    blob SHAs por arquivo), no padrao ja exercido pelo manifesto Maezo.
+    Enquanto a 1.1.0 nao existir com digest citavel, este contrato nao pode
+    ser publicado nem pinado.
+
+# -----------------------------------------------------------------------------
+# CLAUSULA 1 — SUJEITO DO CONTRATO (AQ-4, DECIDIDO 2026-08-15)
+# -----------------------------------------------------------------------------
+subject:
+  identifier: portable_subject_ref
+  formato: "amh:psr:v1:<uuidv4>"       # AMH-020b §1.1, via ata IDN-ADJ-2026-08-15
+  obrigatorio: true                    # DECIDIDO — AQ-4 = A plena
+  escopo_de_estabilidade: "{amh_tenant, legal_entity}"
+  qualificacao_de_encontro: >-
+    DECIDIDO (AQ-4): a ref e independente de encontro, porem SEMPRE
+    transmitida qualificada por encontro. A V2 chaveia fatos clinicos pelo
+    par (PSR, encontro). Nenhuma mensagem deste contrato transporta PSR sem
+    qualificacao de encontro, exceto os eventos de ciclo de vida de
+    identidade e a operacao resolve, que operam sobre a ref em si.
+  proibicoes:
+    - "Nenhum mpi_id cru atravessa a fronteira (AQ-4; XRD-05)"
+    - "Nenhum CPF ou identificador de fonte atravessa a fronteira"
+    - "PSR nunca e re-mintado e nunca morre (AMH-020b, via ata); erasure marca retired, nunca deleta"
+  ambiente_de_desenvolvimento: >-
+    PSRs SINTETICOS em dev (prefixo de exemplo nesta minuta:
+    "amh:psr:v1:SYNTH-..."), mintados pela AMH em producao. DEC-G0-03: apenas
+    dado sintetico ate ratificacao juridica.
+
+# -----------------------------------------------------------------------------
+# CLAUSULA 2 — CICLO DE VIDA DE IDENTIDADE (AQ-5, DECIDIDO, VINCULANTE)
+# Sem esta clausula o Gate G3 NAO passa. Nao se admite janela-teto.
+# Especificacao completa: eventos-ciclo-de-vida-identidade.md (mesma pasta).
+# -----------------------------------------------------------------------------
+identity_lifecycle:
+  obrigatorio: true                    # DECIDIDO — AQ-5 = A vinculante
+  spec: docs/08-interoperability/amh-data/contract-v1/eventos-ciclo-de-vida-identidade.md
+  event_types:                         # seis tipos, conforme OS-17 criterio 1
+    - identity.alias.v1
+    - identity.merge.v1
+    - identity.unmerge.v1              # unmerge/split
+    - identity.restore.v1
+    - identity.reassignment.v1
+    - identity.erasure.v1
+  event_types_nota_divergencia: >-
+    OBSERVADO: a ata IDN-ADJ-2026-08-15 §2 (AQ-5) lista literalmente cinco
+    tipos (alias, merge, unmerge, restore, erasure); a OS-17 e o bloco de
+    decisoes do contracts.lock.draft.yaml listam seis, incluindo
+    reassignment. Esta minuta segue os SEIS da OS-17 (derivacao de
+    engenharia mais especifica); a divergencia esta registrada como ponto
+    em aberto N-8 (memoria-de-desenho.md §8) para confirmacao do titular.
+    A ata prevalece quanto ao teor: se o titular confirmar cinco,
+    reassignment sai por emenda simples.
+  entrega: at-least-once               # DECIDIDO na ata (AQ-5): "entrega at-least-once"
+  ordenacao: por sujeito               # DECIDIDO na ata (AQ-5): "ordenacao por sujeito"
+  idempotencia: >-
+    Toda mensagem carrega chave de idempotencia; o consumidor deduplica por
+    ela. Redelivery nao pode alterar o estado reconstruido.
+  latencia: VALIDATION_REQUIRED        # OS-17 criterio 3: declarada E medida pela AMH — nao inventar
+  replay: >-
+    Requisito vinculante: um consumidor que processe os eventos desde o
+    inicio reconstroi a visao historica correta (OS-17 criterio 5). Vinculo
+    com DOM-0002 (cadeia de proveniencia imutavel) e DOM-0003 (avaliacao
+    deterministica e replayavel).
+  resolve_operation:
+    nome: resolve(ref, as_of)
+    obrigatorio: true                  # DECIDIDO — AQ-5; OS-18
+    semantica: >-
+      Resolucao PONTO-NO-TEMPO: responde "a que esta ref se referia naquele
+      instante", nao apenas "a que se refere agora". Devolve tambem a cadeia
+      de alias aplicavel. as_of anterior ao minting e ref retired tem
+      semantica declarada; ref desconhecida ou as_of fora de janela NEGA
+      (fail-closed) — nunca adivinha. Especificacao completa no doc da
+      clausula (§4).
+    latencia_e_limites: VALIDATION_REQUIRED   # OS-18 criterio 5 — declarados pela AMH, nao inventados
+
+# -----------------------------------------------------------------------------
+# CLAUSULA 3 — FINALIDADE E BASE LEGAL (AQ-3, DECIDIDO 2026-08-15)
+# -----------------------------------------------------------------------------
+purpose_model:
+  base_legal_loop_clinico: >-
+    DECIDIDO (AQ-3 = C): tutela da saude — LGPD Art. 11, II, alinea "f" —
+    em procedimento realizado por profissionais/servicos de saude, para o
+    laco clinico single-tenant em contexto de tratamento.
+  gate_do_loop_clinico: >-
+    O loop clinico NAO tem gate de consentimento. O gate exigivel e
+    proposito-de-uso + autorizacao de contexto profissional.
+  purpose_of_use:
+    obrigatorio: true
+    valores_permitidos_v1: [tratamento]
+    nota: >-
+      Vocabulario deliberadamente minimo: o contrato v1 cobre APENAS o loop
+      clinico. Qualquer outro proposito e rejeitado fail-closed.
+  usos_secundarios: >-
+    BLOQUEADOS (AQ-3): pesquisa, analytics e compartilhamento permanecem fora
+    deste contrato ate existir infraestrutura real de consentimento
+    (mpi.consent_log tem zero produtores — ADR-045, via ata). OS-21 diferida.
+  consent_decision_ref:
+    presente_no_envelope: false        # PROPOSAL — ver justificativa
+    justificativa: >-
+      Sob AQ-3 = C nao ha decisao de consentimento no loop clinico; carregar o
+      campo sugeriria um gate que nao existe (risco que a OS-13 criterio 3
+      manda evitar). A forma final e objeto da OS-13 (SP-4), a ratificar com o
+      parecer juridico da OS-16. Se a AMH preferir campo presente com marcador
+      de base legal, e mudanca compativel — ponto de negociacao N-6.
+    invariante: >-
+      Jamais deriva de ie_perm_sms_email ou de qualquer permissao de contato
+      (AQ-3; verificavel em teste).
+  ratificacao_juridica: >-
+    VALIDATION_REQUIRED — a qualificacao da base legal exige ratificacao por
+    advogados brasileiros ANTES de qualquer dado real, operacao sombra ou
+    piloto (DEC-G0-03; OS-16; gatilhos G6/G8). Ate la: dados sinteticos
+    exclusivamente.
+
+# -----------------------------------------------------------------------------
+# CLASSIFICACAO DE SEGURANCA (OS-19 criterio 1)
+# -----------------------------------------------------------------------------
+security_classification:
+  regra_geral: >-
+    Nenhum artefato deste contrato contem PHI/PII: referencias opacas apenas.
+    Nenhum identificador de fonte (mpi_id cru, CPF, prontuario) em nenhuma
+    mensagem, fixture ou log.
+  por_artefato:
+    contract-manifest: "sem PHI; refs opacas; sem endpoint, credencial ou segredo"
+    eventos-ciclo-de-vida: "sem PHI; refs opacas antiga/nova; tempos e chaves tecnicas apenas"
+    resolve-operation: "sem PHI; entrada ref opaca + as_of; saida refs opacas + cadeia de alias"
+    fixtures: "100% sinteticas; PSR com marcador SYNTH; nenhum identificador real"
+  dados_reais: "PROIBIDOS nesta fase — DEC-G0-03; desbloqueio somente via OS-16 + gates G6/G8"
+
+# -----------------------------------------------------------------------------
+# REGISTRO DE APROVACAO — estrutura pronta, VAZIO por construcao
+# (OS-19 criterio 1; padrao Maezo de 4 papeis seguido SEM copiar nomes)
+# -----------------------------------------------------------------------------
+approval_record: []
+approval_record_estrutura_requerida:
+  # Cada entrada, quando houver, tera esta forma (padrao Maezo-equivalente):
+  #   - role: <papel>            # ver papeis minimos abaixo
+  #     approved: true|false
+  #     name: <humano nomeado>
+  #     capacity: <cargo>
+  #     date: <YYYY-MM-DD>
+  #     attestation_basis: <base da atestacao>
+  papeis_minimos:
+    - "Contract steward AMH (humano)"
+    - "Governanca de seguranca"
+    - "Juridico + Compliance (LGPD/ANS)"
+    - "Governanca clinica"
+  nota: >-
+    VAZIO por construcao: nenhuma aprovacao foi buscada nem obtida. Nenhum
+    agente aprova. O preenchimento e ato humano na publicacao pela AMH.
+
+# -----------------------------------------------------------------------------
+# POLITICA DE COMPATIBILIDADE, DEPRECIACAO E NOTIFICACAO (OS-19 criterio 1)
+# -----------------------------------------------------------------------------
+compatibility_policy:
+  modo_proposto: BACKWARD              # PROPOSAL — mesmo modo exercido no Maezo
+  regras:
+    - "Mudanca compativel (afrouxar cardinalidade, campo opcional novo): versao minor; consumidor nao quebra"
+    - "Mudanca INCOMPATIVEL (apertar cardinalidade, remover campo, mudar semantica de ref ou de tempo): versao major + janela de depreciacao + rota de notificacao"
+    - "Toda mudanca de envelope de evento de identidade e decisao de contrato VERSIONADA e AMH-owned"
+    - "Divergencia entre manifesto publicado e artefato publicado e defeito de publicacao: consumidor rejeita o pacote"
+  forward_compatibility: >-
+    O consumidor V2 ignora campos desconhecidos ADICIONAIS sem falhar
+    (tolerant reader), mas rejeita mensagem sem os campos obrigatorios do
+    envelope minimo.
+
+deprecation_window:
+  valor: null
+  status: VALIDATION_REQUIRED — ponto de negociacao N-4
+  estrutura: >-
+    A janela sera expressa como: aviso minimo (dias) antes de desativar
+    versao major anterior + periodo de operacao paralela das duas versoes.
+    Valores a negociar com o dono AMH; nenhum numero inventado nesta minuta.
+
+change_notification_route:
+  rota_atual_observada: >-
+    OBSERVADO (ata §5): a rota vigente para itens de trabalho e o documento
+    de ordem de servico AMH (ordens-de-servico-amh-2026-08-15.md).
+  rota_proposta_para_o_contrato: >-
+    PROPOSAL: mudanca de contrato = PR no repositorio AMH tocando
+    schemas/contracts/intensicare/** + incremento de versao neste manifesto +
+    notificacao registrada ao dono consumidor V2 ANTES do merge. Canal
+    humano de notificacao: VALIDATION_REQUIRED (ponto de negociacao N-5;
+    nenhum endereco ou canal e registrado por agente).
+
+# -----------------------------------------------------------------------------
+# TENANTS E AMBIENTES SUPORTADOS (OS-19 criterio 1; DEC-G0-03)
+# -----------------------------------------------------------------------------
+supported_tenants:
+  enumeracao_autoritativa: >-
+    DECIDIDO (AQ-6): os 12 tenants pos-ADR-041. A enumeracao legivel por
+    maquina sera pinada da IG 1.1.0 (OS-03) — esta minuta NAO transcreve a
+    lista (a V2 pina, nao copia).
+  tenants_no_v1: VALIDATION_REQUIRED
+  tenant_piloto: VALIDATION_REQUIRED   # DECIDIDO (AQ-6 item 4): nome ADIADO para a redacao do contrato; decisao do titular (ata §8 pendencia 8)
+supported_environments:
+  - environment: dev
+    dados: sinteticos-somente          # DEC-G0-03
+    nota: "OBSERVADO: unico ambiente provisionado; stg/prod/dr nao existem (Q6)"
+supported_environments_nota: >-
+  A condicao de ambiente similar a producao do Gate G3 NAO pode ser satisfeita
+  com dev apenas — restricao registrada, nao contornada.
+
+# -----------------------------------------------------------------------------
+# SLOs — ESTRUTURA PRESENTE, VALORES NAO INVENTADOS (OS-19 criterio 1)
+# -----------------------------------------------------------------------------
+slos:
+  availability:
+    valor: null
+    status: VALIDATION_REQUIRED — a declarar e MEDIR pela AMH; nenhum alvo de NFR e medida de producao
+  freshness:
+    valor: null
+    status: VALIDATION_REQUIRED — nao medido; ADR-040 declara o canal FHIR "nao e near-real-time"
+  identity_event_latency:
+    valor: null
+    status: VALIDATION_REQUIRED — OS-17 criterio 3 exige latencia declarada E medida
+  resolve_latency_e_limites:
+    valor: null
+    status: VALIDATION_REQUIRED — OS-18 criterio 5
+  nota: >-
+    Estrutura presente por exigencia do OS-19; valores deliberadamente null.
+    Inventar um numero aqui seria fabricar evidencia de camada 4, que este
+    ciclo nao tem.
+
+# -----------------------------------------------------------------------------
+# FIXTURES — validas E invalidas, 100% sinteticas (OS-19 criterio 1)
+# Digests: null nesta minuta; calculados na publicacao pela AMH sobre os bytes
+# publicados (padrao Maezo).
+# -----------------------------------------------------------------------------
+fixtures:
+  - path: docs/08-interoperability/amh-data/contract-v1/fixtures/alias.valid.json
+    role: valid
+    event_type: identity.alias.v1
+    sha256: null
+  - path: docs/08-interoperability/amh-data/contract-v1/fixtures/merge.valid.json
+    role: valid
+    event_type: identity.merge.v1
+    sha256: null
+  - path: docs/08-interoperability/amh-data/contract-v1/fixtures/unmerge.valid.json
+    role: valid
+    event_type: identity.unmerge.v1
+    sha256: null
+  - path: docs/08-interoperability/amh-data/contract-v1/fixtures/restore.valid.json
+    role: valid
+    event_type: identity.restore.v1
+    sha256: null
+  - path: docs/08-interoperability/amh-data/contract-v1/fixtures/reassignment.valid.json
+    role: valid
+    event_type: identity.reassignment.v1
+    sha256: null
+  - path: docs/08-interoperability/amh-data/contract-v1/fixtures/erasure.valid.json
+    role: valid
+    event_type: identity.erasure.v1
+    sha256: null
+  - path: docs/08-interoperability/amh-data/contract-v1/fixtures/alias.missing-idempotency-key.invalid.json
+    role: invalid
+    motivo: "sem chave de idempotencia — envelope minimo violado"
+    sha256: null
+  - path: docs/08-interoperability/amh-data/contract-v1/fixtures/merge.ref-nova-igual-antiga.invalid.json
+    role: invalid
+    motivo: "merge com ref nova identica a ref antiga — evento sem efeito e proibido"
+    sha256: null
+  - path: docs/08-interoperability/amh-data/contract-v1/fixtures/unmerge.emissao-antes-do-fato.invalid.json
+    role: invalid
+    motivo: "tempo de emissao anterior ao tempo do fato — ordem temporal violada"
+    sha256: null
+  - path: docs/08-interoperability/amh-data/contract-v1/fixtures/erasure.identificador-de-fonte-cru.invalid.json
+    role: invalid
+    motivo: "identificador de fonte cru no envelope — viola AQ-4/XRD-05 (so refs opacas atravessam)"
+    sha256: null
+fixtures_readme: docs/08-interoperability/amh-data/contract-v1/fixtures/README.md
+
+# -----------------------------------------------------------------------------
+# EXCLUSOES EXPLICITAS (OS-19 criterios 1 e 5)
+# Registradas para que ausencia nunca seja lida como afirmacao.
+# -----------------------------------------------------------------------------
+explicit_exclusions:
+  - item: sinais vitais
+    motivo: >-
+      Contradicao C-1 ABERTA: o unico profile de Observation da IG fixa
+      category em laboratory, excluindo estruturalmente sinais vitais de
+      instancia conforme. Exigiria novo profile e nova decisao de produto
+      (Q1). Nenhuma resolucao de 2026-08-15 os desbloqueia.
+  - item: Observation laboratorial
+    motivo: >-
+      Excluida ATE evidencia da OS-20 aceita pelo caminho ESTRUTURADO
+      Diagnose/LIS (code LOINC + valueQuantity UCUM, povoamento medido). O
+      caminho de texto livre (code.text + valueString), se executado, fica
+      explicitamente FORA deste contrato e nao conta como desbloqueio.
+  - item: replay/backfill/correcao de dados clinicos e procedimento de reconciliacao
+    motivo: >-
+      Garantias desconhecidas neste ciclo (VALIDATION_REQUIRED no lock draft).
+      NAO confundir com o replay de EVENTOS DE IDENTIDADE, que E clausula
+      obrigatoria (identity_lifecycle). A reconciliacao de dados clinicos e
+      objeto de negociacao futura, fora do v1.
+  - item: usos secundarios (pesquisa, analytics, compartilhamento)
+    motivo: "BLOQUEADOS por AQ-3 ate infraestrutura real de consentimento; OS-21 diferida"
+  - item: escrita V2 -> AMH (writeback)
+    motivo: "Fora do v1; OBSERVADO 'so a AMH escreve no HAPI'; exigiria contrato proprio"
+  - item: corpus historico com URL de profile incorreta
+    motivo: "Decisao sobre o acervo (11,4 milhoes de recursos, alegacao FONTE) e da AMH — OS-07 criterio 4; ponto de negociacao N-7"
+
+# -----------------------------------------------------------------------------
+# TRANSPORTE — NENHUM ESCOLHIDO, NENHUM IMPLICITO
+# -----------------------------------------------------------------------------
+transport:
+  escolhido: null
+  status: "DECISAO PROIBIDA nesta minuta — a escolha pertence ao ADR de fronteira (§7.5)"
+  opcoes_a_comparar:
+    - FHIR REST/Subscriptions
+    - stream de eventos publicado
+    - lote controlado (batch exchange)
+  criterios_de_comparacao:
+    - latencia
+    - durabilidade
+    - replay
+    - acoplamento
+    - aderencia a padroes
+    - realidade operacional AMH
+    - custo
+  nota: >-
+    Ver memoria-de-desenho.md §7 para o quadro comparativo SEM escolha.
+    As clausulas desta minuta (envelope minimo, ordenacao por sujeito,
+    at-least-once, resolve sincrono ou nao) foram redigidas para serem
+    satisfativeis por qualquer das tres opcoes.
+
+# -----------------------------------------------------------------------------
+# RESPONSABILIDADES DE SEGURANCA/PRIVACIDADE (estrutura §7.5)
+# -----------------------------------------------------------------------------
+security_privacy_responsibilities:
+  ameaca_e_isolamento: >-
+    DECIDIDO (AQ-6): nenhum bypass cross-tenant existe ou existira; particao
+    por URL + igualdade de claim, sem excecao. A V2 mantem teste negativo que
+    afirma a IMPOSSIBILIDADE do bypass.
+  auditoria: "Toda resolucao de ref e todo consumo de evento sao auditaveis por event_id/idempotency_key; retencao de log: VALIDATION_REQUIRED"
+  retencao: VALIDATION_REQUIRED
+  incidentes: "Rota e SLA de resposta a incidente: VALIDATION_REQUIRED — a negociar com o dono AMH"
+
+# -----------------------------------------------------------------------------
+# DATAS DE VIGENCIA E REGISTRY
+# -----------------------------------------------------------------------------
+effective_dates:
+  valido_de: null
+  valido_ate: null
+  status: "nenhum contrato em vigor — minuta"
+registry_ids:
+  valor: null
+  status: "nada registrado para IntensiCare; preenchido pela AMH na publicacao (padrao Maezo: glue_registration)"
+
+# -----------------------------------------------------------------------------
+# ESTADO EPISTEMICO FINAL
+# -----------------------------------------------------------------------------
+epistemic_status:
+  achado_de_compatibilidade: >-
+    INALTERADO: candidato a integracao; compatibilidade nao demonstrada para
+    avaliacao de UTI acionavel. Esta minuta especifica; nao evidencia.
+  pinned: false
+  aceito: false
+  aceito_por: null
+  proximo_passo: >-
+    Negociacao com a AMH (pontos N-1..N-8 em memoria-de-desenho.md §8) ->
+    publicacao pela AMH (OS-19) -> pin por digest no contracts.lock da V2 ->
+    Gate G3.

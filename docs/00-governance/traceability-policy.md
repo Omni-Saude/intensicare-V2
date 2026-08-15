@@ -105,6 +105,109 @@ Per-prefix notes:
    policy, and reserves `CRV-0000` permanently for illustration (real vectors
    start at `CRV-0001`). Format-compatible; only the prefix itself is
    unratified.
+
+   **Scribe update (governance-and-traceability steward, 2026-08-15) —
+   per-score range allocation, namespace collision resolved.** Cycle 1's three
+   rule-release precursors each self-claimed a `CRV` hundred-block; RULE-SOFA
+   and RULE-NEWS2 independently claimed the **same** block (`CRV-0101–0199`
+   and `CRV-0101–0189` respectively — both actually used, not just reserved,
+   over the overlapping numbers), while RULE-GCS had already picked a disjoint
+   block (`CRV-0200–0299`) specifically to avoid the same collision. Measured
+   2026-08-15 (grep over `docs/05-clinical-safety/rule-releases/{sofa,news2,gcs}/*.md`):
+   SOFA used 35 unique IDs / 67 occurrences; NEWS2 used 89 unique IDs / 116
+   occurrences; GCS used 19 unique IDs / 45 occurrences (no collision). SOFA
+   was mechanically renumbered — not NEWS2 — because it had materially fewer
+   citations to rename across its own files and cross-references
+   (`docs/archive/legacy-provenance/migration-manifest-cycle-1.md`), making it
+   the less-invasive direction of the two candidates. No clinical content,
+   scenario, or expected outcome changed in any vector — only the four-digit
+   ID suffix (old number + 200).
+
+   | Score | Range allocated | IDs actually in use | Vectors | Changed 2026-08-15? |
+   |---|---|---|---|---|
+   | RULE-NEWS2 | `CRV-0100–0199` | `CRV-0101`–`CRV-0189` | 89 | No — unchanged |
+   | RULE-GCS | `CRV-0200–0299` | `CRV-0201`–`CRV-0218` | 18 | No — unchanged |
+   | RULE-SOFA | `CRV-0300–0399` (moved from `CRV-0100–0199`) | `CRV-0301`–`CRV-0334` | 34 | Yes — renumbered (old ID + 200) |
+
+   This is a namespace/ID-format resolution only (`decisions_allowed: register
+   formats, ID formats` for this steward task), not a ratification of the
+   `CRV` prefix itself into §1 — that remains pending `GDEC-0002` exactly as
+   before. Files mechanically edited: `docs/05-clinical-safety/rule-releases/sofa/{reference-vectors,migration-notes,specification}.md`,
+   `docs/05-clinical-safety/rule-releases/news2/reference-vectors.md` (note
+   only, no ID changed), `docs/05-clinical-safety/rule-releases/gcs/reference-vectors.md`
+   (note only, no ID changed), `docs/archive/legacy-provenance/migration-manifest-cycle-1.md`
+   (SOFA-row IDs and the self-flagged collision note). No file outside these
+   two directories (`docs/05-clinical-safety/rule-releases/` and
+   `docs/archive/legacy-provenance/`) cited a specific `CRV-01xx`/`CRV-02xx`
+   ID at the time of this update (verified: `docs/05-clinical-safety/pathway-portfolio/hard-gate-assessment.md`
+   cites only `CRV-0102`, which is NEWS2's ID and was already correct —
+   unchanged).
+
+   **Nota do escriba (2026-08-15, segundo passe, pt-BR — não reescreve o texto
+   acima, que permanece o registro fiel do primeiro passe).** A frase acima
+   ("cites only `CRV-0102` … unchanged") descreve o estado verificado **no
+   momento do primeiro passe**, quando a forma composta por regra ainda não
+   existia. Desde então, `GDEC-0007` (revisão clínica do ciclo 1,
+   `decision-register.md`) decidiu os 98 pontos da revisão e, com eles, a
+   prefixação por regra tornou-se a forma vigente dos vetores reais (ver a
+   nova subseção 3.1 abaixo). Em consequência, `hard-gate-assessment.md`
+   §7.2 foi mecanicamente atualizado nesta integração de `CRV-0102` (nu)
+   para `CRV-NEWS2-0102` (forma composta) — a mesma harmonização mecânica
+   aplicada a `migration-manifest-cycle-1.md` (ver `§3.1` abaixo). Nenhum
+   conteúdo clínico mudou; apenas a citação passou a usar a forma composta
+   vigente. Este registro do primeiro passe permanece histórico e fiel ao
+   que era verdade em 2026-08-15 (primeiro passe); não é mais o estado
+   corrente do arquivo citado.
+
+   **3.1 Forma composta final — prefixo por regra (2026-08-15, segundo
+   passe, pt-BR — autoridade: `GDEC-0007`).**
+
+   **Fato estabelecido a citar, não decisão deste escriba.** `GDEC-0007`
+   (`docs/00-governance/registers/decision-register.md`, revisão clínica do
+   ciclo 1 do orquestrador clínico, 98 pontos decididos por rodaquino-OMNI em
+   2026-08-15) é a autoridade nomeada que tornou vigente a prefixação por
+   regra sobre a alocação de faixas já registrada acima (item 3, primeiro
+   passe). A forma **final composta**, em vigor nos arquivos de
+   `rule-releases/` a partir desta data, é:
+
+   | Score | Faixa (dígitos, inalterada desde o primeiro passe) | Forma composta vigente | Autoridade do prefixo |
+   |---|---|---|---|
+   | RULE-SOFA | `03NN` (`0300–0399`) | `CRV-SOFA-03NN`, p.ex. `CRV-SOFA-0301` | `GDEC-0007` |
+   | RULE-NEWS2 | `01NN` (`0100–0199`) | `CRV-NEWS2-01NN`, p.ex. `CRV-NEWS2-0101` | `GDEC-0007` |
+   | RULE-GCS | `02NN` (`0200–0299`) | `CRV-GCS-02NN`, p.ex. `CRV-GCS-0201` | `GDEC-0007` |
+
+   **O que isto muda em relação ao primeiro passe (item 3 acima, mantido sem
+   edição como histórico):** o primeiro passe resolveu a **colisão de
+   números** entre SOFA e NEWS2 (renumeração mecânica, sufixo nu, sem
+   prefixo por regra — a tabela do item 3 registra essa forma intermediária,
+   nua, tal como existia entre a resolução da colisão e `GDEC-0007`). A
+   revisão clínica do ciclo 1 (`GDEC-0007`) foi além: adotou a prefixação
+   por regra (`CRV-SOFA-`, `CRV-NEWS2-`, `CRV-GCS-`) como a forma vigente de
+   citação para vetores reais das três regras, mantendo os quatro dígitos
+   já corretos do primeiro passe (nenhum dígito numérico mudou nesta
+   segunda etapa — apenas o prefixo foi acrescido). **Isto continua sendo
+   uma resolução de namespace/formato de ID** (`decisions_allowed: register
+   formats, ID formats`), não uma ratificação do prefixo `CRV` em si no §1 —
+   isso permanece pendente de `GDEC-0002`, exatamente como antes.
+
+   **Harmonização mecânica de refs nuas → forma composta nesta integração**
+   (2026-08-15, segundo passe): `docs/archive/legacy-provenance/migration-manifest-cycle-1.md`
+   (~25 refs, linhas do §2.1/§2.2/§2.5 — mantendo intocado o item 4 do §4
+   "Riscos de proveniência em aberto", que descreve a colisão original como
+   histórico);
+   `docs/12-quality-validation-and-testing/clinical-reference-vector-standard.md`
+   (revisado; nenhuma ref viva encontrada — os únicos `CRV-0000`/`CRV-0001`
+   citados são o placeholder genérico ilustrativo do próprio padrão, não
+   apontam para nenhum vetor real de SOFA/NEWS2/GCS, e permanecem sem
+   alteração, com nota própria registrada naquele arquivo);
+   `docs/05-clinical-safety/pathway-portfolio/hard-gate-assessment.md` (1 ref,
+   `CRV-0102` → `CRV-NEWS2-0102`, §7.2). Regra aplicada em todos os três:
+   somente referências vivas (que apontam para um vetor real e atual) foram
+   renomeadas; notas históricas sobre a colisão original ou sobre a faixa
+   nua do primeiro passe permanecem como estão, incluindo a tabela do item 3
+   acima e este próprio §3.1, que é registro de decisão, não uma referência
+   a renomear.
+
 4. **`QAS`** — the source document itself states (its own line ~50) that
    `QAS-xxxx` labels are "document-local scenario labels, not
    traceability-policy IDs," and (line ~61) that each scenario is intended to

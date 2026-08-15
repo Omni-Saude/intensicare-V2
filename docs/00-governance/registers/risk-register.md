@@ -326,6 +326,132 @@ provenance:
   validation_status: "VALIDAÇÃO NECESSÁRIA — gatilhos de revisão individuais já registrados por papel (ver cada DEC-G0-nn em g0-resolucoes-2026-08-15.md); nenhum gatilho consolidado de \"segunda pessoa\" existe ainda para a concentração como um todo"
 ```
 
+## RISK-0008 — Janela de baseline perecível aberta e sem data de fechamento (pt-BR — conteúdo novo, 2026-08-15)
+
+```yaml
+id: RISK-0008
+title: Janela de baseline perecível (VAL-0035/G2-VAL-0025) aberta e sem data de fechamento
+status: OPEN
+statement: >
+  As quatro medidas de baseline pré-V2 (B1 carga de alarmes, B2
+  interrupções, B3 fadiga, B4a tempo até reconhecimento observacional) ficam
+  permanentemente irrecuperáveis assim que houver a primeira demonstração,
+  treinamento ou piloto visível a clínicos em qualquer unidade candidata
+  (protocolo-baselines-pereciveis.md §2, tabela de gatilho). K-10/G2-VAL-0025
+  foi COMISSIONADO em GDEC-0007 (revisão clínica do ciclo 1) — isto ABRE a
+  execução da captura — mas não fecha a janela nem agenda a captura:
+  OBSERVADO em 2026-08-15, nenhum sítio foi contatado, nenhum participante
+  recrutado, nenhuma medição realizada. Nenhuma data de fechamento da janela
+  existe hoje.
+impact: >
+  Se a janela fechar antes da captura, as métricas SM-01 (tempo até
+  reconhecimento), SM-04, HM-02 (fadiga de alarme) e HM-05 tornam-se
+  permanentemente inavaliáveis — nenhuma alegação futura de melhoria ou de
+  não-piora poderá ser sustentada ou refutada, e essa perda é definitiva
+  (protocolo-baselines-pereciveis.md §1).
+likelihood: medium-high — depende inteiramente de quando ocorrer a primeira
+  demonstração/treinamento/piloto, evento que este risco não controla nem
+  agenda.
+gate_relevance: [G1, G2]
+owner: UNASSIGNED — VALIDATION REQUIRED
+links:
+  evidence: []
+  blockers: [BLK-0013]
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: docs/02-users-and-workflows/g1-kit/protocolo-baselines-pereciveis.md
+  commit_sha_or_version: n/a (criado nesta sessão, não commitado)
+  section_or_lines: "§1 (por que é irrecuperável), §2 (gatilho de perecibilidade)"
+  date_collected: "2026-08-15"
+  collector: governance-and-traceability steward (transcrição de achado do líder de pesquisa contextual de UTI, ciclo 2)
+  transformation: "resumido do protocolo autocontido de baselines perecíveis; risco derivado (INFERENCE) do comissionamento K-10/G2-VAL-0025 em GDEC-0007 não implicar fechamento automático da janela"
+  confidence: high
+  owner: UNASSIGNED — VALIDATION REQUIRED
+  validation_status: "VALIDAÇÃO NECESSÁRIA — nenhuma data de fechamento definida; depende de BLK-0013 (cobertura jurídica/ética) ser resolvido antes que a captura possa sequer começar"
+```
+
+## RISK-0009 — Frescor: canal AMH em lote × janela de 1h do NEWS2 (pt-BR — conteúdo novo, 2026-08-15)
+
+```yaml
+id: RISK-0009
+title: Frescor — canal FHIR da AMH em lote pode ainda render stale/not_evaluated sob a janela de 1h do NEWS2
+status: OPEN
+statement: >
+  Mesmo que um feed de sinais vitais da AMH seja construído e declarado
+  conforme (decisão C-1), o canal FHIR da AMH é atualizado em lote — "o
+  Bronze é atualizado em batch, então o canal FHIR não é near-real-time
+  enquanto o CDC estiver parqueado" (ADR-040, citado em
+  pacote-decisao-c1-sinais-vitais.md §2.5). RULE-NEWS2 exige frescor
+  por insumo dentro de uma janela declarada; um canal em lote pode ainda
+  assim produzir `stale`/`not_evaluated` sob essa janela, mesmo com a fonte
+  populada e o profile corrigido.
+impact: >
+  Resolver C-1 (existência de profile e fonte populada) não implica que o
+  NEWS2 avalie `valid` na prática — a regra pode permanecer
+  `not_evaluated`/`stale` por descompasso de frescor entre o canal em lote e
+  a janela clínica de 1h, mesmo depois de todo o investimento de engenharia
+  em profile e fonte. Isto é um constrangimento adicional a RISK-0003, não
+  substituído por ele.
+likelihood: high — o silêncio do ADR-040 sobre vitais não confirma nem nega a
+  intenção, mas a característica em lote do canal é diretamente documentada.
+gate_relevance: [G2, G3]
+owner: UNASSIGNED — VALIDATION REQUIRED
+links:
+  evidence: []
+  blockers: []
+provenance:
+  source_repo: Omni-Saude/amh-data-platform (evidência lida) / intensicare-V2 (registro)
+  path_or_url: docs/08-interoperability/amh-data/vital-signs-decision/pacote-decisao-c1-sinais-vitais.md
+  commit_sha_or_version: "0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116 (evidência AMH); registro V2 não commitado"
+  section_or_lines: "§2.5 (o que o ADR-040 diz — canal em lote, L62-63)"
+  date_collected: "2026-08-15"
+  collector: governance-and-traceability steward (transcrição de achado do especialista de decisão de sinais vitais)
+  transformation: "risco derivado (INFERENCE) da leitura direta do ADR-040 combinada com a janela de frescor de 1h já especificada em RULE-NEWS2"
+  confidence: high
+  owner: UNASSIGNED — VALIDATION REQUIRED
+  validation_status: "VALIDAÇÃO NECESSÁRIA — não medido; exige ambiente com dado real e canal construído, que hoje não existem"
+```
+
+## RISK-0010 — Fronteira/grão decididos por omissão se ADR-0001/0003/0005 estagnarem (pt-BR — conteúdo novo, 2026-08-15)
+
+```yaml
+id: RISK-0010
+title: Fronteira AMH×V2 e grão de tenant decididos por omissão se ADR-0001/0003/0005 permanecerem `proposed`
+status: OPEN
+statement: >
+  ADR-0001 §6.2 registra: "An unresolved boundary is a standing ambiguity
+  that implementation pressure will try to resolve by default — the first
+  team that needs a database will create one, and that choice will look
+  like an answer to this ADR without having been decided." ADR-0003 §6.2
+  registra a mesma dinâmica para o grão de tenant: "o primeiro armazenamento
+  (G7) resolveria o grão por omissão se este ADR estagnar." Nenhum dos dois
+  ADRs foi aceito; ambos permanecem `proposed`.
+impact: >
+  Se a implementação avançar antes da aceitação formal, a primeira decisão
+  de armazenamento fixaria de fato a fronteira AMH×V2 e/ou o grão de
+  isolamento por tenant, sem que nenhuma autoridade nomeada tenha
+  deliberado sobre as alternativas já enumeradas nesses ADRs — uma decisão
+  por omissão que parecerá uma resposta ratificada sem o ser.
+likelihood: medium — depende da pressão de cronograma de implementação
+  superar a aceitação formal dos ADRs.
+gate_relevance: [G3, G7]
+owner: UNASSIGNED — VALIDATION REQUIRED
+links:
+  evidence: []
+  blockers: []
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: "docs/06-architecture/adrs/ADR-0001-amh-platform-boundary.md; docs/06-architecture/adrs/ADR-0003-tenancy-organizacao-facility-propriedade-de-recurso.md"
+  commit_sha_or_version: n/a (working tree, branch cycle-1/clinical-content)
+  section_or_lines: "ADR-0001 §6.2 (Negative); ADR-0003 §6.2 (Negativas)"
+  date_collected: "2026-08-15"
+  collector: governance-and-traceability steward
+  transformation: "risco transcrito quase verbatim (SOURCE) de ambos os ADRs, consolidado em uma única entrada de registro"
+  confidence: high
+  owner: UNASSIGNED — VALIDATION REQUIRED
+  validation_status: "VALIDAÇÃO NECESSÁRIA — mitigação depende da aceitação formal de ADR-0001 e ADR-0003 por AUTH-DATA-PLATFORM antes do Gate G7"
+```
+
 ## Index
 
 | ID | Title | Status | Gate relevance | Owner |
@@ -337,3 +463,6 @@ provenance:
 | RISK-0005 | Single Security Gate required check on AMH `main` | OPEN | G3 | UNASSIGNED |
 | RISK-0006 | No automated traceability/PR-linking enforcement yet | OPEN | G7, G8 | UNASSIGNED |
 | RISK-0007 | Concentração de autoridade (um titular, ~7 papéis AUTH-*) | OPEN | G0, G1, G3, G6, G8 | UNASSIGNED |
+| RISK-0008 | Janela de baseline perecível aberta e sem data de fechamento | OPEN | G1, G2 | UNASSIGNED |
+| RISK-0009 | Frescor — canal AMH em lote × janela de 1h do NEWS2 | OPEN | G2, G3 | UNASSIGNED |
+| RISK-0010 | Fronteira/grão decididos por omissão se ADR-0001/0003/0005 estagnarem | OPEN | G3, G7 | UNASSIGNED |

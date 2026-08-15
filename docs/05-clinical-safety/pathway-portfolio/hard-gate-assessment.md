@@ -473,7 +473,7 @@ is now *named and citable* instead of nonexistent.
 
 | Candidate | Cycle-0 | Cycle-1 | Evidence (one line) |
 |---|:--:|:--:|---|
-| CAND-0001 NEWS2 | FAIL | **PARTIAL** | RULE-NEWS2 0.1.0 specifies missing-input behavior (any missing input → `not_evaluated`/`partial` per policy, never 0; standing HAZ-0005 regression vector CRV-0102: all seven inputs absent → **no total, never 0**) — `RR:news2/`; policy algebra drafted in ADR-0008 and per-score-class policy in ADR-0026 (both `proposed`). |
+| CAND-0001 NEWS2 | FAIL | **PARTIAL** | RULE-NEWS2 0.1.0 specifies missing-input behavior (any missing input → `not_evaluated`/`partial` per policy, never 0; standing HAZ-0005 regression vector CRV-NEWS2-0102: all seven inputs absent → **no total, never 0**) — `RR:news2/`; policy algebra drafted in ADR-0008 and per-score-class policy in ADR-0026 (both `proposed`). |
 | CAND-0003 SOFA | FAIL | **PARTIAL** | RULE-SOFA v0.1.0 + the §7 partial-SOFA analysis (`LR:sepsis-scores/sofa-review.md` §7): never sum a labs-only partial; `not_evaluated` with `missing_required_input:<component>` until all six components have evidenced in-window sources — feeds ADR-0008 directly. |
 | All others | FAIL | FAIL | No precursor specifies their behavior; per-input freshness windows (VAL-0023) and the invalidate-vs-degrade rule remain OPEN; ADR-0008/0026 are drafts, not ratified policy. The newly enumerated pathways make this gate *worse*-evidenced, not better: the trilhas engine renders missing input as silent "normal", **tested as intended behavior**, and its severity vocabulary has no "not evaluated" member (`PATH-IDX` §6). |
 
