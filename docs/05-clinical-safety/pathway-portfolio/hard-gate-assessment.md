@@ -8,7 +8,7 @@ approver_role: AUTH-CLINSAFETY (docs/00-governance/authority-model.md:28)
 validation_status: VALIDATION REQUIRED
 source: INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §6.2 (lines 287-303), Gate G2 (347-349), §7.2 (397-420)
 date_collected: 2026-08-14
-last_updated: 2026-08-14
+last_updated: 2026-08-15
 collector: clinical pathway portfolio optimizer (candidate inventory / source-eligibility phase)
 provenance:
   source_repo: intensicare-V2
@@ -49,6 +49,11 @@ superseded_by: null
 > been weakened, reinterpreted, or scoped down in this assessment. **The implementable
 > portfolio today is empty, and `PROMPT:324` expressly permits that: "Its initial size may
 > legitimately be zero if no candidate passes the hard gates."**
+>
+> **Cycle-1 update (2026-08-15):** source-verified evidence moves some verdicts on gates
+> 3, 6, 7 and 8 from FAIL/UNKNOWN to **PARTIAL** for precursor-covered candidates — see
+> §7. **Gate 4 remains FAIL on unchanged AMH evidence, PARTIAL is not PASS, and the
+> actionable-pathway count remains ZERO.**
 
 ## 0. Method and verdict vocabulary
 
@@ -116,6 +121,10 @@ re-scoping, or clinical cleverness moves any of those eight columns. They are mo
 humans (G2, G5, G11), by obtaining a source (G4), by obtaining data and a site (G9, G10), and
 by authoring V2 artifacts (G6, G8).
 
+> **Cycle-1 note (2026-08-15):** the matrix above is the cycle-0 record and is preserved
+> unchanged. Cycle-1 verdict movements (gates 3, 6, 7, 8 only, to PARTIAL at most) and the
+> gate posture of the new candidates CAND-0010..0020 are in §7. Zero cells are PASS.
+
 **INFERENCE — the practical consequence.** Because the blockers are columnar, *ranking
 candidates against each other today would produce information of no decision value*: every
 candidate is blocked by the same things, in the same way, to the same degree. This is an
@@ -180,6 +189,10 @@ evidence is **good**. Grading evidence quality is the clinical evidence methodol
 and is expressly outside this phase (`decisions_prohibited`). Every cell above is a
 documentation finding, not an evidence grade.
 
+**Cycle-1 update (2026-08-15):** FAIL → **PARTIAL** for CAND-0001..0004 (source-verified
+formulas and primary citations now documented in review records and, for NEWS2/SOFA,
+0.x precursors); remains FAIL for all others — see §7.1.
+
 ### 2.4 Gate 4 — "Required inputs have defined semantics, units, timing, identity, encounter, provenance, and data-quality policies." (`PROMPT:294`)
 
 **This is the gate the AMH hard constraint acts on.** Full per-input detail is in
@@ -201,6 +214,11 @@ documentation finding, not an evidence grade.
 patient/encounter link, timestamp, freshness policy, correction behavior, or representative
 population measurement makes the input **ineligible for actionable evaluation**." Every
 `FAIL` above is missing *several* of those, not one.
+
+**Cycle-1 update (2026-08-15): gate 4 verdicts do NOT improve.** The AMH evidence has not
+changed — zero populated observations, no vital-signs profile (`AMH-CF §3.1/§3.2`). The
+CAND-0006 UNKNOWN is resolved to **FAIL** by enumeration (a determination, not a
+weakening) — see §7.5.
 
 ### 2.5 Gate 5 — "The workflow has an actionable, accountable human response." (`PROMPT:295`)
 
@@ -229,6 +247,10 @@ satisfy this gate.
 | CAND-0007 959 catalog | FAIL | `LEGACY-TA:488`: domain definitions and pathway YAML "use different schemas and validation coverage" — not one governed body of content. |
 | CAND-0008 alert rules | FAIL | Suppression/cooldown state could drift and was not auditable (`LEGACY-TA:494`, `LEGACY-TA:308`; `HAZ-0022`); no V2 policy exists. |
 | CAND-0009 bed-grid | FAIL | The confirmed legacy behavior is precisely the unsafe one this gate forbids (`LEGACY-TA:478`). |
+
+**Cycle-1 update (2026-08-15):** FAIL → **PARTIAL** for CAND-0001 and CAND-0003
+(missing/stale/invalid behavior now *specified* in the NOT ACTIONABLE precursors and
+drafted in ADR-0008/ADR-0026, both `proposed`); remains FAIL elsewhere — see §7.2.
 
 ### 2.7 Gate 7 — "The logic is deterministic and explainable, or any non-determinism has a separately approved validation plan." (`PROMPT:297`)
 
@@ -259,6 +281,11 @@ evaluation record. It requires no AMH act, no site, and no data. It is therefore
 first engineering target — but converting it alone changes nothing about admissibility,
 because ten other gates remain.
 
+**Cycle-1 update (2026-08-15):** the predicted conversion has partially happened:
+UNKNOWN → **PARTIAL** for CAND-0001 and CAND-0003, whose logic now exists declaratively as
+0.x precursor specifications with drafted pt-BR+EN explanation text and no-fire reason
+codes — authored, un-reviewed, unimplemented; remains UNKNOWN elsewhere — see §7.3.
+
 ### 2.8 Gate 8 — "Boundary, exception, negative, delayed-data, and failure test vectors exist." (`PROMPT:298`)
 
 **Verdict for all nine: `FAIL`.**
@@ -272,6 +299,12 @@ because ten other gates remain.
 like vectors. `LEGACY-TA:584` is the standing counter-evidence: a passing gate that validated
 zero cases. Any future claim against gate 8 must state the **number of cases actually
 executed** and the **missing/stale/boundary cases among them**.
+
+**Cycle-1 update (2026-08-15):** FAIL → **PARTIAL** for CAND-0001 and CAND-0003: 89 + 34
+(+18 GCS-component) DRAFT clinical reference vectors now exist on paper, including the
+boundary/missing/invalid classes this gate demands — but **zero have been executed** (no
+code, no CI) and authorship independence is NOT satisfied. Stated per this section's own
+discipline: cases actually executed = **0**. See §7.4.
 
 ### 2.9 Gate 9 — "Retrospective validation is feasible with representative data and defined endpoints." (`PROMPT:299`)
 
@@ -395,3 +428,149 @@ through V2 engineering").
 - `portfolio-method.md` — what happens *after* a candidate passes all eleven gates.
 - `g2-validation-backlog.md` — ordered work, with owner roles, and the candidate hazards.
 - `../../08-interoperability/amh-data/compatibility-finding.md` — the hard constraint.
+
+---
+
+## 7. Cycle-1 assessment update (2026-08-15)
+
+> **PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).**
+> This section supplements the cycle-0 assessment; §§0–6 are preserved unchanged as the
+> 2026-08-14 record. Evidence base: the cycle-1 source-verified review corpus
+> (`../legacy-review/`, citation shorthand `LR:` and `PATH-IDX` per
+> `candidate-inventory.md` §8.0), the three rule-release precursors
+> (`../rule-releases/{news2,sofa,gcs}/`, shorthand `RR:`), and the ADR drafts cited by ID.
+>
+> **Language-policy note (DEC-G0-10 / GDEC-0006):** written in English for coherence with
+> the cycle-0 file it extends; the tension is recorded here once (see
+> `candidate-inventory.md` §8 header).
+
+### 7.0 Verdict-vocabulary extension: `PARTIAL`
+
+Cycle-1 evidence sits between §0.2's FAIL and PASS: artifacts now exist that address a
+gate's condition, but they are **un-reviewed PROPOSAL artifacts** (author ≠ approver not
+satisfied; no named clinical owner; no runtime). This section therefore uses one additional
+verdict:
+
+| Verdict | Definition | Discipline |
+|---|---|---|
+| `PARTIAL` | An artifact addressing the gate condition **exists on disk and is cited**, but the gate condition is **not met**: the artifact is a 0.x / DRAFT / `proposed` PROPOSAL, pending named clinical review, with no execution evidence. | **PARTIAL is not PASS and never counts toward admission.** It may never be awarded above what un-reviewed PROPOSAL artifacts justify. Movements are restricted to gates 3, 6, 7, 8; gate 4 is expressly excluded (§7.5). |
+
+No gate is weakened by this addition: every PARTIAL below was FAIL or UNKNOWN and would
+remain so under §0.2's binary vocabulary; the added value is only that the blocking work
+is now *named and citable* instead of nonexistent.
+
+### 7.1 Gate 3 (evidence provenance documented) — FAIL → PARTIAL for CAND-0001..0004
+
+| Candidate | Cycle-0 | Cycle-1 | Evidence (one line) |
+|---|:--:|:--:|---|
+| CAND-0001 NEWS2 | FAIL | **PARTIAL** | Implemented bands source-verified against the issuer-verified RCP NEWS2 (2017) definition (`LR:ews/news2-review.md`); RULE-NEWS2 0.1.0 precursor carries primary citations (`RR:news2/specification.md`). Applicability to the (still unapproved) population remains undocumented. |
+| CAND-0002 MEWS | FAIL | **PARTIAL** | Variant identified and compared against the Subbe 2001 citation V1 itself claims (`LR:ews/mews-review.md`); **primary Table 1 remains unretrieved (paywalled)** — SOURCE-level verification outstanding, so this PARTIAL is the weakest of the four. |
+| CAND-0003 SOFA | FAIL | **PARTIAL** | Components source-verified against Vincent 1996 and Sepsis-3 (`LR:sepsis-scores/sofa-review.md` §8); RULE-SOFA v0.1.0 precursor with primary citations (`RR:sofa/specification.md`). |
+| CAND-0004 qSOFA | FAIL | **PARTIAL** | Cut-points verified numerically exact to Sepsis-3, with the mandatory post-2021 SSC standing analysis (`LR:sepsis-scores/qsofa-review.md` §§2, 6). No precursor authored. |
+| CAND-0005..0009, CAND-0010..0020 | FAIL | FAIL | For the twelve pathways, 12/12 file-level citations now exist and are DOI-audited (8 MATCH / 1 BROKEN / 1 MISMATCH / 1 PARTIAL — `PATH-IDX` §4), but **"a citation at the file level is not threshold provenance"** (`PATH-IDX` §4 INFERENCE): no band or cut-point carries its own citation. Documented ≠ satisfied; verdict unmoved. |
+
+### 7.2 Gate 6 (missing/stale/conflicting behavior explicit and safe) — FAIL → PARTIAL for CAND-0001, CAND-0003
+
+| Candidate | Cycle-0 | Cycle-1 | Evidence (one line) |
+|---|:--:|:--:|---|
+| CAND-0001 NEWS2 | FAIL | **PARTIAL** | RULE-NEWS2 0.1.0 specifies missing-input behavior (any missing input → `not_evaluated`/`partial` per policy, never 0; standing HAZ-0005 regression vector CRV-0102: all seven inputs absent → **no total, never 0**) — `RR:news2/`; policy algebra drafted in ADR-0008 and per-score-class policy in ADR-0026 (both `proposed`). |
+| CAND-0003 SOFA | FAIL | **PARTIAL** | RULE-SOFA v0.1.0 + the §7 partial-SOFA analysis (`LR:sepsis-scores/sofa-review.md` §7): never sum a labs-only partial; `not_evaluated` with `missing_required_input:<component>` until all six components have evidenced in-window sources — feeds ADR-0008 directly. |
+| All others | FAIL | FAIL | No precursor specifies their behavior; per-input freshness windows (VAL-0023) and the invalidate-vs-degrade rule remain OPEN; ADR-0008/0026 are drafts, not ratified policy. The newly enumerated pathways make this gate *worse*-evidenced, not better: the trilhas engine renders missing input as silent "normal", **tested as intended behavior**, and its severity vocabulary has no "not evaluated" member (`PATH-IDX` §6). |
+
+**Why PARTIAL and not PASS:** the gate demands behavior that is explicit **and safe** —
+safety here is a clinical judgement that only a named reviewer can make of a PROPOSAL
+specification, and no per-candidate freshness/conflict/correction policy is ratified.
+
+### 7.3 Gate 7 (deterministic and explainable) — UNKNOWN → PARTIAL for CAND-0001, CAND-0003
+
+| Candidate | Cycle-0 | Cycle-1 | Evidence (one line) |
+|---|:--:|:--:|---|
+| CAND-0001 NEWS2 | UNKNOWN | **PARTIAL** | Deterministic declarative logic now exists as an authored artifact (RULE-NEWS2 0.1.0), with drafted explanation text and no-fire/why-not reason codes (`insufficient_data`, per-parameter `missing_required_input:*`) in the vector set — `RR:news2/`. No runtime implementation exists; nothing has ever executed. |
+| CAND-0003 SOFA | UNKNOWN | **PARTIAL** | RULE-SOFA v0.1.0 + machine-readable `RR:sofa/logic.yaml`; explanation text drafted (pt-BR terminology validation itself pending ADR-0029). Same caveat: authored, not implemented. |
+| All others | UNKNOWN | UNKNOWN | For CAND-0010..0020 the *legacy* definitions are declarative and deterministic at file level, but the engine that gave them meaning is proposed SUPERSEDE and legacy explainability was never achieved (no no-fire record); V2 logic for them does not exist. §0.2's reasoning stands: determinism is a property of an implementation. |
+
+### 7.4 Gate 8 (test vectors exist) — FAIL → PARTIAL for CAND-0001, CAND-0003
+
+**SOURCE** `RR:news2/reference-vectors.md` (89 vectors), `RR:sofa/reference-vectors.md`
+(34 vectors), `RR:gcs/reference-vectors.md` (18 vectors, supporting the consciousness
+component, not a candidate of its own): **141 DRAFT clinical reference vectors** spanning
+boundary, missing-input, invalid-enumeration, and legacy-defect regression classes —
+including the HAZ-0005 standing vectors (all-inputs-absent must yield `not_evaluated`,
+never a numeric total).
+
+**Why PARTIAL and not PASS, stated bluntly:** (1) every vector is `status: DRAFT`/PROPOSAL;
+(2) **authorship independence is NOT satisfied** — vector author = specification author,
+exactly the self-confirmation risk this gate exists to catch; (3) **zero vectors have been
+executed** — V2 still has no code and no CI, so the §2.8 discipline applies: number of
+cases actually executed = 0. All other candidates: FAIL unchanged (the only pathway-level
+legacy vectors remain the sepse parity suite, 31 vectors, sepse only — `PATH-IDX` §3).
+
+### 7.5 Gate 4 (input source eligibility) — restated: FAIL, unchanged
+
+**The AMH evidence has not changed.** `AMH-CF §3.1`: laboratory Observation blocked at a
+0-row Bronze source, with the announced unblocking path delivering `valueString` free text
+("No ICU scoring rule — NEWS2, MEWS, SOFA, qSOFA, or any threshold logic — can consume a
+`valueString`"). `AMH-CF §3.2`: the IG's only Observation profile pattern-fixes `category`
+to `laboratory`, structurally excluding vital signs. **Zero populated observations are
+evidenced for any candidate input** — the same fact the three precursors record as their
+own classification: **NOT ACTIONABLE — no evidenced populated source** (`RR:news2/`,
+`RR:sofa/`, `RR:gcs/` specifications, front matter and §0).
+
+Movements within FAIL (determinations, not improvements, and not weakenings):
+
+- **CAND-0006 (placeholder): UNKNOWN → FAIL, and the entry is discharged.** Enumeration
+  (`PATH-IDX` §1) shows the eleven formerly unnamed pathways' 60 evaluation inputs are
+  vitals, laboratory results, medication administrations, and bedside assessments — every
+  class AMH cannot supply. The cycle-0 hope that "some members might depend only on
+  encounter/condition data" is now disproven. Assessment transfers to CAND-0010..0020.
+- **CAND-0007 (959-rule catalog): remains UNKNOWN.** Clusters are enumerated and assigned
+  (`LR:00-inventory/coverage-map.md`), but no per-rule input-to-source mapping exists yet;
+  honest verdict unchanged.
+- **CAND-0010..0020 (new): enter as FAIL** — same unchanged AMH citation, plus (renal)
+  the source-verified unit-mismatch lesson (`urine_output_ml_day` feeding a mL/kg/h
+  input — `PATH-IDX` §6.5) and (SOFA-hepatic-adjacent) the absent bilirubin conversion
+  (`LR:data-quality-physio-calc/README.md`) as standing examples of why gate 4 demands
+  more than a nominally existing feed.
+
+### 7.6 The new candidates (CAND-0010..0020) — gate posture and classification
+
+The eleven new candidates (`candidate-inventory.md` §8.4) enter this assessment subject to
+the same columnar failures as every cycle-0 candidate: **G1, G2, G5, G9, G10, G11 FAIL**
+(no approved intended use, no named owner, no observed workflow, no data, no baseline, no
+funding — all programme-level facts unchanged since 2026-08-14) and **G4 FAIL** (§7.5).
+Gates 3/6/7 as per §§7.1–7.3 (FAIL/UNKNOWN — no precursor covers them); gate 8 FAIL.
+
+**Classification (PROPOSAL, §0.3 vocabulary):** all eleven are **DEFER** — each is now
+specified (source-verified YAML + review record), nothing in evidence condemns the
+clinical intent of any of them (the review-level verdicts VALIDATE/TRANSFORM under
+`legacy-import-policy.md` §4 are a *different vocabulary* answering "may legacy content
+inform a V2 spec?", not "is this admissible?"), and the binding admission constraint for
+every one of them is the external AMH source blockage plus unowned governance. None is
+`VALIDATE` in §0.3 terms for exactly the §3.2 reason: full clinical validation would still
+leave gate 4 failed. None is `REJECT`: the one enumerated pathway that merits REJECT as a
+pathway (ventilacao, a stub) is already CAND-0005, whose RESEARCH classification is now
+superseded by a source-verified **REJECT-as-pathway proposal** (`PATH-IDX` §7) — a
+determination cycle-0 could not make and review must now confirm.
+
+### 7.7 The plain statement, cycle-1 edition
+
+1. **The actionable-pathway count remains ZERO.** Twenty candidate handles, eleven gates:
+   **0 PASS cells.** The cycle-1 movements produce PARTIALs on gates 3/6/7/8 for at most
+   four candidates, and PARTIAL is not PASS (§7.0).
+2. **Gate 2 still fails for every candidate for the same one-line reason** — no named,
+   accepted clinical owner for any candidate's content (review assignments to
+   rodaquino-OMNI are *reviewer* designations on PROPOSAL artifacts, not owner
+   acceptance of a pathway; `authority-model.md` §5 appendix governs, and no CAND has a
+   recorded content owner).
+3. **Gate 4 fails on unchanged AMH evidence** (§7.5), and it alone still blocks every
+   candidate regardless of any other progress — including the three precursors, which say
+   so themselves (NOT ACTIONABLE).
+4. **What actually moved** is exactly what §5 predicted could move without any external
+   act: enumeration (order 3 — done: INV-GAP-1 closed), declarative authoring with
+   explanation/no-fire semantics (order 5 — partially done: NEWS2, SOFA), missing-data
+   policy drafting (order 6 — drafted, unratified: ADR-0008/0026), and vector authoring
+   (order 7 — authored, unexecuted, non-independent).
+5. **No gate was weakened.** Every movement is FAIL/UNKNOWN → PARTIAL on gates 3/6/7/8
+   only, each with its blocking caveat stated, or UNKNOWN → FAIL (a determination).
+6. **Nothing here is a decision.** Every verdict movement is PROPOSAL — AWAITING NAMED
+   CLINICAL REVIEW (reviewer: rodaquino-OMNI).

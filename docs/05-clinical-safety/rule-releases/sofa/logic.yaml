@@ -1,0 +1,253 @@
+# =============================================================================
+# RULE-SOFA v0.1.0 — deterministic logic specification (declarative sidecar)
+#
+# PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)
+# Classification: NOT ACTIONABLE — no evidenced populated source (AMH
+# constraint); authorship artifact only. This is a 0.x PRECURSOR, explicitly
+# not a signed release. No runtime may load or execute this content.
+#
+# This file is DATA, not code: declarative bands and predicates only. The
+# normative meaning of every key, every interpretation point (I-1..I-11), and
+# every open question (OQ-1..OQ-14) is defined in specification.md in this
+# directory. Where this file and specification.md disagree, specification.md
+# governs and the disagreement is a defect.
+#
+# Provenance: re-derived from Vincent 1996 (doi:10.1007/BF01709751) and
+# Singer 2016 Sepsis-3 (doi:10.1001/jama.2016.0287); never copied from the
+# legacy repository. See specification.md §2.
+# All values are published thresholds or synthetic proposals. No PHI.
+# =============================================================================
+
+rule:
+  id: RULE-SOFA
+  version: 0.1.0
+  semver_meaning: "0.x precursor — unsigned, unapproved, not releasable"
+  status: "PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)"
+  classification: NOT_ACTIONABLE_AUTHORSHIP_ARTIFACT
+  advisory_only: true
+  emits:
+    - per_component_scores_with_status
+    - total_score_0_to_24_only_when_all_six_components_valid
+  never_emits:
+    - partial_totals
+    - mortality_risk_bands        # legacy D-18 REJECTED; no sourced banding exists
+    - sepsis_determination        # Sepsis-3 delta-SOFA requires a ratified baseline convention (out of scope)
+
+evaluation_semantics:
+  evaluation_instant: T
+  assessment_window: PT24H                    # [T-24h, T]
+  input_selection: worst_in_window            # most abnormal qualifying value per input — PROPOSAL I-9
+  band_assignment: highest_satisfied_band     # assign the highest band whose full condition holds
+  partial_totals: forbidden                   # per partial-SOFA analysis (sofa-review.md §7)
+  zero_coercion: forbidden                    # HAZ-0005 control — absence is a status, never a number
+  invalid_input_handling: poison_component    # an invalid in-window value makes the component invalid;
+                                              # it is never silently dropped (evaluation-status-semantics.md §3.5)
+
+population_gate:                              # VAL-0006 / VAL-0007 / HAZ-0036
+  include: "age_years >= 18"
+  age_unknown: "not_evaluated(reason: population_unverified)"   # NEVER assume adult
+  age_below_18: "not_evaluated(reason: out_of_population_scope)"
+  carve_outs_pending_reviewer_decision:       # OQ-11; HAZ-0044
+    - palliative_or_goals_of_care_restriction
+    - ecmo
+    - chronic_organ_dysfunction_baseline
+    - renal_replacement_therapy
+
+canonical_units:
+  bilirubin: "mg/dL"        # I-6; accepted alternate umol/L, convert: mg/dL = umol/L / 17.104
+  creatinine: "mg/dL"       # accepted alternate umol/L, convert: mg/dL = umol/L / 88.42
+  platelets: "10*3/uL"      # numerically identical to 10*9/L; both accepted
+  pao2: "mm[Hg]"
+  fio2: "1"                 # dimensionless fraction 0.21-1.0; "%" accepted, convert /100; unitless value > 1.0 -> invalid
+  map: "mm[Hg]"
+  vasoactive_dose_rate: "ug/kg/min"
+  urine_output: "mL"        # over an explicit 24-h interval; interval semantics required
+  gcs: "{score}"            # integer 3-15
+  conversion_rule: >-
+    Convert to canonical unit with the exact factor BEFORE band comparison;
+    never round before comparison; record unit_conversion_applied.
+    Unmappable or absent unit on a unit-bearing quantity -> invalid
+    (reason: unmappable_unit). HAZ-0032 control.
+
+inputs:
+  # freshness windows are PROPOSAL (discharges VAL-0023 for SOFA as concrete
+  # proposals; every number requires clinical ratification — OQ-9)
+  - key: age
+    loinc_candidates: ["30525-0"]
+    unit: "a"
+    acceptable_range: [18, 130]     # in-population; below 18 -> out_of_population_scope
+    freshness_window: encounter_constant
+    missing: "whole-rule not_evaluated(population_unverified)"
+  - key: pao2
+    loinc_candidates: ["2703-7"]
+    unit: "mm[Hg]"
+    acceptable_range: [30, 700]
+    freshness_window: PT24H
+    expiry: PT48H
+  - key: fio2
+    loinc_candidates: ["3150-0", "19994-3"]
+    unit: "1"
+    acceptable_range: [0.21, 1.0]
+    pairing: "within 30 min of the qualifying pao2 specimen time"
+  - key: respiratory_support_status
+    loinc_candidates: []            # no single code; device/procedure context concept — VALIDATION REQUIRED
+    values: [invasive_mechanical_ventilation, niv_or_cpap, hfnc, none]
+    qualifies_for_bands_3_4: [invasive_mechanical_ventilation, niv_or_cpap]   # I-1; HFNC excluded by default — OQ-1
+    freshness_window: "within 1 h of the qualifying pao2 specimen time"
+    required_only_when: "pao2/fio2 ratio < 200"
+  - key: platelets
+    loinc_candidates: ["777-3", "26515-7"]
+    unit: "10*3/uL"
+    acceptable_range: [1, 2000]     # 0 -> invalid (implausible; known legacy missing-sentinel)
+    freshness_window: PT24H
+    expiry: PT48H
+  - key: bilirubin_total
+    loinc_candidates: ["1975-2", "14631-6"]
+    unit: "mg/dL"
+    acceptable_range: [0.1, 60]
+    freshness_window: PT24H
+    expiry: PT48H
+  - key: map
+    loinc_candidates: ["8478-0"]
+    unit: "mm[Hg]"
+    acceptable_range: [20, 200]
+    freshness_window: PT4H
+    expiry: PT8H
+  - key: vasoactive_agent
+    coding: "medication code — ATC candidates: norepinephrine C01CA03, epinephrine C01CA24, dopamine C01CA04, dobutamine C01CA07; RxNorm pin VALIDATION REQUIRED"
+    tabulated_agents: [dopamine, dobutamine, epinephrine, norepinephrine]
+    untabulated_agent_behavior: "component not_evaluated(reason: vasoactive_agent_unmapped)"   # I-5 / OQ-5
+  - key: vasoactive_dose_rate
+    unit: "ug/kg/min"
+    acceptable_ranges:
+      dopamine: [0.5, 60]
+      dobutamine: [0.5, 40]
+      epinephrine: [0.01, 5]
+      norepinephrine: [0.01, 5]
+    duration_condition: ">= 1 h at the qualifying rate (Vincent 1996)"        # I-3
+    freshness_window: "administration interval overlapping T; last rate confirmation <= 2 h"
+    expiry: PT4H
+    missing_dose_with_agent_active: "component not_evaluated(reason: missing_dose)"  # rejects legacy D-10 guessing
+  - key: body_weight
+    loinc_candidates: ["29463-7"]
+    unit: "kg"
+    acceptable_range: [30, 300]
+    freshness_window: P7D
+    expiry: P14D
+    required_only_when: "dose rate must be normalized from a non-weight-normalized source unit"
+  - key: gcs_total
+    loinc_candidates: ["9269-2"]    # components 9267-6 (E), 9270-0 (V), 9268-4 (M)
+    unit: "{score}"
+    acceptable_range: [3, 15]       # integers only; out of range -> invalid (legacy D-13 control)
+    freshness_window: PT12H
+    expiry: PT24H
+    confounders:
+      sedation: >-
+        active sedative infusion without documented interruption window ->
+        component not_evaluated(reason: sedation_confounded); RASS <= -3 with
+        active sedation confirms; RASS <= -3 with documented absence of sedatives
+        is genuine coma and scores; sedative-exposure information unavailable ->
+        score with mandatory 'sedation state not assessed' disclosure — default
+        pending the sedation-confounding ADR (REV-NS-01-gcs.md §4); I-8 / OQ-8
+      verbal_not_testable: "any untested E/V/M component -> component not_evaluated(reason: component_not_testable); no minimum-fill, no imputation"
+  - key: rass
+    loinc_candidates: []            # terminology pin VALIDATION REQUIRED
+    acceptable_range: [-5, 4]
+    freshness_window: "within 1 h of the qualifying GCS observation"
+    role: confounder_gate_only      # never a scored input
+  - key: creatinine
+    loinc_candidates: ["2160-0", "14682-9"]
+    unit: "mg/dL"
+    acceptable_range: [0.1, 25]
+    freshness_window: PT24H
+    expiry: PT48H
+  - key: urine_output_24h
+    loinc_candidates: ["9187-6", "3167-4"]
+    unit: "mL"
+    acceptable_range: [0, 10000]    # 0 is a VALID value (anuria) — never a missing-marker
+    interval: "explicit 24-h collection interval ending <= 4 h before T"
+    expiry: "interval ending more than 8 h before T -> expired"
+
+components:
+  respiration:
+    inputs_required: [pao2, fio2]
+    conditionally_required:
+      respiratory_support_status: "when derived ratio < 200"
+    derived: "ratio = pao2 / fio2 (validated, paired inputs only)"
+    bands:                          # SOURCE: Vincent 1996 (mm[Hg])
+      - {score: 0, predicate: "ratio >= 400"}
+      - {score: 1, predicate: "ratio < 400"}
+      - {score: 2, predicate: "ratio < 300"}
+      - {score: 3, predicate: "ratio < 200 AND respiratory_support_qualifying"}   # I-1
+      - {score: 4, predicate: "ratio < 100 AND respiratory_support_qualifying"}
+    note: "unsupported ratio < 200 -> highest satisfied band is 2 (I-2; INFERENCE from band structure, ratification required)"
+    spo2_fio2_surrogate: none       # deliberately absent; any surrogate needs its own citation and ratification (legacy D-03)
+  coagulation:
+    inputs_required: [platelets]
+    bands:                          # SOURCE: Vincent 1996 (10*3/uL)
+      - {score: 0, predicate: "platelets >= 150"}
+      - {score: 1, predicate: "platelets < 150"}
+      - {score: 2, predicate: "platelets < 100"}
+      - {score: 3, predicate: "platelets < 50"}
+      - {score: 4, predicate: "platelets < 20"}
+  liver:
+    inputs_required: [bilirubin_total]
+    bands:                          # SOURCE: Vincent 1996 (mg/dL, continuous, no dead gaps)
+      - {score: 0, predicate: "bilirubin < 1.2"}
+      - {score: 1, predicate: "bilirubin >= 1.2 AND bilirubin < 2.0"}
+      - {score: 2, predicate: "bilirubin >= 2.0 AND bilirubin < 6.0"}
+      - {score: 3, predicate: "bilirubin >= 6.0 AND bilirubin < 12.0"}
+      - {score: 4, predicate: "bilirubin >= 12.0"}
+    unit_note: "printed umol/L bands in Vincent 1996 are rounded conversions and are NOT an independent band set (I-6)"
+  cardiovascular:
+    inputs_required_when_no_tabulated_agent_active: [map]
+    inputs_required_when_tabulated_agent_active: [vasoactive_agent, vasoactive_dose_rate]  # MAP NOT required for bands 2-4 (legacy D-07 fix)
+    bands:                          # SOURCE: Vincent 1996 (doses ug/kg/min, sustained >= 1 h)
+      - {score: 0, predicate: "no tabulated vasoactive agent active AND map >= 70"}
+      - {score: 1, predicate: "no tabulated vasoactive agent active AND map < 70"}
+      - {score: 2, predicate: "dopamine <= 5 OR dobutamine any dose"}
+      - {score: 3, predicate: "dopamine > 5 OR epinephrine <= 0.1 OR norepinephrine <= 0.1"}
+      - {score: 4, predicate: "dopamine > 15 OR epinephrine > 0.1 OR norepinephrine > 0.1"}
+    combination_therapy: "score = max of per-agent band across all active tabulated agents (I-4; PROPOSAL)"
+    untabulated_agent: "not_evaluated(reason: vasoactive_agent_unmapped) — I-5; never a guessed tier"
+    missing_map_with_tabulated_agent: "scoreable from agent bands (positive severity evidence must dominate)"
+    missing_map_without_agent: "not_evaluated(reason: missing_required_input:map)"
+  cns:
+    inputs_required: [gcs_total]
+    confounder_gate: [rass]
+    bands:                          # SOURCE: Vincent 1996
+      - {score: 0, predicate: "gcs == 15"}
+      - {score: 1, predicate: "gcs >= 13 AND gcs <= 14"}
+      - {score: 2, predicate: "gcs >= 10 AND gcs <= 12"}
+      - {score: 3, predicate: "gcs >= 6 AND gcs <= 9"}
+      - {score: 4, predicate: "gcs < 6"}
+  renal:
+    inputs_required: [creatinine, urine_output_24h]   # conservative default — OQ-7; creatinine-only scoring NOT admitted without a ratified partial policy
+    creatinine_bands:               # SOURCE: Vincent 1996 (mg/dL, continuous — no dead gap at 5.0)
+      - {score: 0, predicate: "creatinine < 1.2"}
+      - {score: 1, predicate: "creatinine >= 1.2 AND creatinine < 2.0"}
+      - {score: 2, predicate: "creatinine >= 2.0 AND creatinine < 3.5"}
+      - {score: 3, predicate: "creatinine >= 3.5 AND creatinine < 5.0"}
+      - {score: 4, predicate: "creatinine >= 5.0"}
+    urine_output_bands:             # SOURCE: Vincent 1996 (mL/day)
+      - {score: 0, predicate: "urine_output_24h >= 500"}
+      - {score: 3, predicate: "urine_output_24h < 500"}
+      - {score: 4, predicate: "urine_output_24h < 200"}
+    combination: "component score = max(creatinine_band, urine_output_band)"
+
+status_algebra:
+  component_status_vocabulary: [valid, not_evaluated, stale, invalid]
+  component_partial: "unusable — no approved partial policy exists (evaluation-status-semantics.md §3.2 entry condition unmet)"
+  component_rules:
+    - "all required inputs present, in-window, in-range, unit-mapped -> valid (score readable)"
+    - "any required input absent -> not_evaluated(reason: missing_required_input:<input>)"
+    - "required input present only outside window but inside expiry -> stale (value + age shown; score contribution NOT readable)"
+    - "required input beyond expiry -> not_evaluated(reason: expired_input:<input>)"
+    - "any in-window value out-of-range, unit-unmappable, or in unreconciled conflict -> invalid(reason) — never silently dropped"
+  total_rules:
+    - "total (0-24) computed and emitted ONLY when all six components are valid"
+    - "any component invalid -> total invalid (reasons enumerate offending components)"
+    - "otherwise any component not valid -> total not_evaluated (reasons enumerate every non-valid component; per-component detail remains available)"
+    - "numeric total is NEVER emitted alongside any non-valid status; no partial sums; no zero substitution (HAZ-0005)"
+  precedence: "invalid > not_evaluated > stale > valid (evaluation-status-semantics.md §3.6)"
+  fallback: "any condition not covered above -> not_evaluated(reason: unspecified_condition)"
