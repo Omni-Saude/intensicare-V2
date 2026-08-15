@@ -197,6 +197,69 @@ Each requires an ADR determining whether it is needed at all. §7.5: `Evaluate, 
 
 **No candidate passes Layer 2, 3, or 4 — because no evidence exists at those layers in this cycle.** The one candidate for which Layer 3 can be assessed at all (A2, laboratory Observation) fails on AMH's own documentary account.
 
+> **ATUALIZAÇÃO 2026-08-15 — a seção E abaixo (pt-BR) supersede a linha B0 desta tabela.** O contrato AMH×IntensiCare v1 deixou de ser candidato sem direção: passou a ter **direção DECIDIDA**. As camadas de evidência continuam as mesmas — a decisão não produziu artefato.
+
+---
+
+## E. Contrato AMH×IntensiCare v1 — direção DECIDIDA (2026-08-15)
+
+> Seção acrescentada em 2026-08-15 conforme a política de idioma **DEC-G0-10** (material novo em pt-BR; seções acrescentadas a arquivos existentes em inglês, sem reescrita do corpo). As seções A–D acima permanecem válidas como evidência do ciclo 0 e **não** foram alteradas.
+
+### E.0 O que mudou, e o que não mudou
+
+**DECIDIDO** — em 2026-08-15, **rodaquino-OMNI** (CEO e acionista principal de OMNI e AMH; autoridade do lado AMH registrada em `docs/00-governance/registers/g0-resolucoes-2026-08-15.md` **DEC-G0-04**) resolveu as questões de adjudicação **AQ-1..AQ-6**. O item **B0** deste inventário — *"AMH×IntensiCare contract package — DOES NOT EXIST"* — permanece **factualmente correto quanto ao artefato**, e passa a ter **direção decidida quanto ao conteúdo**.
+
+**A distinção é o ponto central desta seção.** Uma decisão de direção **não é** evidência de camada. Nenhuma das seis resoluções criou um arquivo, publicou um package, provisionou um ambiente ou mediu uma linha de dado. O que elas fizeram foi eliminar a indefinição que impedia sequer especificar o contrato. As camadas 2, 3 e 4 continuam **sem evidência**.
+
+**Ata de referência.** As seis resoluções estão lavradas em [`identity-adjudication/adjudicacao-decisoes-2026-08-15.md`](./identity-adjudication/adjudicacao-decisoes-2026-08-15.md) (`IDN-ADJ-2026-08-15`). Em caso de divergência, **a ata prevalece quanto ao teor**; esta seção é leitura de consequência para o inventário de contratos.
+
+**VALIDAÇÃO NECESSÁRIA — duas pendências de forma** (registradas pela própria ata, §0.3): as AQ-1..AQ-6 **ainda não constam do `decision-register.md`** (verificado 2026-08-15: busca por `AQ-` não retorna entradas; IDs `GDEC-nnnn` a alocar pelo steward), e a ata recomenda **contra-assinatura** do titular, por terem sido transmitidas por intermédio do orquestrador. Pendências de **forma, não de mérito** — a V2 opera sob a ata até que se fechem.
+
+### E.1 Os três elementos com direção decidida
+
+| Elemento do contrato v1 | Direção DECIDIDA | Resolução |
+|---|---|---|
+| **Campo sujeito** | `portable_subject_ref` (PSR) — **obrigatório** como identificador de fronteira. Nativo na V2 desde o dia um, sintético em `dev`. **Independente de encontro, sempre qualificado por encontro.** | **AQ-4 = A plena** |
+| **Cláusula de ciclo de vida de identidade** | Eventos (alias, merge, unmerge/split, restore, reassignment, erasure) **+** `resolve(ref, as_of)` — **obrigatórios** no v1. **Sem eles o G3 não passa.** | **AQ-5 = A vinculante** |
+| **Modelo de finalidade** | Loop clínico sob **tutela da saúde** (LGPD Art. 11, II, "f"). **Sem gate de consentimento no loop clínico.** Usos secundários **bloqueados**. `ie_perm_sms_email` **jamais** como consentimento. Ratificação jurídica antes de dado real. | **AQ-3 = C** |
+
+### E.2 Camadas de evidência que cada elemento ainda não tem
+
+Esta é a tabela que a decisão **não** alterou, e é por isso que ela está aqui.
+
+| Elemento | C1 declarado | C2 implantado | C3 povoado | C4 aptidão | O que falta, concretamente |
+|---|:--:|:--:|:--:|:--:|---|
+| **Campo sujeito (PSR)** | **DIRIGIDO** — desenho AMH-020b existe; contrato v1 não | — | — | — | ONDA C (OS-10..OS-16): SP-1..SP-7. PSR **não existe em nenhum ambiente**; nenhuma ref mintada. Parecer DPO/jurídico (OS-16) é a única dependência externa |
+| **Eventos de ciclo de vida** | **DIRIGIDO** — semântica interna já especificada (AMH-020b); **exposição a consumidor nunca foi requisito** | — | — | — | OS-17. Sem canal, sem envelope, sem ordenação declarada, sem latência medida |
+| **`resolve(ref, as_of)`** | **DIRIGIDO** — a garantia de que toda ref resolve para sempre existe; a operação ponto-no-tempo não | — | — | — | OS-18. Nenhuma operação exposta; semântica de `as_of` fora de janela indefinida |
+| **Modelo de finalidade** | **DIRIGIDO** — base legal decidida | — | n/a | n/a | OS-13 (forma do `consent_decision_ref` sob tutela da saúde) e **OS-16** (ratificação jurídica). A decisão de base legal é da autoridade; a **ratificação** é de advogados (DEC-G0-03) |
+| **Manifesto v1 (o artefato)** | **NÃO EXISTE** | — | — | — | OS-19. `schemas/contracts/` continha apenas `maezo/` e `source-authority/` no commit pinado |
+
+**Leitura obrigatória desta tabela:** **DIRIGIDO ≠ PASSA.** Nenhum elemento passa camada alguma. "Direção decidida" significa que a especificação pode começar, não que o contrato exista.
+
+### E.3 Efeito sobre os itens A e B das seções anteriores
+
+| Item | Estado no ciclo 0 | Efeito das resoluções |
+|---|---|---|
+| **A2** — `Observation` laboratorial | Camada 3 **FALHA** (fonte vazia); C-4: plano de desbloqueio viola o profile | **Encaminhado, não resolvido.** OS-20 determina financiar o caminho **estruturado** Diagnose/LIS. O caminho de texto livre, se executado, fica **explicitamente excluído** do v1 |
+| **A7** — superfície de autenticação | **CONTRADITÓRIA** (3 vias) | **Parcialmente encaminhado.** AQ-6 elimina o *bypass* `cross_tenant_authorized` (deriva documental). O mecanismo implantado por ambiente (C-2) **permanece aberto** — Q2 |
+| **B0** — pacote de contrato v1 | **NÃO EXISTE** | **Direção decidida** (E.1). Artefato ainda inexistente → OS-19 |
+| **B2** — observações clinicamente tipadas | **NÃO EXISTE**; profile exclui vitais por construção | **Inalterado.** As seis resoluções **não** decidem C-1. Sinais vitais exigem **novo profile** e nova decisão de produto — Q1 |
+| **B3** — identidade / alias / merge / consentimento | **NÃO EXISTE** | **Torna-se cláusula obrigatória do v1** (AQ-5). Deixa de ser candidato opcional |
+| **B5** — API de contexto read-only | **NÃO EXISTE** para IntensiCare | **Inalterado.** Nenhuma resolução escolheu transporte — §7.5 continua exigindo comparação |
+
+### E.4 O que continua proibido a este especialista
+
+As resoluções ampliaram o que se sabe; **não** ampliaram o que este papel pode decidir. Permanecem vedados: declarar compatibilidade (G3), escolher transporte, aprovar a fronteira de plataforma, escrever no repositório AMH e emitir parecer jurídico. Todo item da seção E segue rotulado **PROPOSAL**, salvo as três direções **DECIDIDAS** de E.1, cuja autoria é do humano nomeado.
+
+### E.5 Restrição dura de portfólio — inalterada
+
+`compatibility-finding.md` §3 registra a restrição: **`Observation` laboratorial bloqueada e nenhum feed de sinais vitais demonstrado.** OS-20 endereça a primeira metade. **A segunda permanece intacta:** o único profile de Observation da IG fixa `category` em `laboratory` por padrão, excluindo estruturalmente sinais vitais de qualquer instância conforme. Mesmo com as 21 ordens de serviço executadas, **a V2 continua sem sinais vitais da AMH**.
+
+O achado permanece: **candidato a integração; compatibilidade não demonstrada para avaliação de UTI acionável.** O que mudou é a natureza do bloqueio — de **indefinição** para **execução e ambiente**, que é um estado melhor e mensurável.
+
 ---
 
 *Prepared by the AMH-data compatibility architect (Wave 1). Every entry is a PROPOSAL. No interface is approved, no transport chosen, no boundary decided, and no AMH-owner sign-off obtained. Nothing was written to the AMH repository. No PHI, credentials, or tokens appear in this document.*
+
+*Seção E acrescentada em 2026-08-15 (DEC-G0-10, pt-BR). As direções de E.1 são DECIDIDAS por rodaquino-OMNI; tudo o mais permanece PROPOSAL. Corpo em inglês das seções A–D preservado sem reescrita.*

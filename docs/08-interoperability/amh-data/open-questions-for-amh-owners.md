@@ -305,4 +305,104 @@ To be clear about scope, and to avoid implying commitments neither side has made
 
 ---
 
-*Prepared by the AMH-data compatibility architect (Wave 1), from read-only inspection at a pinned commit. No PHI, credentials, tokens, or endpoint addresses appear in this document. Companion documents: [`four-layer-dossier.md`](./four-layer-dossier.md), [`claim-verification-matrix.md`](./claim-verification-matrix.md), [`compatibility-finding.md`](./compatibility-finding.md), [`contract-inventory.md`](./contract-inventory.md), [`contracts.lock.draft.yaml`](./contracts.lock.draft.yaml).*
+## Estado das perguntas após a adjudicação de 2026-08-15 (pt-BR)
+
+> Seção acrescentada em 2026-08-15 conforme a política de idioma **DEC-G0-10**. O corpo em inglês acima permanece **sem reescrita** — era o pedido enviado; esta seção registra o que foi respondido. Onde as duas divergirem, **esta seção prevalece**.
+
+### Autoridade
+
+**DECIDIDO** — **rodaquino-OMNI** (CEO e acionista principal de OMNI e AMH), em **2026-08-15**, resolveu as questões de adjudicação **AQ-1..AQ-6**. Autoridade do lado AMH registrada em `docs/00-governance/registers/g0-resolucoes-2026-08-15.md` **DEC-G0-04**. Algumas dessas resoluções respondem, no todo ou em parte, perguntas Q1..Q10 deste documento.
+
+**Ata de referência.** As seis resoluções estão lavradas em [`identity-adjudication/adjudicacao-decisoes-2026-08-15.md`](./identity-adjudication/adjudicacao-decisoes-2026-08-15.md) (`IDN-ADJ-2026-08-15`). Em caso de divergência, **a ata prevalece quanto ao teor**; esta seção registra apenas o efeito sobre Q1–Q10.
+
+**VALIDAÇÃO NECESSÁRIA — duas pendências de forma** (registradas pela própria ata, §0.3): as AQ-1..AQ-6 **ainda não constam do `decision-register.md`** (verificado 2026-08-15), e a ata recomenda **contra-assinatura** do titular, por terem sido transmitidas por intermédio do orquestrador. São pendências de **forma, não de mérito**.
+
+### Quadro-resumo
+
+| # | Pergunta | Estado | Resolução que a moveu |
+|---|---|---|---|
+| **Q1** | Sinais vitais | 🔴 **ABERTA — sem alteração** | nenhuma |
+| **Q2** | Autenticação implantada | 🟡 **PARCIAL** | AQ-6 (só o *bypass*) |
+| **Q3** | `Observation` — prazo e conformidade | 🟡 **PARCIAL — direção decidida** | AQ-2 + OS-20 |
+| **Q4** | Propriedade do contrato | 🟢 **RESPONDIDA** | DEC-G0-04 + AQ-4/5 |
+| **Q5** | Licença / propriedade intelectual | 🟢 **RESPONDIDA** | DEC-G0-08 |
+| **Q6** | Ambientes e tenants | 🟡 **PARCIAL** | AQ-6 (só a enumeração) |
+| **Q7** | Manifesto Maezo publicado? | 🔴 **ABERTA — sem alteração** | nenhuma |
+| **Q8** | `_dq_status` no FHIR? | 🟡 **PARCIAL — contexto mudou** | AQ-3 |
+| **Q9** | Procedimento de *onboarding* | 🔴 **ABERTA — sem alteração** | nenhuma |
+| **Q10** | Notificação de mudança | 🟡 **PARCIAL** | AQ-2 (via IG 1.1.0) |
+
+**Contagem: 2 respondidas, 5 parciais, 3 abertas.** Nenhuma das respostas produziu evidência de camada 2, 3 ou 4.
+
+---
+
+### 🟢 Q4 — Propriedade do contrato — **RESPONDIDA**
+
+**Resposta.** A autoridade do lado AMH é de **rodaquino-OMNI** (DEC-G0-04). O contrato AMH×IntensiCare v1 **existirá**, e três cláusulas já têm direção decidida: campo sujeito = **PSR** (AQ-4), cláusula de **ciclo de vida de identidade obrigatória** (AQ-5), **modelo de finalidade** por tutela da saúde (AQ-3).
+
+**O que permanece aberto dentro de Q4:** o caminho continua *proposto* (`schemas/contracts/intensicare/v1/`), não confirmado; o **steward de contrato** e o **steward de dado clínico** do lado AMH não foram nomeados; e não se sabe se o *gate* humano estilo XRG-2 se aplica. → **OS-19**.
+
+### 🟢 Q5 — Licença e propriedade intelectual — **RESPONDIDA**
+
+**Resposta — DEC-G0-08, concessão por escrito:** o titular *"autoriza a IntensiCare V2 a ler o repositório `amh-data-platform` em commits pinados e a derivar contratos de integração a partir dele"*. Reuso de código ou artefato AMH **continua exigindo aprovação por artefato**, conforme `legacy-import-policy.md`.
+
+**Efeito.** O `NOASSERTION` observado no metadado do GitHub deixa de ser bloqueador. **Permanece útil** o espelhamento opcional já previsto: arquivo de licença interna no repositório AMH, para que a concessão não dependa de memória de sessão.
+
+### 🟡 Q1 → recolocada: sinais vitais — **ABERTA, e continua sendo a pergunta de maior valor**
+
+**Nada mudou.** As seis resoluções tratam de identidade, tenancy, consentimento e contrato. **Não decidem C-1.**
+
+O dossiê registra que o único profile de `Observation` da IG **fixa `category` em `laboratory` por padrão**, o que exclui **estruturalmente** sinais vitais de qualquer instância conforme — enquanto os diagramas afirmam `Observation` para sinais vitais e ingresso de dispositivos IoT.
+
+**Consequência, dita sem rodeios:** mesmo com as **21 ordens de serviço integralmente executadas**, a V2 continua **sem sinais vitais da AMH**. Sinais vitais exigem **novo profile** — autorado, publicado, versionado e povoado — mais fonte demonstradamente povoada. Isso não é ordem derivável destas decisões; é **nova decisão de produto**.
+
+### 🟡 Q2 — Autenticação implantada — **PARCIAL**
+
+**Respondido (AQ-6=A).** O *bypass* `cross_tenant_authorized` é **deriva documental e não existirá**. O texto sai da IG (**OS-04**) e a V2 escreverá teste negativo asseverando sua impossibilidade.
+
+**Aberto.** A divergência de **três vias** sobre o mecanismo **efetivamente implantado** permanece: CapabilityStatement (OAuth + SMART), README do HAPI (mTLS, SMART *futuro*) e o autorizador OIDC/JWT implementado em `lambda-authorizer-fhir`. **Isto não se resolve por decisão — resolve-se por descoberta empírica**, e depende de acesso a ambiente (Q6).
+
+### 🟡 Q3 — `Observation`: prazo e conformidade — **PARCIAL, com a parte difícil decidida**
+
+**Respondida a parte B, que era a mais importante.** O achado do dossiê (**C-4**) foi incorporado: o plano de desbloqueio de registro emitiria `code = {text: …}` e `valueString`, o que **não conforma** ao profile — e **nenhuma regra de escore de UTI consome uma string**. **OS-20** determina financiar o caminho **estruturado Diagnose/LIS** (analito/valor/unidade → `valueQuantity` com LOINC). Se o caminho de texto livre for executado por prazo, fica **explicitamente excluído** do contrato v1 e **não conta como desbloqueio**.
+
+**Aberto:** **prazo** de ingestão; cobertura de LOINC; tenants; profundidade histórica; cadência.
+
+### 🟡 Q6 — Ambientes e tenants — **PARCIAL**
+
+**Respondido (AQ-6=A).** A enumeração autoritativa é de **12 tenants** pós-ADR-041. CodeSystem/ValueSet (**OS-03**) e tabela de partições do HAPI (**OS-09**) serão corrigidos.
+
+**Aberto, e é o bloqueio estrutural mais duro do dossiê.** Apenas `dev` está provisionado. **Nenhuma resolução cria ambiente.** A condição do G3 de teste em ambiente similar a produção **continua insatisfazível por qualquer parte** — é decisão de orçamento. Também abertos: alcance de rede para carga de trabalho V2, existência real das partições, tenant piloto, *sandbox*/emulador, e a pergunta factual sobre `iop_uti`.
+
+### 🟡 Q8 — `_dq_status` nos recursos FHIR — **PARCIAL: o contexto mudou, a pergunta não**
+
+**Mudou o contexto (AQ-3=C).** Com o loop clínico sob **tutela da saúde** e **sem gate de consentimento**, o vocabulário de `consent-scope` deixa de ser caminho crítico — **OS-21** fica **diferido** até que usos secundários desbloqueiem.
+
+**A pergunta permanece intacta e importante:** os recursos FHIR servidos pelo HAPI carregam **algum** sinal de qualidade de dado? O CodeSystem é escopado ao `_dq_status` do Silver-Rules. **Se o canal FHIR não carregar nenhum sinal**, a V2 recebe **zero dimensão de qualidade de origem** — restrição mais forte que incompatibilidade de vocabulário, e que obrigaria a V2 a derivar qualidade por conta própria.
+
+> **Invariante reafirmada.** AMH `valid | warning | quarantined` (qualidade de origem) e V2 `valid | partial | not_evaluated | stale | invalid` (estado de avaliação) permanecem **dimensões ortogonais**. Nenhuma resolução as fundiu, e nenhuma poderia.
+
+### 🟡 Q10 — Notificação de mudança — **PARCIAL**
+
+**Respondido em parte (AQ-2).** Haverá **IG package 1.1.0** publicado com digest (**OS-05**) — a V2 passa a ter artefato versionado a pinar, em vez de comparar SHAs de blob.
+
+**Aberto:** canal de notificação, janela de depreciação, `CODEOWNERS` para caminhos consumidos, e o efeito das catracas datadas de CI. **Atenção declarada em OS-05:** elevar `identifier:mpiId` de `0..1` para `1..1` **aperta** e é **incompatível para trás** — precisa estar dito na política de compatibilidade, não descoberto por consumidor.
+
+### 🔴 Q7 e Q9 — **ABERTAS, sem alteração**
+
+- **Q7 — manifesto Maezo `PUBLISHED` ou `UNPUBLISHED`?** A contradição **C-3** entre o README e o próprio arquivo não foi tratada por nenhuma resolução. Importa porque a V2 imita esse padrão de publicação: saber se a única publicação exercida completou determina se o padrão está **provado** ou apenas **proposto**.
+- **Q9 — qual documento rege o *onboarding* de consumidor?** O procedimento de acesso FHIR nomeia um autorizador (`fhir-api-authorizer`) que **não existe na árvore**; o implementado tem outro nome e outro desenho. Continua sem resposta qual documento é o vigente e se os controles organizacionais se aplicam a um consumidor do mesmo grupo.
+
+---
+
+### Efeito líquido sobre o achado de compatibilidade
+
+**INFERÊNCIA.** As respostas eliminam três das quatro contradições de camada 1 e dão direção decidida ao contrato v1. **Não produzem evidência nas camadas 2, 3 e 4.**
+
+O achado de [`compatibility-finding.md`](./compatibility-finding.md) **permanece**: *candidato a integração; compatibilidade não demonstrada para avaliação de UTI acionável*. O que mudou é a **natureza** do bloqueio — de **indefinição** para **execução e ambiente**. É um estado melhor, e mensurável.
+
+---
+
+*Prepared by the AMH-data compatibility architect (Wave 1), from read-only inspection at a pinned commit. No PHI, credentials, tokens, or endpoint addresses appear in this document. Companion documents: [`four-layer-dossier.md`](./four-layer-dossier.md), [`claim-verification-matrix.md`](./claim-verification-matrix.md), [`compatibility-finding.md`](./compatibility-finding.md), [`contract-inventory.md`](./contract-inventory.md), [`contracts.lock.draft.yaml`](./contracts.lock.draft.yaml), [`ordens-de-servico-amh-2026-08-15.md`](./ordens-de-servico-amh-2026-08-15.md).*
+
+*Seção pt-BR acrescentada em 2026-08-15 (DEC-G0-10). Corpo em inglês preservado sem reescrita. As resoluções AQ-1..AQ-6 são DECIDIDAS por rodaquino-OMNI; a leitura de seu efeito sobre Q1–Q10 é INFERÊNCIA deste especialista.*

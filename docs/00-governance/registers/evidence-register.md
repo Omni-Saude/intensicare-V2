@@ -3,7 +3,7 @@ doc_id: GOV-EVIDENCE-REGISTER
 status: OPEN
 owner: UNASSIGNED — VALIDATION REQUIRED
 source: Orchestrator-collected OBSERVED facts, 2026-08-14; format per ../evidence-notation.md
-last_updated: 2026-08-14
+last_updated: 2026-08-15
 ---
 
 # Evidence Register
@@ -218,6 +218,67 @@ task's `decisions_prohibited`.
 - **Links:** `registers/blockers-register.md` `BLK-0011`;
   `INTENSICARE_V2_ORCHESTRATOR_PROMPT.md` §15.1, §3 rule 13.
 
+## EVID-0010 — Proteção de branch aplicada a `main` (pt-BR — conteúdo novo, 2026-08-15)
+
+- **Rótulo:** OBSERVED
+- **Declaração:** Proteção de branch foi aplicada em 2026-08-15 a `main`,
+  observada por resposta da API do GitHub: checks obrigatórios
+  `doc-conventions` + `forbidden-content` (modo `strict`), `enforce_admins`
+  ativo, histórico linear obrigatório, force-push proibido, deleção
+  proibida, pull request obrigatório com **0 aprovações** requeridas (valor
+  que `docs/14-devsecops-and-delivery/branch-protection-request.md` §2/§3
+  havia deixado em aberto). Isto substitui, na prática, o estado registrado
+  em `EVID-0009` (proteção ausente).
+- **Proveniência:**
+  - `source_repo`: `intensicare-V2`
+  - `path_or_url`: `docs/00-governance/registers/g0-resolucoes-2026-08-15.md` (`DEC-G0-09`)
+  - `commit_sha_or_version`: n/a (criado nesta sessão, não commitado)
+  - `section_or_lines`: "DEC-G0-09"
+  - `date_collected`: 2026-08-15
+  - `collector`: orquestrador de entrega (resposta de API observada); registrado neste register pelo governance-and-traceability bootstrap steward
+  - `transformation`: resumida a partir da transcrição da decisão/execução no documento-fonte
+  - `confidence`: alta
+  - `owner`: UNASSIGNED — VALIDAÇÃO NECESSÁRIA
+  - `validation_status`: VALIDAÇÃO NECESSÁRIA — este steward não chamou a API do GitHub diretamente para reconfirmar; a observação é transcrita do documento-fonte, não reverificada de forma independente nesta integração
+- **Nota do steward — discrepância não resolvida silenciosamente:** o
+  documento-fonte identifica o repositório protegido como
+  `Omni-Saude/intensicare-V2`; `registers/blockers-register.md` `BLK-0011`
+  (criado em 2026-08-14) usa `rodaquino-OMNI/intensicare-V2`. Qual string é
+  o slug real do remoto é `VALIDAÇÃO NECESSÁRIA` — ver `BLK-0011`.
+- **Links:** `registers/blockers-register.md` `BLK-0011`;
+  `registers/decision-register.md` `GDEC-0004`; supersede prático (não
+  formal) de `EVID-0009`.
+
+## EVID-0011 — Acesso AMH verificado funcional sem novo login (pt-BR — conteúdo novo, 2026-08-15)
+
+- **Rótulo:** OBSERVED
+- **Declaração:** Em 2026-08-15, o acesso a `Omni-Saude/amh-data-platform`
+  foi verificado funcional **sem exigir novo login**, usando o mecanismo
+  OAuth `gh` já existente no usuário `rodaquino-OMNI` (o mesmo mecanismo
+  registrado em `EVID-0007`). A verificação ocorreu antes de qualquer
+  solicitação de credencial nova, conforme instrução operacional citada no
+  documento-fonte ("verificar antes de pedir").
+- **Proveniência:**
+  - `source_repo`: `intensicare-V2` (registro da verificação) / `Omni-Saude/amh-data-platform` (alvo verificado)
+  - `path_or_url`: `docs/00-governance/registers/g0-resolucoes-2026-08-15.md` (`DEC-G0-07`)
+  - `commit_sha_or_version`: n/a (criado nesta sessão, não commitado)
+  - `section_or_lines`: "DEC-G0-07"
+  - `date_collected`: 2026-08-15
+  - `collector`: orquestrador de entrega (verificação observada); registrado neste register pelo governance-and-traceability bootstrap steward
+  - `transformation`: resumida a partir da transcrição da decisão/verificação no documento-fonte
+  - `confidence`: alta
+  - `owner`: UNASSIGNED — VALIDAÇÃO NECESSÁRIA
+  - `validation_status`: VALIDAÇÃO NECESSÁRIA — este steward não executou a verificação de acesso diretamente nesta integração; a observação é transcrita do documento-fonte
+- **Consequência:** fundamenta a resolução de `BLK-0009` (RESOLVIDO POR
+  RATIFICAÇÃO) — o mecanismo de acesso real (OAuth `gh`, não instalação de
+  GitHub App) fica ratificado como o mecanismo sancionado, com item de
+  melhoria não bloqueador registrado (credencial de escopo fino
+  somente-leitura).
+- **Links:** `registers/blockers-register.md` `BLK-0009`;
+  `registers/assumptions-register.md` `ASM-0001` (corpus de ciclo 0, não
+  retraduzido; esta entrada não o substitui, mas registra o fato que o
+  supera na prática); `registers/decision-register.md` `GDEC-0004`.
+
 ## Index
 
 | ID | Statement (short) | Label | Validation status |
@@ -231,3 +292,5 @@ task's `decisions_prohibited`.
 | EVID-0007 | GitHub access via `gh` CLI OAuth, `rodaquino-OMNI` | OBSERVED | VALIDATION REQUIRED |
 | EVID-0008 | AMH repo license = `NOASSERTION` | OBSERVED | VALIDATION REQUIRED |
 | EVID-0009 | Branch protection on `main` not configured; CI gates not enforced | OBSERVED | VALIDATION REQUIRED |
+| EVID-0010 | Proteção de branch aplicada a `main` (2026-08-15) | OBSERVED | VALIDAÇÃO NECESSÁRIA |
+| EVID-0011 | Acesso AMH verificado sem novo login (2026-08-15) | OBSERVED | VALIDAÇÃO NECESSÁRIA |

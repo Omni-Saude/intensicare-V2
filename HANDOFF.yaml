@@ -69,6 +69,29 @@ open_integration_items:
     (docs/16-validation-backlog/README.md is the interim index)
   - 8 of the 10 required diagrams (prompt §19) not yet authored
 
+# --- Atualização 2026-08-15 (pt-BR conforme DEC-G0-10) ---
+adjudicacao_identidade_2026_08_15:
+  autoridade: rodaquino-OMNI (CEO e acionista principal de OMNI e AMH; médico intensivista)
+  registro: docs/08-interoperability/amh-data/identity-adjudication/adjudicacao-decisoes-2026-08-15.md
+  decisoes:
+    AQ1: "C — MPI por tenant (ADR-041 §6) + índice cross-PJ governado (ADR-043, gated em parecer DPO/jurídico); ADR-006 superseded; IG README longitudinal = defeito"
+    AQ2: "B — identifier:mpiId autoritativo; extensions rebaixadas; URL de profile única (fhir.americashealth.com.br); IG package 1.1.0 a publicar e pinar"
+    AQ3: "C — base legal do loop clínico = tutela da saúde (LGPD Art.11,II,f); sem gate de consentimento no loop; usos secundários bloqueados; ie_perm_sms_email jamais consentimento"
+    AQ4: "A — portable_subject_ref obrigatório como identificador de fronteira (amh:psr:v1); PSR nativo desde o dia um; IDP-02 superseded; ref sempre qualificada por encontro"
+    AQ5: "A — eventos de ciclo de vida de identidade + resolve(ref,as_of) obrigatórios no contrato v1; sem eles G3 não passa"
+    AQ6: "A — bypass cross-tenant não existirá (deriva documental); 12 tenants pós-ADR-041; correções no IG 1.1.0"
+  g0_resolucoes: docs/00-governance/registers/g0-resolucoes-2026-08-15.md  # 9 bloqueadores resolvidos/reclassificados pelo titular
+  observacao_honesta: >-
+    Observation da AMH continua NÃO consumível: as pernas de população (fonte vazia),
+    forma (plano free-text) e emissão permanecem abertas; a adjudicação resolveu a
+    perna de identidade em nível de decisão, pendente de implementação AMH (IG 1.1.0,
+    PSR SP-1..7, eventos de ciclo de vida).
+  pendencias_de_integracao:
+    - "Flips de status nos registros (BLK-0001..0011) aguardam commit do orquestrador clínico (edições concorrentes não confirmadas)"
+    - "Ordens de serviço AMH: docs/08-interoperability/amh-data/ordens-de-servico-amh-2026-08-15.md (em produção)"
+    - "ADR-0004 (identidade) em redação; aceitação formal na revisão do titular"
+    - "Política de idioma DEC-G0-10: todo material novo em pt-BR"
+
 rules_for_any_resuming_agent:
   - Read docs/00-governance/evidence-notation.md before writing anything; front-matter is CI-enforced
   - Never name an owner, mark DECIDED, accept a risk, or resolve a contradiction — humans do that

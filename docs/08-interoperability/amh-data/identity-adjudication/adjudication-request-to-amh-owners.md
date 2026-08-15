@@ -2,7 +2,7 @@
 id: IDN-REQ-001
 title: Adjudication request to AMH owners — patient identity, tenant grain, consent
 label: PROPOSAL
-status: OPEN — AWAITING AMH OWNER DECISION
+status: RESPONDIDO em 2026-08-15 — AQ-1..AQ-6 decididas; ver ./adjudicacao-decisoes-2026-08-15.md
 statement: >
   Six questions only AMH owners can answer, each grounded in a named artifact at a
   pinned commit, each blocking a specific piece of IntensiCare V2 work. Answering
@@ -30,6 +30,27 @@ superseded_by: null
 ---
 
 # Adjudication Request to AMH Owners — Patient Identity, Tenant Grain, Consent
+
+> ## ⚑ RESPONDIDO EM 2026-08-15 — ESTE PEDIDO NÃO ESTÁ MAIS ABERTO
+>
+> As seis questões **AQ-1…AQ-6** foram **decididas** pelo titular nomeado
+> **rodaquino-OMNI** em **2026-08-15** (autoridade: DEC-G0-04, que declara deter a autoridade
+> do lado AMH e do lado V2). **Ata:**
+> [`adjudicacao-decisoes-2026-08-15.md`](./adjudicacao-decisoes-2026-08-15.md).
+>
+> **Não reenviar este documento aos owners da AMH como pedido pendente.** Seu valor residual
+> é duplo: (a) é o registro da **evidência** que fundamentou cada decisão, questão por
+> questão; (b) é o **insumo direto da ordem de serviço AMH** — as correções que a decisão
+> gerou do lado AMH (publicar o IG 1.1.0, corrigir o produtor batch, corrigir o
+> CodeSystem/ValueSet `amh-tenant` e a tabela de partições, ordenar SP-1…SP-7) saem daqui.
+>
+> **Respostas em uma linha:** AQ-1 = Opção C · AQ-2 = Opção B · AQ-3 = Opção C ·
+> AQ-4 = Opção A plena · AQ-5 = Opção A vinculante · AQ-6 = Opção A.
+>
+> **Segue aberto e NÃO foi respondido aqui:** as questões **Q1…Q10** do dossiê irmão
+> (`../open-questions-for-amh-owners.md`) — em especial **Q1, sinais vitais**, que continua
+> sendo a questão de maior valor para o portfólio clínico e que **nenhuma** destas decisões
+> toca.
 
 **Audience.** AMH Data Platform owners. Per ADR-042 L5, the approver roles AMH itself
 names for identity/consent clauses are `Principal Architect AMH + CTO`,

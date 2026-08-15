@@ -3,7 +3,7 @@ doc_id: GOV-RISK-REGISTER
 status: OPEN
 owner: UNASSIGNED — VALIDATION REQUIRED
 source: format per ../evidence-notation.md; RISK prefix per INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §8
-last_updated: 2026-08-14
+last_updated: 2026-08-15
 ---
 
 # Risk Register
@@ -38,7 +38,7 @@ provenance: { ... per evidence-notation.md §3 }
 ```yaml
 id: RISK-0001
 title: No named human decision owners for product, clinical safety, security, privacy/legal, data-platform, UX, or operations
-status: OPEN
+status: MATERIALMENTE MITIGADO (2026-08-15)
 statement: >
   As of 2026-08-14, every AUTH-* role in ../authority-model.md is
   UNASSIGNED — VALIDATION REQUIRED. No human has been named for product,
@@ -68,6 +68,31 @@ provenance:
   owner: UNASSIGNED — VALIDATION REQUIRED
   validation_status: VALIDATION REQUIRED
 ```
+
+**Atualização (2026-08-15, pt-BR — conteúdo novo):** `rodaquino-OMNI` aceitou,
+por decisão nomeada e datada, sete dos oito papéis `AUTH-*` referidos acima
+(`AUTH-PRODUCT`, `AUTH-SECURITY` com escopo, `AUTH-DATA-PLATFORM`, `AUTH-UX`
+com restrição, `AUTH-OPERATIONS`, e — com resolução apenas **parcial** —
+`AUTH-CLINSAFETY`/`AUTH-INTENDED-USE` via `GDEC-0003`), além de declarar
+autoridade do lado AMH (`DEC-G0-04`). `AUTH-PRIVACY-LEGAL` foi
+**reclassificado**, não resolvido: nenhum titular jurídico existe, e o
+trabalho prossegue apenas com dados sintéticos até ratificação (Gates
+G6/G8). Ver `g0-resolucoes-2026-08-15.md` e `decision-register.md`
+`GDEC-0003`/`GDEC-0004`. **Este risco não está `CLOSED`:** ele está
+rebaixado de "nenhum titular" para "titular único concentrado" — ver o novo
+`RISK-0007` (risco de concentração de autoridade) abaixo, que registra a
+consequência direta desta mitigação. Reclassificação formal para
+`MITIGATING` ou `ACCEPTED` é `VALIDAÇÃO NECESSÁRIA` pelo titular.
+
+**Nota (2026-08-15, pt-BR — conteúdo novo):** `BLK-0010` foi RESOLVIDO POR
+CONCESSÃO ESCRITA do titular (`rodaquino-OMNI`, DEC-G0-08 — ver
+`decision-register.md` `GDEC-0004`), que autoriza a V2 a ler o repositório
+AMH em commits pinados e a derivar contratos a partir dele. Isto mitiga a
+**autoridade de reuso**; **não** substitui um SPDX/licença formal publicada
+no repositório AMH — o achado `NOASSERTION` (`EVID-0008`) permanece
+tecnicamente verdadeiro. Este risco permanece `OPEN`, rebaixado na prática
+pela concessão escrita; reclassificação formal (`MITIGATING`) é
+`VALIDAÇÃO NECESSÁRIA` pelo titular ou por `AUTH-DATA-PLATFORM`.
 
 ## RISK-0002 — AMH repository license NOASSERTION
 
@@ -254,13 +279,61 @@ provenance:
   validation_status: VALIDATION REQUIRED
 ```
 
+## RISK-0007 — Risco de concentração de autoridade (pt-BR — conteúdo novo, 2026-08-15)
+
+```yaml
+id: RISK-0007
+title: Concentração de autoridade — um único humano detém a maioria dos papéis AUTH-*
+status: OPEN
+statement: >
+  Em 2026-08-15, rodaquino-OMNI (CEO e acionista principal de OMNI e AMH,
+  médico intensivista) aceitou, por decisão nomeada, os papéis
+  AUTH-PRODUCT, AUTH-SECURITY (escopo de projeto), AUTH-DATA-PLATFORM +
+  autoridade AMH, AUTH-UX (com restrição), AUTH-OPERATIONS, e — em
+  resolução parcial — AUTH-CLINSAFETY/AUTH-INTENDED-USE (GDEC-0003). Isto é
+  aproximadamente sete papéis de decisão AUTH-* concentrados em uma única
+  pessoa, que é também proprietária/acionista principal de ambas as
+  organizações (V2 e AMH) cujos interesses o contrato AMH×IntensiCare deve
+  arbitrar de forma independente.
+impact: >
+  Resolve a lacuna "nenhum titular nomeado" (RISK-0001), mas troca-a por um
+  risco de ponto único de decisão e por um conflito de interesse estrutural
+  na adjudicação AMH×IntensiCare (o mesmo titular decide dos dois lados de
+  um contrato entre as duas empresas que possui — ver DEC-G0-04 e
+  adjudicacao-decisoes-2026-08-15.md). Os pares de independência do prompt
+  §4 (implementador ≠ verificador) continuam vinculantes nos portões de
+  verificação (G1, G6, G8) e não são satisfeitos pela mesma pessoa em ambos
+  os lados de um par — isto restringe, mas não elimina, o risco: a
+  concentração na camada de *titularidade de decisão* permanece, mesmo
+  quando a *verificação* de um item específico é delegada a terceiro
+  (ex.: BLK-0003/DEC-G0-02, verificador de intrusão independente no G6).
+likelihood: high (currently certain — directly observed as a consequence of today's resolutions)
+gate_relevance: [G0, G1, G3, G6, G8]
+owner: UNASSIGNED — VALIDATION REQUIRED
+links:
+  evidence: []
+  blockers: [BLK-0001, BLK-0003, BLK-0004, BLK-0005, BLK-0006, BLK-0007, BLK-0009, BLK-0010]
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: docs/00-governance/registers/g0-resolucoes-2026-08-15.md
+  commit_sha_or_version: n/a (criado nesta sessão, não commitado)
+  section_or_lines: "Fundamento do modelo adotado (preâmbulo); DEC-G0-01, 02, 04, 05, 06"
+  date_collected: "2026-08-15"
+  collector: governance-and-traceability bootstrap steward (risco identificado por instrução de integração; fundamento textual no documento-fonte)
+  transformation: "risco derivado (INFERENCE) a partir de nove decisões individuais registradas no documento-fonte, não uma citação única"
+  confidence: high
+  owner: UNASSIGNED — VALIDATION REQUIRED
+  validation_status: "VALIDAÇÃO NECESSÁRIA — gatilhos de revisão individuais já registrados por papel (ver cada DEC-G0-nn em g0-resolucoes-2026-08-15.md); nenhum gatilho consolidado de \"segunda pessoa\" existe ainda para a concentração como um todo"
+```
+
 ## Index
 
 | ID | Title | Status | Gate relevance | Owner |
 |---|---|---|---|---|
-| RISK-0001 | No named human decision owners | OPEN | G0 | UNASSIGNED |
-| RISK-0002 | AMH license NOASSERTION | OPEN | G0, G3 | UNASSIGNED |
+| RISK-0001 | No named human decision owners | MATERIALMENTE MITIGADO (2026-08-15) | G0 | UNASSIGNED |
+| RISK-0002 | AMH license NOASSERTION | OPEN (nota 2026-08-15) | G0, G3 | UNASSIGNED |
 | RISK-0003 | AMH laboratory Observation blocked / no vital-sign feed | OPEN | G2, G3 | UNASSIGNED |
 | RISK-0004 | Only dev environment provisioned in AMH | OPEN | G3, G8 | UNASSIGNED |
 | RISK-0005 | Single Security Gate required check on AMH `main` | OPEN | G3 | UNASSIGNED |
 | RISK-0006 | No automated traceability/PR-linking enforcement yet | OPEN | G7, G8 | UNASSIGNED |
+| RISK-0007 | Concentração de autoridade (um titular, ~7 papéis AUTH-*) | OPEN | G0, G1, G3, G6, G8 | UNASSIGNED |
