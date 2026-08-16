@@ -1,22 +1,23 @@
 ---
 id: REV-NS-01
-title: Legacy review — Glasgow Coma Scale (capture, computation, downstream consumers, sedation/intubation confounding)
+title: Revisão legada — Escala de Coma de Glasgow (captura, computação, consumidores a jusante, confundimento por sedação/intubação)
 label: PROPOSAL
 statement: >
-  V1 captures GCS as a nullable 3-15 integer, computes it in the forms engine by coercing
-  untested E/V/M components to their minimum, feeds it to SOFA CNS and qSOFA with
-  missing-scores-zero semantics, and has no representation whatsoever for
-  "verbal-not-testable" (intubation) or sedation-confounded GCS. Verdict: TRANSFORM.
+  A V1 captura o GCS como um inteiro anulável 3-15, computa-o no motor de formulários coagindo
+  componentes E/V/M não testados ao seu mínimo, alimenta-o no CNS do SOFA e no qSOFA com
+  semântica de escore-ausente-zero, e não tem representação alguma para "verbal-não-testável"
+  (intubação) ou GCS confundido por sedação. Veredito: TRANSFORM.
   PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).
 provenance:
-  source_repo: intensicare (legacy V1, READ-ONLY)
+  source_repo: intensicare (legado V1, READ-ONLY)
   path_or_url: src/intensicare/services/domain_formularios.py; src/intensicare/services/sofa.py; src/intensicare/services/qsofa.py; src/intensicare/models/vital_sign.py; src/intensicare/schemas/vitals.py
-  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (per-file SHA-256 in §1 table; all MATCH docs/archive/legacy-provenance/legacy-pin-cycle-1.md unless noted)
-  section_or_lines: cited per finding below
+  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (SHA-256 por arquivo na tabela §1; todos MATCH docs/archive/legacy-provenance/legacy-pin-cycle-1.md salvo indicação em contrário)
+  section_or_lines: citado por achado abaixo
   date_collected: 2026-08-15
-  collector: legacy neuro/sedation instrument forensics reviewer (cycle 1, Task 1); accountable reviewer rodaquino-OMNI
-  transformation: verbatim excerpts plus reviewer analysis
-  confidence: high
+  collector: revisor forense de instrumentos legados de neuro/sedação (ciclo 1, Tarefa 1); revisor responsável rodaquino-OMNI
+  transformation: >
+    traduzido EN→pt-BR, tranche 4, GDEC-0008 item 8 (trechos verbatim mais análise do revisor)
+  confidence: alta
   owner: UNASSIGNED — VALIDATION REQUIRED
   validation_status: VALIDATION REQUIRED
 links:
@@ -29,13 +30,15 @@ supersedes: null
 superseded_by: null
 ---
 
-# REV-NS-01 — Glasgow Coma Scale
+> Traduzido EN→pt-BR em 2026-08-16 (GDEC-0008 item 8, tranche 4); original EN preservado no histórico git.
 
-## 1. As implemented (OBSERVED, verbatim)
+# REV-NS-01 — Escala de Coma de Glasgow
 
-Sources (paths relative to `/Users/familia/intensicare/`; manifest status per cycle-1 pin):
+## 1. Conforme implementado (OBSERVED, verbatim)
 
-| Path | Lines | SHA-256 | Manifest |
+Fontes (caminhos relativos a `/Users/familia/intensicare/`; status de manifesto conforme pin do ciclo-1):
+
+| Caminho | Linhas | SHA-256 | Manifesto |
 |---|---|---|---|
 | `src/intensicare/models/vital_sign.py` | 49 | `4a145e9b4135fd943043d96c5efe3a3981f84053f78710b0f6fe66bd126d4a12` | MATCH |
 | `src/intensicare/schemas/vitals.py` | 73 | `f6afffd444038f2d1dec19d7047a0013f908d9a7106c52ce9895cbc1ba14308f` | MATCH |
@@ -51,21 +54,21 @@ Sources (paths relative to `/Users/familia/intensicare/`; manifest status per cy
 | `src/intensicare/services/domain_sepsis.py` | 248-261 | `853d2e38a8167d28e7eb242872e871024abe00b4868fc22f7c02502f99d3ccf8` | MATCH |
 | `_work/alerts/pathways/desmame.yaml` | 23-26, 85-105 | `808e81b2de592b0bd9f1bae09e505e5db2d910b6f09fc21ec1f5ef56ecf2574a` | MATCH |
 | `_work/alerts/schema/pathway.schema.json` | 156 | `68ca230a47b7ad5be991cdfc4319ad1d6a6e6112d14b185506588ebed772a203` | MATCH |
-| `docs/rules/clinical-scoring/RULE-CLINICAL-SCORING-013-…md` | whole file | `9e47872ed70d2411ea06cb3ab5ba42cca24b14e9e3d78efd3c92ef3b696656ea` | MATCH |
-| `docs/rules/clinical-scoring/RULE-CLINICAL-SCORING-006-…md` | whole file | `66750c00b709c23a5f18872d72160bc0bb72216f60f51b44ab0b43437a87eef0` | MATCH |
-| `docs/rules/clinical-scoring/RULE-SINAIS-VITAIS-011-…md` | whole file | `5041e6afbb5ae8556030e7f109550d9a24d65a54a329c1264fd64df3f94ce0ad` | MATCH |
-| `tests/test_sofa.py`, `tests/test_qsofa.py` | missing-input vectors | see README §4 | ABSENT (hash-noted) |
+| `docs/rules/clinical-scoring/RULE-CLINICAL-SCORING-013-…md` | arquivo inteiro | `9e47872ed70d2411ea06cb3ab5ba42cca24b14e9e3d78efd3c92ef3b696656ea` | MATCH |
+| `docs/rules/clinical-scoring/RULE-CLINICAL-SCORING-006-…md` | arquivo inteiro | `66750c00b709c23a5f18872d72160bc0bb72216f60f51b44ab0b43437a87eef0` | MATCH |
+| `docs/rules/clinical-scoring/RULE-SINAIS-VITAIS-011-…md` | arquivo inteiro | `5041e6afbb5ae8556030e7f109550d9a24d65a54a329c1264fd64df3f94ce0ad` | MATCH |
+| `tests/test_sofa.py`, `tests/test_qsofa.py` | vetores de entrada ausente | ver README §4 | ABSENT (hash-notado) |
 
-### 1.1 Capture
+### 1.1 Captura
 
-- `models/vital_sign.py:49` — `gcs: Mapped[int | None] = mapped_column(Integer)` — nullable,
-  **no DB-level range constraint**, total score only (no E/V/M columns).
-- `schemas/vitals.py:73` — `gcs: int | None = Field(None, ge=3, le=15, …)` — API ingestion
-  validates 3-15 inclusive; `None` allowed. No zero-sentinel is accepted in the V1 API
-  (unlike the predecessor's `GlasgowValidator`, which exempted 0 as "not measured" —
+- `models/vital_sign.py:49` — `gcs: Mapped[int | None] = mapped_column(Integer)` — anulável,
+  **sem restrição de faixa em nível de BD**, apenas escore total (sem colunas E/V/M).
+- `schemas/vitals.py:73` — `gcs: int | None = Field(None, ge=3, le=15, …)` — a ingestão da API
+  valida 3-15 inclusive; `None` é permitido. Nenhum sentinela-zero é aceito na API da V1
+  (diferente do `GlasgowValidator` do predecessor, que isentava 0 como "não medido" —
   RULE-SINAIS-VITAIS-011).
 
-### 1.2 Forms-engine computation (`domain_formularios.py:731-753`)
+### 1.2 Computação no motor de formulários (`domain_formularios.py:731-753`)
 
 ```text
 o = max(1, min(4, int(ocular)))  if ocular  is not None else 1
@@ -74,129 +77,135 @@ m = max(1, min(6, int(motora)))  if motora  is not None else 1
 return float(o + v + m)
 ```
 
-Docstring, verbatim (line 739): *"If any component is missing, scores minimum for that
-component."* Severity bands (`_glasgow_severity`, lines 756-765): `>=13 leve`,
-`>=9 moderado`, `>=6 grave`, else `muito_grave`.
+Docstring, verbatim (linha 739): *"If any component is missing, scores minimum for that
+component."* ("Se algum componente está ausente, pontua o mínimo para esse componente.")
+Faixas de gravidade (`_glasgow_severity`, linhas 756-765): `>=13 leve`,
+`>=9 moderado`, `>=6 grave`, senão `muito_grave`.
 
-### 1.3 Downstream consumers of GCS (the confounding propagation surface)
+### 1.3 Consumidores a jusante do GCS (a superfície de propagação do confundimento)
 
-| Consumer | Code path | Behaviour with a value | Behaviour when missing |
+| Consumidor | Caminho de código | Comportamento com um valor | Comportamento quando ausente |
 |---|---|---|---|
-| SOFA CNS | `sofa.py:343-369` (`15→0, 13-14→1, 10-12→2, 6-9→3, <6→4`) | matches Vincent 1996 bands exactly | `(0, "missing")` → contributes 0 to total; `"gcs"` appended to `missing_components` (`sofa.py:487-489`) |
-| SOFA (forms path) | `domain_formularios.py:611-626` | same bands | component silently skipped → contributes 0, **no missing metadata at all** |
-| qSOFA mentation | `qsofa.py:101-115` (`GCS<15 → 1`) | matches Sepsis-3 | `(0, "missing")` → contributes 0; listed in `missing_criteria` (`qsofa.py:148-158`) |
-| qSOFA recompute in deterioration | `domain_piora_clinica.py:341-351` | same | each missing input contributes 0 with no marker |
-| Deterioration criterion "Queda de GCS ≥2/24h" | `domain_piora_clinica.py:422-440` | `GCS<=8 → critical`; `ΔGCS<=-2/-3 → alert/critical` | `(False, "normal", "sem dados de GCS")` — **status literal "normal"** |
-| Deterioration API feed | `api/v1/deterioration.py:108,123` | `"glasgow": vital.gcs` | `"glasgow_24h_ago": None` is **hard-coded** — the Δ-branch is structurally unreachable via this route |
-| Weaning readiness | `domain_respiratory.py:389-391` (`GCS>=10` gate), `:771-778` (`GCS>8 OR RASS>=-2`) | conjunctive gate | `None` → criterion fails → NOT ready (conservative direction) |
-| Desmame pathway | `desmame.yaml:85-105` — bands `[11,∞) normal / [9,11) watch / [0,9) critical` (lower-inclusive/upper-exclusive per `pathway.schema.json:156`) | GCS ≥11 adequate | band floor 0 silently admits the impossible values 0-2 into "critical" |
-| Trilhas eligibility | `domain_trilhas_engine.py:297-316` | needs neuro or mechanics data | missing → `eligible=False` with an explicit pt-BR reason (honest not-evaluated pattern) |
-| Step-down readiness | `ews_nrt_runner.py:403-406` | `GCS>=14` | `None` → failure `"GCS unavailable"` (fail-safe, explicit) |
-| Sepsis inputs | `sepsis_input_provider.py:215-216`; `domain_sepsis.py:248-261` | passes `glasgow` only when present | absent key → qSOFA missing-as-zero downstream |
+| CNS do SOFA | `sofa.py:343-369` (`15→0, 13-14→1, 10-12→2, 6-9→3, <6→4`) | corresponde exatamente às faixas de Vincent 1996 | `(0, "missing")` → contribui 0 ao total; `"gcs"` é anexado a `missing_components` (`sofa.py:487-489`) |
+| SOFA (caminho de formulários) | `domain_formularios.py:611-626` | mesmas faixas | o componente é silenciosamente pulado → contribui 0, **nenhum metadado de ausência de forma alguma** |
+| Mentação do qSOFA | `qsofa.py:101-115` (`GCS<15 → 1`) | corresponde ao Sepsis-3 | `(0, "missing")` → contribui 0; listado em `missing_criteria` (`qsofa.py:148-158`) |
+| Recomputação do qSOFA em piora clínica | `domain_piora_clinica.py:341-351` | igual | cada entrada ausente contribui 0 sem nenhum marcador |
+| Critério de deterioração "Queda de GCS ≥2/24h" | `domain_piora_clinica.py:422-440` | `GCS<=8 → critical`; `ΔGCS<=-2/-3 → alert/critical` | `(False, "normal", "sem dados de GCS")` — **status literal "normal"** |
+| Alimentação da API de deterioração | `api/v1/deterioration.py:108,123` | `"glasgow": vital.gcs` | `"glasgow_24h_ago": None` é **hard-coded** — o ramo de Δ é estruturalmente inalcançável por essa rota |
+| Prontidão para desmame | `domain_respiratory.py:389-391` (gate `GCS>=10`), `:771-778` (`GCS>8 OR RASS>=-2`) | gate conjuntivo | `None` → critério falha → NÃO pronto (direção conservadora) |
+| Pathway de desmame | `desmame.yaml:85-105` — faixas `[11,∞) normal / [9,11) watch / [0,9) critical` (limite inferior inclusive/superior exclusivo conforme `pathway.schema.json:156`) | GCS ≥11 adequado | o piso 0 da faixa admite silenciosamente os valores impossíveis 0-2 em "critical" |
+| Elegibilidade de trilhas | `domain_trilhas_engine.py:297-316` | precisa de dados de neuro ou de mecânica | ausente → `eligible=False` com um motivo pt-BR explícito (padrão honesto de não-avaliado) |
+| Prontidão para step-down | `ews_nrt_runner.py:403-406` | `GCS>=14` | `None` → falha `"GCS unavailable"` (fail-safe, explícito) |
+| Entradas de sepse | `sepsis_input_provider.py:215-216`; `domain_sepsis.py:248-261` | passa `glasgow` apenas quando presente | chave ausente → ausente-como-zero do qSOFA a jusante |
 
-## 2. Published instrument (SOURCE)
+## 2. Instrumento publicado (SOURCE)
 
 - Teasdale G, Jennett B. *Assessment of coma and impaired consciousness: a practical scale.*
-  Lancet. 1974;2(7872):81-84. Total = eye (1-4) + verbal (1-5) + motor (1-6); range 3-15.
-- Current structured-assessment guidance: glasgowcomascale.org (Teasdale et al., the Glasgow
-  structured approach; see also Teasdale G et al., *The Glasgow Coma Scale at 40 years*,
-  Lancet Neurol. 2014;13(8):844-854). Verified 2026-08-15: when a component cannot be tested
-  (e.g. verbal under endotracheal intubation/tracheostomy), it is recorded **"NT" (not
-  testable)**; guidance is explicitly **do not report a total score when a component is NT**
-  (a fabricated-low total misrepresents the patient), and **do not use "1" to record an
-  untestable component**.
-- SOFA CNS operationalisation of GCS: Vincent JL et al. Intensive Care Med.
-  1996;22(7):707-710 (bands 15/13-14/10-12/6-9/<6). The original SOFA publication does not
-  define how to score sedated patients; no published rule in it licenses substituting the
-  sedated value.
-- qSOFA: Singer M et al. (Sepsis-3). JAMA. 2016;315(8):801-810; altered mentation
-  operationalised as GCS < 15 (Seymour CW et al. JAMA. 2016;315(8):762-774).
-- Sedation practice anchor: Devlin JW et al. (SCCM PADIS). Crit Care Med.
+  Lancet. 1974;2(7872):81-84. Total = ocular (1-4) + verbal (1-5) + motor (1-6); faixa 3-15.
+- Orientação atual de avaliação estruturada: glasgowcomascale.org (Teasdale et al., a abordagem
+  estruturada de Glasgow; ver também Teasdale G et al., *The Glasgow Coma Scale at 40 years*,
+  Lancet Neurol. 2014;13(8):844-854). Verificado em 2026-08-15: quando um componente não pode
+  ser testado (p. ex., verbal sob intubação endotraqueal/traqueostomia), ele é registrado
+  **"NT" (não testável)**; a orientação é explicitamente **não relatar um escore total quando
+  um componente é NT** (um total fabricado-baixo representa erroneamente o paciente), e **não
+  usar "1" para registrar um componente não testável**.
+- Operacionalização do CNS do SOFA a partir do GCS: Vincent JL et al. Intensive Care Med.
+  1996;22(7):707-710 (faixas 15/13-14/10-12/6-9/<6). A publicação original do SOFA não define
+  como pontuar pacientes sedados; nenhuma regra publicada nela licencia substituir o valor
+  sedado.
+- qSOFA: Singer M et al. (Sepsis-3). JAMA. 2016;315(8):801-810; mentação alterada
+  operacionalizada como GCS < 15 (Seymour CW et al. JAMA. 2016;315(8):762-774).
+- Âncora de prática de sedação: Devlin JW et al. (SCCM PADIS). Crit Care Med.
   2018;46(9):e825-e873.
 
-## 3. Discrepancy analysis
+## 3. Análise de discrepância
 
-| Dimension | Finding | Label |
+| Dimensão | Achado | Rótulo |
 |---|---|---|
-| Range | 3-15 inclusive at API and rules layer — matches Teasdale-Jennett. The predecessor's 0-exempt sentinel (RULE-SINAIS-VITAIS-011) is **not** carried into the V1 API schema, but `desmame.yaml`'s `[0,9)` band floor still accommodates it. No DB constraint backs the API validation. | OBSERVED |
-| Component modelling | Vitals stream stores total only; only the forms engine has E/V/M and it **coerces an untested component to its minimum (1)** — the exact practice glasgowcomascale.org forbids ("do not use 1 for missing"). A fully empty form yields 3.0, indistinguishable from true deep coma. | OBSERVED |
-| Severity bands | `_glasgow_severity` splits published "severe 3-8" into `grave 6-8` / `muito_grave 3-5`; 13/9 boundaries match the published mild/moderate cut-points. Institutional subdivision, not a numeric error. | OBSERVED |
-| Missing-data behaviour | Divergent by consumer (table §1.3): zero-coercion (SOFA/qSOFA), coercion-to-worst (forms E/V/M), status-"normal" (deterioration), fail-safe refusal (weaning, step-down, trilhas). No single policy. | OBSERVED |
-| Structural dead paths | `glasgow_24h_ago` hard-coded `None` in the deterioration API kills the ΔGCS criterion on that route. | OBSERVED |
-| Population | GCS itself is used in adults and children, but every consumer here (SOFA, qSOFA, weaning bundles) is adult-validated; V1 has no age gating → VAL-0006/VAL-0007, HAZ-0036. | INFERENCE |
+| Faixa | 3-15 inclusive na API e na camada de regras — corresponde a Teasdale-Jennett. O sentinela 0-isento do predecessor (RULE-SINAIS-VITAIS-011) **não** é carregado para o schema da API da V1, mas o piso da faixa `[0,9)` de `desmame.yaml` ainda o acomoda. Nenhuma restrição de BD respalda a validação da API. | OBSERVED |
+| Modelagem de componente | O stream de vitais armazena apenas o total; apenas o motor de formulários tem E/V/M e ele **coage um componente não testado ao seu mínimo (1)** — exatamente a prática que glasgowcomascale.org proíbe ("não usar 1 para ausente"). Um formulário totalmente vazio produz 3.0, indistinguível de coma profundo verdadeiro. | OBSERVED |
+| Faixas de gravidade | `_glasgow_severity` divide o "grave 3-8" publicado em `grave 6-8` / `muito_grave 3-5`; os limites 13/9 correspondem aos pontos de corte publicados de leve/moderado. Subdivisão institucional, não um erro numérico. | OBSERVED |
+| Comportamento em dado ausente | Divergente por consumidor (tabela §1.3): coerção-zero (SOFA/qSOFA), coerção-ao-pior (formulários E/V/M), status-"normal" (deterioração), recusa fail-safe (desmame, step-down, trilhas). Nenhuma política única. | OBSERVED |
+| Caminhos mortos estruturais | `glasgow_24h_ago` hard-coded como `None` na API de deterioração mata o critério ΔGCS nessa rota. | OBSERVED |
+| População | O próprio GCS é usado em adultos e crianças, mas todo consumidor aqui (SOFA, qSOFA, bundles de desmame) é validado para adultos; a V1 não tem gating por idade → VAL-0006/VAL-0007, HAZ-0036. | INFERENCE |
 
-## 4. MANDATORY — GCS validity under sedation/intubation
+## 4. OBRIGATÓRIO — validade do GCS sob sedação/intubação
 
-**What V1 actually does (OBSERVED):**
+**O que a V1 realmente faz (OBSERVED):**
 
-1. **There is no "T"/"NT" designation, no verbal substitution, and no RASS-gating of GCS
-   anywhere in the V1 codebase.** The only trace of awareness is a commented-out placeholder
-   in the cross-field invariants registry — `domain_formularios.py:131-132`, verbatim:
-   `# Future invariants can be added here:` / `# "glasgow_intubated_block": { ... },` —
-   i.e. an intubation block for GCS was contemplated and never implemented.
-2. For an **intubated patient** (verbal untestable) the system offers exactly two encodings,
-   both wrong: (a) omit GCS → every scorer treats it as `missing` → SOFA CNS 0 / qSOFA
-   mentation 0 (false reassurance, HAZ-0005 pattern); or (b) submit the forms engine with
-   `verbal` absent or 1 → `_calculate_glasgow` coerces V=1, so an alert intubated patient
-   (E4, M6) becomes GCS 11 → SOFA CNS 2 and qSOFA mentation 1 (false alarm and polluted
-   scores in the opposite direction).
-3. For a **deeply sedated patient (RASS ≤ -3)** the measured GCS reflects drug effect. V1
-   computes SOFA CNS and qSOFA mentation from it with **no sedation covariate**: RASS is not
-   an input to `sofa.py`, `qsofa.py`, or `domain_piora_clinica._eval_gcs_drop`; nothing
-   marks the resulting CNS sub-score as sedation-confounded. A propofol-sedated RASS -4
-   patient scores SOFA CNS 4 and permanently trips the `GCS<=8 → critical "coma"` branch of
-   the deterioration criterion (`domain_piora_clinica.py:430-431`).
-4. The contrast is stark with V1's own CAM-ICU handling, which **does** gate on RASS ≤ -4
-   ("não avaliável", `domain_sedacao.py:271-291`) — proving the pattern was available and
-   simply never applied to GCS.
-5. Downstream propagation (cross-references; deep score review is other workstreams'):
-   SOFA CNS → `sofa.py:487-504` total; qSOFA → `qsofa.py:148-158` total and
-   `domain_sepsis.py:248-261` sepsis screening; EWS consciousness is AVPU-based, not
-   GCS-based (`news2.py:213-224`, `mews.py:151-165` — see REV-NS-08), but a sedated,
-   non-alert patient scores NEWS2 +3 / MEWS +1-3 with the same confounding and no gating;
-   deterioration criteria per §1.3; weaning/step-down gates per §1.3 (these are the only
-   consumers that fail safe).
+1. **Não existe designação "T"/"NT", nem substituição verbal, nem gating por RASS do GCS em
+   lugar algum da base de código da V1.** O único traço de consciência é um placeholder
+   comentado no registro de invariantes cross-field — `domain_formularios.py:131-132`,
+   verbatim: `# Future invariants can be added here:` / `# "glasgow_intubated_block": { ... },`
+   — ou seja, um bloco de intubação para o GCS foi contemplado e nunca implementado.
+2. Para um **paciente intubado** (verbal não testável) o sistema oferece exatamente duas
+   codificações, ambas erradas: (a) omitir o GCS → todo escorador trata como `missing` → CNS
+   do SOFA 0 / mentação do qSOFA 0 (falsa tranquilização, padrão HAZ-0005); ou (b) submeter o
+   motor de formulários com `verbal` ausente ou 1 → `_calculate_glasgow` coage V=1, de modo
+   que um paciente intubado alerta (E4, M6) se torna GCS 11 → CNS do SOFA 2 e mentação do
+   qSOFA 1 (falso alarme e escores poluídos na direção oposta).
+3. Para um **paciente profundamente sedado (RASS ≤ -3)** o GCS medido reflete o efeito da
+   droga. A V1 computa o CNS do SOFA e a mentação do qSOFA a partir dele **sem nenhuma
+   covariável de sedação**: o RASS não é uma entrada para `sofa.py`, `qsofa.py`, nem
+   `domain_piora_clinica._eval_gcs_drop`; nada marca o subescore de CNS resultante como
+   confundido por sedação. Um paciente sedado com propofol em RASS -4 pontua CNS do SOFA 4 e
+   dispara permanentemente o ramo `GCS<=8 → critical "coma"` do critério de deterioração
+   (`domain_piora_clinica.py:430-431`).
+4. O contraste é gritante com o próprio tratamento de CAM-ICU da V1, que **de fato** faz
+   gating por RASS ≤ -4 ("não avaliável", `domain_sedacao.py:271-291`) — provando que o padrão
+   estava disponível e simplesmente nunca foi aplicado ao GCS.
+5. Propagação a jusante (referências cruzadas; a revisão profunda de escore é de outros
+   workstreams): CNS do SOFA → total em `sofa.py:487-504`; qSOFA → total em `qsofa.py:148-158`
+   e rastreio de sepse em `domain_sepsis.py:248-261`; a consciência do EWS é baseada em AVPU,
+   não em GCS (`news2.py:213-224`, `mews.py:151-165` — ver REV-NS-08), mas um paciente sedado,
+   não-alerta pontua NEWS2 +3 / MEWS +1-3 com o mesmo confundimento e nenhum gating; critérios
+   de deterioração conforme §1.3; gates de desmame/step-down conforme §1.3 (estes são os
+   únicos consumidores que falham com segurança).
 
-### INPUT TO ADR — sedation/neuro-assessment confounding policy
+### INPUT TO ADR — política de confundimento sedação/avaliação-neuro
 
-PROPOSAL (clinical recommendation for the V2 ADR; requires named clinical ratification):
+PROPOSAL (recomendação clínica para o ADR da V2; requer ratificação clínica nomeada):
 
-1. **Model GCS as E/V/M components with an explicit NT state per component.** A total is
-   computable only when all three components are tested; an untested component makes the
-   total unrepresentable (not 3, not 15, not minimum-filled), per glasgowcomascale.org.
-   Record modality (e.g. "GCS 10T" display convention) as presentation, not arithmetic.
-2. **Gate neuro-assessment validity on sedation state.** Require a contemporaneous RASS with
-   every GCS intended for scoring. If RASS ≤ -3 (or a sedative infusion is active without an
-   interruption window), the GCS is recorded but flagged `sedation_confounded`; SOFA CNS,
-   qSOFA mentation, and EWS consciousness computed from it must carry
-   `evaluation_status = partial` at best, under an explicitly ratified partial policy
-   (`evaluation-status-semantics.md` §3.2) — never silently `valid`. The clinically honest
-   default for the CNS sub-score of a pharmacologically sedated patient is
-   `not_evaluated (reason: sedation_confounded)`, with the last pre-sedation GCS surfaced.
-3. **Never coerce.** Missing/NT/confounded neuro inputs must be unrepresentable as 0, as
-   component-minimum, or as "normal" (HAZ-0005, SAF-0002 absent-input probe). The three V1
-   behaviours (zero, minimum-fill, status-"normal") are all rejected.
-4. **Population gate**: adult-only until VAL-0006/VAL-0007 are decided.
+1. **Modelar o GCS como componentes E/V/M com um estado NT explícito por componente.** Um
+   total só é computável quando os três componentes são testados; um componente não testado
+   torna o total não-representável (nem 3, nem 15, nem preenchido-pelo-mínimo), conforme
+   glasgowcomascale.org. Registrar a modalidade (p. ex., convenção de exibição "GCS 10T") como
+   apresentação, não como aritmética.
+2. **Fazer gating da validade da avaliação neurológica pelo estado de sedação.** Exigir um
+   RASS contemporâneo para todo GCS destinado a pontuação. Se RASS ≤ -3 (ou uma infusão
+   sedativa está ativa sem uma janela de interrupção), o GCS é registrado mas marcado
+   `sedation_confounded`; o CNS do SOFA, a mentação do qSOFA e a consciência do EWS
+   computados a partir dele devem carregar `evaluation_status = partial` no máximo, sob uma
+   política de parcial explicitamente ratificada (`evaluation-status-semantics.md` §3.2) —
+   nunca silenciosamente `valid`. O padrão clinicamente honesto para o subescore de CNS de um
+   paciente farmacologicamente sedado é `not_evaluated (reason: sedation_confounded)`, com o
+   último GCS pré-sedação exposto.
+3. **Nunca coagir.** Entradas neurológicas ausentes/NT/confundidas devem ser
+   não-representáveis como 0, como mínimo-de-componente, ou como "normal" (HAZ-0005, sonda de
+   entrada-ausente do SAF-0002). Os três comportamentos da V1 (zero, preenchimento-pelo-mínimo,
+   status-"normal") são todos rejeitados.
+4. **Gate de população**: apenas adultos até que VAL-0006/VAL-0007 sejam decididos.
 
-## 5. HAZ-0005 zero-coercion check (from source)
+## 5. Checagem de coerção-zero do HAZ-0005 (a partir da fonte)
 
-**VIOLATION — multiple, live.** (a) `sofa.py:358-359` and `qsofa.py:113-114`: missing GCS →
-0 points; the "missing" marker is metadata that no consumer elevates (the legacy-TA E1
-pattern exactly). (b) `domain_formularios.py:611-626`: forms SOFA drops the component with
-no marker at all. (c) `domain_piora_clinica.py:427-428`: missing GCS → status `"normal"`.
-(d) `domain_formularios.py:749-751`: inverse coercion — missing component → worst value.
-Only the weaning/step-down/trilhas gates (§1.3) behave safely. Intent evidence: the
-missing→0 behaviour is asserted as expected in `tests/test_sofa.py` and
-`tests/test_qsofa.py` missing-input vectors (hash-noted; absent from manifest), so this is
-designed behaviour, not an accident.
+**VIOLAÇÃO — múltipla, viva.** (a) `sofa.py:358-359` e `qsofa.py:113-114`: GCS ausente → 0
+pontos; o marcador "missing" é metadado que nenhum consumidor eleva (exatamente o padrão
+legacy-TA E1). (b) `domain_formularios.py:611-626`: o SOFA de formulários descarta o
+componente sem marcador algum. (c) `domain_piora_clinica.py:427-428`: GCS ausente → status
+`"normal"`. (d) `domain_formularios.py:749-751`: coerção inversa — componente ausente → pior
+valor. Apenas os gates de desmame/step-down/trilhas (§1.3) se comportam com segurança.
+Evidência de intenção: o comportamento ausente→0 é asserido como esperado nos vetores de
+entrada ausente de `tests/test_sofa.py` e `tests/test_qsofa.py` (hash-notados; ausentes do
+manifesto), de modo que este é comportamento projetado, não um acidente.
 
-## 6. Verdict
+## 6. Veredito
 
-**TRANSFORM** — retain only the concept (GCS as the CNS severity input, Teasdale-Jennett
-3-15, Vincent SOFA bands, Sepsis-3 GCS<15 cut-point — all numerically correct in V1); rebuild
-the instrument model entirely: component-level capture with NT, sedation gating per §4, one
-evaluation-status-governed missing-data policy, DB-level constraints, and adult population
-gating. The V1 missing-data behaviours and the absence of any intubation/sedation handling
-are REJECTED as clinical logic.
+**TRANSFORM** — reter apenas o conceito (GCS como a entrada de gravidade de CNS,
+Teasdale-Jennett 3-15, faixas do SOFA de Vincent, ponto de corte GCS<15 do Sepsis-3 — todos
+numericamente corretos na V1); reconstruir o modelo do instrumento por completo: captura em
+nível de componente com NT, gating por sedação conforme §4, uma única política de dado ausente
+governada por evaluation-status, restrições em nível de BD, e gating de população adulta. Os
+comportamentos de dado ausente da V1 e a ausência de qualquer tratamento de
+intubação/sedação são REJEITADOS como lógica clínica.
 
 **PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).**

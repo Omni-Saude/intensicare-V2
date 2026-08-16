@@ -1,26 +1,27 @@
 ---
 id: LEGREV-ALTB-CLUSTER
-title: Legacy review — docs/rules/alert-threshold cluster (116 rule records) with per-rule dispositions
+title: Revisão legada — cluster docs/rules/alert-threshold (116 registros de regra) com disposições por regra
 label: PROPOSAL
 status: PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)
 statement: >
-  Cluster-level review of the legacy extracted-rule catalog cluster
-  docs/rules/alert-threshold (116 rule records), with a per-rule disposition
-  table (rule ID, one-line function with citation, proposed verdict) under
+  Revisão em nível de cluster do cluster de catálogo de regras extraídas legado
+  docs/rules/alert-threshold (116 registros de regra), com uma tabela de disposição
+  por regra (ID da regra, função de uma linha com citação, veredito proposto) sob
   docs/00-governance/legacy-import-policy.md.
 provenance:
-  source_repo: intensicare (legacy V1, READ-ONLY)
-  path_or_url: docs/rules/alert-threshold/ (116 files)
-  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD at pin; docs/rules is covered file-by-file in the cycle-1 SHA-256 manifest)
-  section_or_lines: whole cluster; per-rule upstream citations reproduced from the rule records
+  source_repo: intensicare (legado V1, READ-ONLY)
+  path_or_url: docs/rules/alert-threshold/ (116 arquivos)
+  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD no pin; docs/rules é coberto arquivo-por-arquivo no manifesto SHA-256 do ciclo-1)
+  section_or_lines: cluster inteiro; citações upstream por regra reproduzidas dos registros de regra
   date_collected: 2026-08-15
   last_updated: 2026-08-15
-  collector: rodaquino-OMNI (legacy alert-and-threshold engine forensics reviewer, cycle 1 Task 1)
+  collector: rodaquino-OMNI (revisor forense do motor legado de alerta-e-limiar, ciclo 1 Tarefa 1)
   transformation: >
-    every rule record read (metadata, rule statement, logic, sources);
-    one-line summaries condensed from the records; verdicts are this
-    reviewer's proposals, not the records' own audit verdicts.
-  confidence: high (record contents) / medium (dispositions)
+    traduzido EN→pt-BR, tranche 4, GDEC-0008 item 8 (todo registro de regra lido —
+    metadados, statement da regra, lógica, fontes; resumos de uma linha condensados dos
+    registros; os vereditos são propostas deste revisor, não os vereditos de auditoria
+    próprios dos registros)
+  confidence: alta (conteúdo dos registros) / média (disposições)
   owner: UNASSIGNED — VALIDATION REQUIRED
   validation_status: VALIDATION REQUIRED
 links:
@@ -31,172 +32,176 @@ supersedes: null
 superseded_by: null
 ---
 
-# Alert-threshold rule cluster — disposition review
+> Traduzido EN→pt-BR em 2026-08-16 (GDEC-0008 item 8, tranche 4); original EN preservado no histórico git.
+
+# Cluster de regras de alert-threshold — revisão de disposição
 
 > **PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).**
-> Nothing in this table is an import decision. A verdict here proposes a
-> classification under `docs/00-governance/legacy-import-policy.md` §4; any
-> actual import additionally requires all eight §3 preconditions, which are
-> currently unmet (license/IP, named owner, clinical relevance review, V2
-> acceptance tests, and more).
+> Nada nesta tabela é uma decisão de importação. Um veredito aqui propõe uma
+> classificação sob `docs/00-governance/legacy-import-policy.md` §4; qualquer
+> importação real exige adicionalmente todas as oito precondições do §3, que
+> atualmente não são satisfeitas (licença/PI, dono nomeado, revisão de
+> relevância clínica, testes de aceitação da V2, e mais).
 
-## 0. Sources and integrity
+## 0. Fontes e integridade
 
 - Cluster: `/Users/familia/intensicare/docs/rules/alert-threshold/` —
-  OBSERVED 2026-08-15: **116 rule records** (`ls | wc -l`), all individually
-  SHA-256-hashed in `docs/archive/legacy-provenance/legacy-pin-cycle-1.md`
-  (the manifest's `docs/rules/` file set). Citations inside each record
-  point at the audited upstream repos pinned by the records themselves:
-  `ahlabs-trilhas @ 8166c07eae...` and `trilhas-frontend @ f9656be266...`
-  (audit date 2026-07-03). This review verifies the *records*; the upstream
-  repos were not re-opened (they are outside the cycle-1 pin scope), so
-  each row's implementation citation inherits the record's own audit
-  provenance.
-- Legacy context ADR: `docs/adr/0014-no-abnormal-value-threshold-flagging.md`
-  (hash-and-note in `README.md`) — establishes that clinical values carried
-  no severity encoding in V1's UI; the cluster below is therefore the
-  *entire* severity-signal surface the predecessor had.
-- Two rules (RULE-ALERTAS-001/002) also exist as ratified
-  re-implementations in `src/intensicare/services/domain_alertas.py`
-  (manifest-hashed; engine-review §3.1).
+  OBSERVED 2026-08-15: **116 registros de regra** (`ls | wc -l`), todos
+  individualmente hasheados com SHA-256 em
+  `docs/archive/legacy-provenance/legacy-pin-cycle-1.md` (o conjunto de
+  arquivos `docs/rules/` do manifesto). As citações dentro de cada registro
+  apontam para os repositórios upstream auditados fixados pelos próprios
+  registros: `ahlabs-trilhas @ 8166c07eae...` e `trilhas-frontend @
+  f9656be266...` (data de auditoria 2026-07-03). Esta revisão verifica os
+  *registros*; os repositórios upstream não foram reabertos (estão fora do
+  escopo do pin do ciclo-1), de modo que a citação de implementação de cada
+  linha herda a proveniência de auditoria própria do registro.
+- ADR de contexto legado: `docs/adr/0014-no-abnormal-value-threshold-flagging.md`
+  (hash-and-note em `README.md`) — estabelece que valores clínicos não
+  carregavam codificação de gravidade na UI da V1; o cluster abaixo é,
+  portanto, *toda* a superfície de sinal de gravidade que o predecessor
+  tinha.
+- Duas regras (RULE-ALERTAS-001/002) também existem como reimplementações
+  ratificadas em `src/intensicare/services/domain_alertas.py`
+  (hasheadas no manifesto; engine-review §3.1).
 
-## 1. Verdict method (applied uniformly)
+## 1. Método de veredito (aplicado uniformemente)
 
-| Verdict | Applied when |
+| Veredito | Aplicado quando |
 |---|---|
-| REJECT | The implemented rule is defective (docstring/code contradiction, unreachable branch, wrong column, exact-equality banding, dead code), or embodies a pattern V2's hazard log forbids (absence-to-normal coercion, severity masking, count-as-severity, color-only encoding, unscoped counters) |
-| VALIDATE | The clinical intent is plausible and the implementation is faithful (or the defect is minor), but no legacy clinical rule may enter V2 without empirical/clinical validation and named approval — this is the ceiling for every clinical criterion in the cluster |
-| TRANSFORM | A sound underlying concept is worth carrying, but only as a rebuilt V2-native design; the implementation is not the candidate |
-| SUPERSEDE | V2's architecture or governance already replaces the mechanism wholesale (UI color tokens, Firebase counters, chat retention, operational gauges) |
-| RETAIN / REFINE | Not proposed for any row — the cluster predates evaluation-status semantics, so nothing imports as-is or with light modification |
+| REJECT | A regra implementada é defeituosa (contradição docstring/código, ramo inalcançável, coluna errada, faixa de igualdade exata, código morto), ou incorpora um padrão que o hazard log da V2 proíbe (coerção de ausência-para-normal, mascaramento de gravidade, contagem-como-gravidade, codificação apenas-por-cor, contadores sem escopo) |
+| VALIDATE | A intenção clínica é plausível e a implementação é fiel (ou o defeito é menor), mas nenhuma regra clínica legada pode entrar na V2 sem validação empírica/clínica e aprovação nomeada — este é o teto para todo critério clínico do cluster |
+| TRANSFORM | Um conceito subjacente sólido vale a pena carregar, mas apenas como um design reconstruído nativo da V2; a implementação não é a candidata |
+| SUPERSEDE | A arquitetura ou governança da V2 já substitui o mecanismo por completo (tokens de cor da UI, contadores Firebase, retenção de chat, medidores operacionais) |
+| RETAIN / REFINE | Não proposto para nenhuma linha — o cluster antecede a semântica de evaluation-status, de modo que nada é importado como-está ou com modificação leve |
 
-## 2. Per-rule disposition table
+## 2. Tabela de disposição por regra
 
-Upstream citations abbreviated: `aht` = ahlabs-trilhas @ 8166c07eae,
+Citações upstream abreviadas: `aht` = ahlabs-trilhas @ 8166c07eae,
 `tf` = trilhas-frontend @ f9656be266.
 
-| Rule ID | What it does (one line, cited) | Verdict |
+| ID da regra | O que faz (uma linha, citada) | Veredito |
 |---|---|---|
-| RULE-ALERTAS-001 | Counts criteria with esta_alerta == 1 as the input to color banding (aht trilha_automatica/utils.py:8-13) | REJECT — None/absent coerced to not-in-alert; count feeds severity |
-| RULE-ALERTAS-002 | Buckets movimentacoes by worst manual-pathway color; all-None tuple counts as NEUTRO (aht core/models/leito.py:709-736) | REJECT — absence counted as no-alert (HAZ-0005 at rollup) |
-| RULE-ALERTAS-003 | Maps triggered-criteria count to VERMELHO/AMARELO/NEUTRO via per-trilha count thresholds; record status DISCREPANCY (aht trilha_automatica/utils.py:75-81) | REJECT — count-as-severity |
-| RULE-ALERTAS-004 | Criterion is in-alert iff value == exactly 1 (aht trilha_automatica/utils.py:1-5) | REJECT — unknown/2/None silently not-in-alert |
-| RULE-ALERTAS-005 | Bed rollup, red dominates amber dominates neutral; dead code variant (aht trilha_automatica/utils.py:84-97) | SUPERSEDE — max-severity concept survives elsewhere; dead |
-| RULE-ALERTAS-006 | Bed color with interactive-sepsis LARANJA outranking all, else red > amber > neutral among un-attended pathways (aht core/models/leito.py:246-280) | TRANSFORM — max-severity sound; LARANJA special case and color-only encoding rejected |
-| RULE-ALERTAS-007 | Attendance-ignoring worst color per automatic bed (alerta_nao_assistido); empty string when none (aht core/models/leito.py:457-480) | TRANSFORM — unmasked-severity channel is the correct invariant; empty-string encoding rejected |
-| RULE-ALERTAS-008 | Homecare variant of attendance-ignoring bed alert (aht core/models/leito.py:653-707) | TRANSFORM |
-| RULE-ALERTAS-009 | Bed attended only if every non-NEUTRO pathway attended; all-NEUTRO bed not attended (aht core/models/leito.py:818-848) | TRANSFORM — acknowledgement concept; semantics rebuilt |
-| RULE-ALERTAS-010 | Bed payload: overall alert = worst un-attended color; attended flag requires NEUTRO plus another distinct color (aht core/models/leito.py:390-455) | REJECT — incoherent attended-flag semantics |
-| RULE-ALERTAS-011 | If assistido, render blue ASSISTIDO regardless of alert value, at card and chip level (tf InfoPacienteHeader.tsx:21-105; duplicated in CollapseCard.tsx) | REJECT — attendance masks severity (engine-review Finding 2) |
-| RULE-ALERTAS-012 | Collects criterion messages of red manual pathways into notification content (aht utils/handlers.py:109-126) | TRANSFORM — explanation-payload concept |
-| RULE-ALERTAS-013 | Same for automatic pathways, no whitelist filter (aht utils/handlers.py:129-148) | TRANSFORM |
-| RULE-ALERTAS-014 | Tipo-dependent whitelist filtering of criterion messages; AMBIGUOUS; disabled sepsis special-case in dead code (aht utils/handlers.py:151-196) | REJECT — inconsistent filtering of clinical explanations |
-| RULE-ALERTAS-015 | Homecare red-content extraction, unconditional (aht utils/handlers.py:199-218) | TRANSFORM |
-| RULE-ALERTAS-016 | Push observation when newly red, or when red content changed; suppress unchanged-red duplicates (aht core/utils.py:163-190) | VALIDATE — content-change re-notify vs suppression trade-off is clinical |
-| RULE-ALERTAS-025 | Semantic color tokens (success/info/warning/danger) layered on the UI theme (tf src/styles/variables.less:1-15) | SUPERSEDE |
-| RULE-ALERTAS-027 | Sector rollup: bed is VERMELHO if any track red, else AMARELO if any amber, else NEUTRO; plus gender tally (aht core/models/leito.py:764-816) | TRANSFORM — per-bed worst-severity bucketing sound; color-only rejected |
-| RULE-ALERTAS-028 | Sector total_alertas keyed on the attendance-ignoring bed color (aht core/models/leito.py:750-762) | TRANSFORM — the unmasked KPI is the safety-relevant half |
-| RULE-ALERTAS-029 | Sector assisted-bed counts, two paths (aht core/models/leito.py:332-361) | TRANSFORM |
-| RULE-ANTIMICROBIANO-001 | Active stewardship flags to color, wired in save(); NEUTRO resets assistido (aht trilha5.py:101-105,182-201) | VALIDATE |
-| RULE-ANTIMICROBIANO-002 | Legacy stewardship color variant, dead in the active path (aht trilha5.py:156-180) | REJECT — dead code |
-| RULE-BALANCO-HIDRICO-025 | Fluid-balance cell visibility differs between desktop (!= 0) and mobile (> 0) views (tf GridView.tsx:81-96) | REJECT — same data, two thresholds |
-| RULE-COMUNICACAO-004 | Per-user Firestore unread-count updates on message events (aht utils/firebase.py:19-75) | SUPERSEDE |
-| RULE-COMUNICACAO-005 | Eligibility to decrement an observation's unread contribution (aht utils/mensageiro.py:77-84) | SUPERSEDE |
-| RULE-COMUNICACAO-006 | Zero unread flags when a checagem becomes checked (aht checagem_observacao.py:28-43) | SUPERSEDE |
-| RULE-COMUNICACAO-007 | Skip increment notification for replies that already decremented (aht observacao.py:183-220) | SUPERSEDE |
-| RULE-COMUNICACAO-008 | Chat retention 48 h sector-wide, 96 h with bed filter (aht core/api/v1/views/chat.py:23-54) | SUPERSEDE |
-| RULE-COMUNICACAO-009 | Popup notifications debounced to one per 2 s (tf DisplayNotificaoes.tsx:98,105) | SUPERSEDE |
-| RULE-COMUNICACAO-010 | Status color applied only to leito-type messages; others fixed gray (tf ItemNotificacao.tsx:26-39) | SUPERSEDE |
-| RULE-COMUNICACAO-020 | Streams ignore the current user's own messages (tf DisplayNotificaoes.tsx:100-126) | SUPERSEDE |
-| RULE-COMUNICACAO-046 | Unread-decrement predicate gating Firebase updates (aht utils/firebase.py:77-84) | SUPERSEDE |
-| RULE-EFICIENCIA-001 | v3 efficiency criteria to color; a divergent legacy variant is dead (aht trilha_eficiencia.py:60-65,115-157,206-216) | VALIDATE |
-| RULE-EFICIENCIA-005 | Suspected-brain-death criterion: documented GCS < 6, code uses GCS < 13 with AND-combined sedative filter; unwired (aht trilha_eficiencia.py:878-912) | REJECT — contradicts documented clinical intent |
-| RULE-EFICIENCIA-006 | Restraint-without-agitation: docstring requires delirium absent, code requires delirium present (aht trilha_eficiencia.py:914-937) | REJECT — inverted predicate |
-| RULE-EFICIENCIA-012 | Alert label + recommendation catalog for the 10 efficiency criteria (aht core/facade/trilha_eficiencia.py:94-155) | VALIDATE — clinical wording review |
-| RULE-EQUILIBRIO-001 | Fluid-balance criteria 1-4 with labels and recommendations (aht core/facade/trilha_equilibrio.py:1-36) | VALIDATE |
-| RULE-EQUILIBRIO-003 | Equilibrio criteria flags to persisted color (aht trilha7.py:87-91,124-143) | VALIDATE |
-| RULE-ESTABILIDADE-003 | Noradrenaline + (TEC > 3 s or lactate >= 2) hypoperfusion criterion; unwired (aht trilha_estabilidade.py:215-247) | VALIDATE |
-| RULE-ESTABILIDADE-005 | Docstring documents absence of noradrenaline, code checks presence; unwired (aht trilha_estabilidade.py:286-319) | REJECT — inverted predicate |
-| RULE-ESTABILIDADE-006 | Persistent shock on low-dose vasopressor, compound criterion; unwired (aht trilha_estabilidade.py:321-362) | VALIDATE |
-| RULE-ESTABILIDADE-007 | High-dose noradrenaline without vasopressin or hydrocortisone; wired to VERMELHO; audit DISCREPANCY moderate (aht trilha_estabilidade.py:460-497) | REJECT as implemented — concept to clinical re-derivation |
-| RULE-ESTABILIDADE-008 | Refractory-shock triple-therapy criterion; unwired; audit DISCREPANCY moderate (aht trilha_estabilidade.py:499-521) | REJECT as implemented |
-| RULE-ESTABILIDADE-009 | Dobutamine + high-dose noradrenaline criterion; unwired; audit DISCREPANCY moderate (aht trilha_estabilidade.py:523-542) | REJECT as implemented |
-| RULE-ESTABILIDADE-011 | Bicarbonate use despite compensated pH; noted missing precondition; unwired (aht trilha_estabilidade.py:592-612) | VALIDATE |
-| RULE-ESTABILIDADE-012 | Scheduled antihypertensive + recurrent hypotension; wired to AMARELO (aht trilha_estabilidade.py:614-669) | VALIDATE |
-| RULE-ESTABILIDADE-013 | Recurrent hypertension off vasopressor, stroke-diagnosis exclusion; wired to AMARELO (aht trilha_estabilidade.py:671-709) | VALIDATE |
-| RULE-ESTABILIDADE-014 | v3 stability color: red on criteria 7/10, amber on 12/13 (aht trilha_estabilidade.py:117-155,200-213) | VALIDATE |
-| RULE-ESTABILIDADE-015 | Facade alert texts whose numeric thresholds diverge from evaluated predicates; audit DISCREPANCY moderate (aht core/facade/trilha_estabilidade.py:1-57,92-101) | REJECT — rendered thresholds must equal evaluated predicates |
-| RULE-ESTABILIDADE-023 | Manual stability: count of satisfied criteria to 3-level alert (aht trilha_manual/models/trilha_estabilidade.py:139-153) | REJECT — count-as-severity |
-| RULE-ESTABILIDADE-025 | v1 color with criterio-6 combination clause (aht trilha2.py:78-97) | VALIDATE |
-| RULE-FORMULARIOS-CLINICOS-004 | Peri-wound edema enum around a 4 cm boundary; audit DISCREPANCY low (aht avaliacao_global.py:92-115) | VALIDATE |
-| RULE-FORMULARIOS-CLINICOS-005 | Cardiovascular exam enums + capillary-refill > 5 s flag; audit DISCREPANCY low (tf dataFormEnfermagem.ts:424-472) | VALIDATE |
-| RULE-FORMULARIOS-CLINICOS-006 | Nursing-technician diet block ranges, subset of nurse/dietitian forms (tf dataFormTecEnfermagem.ts:289-339) | VALIDATE |
-| RULE-INDICADORES-ETL-001 | Alert-share percentage per color bucket for sector bars (tf DashboardCard.tsx:54-67) | SUPERSEDE |
-| RULE-INDICADORES-ETL-002 | Assisted-share percentage; at 100% flips the whole sector card to ASSISTIDO (tf DashboardCard.tsx:69-79) | REJECT — sector-level severity masking |
-| RULE-INDICADORES-ETL-005 | Occupancy gauge color at > 70 / > 50 (tf DashboardCard.tsx:291-300) | SUPERSEDE — operational, not clinical |
-| RULE-INDICADORES-ETL-006 | Sector badge: ASSISTIDO top priority, else highest-COUNT color wins with red preferred on ties (tf DashboardCard.tsx:81-109) | REJECT — count-based aggregation can under-report severity (P-3) |
-| RULE-INDICADORES-ETL-007 | Fourth LARANJA bucket in one dashboard type, inconsistent with the 3-level model everywhere else (tf DashboardItem.d.ts:26-31) | REJECT — vocabulary drift |
-| RULE-MOVIMENTACAO-ADT-012 | Rolls 4 pathway alerts into a bed alert; notifies on newly-red or changed-red content (aht atualizar_alerta_movimentacao.py:9-79) | TRANSFORM |
-| RULE-MOVIMENTACAO-ADT-014 | Three-level AMARELO/NEUTRO/VERMELHO enum across bed/trilha/message types (tf Ocupacao.d.ts:106) | SUPERSEDE |
-| RULE-MOVIMENTACAO-ADT-015 | Overdue-protocol-item clock icon on trilha chip (tf CollapseCard.tsx:570-578) | TRANSFORM — overdue-item visibility concept |
-| RULE-MOVIMENTACAO-ADT-016 | Invasive-procedures badge with popover when list non-empty (tf CollapseCard.tsx:423-454) | TRANSFORM |
-| RULE-NUTRICAO-004 | Nutrition color aggregation; AMARELO requires amarelo > 2 with only 2 possible — unreachable (aht trilha6.py:123-142) | REJECT — unreachable severity band |
-| RULE-NUTRICAO-005 | Nutrition-therapy form ranges shared by nursing and dietitian forms (tf dataFormEnfermagem.ts:554-633) | VALIDATE |
-| RULE-PIORA-CLINICA-010 | Track-and-trigger: any single grade-2 sets AMARELO, grade-3 sets VERMELHO, else sum bands 0-7/8-14/15-21; audit DISCREPANCY (aht piora_clinica.py:236-262) | VALIDATE — single-parameter trigger design is sound; bands need clinical derivation |
-| RULE-PIORA-CLINICA-011 | Per-criterion alert labels, recommendations, interventions incl. embedded vital thresholds (aht core/facade/piora_clinica.py:1-262) | VALIDATE — clinical wording review |
-| RULE-PRESCRICAO-002 | Per-dose suspension check; each class also carries a shadowed never-executed inverted first definition (aht horario_prescricao.py:147-162) | REJECT — shadowed inverted logic disqualifies the artifact |
-| RULE-PRESCRICAO-003 | Order-level suspension once DT_SUSPENSAO at or before now (aht prescricao.py:145-151) | TRANSFORM |
-| RULE-PROFILAXIA-003 | Prophylaxis v1: criterion 1 amber; criteria 4/9 red (aht trilha8.py:124-141) | VALIDATE |
-| RULE-PROFILAXIA-004 | Prophylaxis v3: criterion 1 amber; criterion 9 red; NEUTRO resets assistido (aht trilha_profilaxia.py:123-140,181-190) | VALIDATE |
-| RULE-SEDACAO-014 | Sedation v3 color via calcular_alerta_v2; legacy variant dead (aht trilha_sedacao.py:120-166,248-260) | VALIDATE |
-| RULE-SEDACAO-021 | Manual sedation: criteria count to 3-level alert (aht trilha_manual/models/trilha_sedacao.py:174-188) | REJECT — count-as-severity |
-| RULE-SEDACAO-023 | Sedation v1 color from fixed flag subset (aht trilha1.py:108-123) | VALIDATE |
-| RULE-SEPSE-003 | Homecare sepsis color: red if > 2 majors or exactly 4 minors; amber on exactly 2 majors or exactly 3 minors (aht trilha_homecare/models/sepse.py:350-383) | REJECT — exact-equality banding: 5 minors is not red |
-| RULE-SEPSE-004 | Manual sepsis: simultaneous major (C1-9) and minor (C10-20) count thresholds (aht trilha_manual/models/trilha_sepse.py:526-561) | VALIDATE |
-| RULE-SEPSE-007 | Fever without vasopressor; audit DISCREPANCY moderate (aht trilha_sepse.py v3:362-382) | REJECT as implemented |
-| RULE-SEPSE-008 | Tachypnea/hypoxemia without vasopressor or invasive ventilation; audit VERIFIED (aht trilha_sepse.py v3:384-425) | VALIDATE |
-| RULE-SEPSE-009 | Respiratory-failure prescription criterion; audit DISCREPANCY moderate (aht trilha_sepse.py v3:427-450) | REJECT as implemented |
-| RULE-SEPSE-010 | Newly started vasopressor (started within 6 h, absent beyond ~24 h); VERIFIED (aht trilha_sepse.py v3:452-477) | VALIDATE |
-| RULE-SEPSE-011 | Hypotension (PAS < 90 or PAD < 60 or PAM < 65) without vasopressor; VERIFIED (aht trilha_sepse.py v3:479-502) | VALIDATE |
-| RULE-SEPSE-012 | Platelets < 100000 without vasopressor; VERIFIED (aht trilha_sepse.py v3:504-526) | VALIDATE |
-| RULE-SEPSE-013 | Arterial lactate >= 3 without vasopressor; audit DISCREPANCY low (aht trilha_sepse.py v3:528-548) | VALIDATE |
-| RULE-SEPSE-015 | AKI criterion (creatinine > 2 or rise > 0.5) with dialysis exclusions; audit DISCREPANCY moderate (aht trilha_sepse.py v3:615-671) | REJECT as implemented |
-| RULE-SEPSE-016 | Acute encephalopathy/delirium composite; audit DISCREPANCY moderate (aht trilha_sepse.py v3:673-739) | REJECT as implemented |
-| RULE-SEPSE-017 | Hyperbilirubinemia/jaundice, incomplete; audit DISCREPANCY moderate (aht trilha_sepse.py v3:741-761) | REJECT as implemented |
-| RULE-SEPSE-018 | Hypothermia < 36 C without vasopressor; VERIFIED (aht trilha_sepse.py v3:763-781) | VALIDATE |
-| RULE-SEPSE-019 | Tachycardia criterion reading the wrong column; audit DISCREPANCY moderate (aht trilha_sepse.py v3:783-801) | REJECT — wrong data column |
-| RULE-SEPSE-020 | Respiratory alkalosis/hypoxemia in spontaneous ventilation; audit DISCREPANCY moderate (aht trilha_sepse.py v3:803-842) | REJECT as implemented |
-| RULE-SEPSE-021 | Leukocytosis/leukopenia/bandemia/CRP composite with string parsing; audit DISCREPANCY moderate (aht trilha_sepse.py v3:844-913) | REJECT as implemented |
-| RULE-SEPSE-022 | New-onset capillary refill > 3 s; VERIFIED (aht trilha_sepse.py v3:915-942) | VALIDATE |
-| RULE-SEPSE-023 | Enteral tube with adequate GCS (aht trilha_sepse.py v3:944-978) | VALIDATE |
-| RULE-SEPSE-024 | Central line older than 7 days (aht trilha_sepse.py v3:980-1001) | VALIDATE |
-| RULE-SEPSE-025 | Femoral central line older than 5 days (aht trilha_sepse.py v3:1003-1028) | VALIDATE |
-| RULE-SEPSE-026 | Recent abdominal surgery flag (aht trilha_sepse.py v3:1030-1051) | VALIDATE |
-| RULE-SEPSE-058 | v3 sepsis facade threshold table for 20 criteria; audit DISCREPANCY moderate vs model layer (aht core/facade/trilha_sepse_v3.py:1-85) | REJECT — facade diverges from evaluated predicates |
-| RULE-SEPSE-062 | Labs-reassessment guidance: restricted bicarbonate, dobutamine on rising lactate, transfusion threshold; VERIFIED (aht item_trilha_interativa_sepse.py:192-199) | VALIDATE — clinical wording review |
-| RULE-SEPSE-095 | First-hour-delay flag rendered as red clock on protocol item; audit DISCREPANCY (tf ItemProtocoloSepse.tsx:42-50) | TRANSFORM — time-to-task visibility concept |
-| RULE-SINAIS-VITAIS-001 | BP/HR input plausibility bounds, frontend mirrors backend (tf dataFormMovimentacao.ts:72-92) | VALIDATE |
-| RULE-SINAIS-VITAIS-002 | Blood-gas/lab plausibility bounds feeding SOFA/sepsis inputs (tf dataFormMovimentacao.ts:145-198) | VALIDATE |
-| RULE-SINAIS-VITAIS-003 | Urine-output/temperature plausibility bounds (tf dataFormMovimentacao.ts:199-212) | VALIDATE |
-| RULE-SINAIS-VITAIS-004 | Capillary refill captured three inconsistent ways; numeric lower bound 3 s excludes normal values (tf dataFormMovimentacao.ts:93-99) | REJECT — one canonical capture required |
-| RULE-SINAIS-VITAIS-005 | Physician form leaves HR/RR/temp/SpO2 unbounded, unlike other forms and backend (tf dataFormFormularioMedico.ts:270-308) | REJECT — inconsistent validation surface |
-| RULE-TENANCY-ORGANIZACAO-007 | Establishment unread count sums all sectors without user scoping (aht estabelecimento.py:231-251) | REJECT — scoping defect |
-| RULE-TENANCY-ORGANIZACAO-008 | Sector unread count via Firestore per user (aht setor.py:270-286) | SUPERSEDE |
-| RULE-TENANCY-ORGANIZACAO-011 | Sector alert counts merge manual movement alerts with automatic bed alerts (aht setor.py:56-79) | TRANSFORM |
-| RULE-TENANCY-ORGANIZACAO-035 | Sector total-alert counts branch by sector type (aht setor.py:208-236) | TRANSFORM |
-| RULE-TRILHAS-ENGINE-004 | Pathway tab style: ASSISTIDO preferred over the alert level (tf TabRecomendacoes.tsx:110-139) | REJECT — severity masking (engine-review Finding 2) |
-| RULE-TRILHAS-ENGINE-008 | Red warning in protocol card header when items overdue (tf TrilhaInterativa.tsx:190-194) | TRANSFORM |
-| RULE-VENTILACAO-014 | Ventilation alert: red if >= 3 criteria OR any of C1/C8/C9; amber if >= 1 (aht trilha_manual/models/trilha_ventilacao.py:346-364) | VALIDATE — special-criterion override partially corrects count-as-severity |
-| RULE-VENTILACAO-015 | Ventilation v1 active color; NEUTRO resets assistido (aht trilha3.py:82-86,124-142) | VALIDATE |
-| RULE-VENTILACAO-016 | Ventilation v1 legacy color variant, dead (aht trilha3.py:104-122) | REJECT — dead code |
-| RULE-VENTILACAO-018 | Ventilator parameter validation bounds (tf dataFormMovimentacao.ts:110-144) | VALIDATE |
-| RULE-VENTILACAO-021 | Supplemental O2 flow bounded 1-15 L/min (aht respiratoria.py:135-140) | VALIDATE |
-| RULE-VENTILACAO-022 | PEEP bounded 5-18 cmH2O (aht ventilacao.py:170-178) | VALIDATE |
-| RULE-VENTILACAO-023 | Inspiratory pressure bounded 5-40 cmH2O (aht ventilacao.py:180-188) | VALIDATE |
+| RULE-ALERTAS-001 | Conta critérios com esta_alerta == 1 como a entrada para o bandeamento de cor (aht trilha_automatica/utils.py:8-13) | REJECT — None/ausente coagido a não-em-alerta; contagem alimenta gravidade |
+| RULE-ALERTAS-002 | Agrupa movimentacoes pela pior cor de pathway manual; tupla toda-None conta como NEUTRO (aht core/models/leito.py:709-736) | REJECT — ausência contada como sem-alerta (HAZ-0005 na consolidação) |
+| RULE-ALERTAS-003 | Mapeia contagem de critérios disparados para VERMELHO/AMARELO/NEUTRO via limiares de contagem por trilha; status do registro DISCREPANCY (aht trilha_automatica/utils.py:75-81) | REJECT — contagem-como-gravidade |
+| RULE-ALERTAS-004 | Critério está em-alerta sse valor == exatamente 1 (aht trilha_automatica/utils.py:1-5) | REJECT — desconhecido/2/None silenciosamente não-em-alerta |
+| RULE-ALERTAS-005 | Consolidação de leito, vermelho domina amarelo domina neutro; variante de código morto (aht trilha_automatica/utils.py:84-97) | SUPERSEDE — conceito de gravidade-máxima sobrevive em outro lugar; morto |
+| RULE-ALERTAS-006 | Cor do leito com LARANJA de sepse interativa superando tudo, senão vermelho > amarelo > neutro entre pathways não-atendidos (aht core/models/leito.py:246-280) | TRANSFORM — gravidade-máxima sólida; caso especial LARANJA e codificação apenas-por-cor rejeitados |
+| RULE-ALERTAS-007 | Pior cor por leito automático ignorando atendimento (alerta_nao_assistido); string vazia quando nenhum (aht core/models/leito.py:457-480) | TRANSFORM — o canal de gravidade não-mascarada é o invariante correto; codificação por string vazia rejeitada |
+| RULE-ALERTAS-008 | Variante homecare do alerta de leito ignorando atendimento (aht core/models/leito.py:653-707) | TRANSFORM |
+| RULE-ALERTAS-009 | Leito atendido apenas se todo pathway não-NEUTRO atendido; leito todo-NEUTRO não atendido (aht core/models/leito.py:818-848) | TRANSFORM — conceito de reconhecimento; semântica reconstruída |
+| RULE-ALERTAS-010 | Payload de leito: alerta geral = pior cor não-atendida; flag de atendido exige NEUTRO mais outra cor distinta (aht core/models/leito.py:390-455) | REJECT — semântica incoerente de flag-atendido |
+| RULE-ALERTAS-011 | Se assistido, renderiza ASSISTIDO azul independentemente do valor de alerta, em nível de card e de chip (tf InfoPacienteHeader.tsx:21-105; duplicado em CollapseCard.tsx) | REJECT — atendimento mascara gravidade (achado 2 do engine-review) |
+| RULE-ALERTAS-012 | Coleta mensagens de critério de pathways manuais vermelhos no conteúdo de notificação (aht utils/handlers.py:109-126) | TRANSFORM — conceito de payload-explicação |
+| RULE-ALERTAS-013 | O mesmo para pathways automáticos, sem filtro de lista de permissão (aht utils/handlers.py:129-148) | TRANSFORM |
+| RULE-ALERTAS-014 | Filtragem de lista de permissão dependente de tipo para mensagens de critério; AMBÍGUO; caso especial de sepse desabilitado em código morto (aht utils/handlers.py:151-196) | REJECT — filtragem inconsistente de explicações clínicas |
+| RULE-ALERTAS-015 | Extração de conteúdo vermelho de homecare, incondicional (aht utils/handlers.py:199-218) | TRANSFORM |
+| RULE-ALERTAS-016 | Empurra observação quando recém-vermelho, ou quando o conteúdo vermelho muda; suprime duplicatas vermelho-inalterado (aht core/utils.py:163-190) | VALIDATE — o trade-off renotificar-em-mudança-de-conteúdo vs. supressão é clínico |
+| RULE-ALERTAS-025 | Tokens de cor semânticos (success/info/warning/danger) sobrepostos ao tema da UI (tf src/styles/variables.less:1-15) | SUPERSEDE |
+| RULE-ALERTAS-027 | Consolidação de setor: leito é VERMELHO se qualquer trilha vermelha, senão AMARELO se qualquer âmbar, senão NEUTRO; mais contagem por gênero (aht core/models/leito.py:764-816) | TRANSFORM — agrupamento por gravidade-máxima por leito sólido; apenas-por-cor rejeitado |
+| RULE-ALERTAS-028 | total_alertas do setor chaveado na cor de leito ignorando atendimento (aht core/models/leito.py:750-762) | TRANSFORM — o KPI não-mascarado é a metade relevante para segurança |
+| RULE-ALERTAS-029 | Contagens de leito assistido por setor, dois caminhos (aht core/models/leito.py:332-361) | TRANSFORM |
+| RULE-ANTIMICROBIANO-001 | Flags de stewardship ativo para cor, conectado em save(); NEUTRO reseta assistido (aht trilha5.py:101-105,182-201) | VALIDATE |
+| RULE-ANTIMICROBIANO-002 | Variante de cor de stewardship legada, morta no caminho ativo (aht trilha5.py:156-180) | REJECT — código morto |
+| RULE-BALANCO-HIDRICO-025 | Visibilidade da célula de balanço hídrico difere entre visões desktop (!= 0) e mobile (> 0) (tf GridView.tsx:81-96) | REJECT — mesmo dado, dois limiares |
+| RULE-COMUNICACAO-004 | Atualizações de contagem-não-lida no Firestore por usuário em eventos de mensagem (aht utils/firebase.py:19-75) | SUPERSEDE |
+| RULE-COMUNICACAO-005 | Elegibilidade para decrementar a contribuição não-lida de uma observação (aht utils/mensageiro.py:77-84) | SUPERSEDE |
+| RULE-COMUNICACAO-006 | Zera flags de não-lido quando uma checagem se torna checada (aht checagem_observacao.py:28-43) | SUPERSEDE |
+| RULE-COMUNICACAO-007 | Pula notificação de incremento para respostas que já decrementaram (aht observacao.py:183-220) | SUPERSEDE |
+| RULE-COMUNICACAO-008 | Retenção de chat 48h em todo o setor, 96h com filtro de leito (aht core/api/v1/views/chat.py:23-54) | SUPERSEDE |
+| RULE-COMUNICACAO-009 | Notificações popup com debounce para uma a cada 2s (tf DisplayNotificaoes.tsx:98,105) | SUPERSEDE |
+| RULE-COMUNICACAO-010 | Cor de status aplicada apenas a mensagens tipo-leito; outras cinza fixo (tf ItemNotificacao.tsx:26-39) | SUPERSEDE |
+| RULE-COMUNICACAO-020 | Streams ignoram as próprias mensagens do usuário atual (tf DisplayNotificaoes.tsx:100-126) | SUPERSEDE |
+| RULE-COMUNICACAO-046 | Predicado de decremento-não-lido fazendo gate de atualizações Firebase (aht utils/firebase.py:77-84) | SUPERSEDE |
+| RULE-EFICIENCIA-001 | Critérios de eficiência v3 para cor; uma variante legada divergente está morta (aht trilha_eficiencia.py:60-65,115-157,206-216) | VALIDATE |
+| RULE-EFICIENCIA-005 | Critério de suspeita de morte encefálica: documentado GCS < 6, código usa GCS < 13 com filtro sedativo combinado por AND; desconectado (aht trilha_eficiencia.py:878-912) | REJECT — contradiz a intenção clínica documentada |
+| RULE-EFICIENCIA-006 | Contenção-sem-agitação: docstring exige delirium ausente, código exige delirium presente (aht trilha_eficiencia.py:914-937) | REJECT — predicado invertido |
+| RULE-EFICIENCIA-012 | Catálogo de rótulo de alerta + recomendação para os 10 critérios de eficiência (aht core/facade/trilha_eficiencia.py:94-155) | VALIDATE — revisão de texto clínico |
+| RULE-EQUILIBRIO-001 | Critérios 1-4 de balanço hídrico com rótulos e recomendações (aht core/facade/trilha_equilibrio.py:1-36) | VALIDATE |
+| RULE-EQUILIBRIO-003 | Flags de critério de equilibrio para cor persistida (aht trilha7.py:87-91,124-143) | VALIDATE |
+| RULE-ESTABILIDADE-003 | Critério de hipoperfusão: noradrenalina + (TEC > 3s ou lactato >= 2); desconectado (aht trilha_estabilidade.py:215-247) | VALIDATE |
+| RULE-ESTABILIDADE-005 | Docstring documenta ausência de noradrenalina, código checa presença; desconectado (aht trilha_estabilidade.py:286-319) | REJECT — predicado invertido |
+| RULE-ESTABILIDADE-006 | Choque persistente sob vasopressor em dose baixa, critério composto; desconectado (aht trilha_estabilidade.py:321-362) | VALIDATE |
+| RULE-ESTABILIDADE-007 | Noradrenalina em dose alta sem vasopressina ou hidrocortisona; conectada a VERMELHO; auditoria DISCREPANCY moderada (aht trilha_estabilidade.py:460-497) | REJECT como implementada — conceito para re-derivação clínica |
+| RULE-ESTABILIDADE-008 | Critério de tripla terapia de choque refratário; desconectado; auditoria DISCREPANCY moderada (aht trilha_estabilidade.py:499-521) | REJECT como implementada |
+| RULE-ESTABILIDADE-009 | Critério dobutamina + noradrenalina em dose alta; desconectado; auditoria DISCREPANCY moderada (aht trilha_estabilidade.py:523-542) | REJECT como implementada |
+| RULE-ESTABILIDADE-011 | Uso de bicarbonato apesar de pH compensado; precondição ausente anotada; desconectado (aht trilha_estabilidade.py:592-612) | VALIDATE |
+| RULE-ESTABILIDADE-012 | Anti-hipertensivo programado + hipotensão recorrente; conectada a AMARELO (aht trilha_estabilidade.py:614-669) | VALIDATE |
+| RULE-ESTABILIDADE-013 | Hipertensão recorrente sem vasopressor, exclusão por diagnóstico de AVC; conectada a AMARELO (aht trilha_estabilidade.py:671-709) | VALIDATE |
+| RULE-ESTABILIDADE-014 | Cor de estabilidade v3: vermelho em critérios 7/10, âmbar em 12/13 (aht trilha_estabilidade.py:117-155,200-213) | VALIDATE |
+| RULE-ESTABILIDADE-015 | Textos de alerta de facade cujos limiares numéricos divergem dos predicados avaliados; auditoria DISCREPANCY moderada (aht core/facade/trilha_estabilidade.py:1-57,92-101) | REJECT — limiares renderizados devem ser iguais aos predicados avaliados |
+| RULE-ESTABILIDADE-023 | Estabilidade manual: contagem de critérios satisfeitos para alerta de 3 níveis (aht trilha_manual/models/trilha_estabilidade.py:139-153) | REJECT — contagem-como-gravidade |
+| RULE-ESTABILIDADE-025 | Cor v1 com cláusula de combinação critério-6 (aht trilha2.py:78-97) | VALIDATE |
+| RULE-FORMULARIOS-CLINICOS-004 | Enum de edema peri-ferida em torno de um limite de 4 cm; auditoria DISCREPANCY baixa (aht avaliacao_global.py:92-115) | VALIDATE |
+| RULE-FORMULARIOS-CLINICOS-005 | Enums de exame cardiovascular + flag de refil capilar > 5s; auditoria DISCREPANCY baixa (tf dataFormEnfermagem.ts:424-472) | VALIDATE |
+| RULE-FORMULARIOS-CLINICOS-006 | Faixas do bloco de dieta técnico-de-enfermagem, subconjunto dos formulários de enfermeiro/nutricionista (tf dataFormTecEnfermagem.ts:289-339) | VALIDATE |
+| RULE-INDICADORES-ETL-001 | Porcentagem de participação de alerta por bucket de cor para barras de setor (tf DashboardCard.tsx:54-67) | SUPERSEDE |
+| RULE-INDICADORES-ETL-002 | Porcentagem de participação assistida; em 100% vira o card de setor inteiro para ASSISTIDO (tf DashboardCard.tsx:69-79) | REJECT — mascaramento de gravidade em nível de setor |
+| RULE-INDICADORES-ETL-005 | Cor do medidor de ocupação em > 70 / > 50 (tf DashboardCard.tsx:291-300) | SUPERSEDE — operacional, não clínico |
+| RULE-INDICADORES-ETL-006 | Badge de setor: ASSISTIDO prioridade máxima, senão a cor de maior CONTAGEM vence com vermelho preferido em empates (tf DashboardCard.tsx:81-109) | REJECT — agregação baseada em contagem pode subestimar gravidade (P-3) |
+| RULE-INDICADORES-ETL-007 | Quarto bucket LARANJA em um tipo de dashboard, inconsistente com o modelo de 3 níveis em todo o resto (tf DashboardItem.d.ts:26-31) | REJECT — deriva de vocabulário |
+| RULE-MOVIMENTACAO-ADT-012 | Consolida 4 alertas de pathway em um alerta de leito; notifica em conteúdo recém-vermelho ou vermelho-alterado (aht atualizar_alerta_movimentacao.py:9-79) | TRANSFORM |
+| RULE-MOVIMENTACAO-ADT-014 | Enum de três níveis AMARELO/NEUTRO/VERMELHO entre tipos leito/trilha/mensagem (tf Ocupacao.d.ts:106) | SUPERSEDE |
+| RULE-MOVIMENTACAO-ADT-015 | Ícone de relógio de item-de-protocolo-atrasado no chip de trilha (tf CollapseCard.tsx:570-578) | TRANSFORM — conceito de visibilidade de item atrasado |
+| RULE-MOVIMENTACAO-ADT-016 | Badge de procedimentos invasivos com popover quando a lista não está vazia (tf CollapseCard.tsx:423-454) | TRANSFORM |
+| RULE-NUTRICAO-004 | Agregação de cor de nutrição; AMARELO exige amarelo > 2 com apenas 2 possíveis — inalcançável (aht trilha6.py:123-142) | REJECT — faixa de gravidade inalcançável |
+| RULE-NUTRICAO-005 | Faixas de formulário de terapia nutricional compartilhadas pelos formulários de enfermagem e nutricionista (tf dataFormEnfermagem.ts:554-633) | VALIDATE |
+| RULE-PIORA-CLINICA-010 | Track-and-trigger: qualquer grau-2 único define AMARELO, grau-3 define VERMELHO, senão soma em faixas 0-7/8-14/15-21; auditoria DISCREPANCY (aht piora_clinica.py:236-262) | VALIDATE — o design de disparo por parâmetro único é sólido; as faixas precisam de derivação clínica |
+| RULE-PIORA-CLINICA-011 | Rótulos de alerta, recomendações, intervenções por critério incl. limiares vitais embutidos (aht core/facade/piora_clinica.py:1-262) | VALIDATE — revisão de texto clínico |
+| RULE-PRESCRICAO-002 | Checagem de suspensão por dose; cada classe também carrega uma primeira definição invertida sombreada nunca-executada (aht horario_prescricao.py:147-162) | REJECT — lógica invertida sombreada desqualifica o artefato |
+| RULE-PRESCRICAO-003 | Suspensão em nível de ordem quando DT_SUSPENSAO em ou antes de agora (aht prescricao.py:145-151) | TRANSFORM |
+| RULE-PROFILAXIA-003 | Profilaxia v1: critério 1 âmbar; critérios 4/9 vermelho (aht trilha8.py:124-141) | VALIDATE |
+| RULE-PROFILAXIA-004 | Profilaxia v3: critério 1 âmbar; critério 9 vermelho; NEUTRO reseta assistido (aht trilha_profilaxia.py:123-140,181-190) | VALIDATE |
+| RULE-SEDACAO-014 | Cor de sedação v3 via calcular_alerta_v2; variante legada morta (aht trilha_sedacao.py:120-166,248-260) | VALIDATE |
+| RULE-SEDACAO-021 | Sedação manual: contagem de critérios para alerta de 3 níveis (aht trilha_manual/models/trilha_sedacao.py:174-188) | REJECT — contagem-como-gravidade |
+| RULE-SEDACAO-023 | Cor de sedação v1 a partir de subconjunto de flag fixo (aht trilha1.py:108-123) | VALIDATE |
+| RULE-SEPSE-003 | Cor de sepse homecare: vermelho se > 2 majors ou exatamente 4 minors; âmbar em exatamente 2 majors ou exatamente 3 minors (aht trilha_homecare/models/sepse.py:350-383) | REJECT — bandeamento por igualdade exata: 5 minors não é vermelho |
+| RULE-SEPSE-004 | Sepse manual: limiares de contagem simultâneos de major (C1-9) e minor (C10-20) (aht trilha_manual/models/trilha_sepse.py:526-561) | VALIDATE |
+| RULE-SEPSE-007 | Febre sem vasopressor; auditoria DISCREPANCY moderada (aht trilha_sepse.py v3:362-382) | REJECT como implementada |
+| RULE-SEPSE-008 | Taquipneia/hipoxemia sem vasopressor ou ventilação invasiva; auditoria VERIFIED (aht trilha_sepse.py v3:384-425) | VALIDATE |
+| RULE-SEPSE-009 | Critério de prescrição para falência respiratória; auditoria DISCREPANCY moderada (aht trilha_sepse.py v3:427-450) | REJECT como implementada |
+| RULE-SEPSE-010 | Vasopressor recém-iniciado (iniciado dentro de 6h, ausente além de ~24h); VERIFIED (aht trilha_sepse.py v3:452-477) | VALIDATE |
+| RULE-SEPSE-011 | Hipotensão (PAS < 90 ou PAD < 60 ou PAM < 65) sem vasopressor; VERIFIED (aht trilha_sepse.py v3:479-502) | VALIDATE |
+| RULE-SEPSE-012 | Plaquetas < 100000 sem vasopressor; VERIFIED (aht trilha_sepse.py v3:504-526) | VALIDATE |
+| RULE-SEPSE-013 | Lactato arterial >= 3 sem vasopressor; auditoria DISCREPANCY baixa (aht trilha_sepse.py v3:528-548) | VALIDATE |
+| RULE-SEPSE-015 | Critério de AKI (creatinina > 2 ou elevação > 0,5) com exclusões por diálise; auditoria DISCREPANCY moderada (aht trilha_sepse.py v3:615-671) | REJECT como implementada |
+| RULE-SEPSE-016 | Composto de encefalopatia aguda/delirium; auditoria DISCREPANCY moderada (aht trilha_sepse.py v3:673-739) | REJECT como implementada |
+| RULE-SEPSE-017 | Hiperbilirrubinemia/icterícia, incompleta; auditoria DISCREPANCY moderada (aht trilha_sepse.py v3:741-761) | REJECT como implementada |
+| RULE-SEPSE-018 | Hipotermia < 36°C sem vasopressor; VERIFIED (aht trilha_sepse.py v3:763-781) | VALIDATE |
+| RULE-SEPSE-019 | Critério de taquicardia lendo a coluna errada; auditoria DISCREPANCY moderada (aht trilha_sepse.py v3:783-801) | REJECT — coluna de dado errada |
+| RULE-SEPSE-020 | Alcalose respiratória/hipoxemia em ventilação espontânea; auditoria DISCREPANCY moderada (aht trilha_sepse.py v3:803-842) | REJECT como implementada |
+| RULE-SEPSE-021 | Composto de leucocitose/leucopenia/bandemia/PCR com parsing de string; auditoria DISCREPANCY moderada (aht trilha_sepse.py v3:844-913) | REJECT como implementada |
+| RULE-SEPSE-022 | Refil capilar > 3s de início recente; VERIFIED (aht trilha_sepse.py v3:915-942) | VALIDATE |
+| RULE-SEPSE-023 | Sonda enteral com GCS adequado (aht trilha_sepse.py v3:944-978) | VALIDATE |
+| RULE-SEPSE-024 | Acesso central com mais de 7 dias (aht trilha_sepse.py v3:980-1001) | VALIDATE |
+| RULE-SEPSE-025 | Acesso central femoral com mais de 5 dias (aht trilha_sepse.py v3:1003-1028) | VALIDATE |
+| RULE-SEPSE-026 | Flag de cirurgia abdominal recente (aht trilha_sepse.py v3:1030-1051) | VALIDATE |
+| RULE-SEPSE-058 | Tabela de limiar de facade de sepse v3 para 20 critérios; auditoria DISCREPANCY moderada vs. camada de model (aht core/facade/trilha_sepse_v3.py:1-85) | REJECT — facade diverge dos predicados avaliados |
+| RULE-SEPSE-062 | Orientação de reavaliação de labs: bicarbonato restrito, dobutamina em lactato ascendente, limiar de transfusão; VERIFIED (aht item_trilha_interativa_sepse.py:192-199) | VALIDATE — revisão de texto clínico |
+| RULE-SEPSE-095 | Flag de atraso-de-primeira-hora renderizada como relógio vermelho no item de protocolo; auditoria DISCREPANCY (tf ItemProtocoloSepse.tsx:42-50) | TRANSFORM — conceito de visibilidade de tempo-até-tarefa |
+| RULE-SINAIS-VITAIS-001 | Limites de plausibilidade de entrada PA/FC, frontend espelha backend (tf dataFormMovimentacao.ts:72-92) | VALIDATE |
+| RULE-SINAIS-VITAIS-002 | Limites de plausibilidade de gasometria/lab alimentando entradas de SOFA/sepse (tf dataFormMovimentacao.ts:145-198) | VALIDATE |
+| RULE-SINAIS-VITAIS-003 | Limites de plausibilidade de débito urinário/temperatura (tf dataFormMovimentacao.ts:199-212) | VALIDATE |
+| RULE-SINAIS-VITAIS-004 | Refil capilar capturado de três formas inconsistentes; limite inferior numérico 3s exclui valores normais (tf dataFormMovimentacao.ts:93-99) | REJECT — captura canônica única exigida |
+| RULE-SINAIS-VITAIS-005 | Formulário médico deixa FC/FR/temp/SpO2 sem limite, diferente de outros formulários e do backend (tf dataFormFormularioMedico.ts:270-308) | REJECT — superfície de validação inconsistente |
+| RULE-TENANCY-ORGANIZACAO-007 | Contagem de não-lidos do estabelecimento soma todos os setores sem escopo por usuário (aht estabelecimento.py:231-251) | REJECT — defeito de escopo |
+| RULE-TENANCY-ORGANIZACAO-008 | Contagem de não-lidos do setor via Firestore por usuário (aht setor.py:270-286) | SUPERSEDE |
+| RULE-TENANCY-ORGANIZACAO-011 | Contagens de alerta do setor mesclam alertas de movimentação manual com alertas de leito automáticos (aht setor.py:56-79) | TRANSFORM |
+| RULE-TENANCY-ORGANIZACAO-035 | Contagens de alerta total do setor ramificam por tipo de setor (aht setor.py:208-236) | TRANSFORM |
+| RULE-TRILHAS-ENGINE-004 | Estilo da aba de pathway: ASSISTIDO preferido sobre o nível de alerta (tf TabRecomendacoes.tsx:110-139) | REJECT — mascaramento de gravidade (achado 2 do engine-review) |
+| RULE-TRILHAS-ENGINE-008 | Aviso vermelho no cabeçalho do card de protocolo quando itens atrasados (tf TrilhaInterativa.tsx:190-194) | TRANSFORM |
+| RULE-VENTILACAO-014 | Alerta de ventilação: vermelho se >= 3 critérios OU qualquer de C1/C8/C9; âmbar se >= 1 (aht trilha_manual/models/trilha_ventilacao.py:346-364) | VALIDATE — override por critério especial corrige parcialmente contagem-como-gravidade |
+| RULE-VENTILACAO-015 | Cor ativa de ventilação v1; NEUTRO reseta assistido (aht trilha3.py:82-86,124-142) | VALIDATE |
+| RULE-VENTILACAO-016 | Variante de cor legada de ventilação v1, morta (aht trilha3.py:104-122) | REJECT — código morto |
+| RULE-VENTILACAO-018 | Limites de validação de parâmetro de ventilador (tf dataFormMovimentacao.ts:110-144) | VALIDATE |
+| RULE-VENTILACAO-021 | Fluxo de O2 suplementar limitado a 1-15 L/min (aht respiratoria.py:135-140) | VALIDATE |
+| RULE-VENTILACAO-022 | PEEP limitado a 5-18 cmH2O (aht ventilacao.py:170-178) | VALIDATE |
+| RULE-VENTILACAO-023 | Pressão inspiratória limitada a 5-40 cmH2O (aht ventilacao.py:180-188) | VALIDATE |
 
-## 3. Disposition tallies
+## 3. Contagens de disposição
 
-| Verdict | Count |
+| Veredito | Contagem |
 |---|---|
 | RETAIN | 0 |
 | REFINE | 0 |
@@ -206,35 +211,38 @@ Upstream citations abbreviated: `aht` = ahlabs-trilhas @ 8166c07eae,
 | REJECT | 38 |
 | **Total** | **116** |
 
-## 4. Cluster-level findings
+## 4. Achados em nível de cluster
 
-1. **No rule is import-ready.** Zero RETAIN/REFINE. The cluster's best
-   artifacts (the VERIFIED sepsis criteria) are still clinical content that
-   must pass V2's pathway process (candidate inventory, MCDA, named
-   approval) — VALIDATE is the ceiling by construction.
-2. **Docstring/code contradictions are endemic in the clinical criteria**:
-   at least 12 rules where the implemented predicate contradicts the
-   documented clinical intent (inverted absence/presence of noradrenaline,
-   GCS 13 vs 6, delirium present vs absent, wrong column). Any V2 rule
-   language must make the executable form and the reviewed form the same
-   artifact (the legitimate goal behind the rejected Gate C —
-   engine-review §6.2).
-3. **Facade/predicate divergence** (RULE-ESTABILIDADE-015, RULE-SEPSE-058):
-   the numbers shown to clinicians differed from the numbers evaluated.
-   This is HAZ-0036-class (output reads as authoritative direction) and
-   must be a build-blocking check in V2.
-4. **Count-as-severity and exact-equality banding** (ALERTAS-001/003/004,
-   ESTABILIDADE-023, SEDACAO-021, SEPSE-003): absence contributes zero,
-   counts saturate wrongly, and off-by-one band definitions leave holes
-   (5 minors not red). Severity in V2 must be ordinal over evaluated
-   evidence, never a criteria count.
-5. **The assistido family and sector count-tie-breaks mask severity**
-   (ALERTAS-011, TRILHAS-ENGINE-004, INDICADORES-ETL-002/006) — reviewed
-   in depth in engine-review Finding 2.
-6. **Three-plus color vocabularies drift** (NEUTRO/AMARELO/VERMELHO,
-   plus LARANJA in exactly one type, plus ASSISTIDO, plus the newer
-   normal/watch/urgent/critical in the Python engine): one canonical,
-   non-color-only severity vocabulary is a precondition for any V2 UI.
+1. **Nenhuma regra está pronta para importação.** Zero RETAIN/REFINE. Os
+   melhores artefatos do cluster (os critérios de sepse VERIFIED) ainda são
+   conteúdo clínico que deve passar pelo processo de pathway da V2
+   (inventário de candidatos, MCDA, aprovação nomeada) — VALIDATE é o teto
+   por construção.
+2. **Contradições docstring/código são endêmicas nos critérios clínicos**:
+   pelo menos 12 regras onde o predicado implementado contradiz a intenção
+   clínica documentada (ausência/presença invertida de noradrenalina, GCS
+   13 vs. 6, delirium presente vs. ausente, coluna errada). Qualquer
+   linguagem de regra da V2 deve fazer da forma executável e da forma
+   revisada o mesmo artefato (o objetivo legítimo por trás do Gate C
+   rejeitado — engine-review §6.2).
+3. **Divergência facade/predicado** (RULE-ESTABILIDADE-015, RULE-SEPSE-058):
+   os números mostrados aos clínicos diferiam dos números avaliados. Isso é
+   classe-HAZ-0036 (a saída lê como direção autoritativa) e deve ser uma
+   checagem bloqueadora de build na V2.
+4. **Contagem-como-gravidade e bandeamento por igualdade exata**
+   (ALERTAS-001/003/004, ESTABILIDADE-023, SEDACAO-021, SEPSE-003): a
+   ausência contribui zero, contagens saturam errado, e definições de faixa
+   off-by-one deixam buracos (5 minors não é vermelho). A gravidade na V2
+   deve ser ordinal sobre evidência avaliada, nunca uma contagem de
+   critérios.
+5. **A família assistido e os desempates por contagem de setor mascaram
+   gravidade** (ALERTAS-011, TRILHAS-ENGINE-004, INDICADORES-ETL-002/006) —
+   revisado em profundidade no achado 2 do engine-review.
+6. **Deriva de vocabulários de três-ou-mais cores** (NEUTRO/AMARELO/VERMELHO,
+   mais LARANJA em exatamente um tipo, mais ASSISTIDO, mais o mais recente
+   normal/watch/urgent/critical no motor Python): um vocabulário de
+   gravidade único, canônico e não-apenas-por-cor é uma precondição para
+   qualquer UI da V2.
 
-All dispositions: PROPOSAL — AWAITING NAMED CLINICAL REVIEW
+Todas as disposições: PROPOSAL — AWAITING NAMED CLINICAL REVIEW
 (reviewer: rodaquino-OMNI).
