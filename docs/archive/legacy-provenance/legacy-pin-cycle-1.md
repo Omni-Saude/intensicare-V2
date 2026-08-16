@@ -1,49 +1,58 @@
 ---
 doc_id: LEGACY-PIN-CYCLE-1
-title: Cycle-1 legacy evidence pin — repository state and per-file SHA-256 manifest
+title: Pin de evidência legada do ciclo-1 — estado do repositório e manifesto SHA-256 por arquivo
 status: OBSERVED
 owner: delivery orchestrator (cycle 1); accountable reviewer rodaquino-OMNI (GDEC-0003)
-source: /Users/familia/intensicare (READ-ONLY legacy repository), hashed in place at collection time
+source: /Users/familia/intensicare (repositório legado READ-ONLY), hasheado in place no momento da coleta
 date_collected: 2026-08-15
 last_updated: 2026-08-15
 provenance:
-  source_repo: intensicare (legacy V1)
+  source_repo: intensicare (legado V1)
   path_or_url: /Users/familia/intensicare
-  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD at pin time)
-  section_or_lines: n/a — whole-file hashes below
+  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD no momento do pin)
+  section_or_lines: n/a — hashes de arquivo inteiro abaixo
   date_collected: 2026-08-15
   collector: delivery orchestrator (cycle 1)
-  transformation: computed — shasum -a 256 over the file sets listed below
-  confidence: high
-  validation_status: N/A (mechanical hash manifest; no clinical claim)
+  transformation: >
+    traduzido EN→pt-BR, tranche 3, GDEC-0008 item 8 (prosa apenas; o manifesto
+    de hashes SHA-256 abaixo é dado mecânico — caminhos de arquivo e hashes —
+    e permanece inalterado, pois caminhos de arquivo não são traduzíveis);
+    computado — shasum -a 256 sobre os conjuntos de arquivo listados abaixo
+  confidence: alta
+  validation_status: N/A (manifesto de hash mecânico; nenhuma alegação clínica)
 ---
 
-# Cycle-1 legacy evidence pin
+> Traduzido EN→pt-BR em 2026-08-16 (GDEC-0008 item 8, tranche 3); original EN preservado no histórico git. O manifesto de hashes SHA-256 abaixo (caminhos de arquivo e valores de hash) é dado mecânico e não foi alterado pela tradução.
 
-OBSERVED: the legacy repository `/Users/familia/intensicare` was at git HEAD
-`1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79` on 2026-08-15 when cycle-1 review
-began. Because clinical content in that repository includes untracked
-working-tree files (see HANDOFF.yaml `legacy_assessment_caution`), commit
-pinning alone is insufficient; every file cited by a cycle-1 review record is
-therefore hashed here at read time. A review record citing `file:line` is
-valid only against the file whose SHA-256 matches this manifest.
+# Pin de evidência legada do ciclo-1
 
-Rules:
+OBSERVED: o repositório legado `/Users/familia/intensicare` estava no HEAD
+git `1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79` em 2026-08-15 quando a revisão
+do ciclo-1 começou. Como o conteúdo clínico daquele repositório inclui
+arquivos de working-tree não rastreados (ver `legacy_assessment_caution` do
+HANDOFF.yaml), a fixação por commit sozinha é insuficiente; todo arquivo
+citado por um registro de revisão do ciclo-1 é, portanto, hasheado aqui no
+momento da leitura. Um registro de revisão citando `arquivo:linha` só é
+válido contra o arquivo cujo SHA-256 corresponde a este manifesto.
 
-- The legacy repository is READ-ONLY. No cycle-1 task may modify it.
-- Any reviewer re-verifying a citation must first re-hash the file
-  (`shasum -a 256 <path>`) and compare against this manifest. On mismatch,
-  the citation is stale and the review record must be re-verified, not
-  trusted.
-- Paths below are relative to `/Users/familia/intensicare/`.
+Regras:
 
-File sets hashed: `src/intensicare/services/`, `src/intensicare/models/`,
-`src/intensicare/schemas/`, `src/intensicare/core/metrics.py`, selected
-`src/intensicare/api/` clinical surfaces, `_work/alerts/` (pathway
-definitions, registry, schema), `docs/rules/` (entire extracted-rule
-catalog), and `alembic/versions/0038_seed_default_threshold_config.py`.
+- O repositório legado é READ-ONLY. Nenhuma tarefa do ciclo-1 pode
+  modificá-lo.
+- Qualquer revisor re-verificando uma citação deve primeiro re-hashear o
+  arquivo (`shasum -a 256 <caminho>`) e comparar contra este manifesto. Em
+  caso de descasamento, a citação está obsoleta e o registro de revisão deve
+  ser re-verificado, não confiado.
+- Os caminhos abaixo são relativos a `/Users/familia/intensicare/`.
 
-## SHA-256 manifest
+Conjuntos de arquivo hasheados: `src/intensicare/services/`,
+`src/intensicare/models/`, `src/intensicare/schemas/`,
+`src/intensicare/core/metrics.py`, superfícies clínicas selecionadas de
+`src/intensicare/api/`, `_work/alerts/` (definições de pathway, registro,
+schema), `docs/rules/` (catálogo de regras extraídas inteiro), e
+`alembic/versions/0038_seed_default_threshold_config.py`.
+
+## Manifesto SHA-256
 
 ```text
 0ef987c51ad18ab9dea0123da1fec8c2c07b96833abe6a5ce9ee6db8e4e3758f  _work/alerts/pathways/antimicrobiano.yaml

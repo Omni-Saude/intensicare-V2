@@ -1,24 +1,28 @@
 ---
 id: LEGREV-ALTB-ENGINE
-title: Legacy review — V1 alert engine, bed-severity derivation, precedence, and suppression logic
+title: Revisão legada — engine de alerta da V1, derivação de severidade de leito, precedência e lógica de supressão
 label: PROPOSAL
 status: PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)
 statement: >
-  Source-verified review of the V1 alert generation engine, the bed-severity
-  floor-to-normal derivation, the severity/color model, the
-  assistido-precedence family, cooldown/de-duplication/grouping windows, the
-  correlation engine, the alert compiler, and the notification worker, with
-  per-artifact verdicts under docs/00-governance/legacy-import-policy.md.
+  Revisão source-verified do engine de geração de alertas da V1, a derivação
+  com piso-para-normal da severidade de leito, o modelo de severidade/cor, a
+  família de precedência assistido, as janelas de
+  cooldown/deduplicação/agrupamento, o motor de correlação, o compilador de
+  alertas, e o worker de notificação, com vereditos por artefato sob
+  docs/00-governance/legacy-import-policy.md.
 provenance:
-  source_repo: intensicare (legacy V1, READ-ONLY)
+  source_repo: intensicare (legado V1, READ-ONLY)
   path_or_url: src/intensicare/ (services, models, schemas, api)
-  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD at pin; per-file SHA-256 in section 0)
-  section_or_lines: cited per finding as path:lines
+  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD no pin; SHA-256 por arquivo na seção 0)
+  section_or_lines: citado por achado como path:linhas
   date_collected: 2026-08-15
   last_updated: 2026-08-15
-  collector: rodaquino-OMNI (legacy alert-and-threshold engine forensics reviewer, cycle 1 Task 1)
-  transformation: read from source; quoted or faithfully summarized; analyzed against V2 hazard log and evaluation-status semantics
-  confidence: high (citations) / medium (clinical assessments)
+  collector: rodaquino-OMNI (revisor forense do motor de alerta e limiar legado, ciclo 1 Tarefa 1)
+  transformation: >
+    traduzido EN→pt-BR, tranche 3, GDEC-0008 item 8 (lido a partir da fonte;
+    citado ou resumido com fidelidade; analisado contra o hazard log da V2 e
+    a semântica de status de avaliação)
+  confidence: alta (citações) / média (avaliações clínicas)
   owner: UNASSIGNED — VALIDATION REQUIRED
   validation_status: VALIDATION REQUIRED
 links:
@@ -29,17 +33,21 @@ supersedes: null
 superseded_by: null
 ---
 
-# V1 alert engine and severity derivation — forensic review
+> Traduzido EN→pt-BR em 2026-08-16 (GDEC-0008 item 8, tranche 3); original EN preservado no histórico git.
+
+# Engine de alerta e derivação de severidade da V1 — revisão forense
 
 > **PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).**
-> Verdict vocabulary per `docs/00-governance/legacy-import-policy.md` §4.
-> Nothing here is imported. Every verdict is a proposal to the named clinical
-> authority; none is self-executing.
+> Vocabulário de veredito conforme
+> `docs/00-governance/legacy-import-policy.md` §4. Nada aqui é importado.
+> Todo veredito é uma proposta à autoridade clínica nomeada; nenhum é
+> autoexecutável.
 
-## 0. Cited files and integrity
+## 0. Arquivos citados e integridade
 
-All paths relative to `/Users/familia/intensicare/`. OBSERVED 2026-08-15:
-every SHA-256 below matches `docs/archive/legacy-provenance/legacy-pin-cycle-1.md`.
+Todos os caminhos relativos a `/Users/familia/intensicare/`. OBSERVED
+2026-08-15: todo SHA-256 abaixo corresponde a
+`docs/archive/legacy-provenance/legacy-pin-cycle-1.md`.
 
 ```text
 80980e3966626480a95af4ebe4ba379794dd4b74eaa99fb455923c2530df20ee  src/intensicare/services/alert_engine.py
@@ -61,15 +69,15 @@ c23243f811fdd81c004f219e84f8c3154b4f73444dab149376ffb023854bd309  src/intensicar
 46d6b5042ac6acb76bfe01068f614e87a5c3bd7ececa4e3123ea8c2b35a3c939  src/intensicare/api/v1/alerts.py
 ```
 
-Hash-and-note (absent from the manifest — recorded in `README.md` §hash-and-note):
-`docs/plan/_work/alerts/early-warning-scores.yaml`,
+Hash-and-note (ausente do manifesto — registrado em `README.md`
+§hash-and-note): `docs/plan/_work/alerts/early-warning-scores.yaml`,
 `docs/plan/_work/alerts/correlation-engine.yaml`.
 
 ---
 
-## 1. FINDING 1 — bed-severity floor-to-normal (candidate-inventory 1.1g; HAZ-0005)
+## 1. FINDING 1 — piso-para-normal da severidade de leito (candidate-inventory 1.1g; HAZ-0005)
 
-### 1.1 The mechanism, located
+### 1.1 O mecanismo, localizado
 
 OBSERVED (`src/intensicare/services/dashboard.py:93-115`):
 
@@ -92,438 +100,473 @@ def derive_bed_severity(
     return derived or SeverityLevel.NORMAL.value
 ```
 
-The floor is the final line (`dashboard.py:115`). Supporting coercions:
+O piso é a linha final (`dashboard.py:115`). Coerções de apoio:
 
-- `_score_band_severity` (`dashboard.py:79-90`) returns `None` when the
-  score is `None`; `max_severity` over all-`None` returns `None`
-  (`src/intensicare/schemas/severity.py:176-182`, `:150-173`); line 115 then
-  converts that `None` — "nothing was evaluated" — into the string
-  `"normal"`.
-- Pathway severities are individually coerced:
-  `"severity": pp.severity or "normal"` (`dashboard.py:353`) — a pathway with
-  a null severity is presented as `normal` before aggregation.
-- The module's own comment states the intent (`dashboard.py:100-107`):
+- `_score_band_severity` (`dashboard.py:79-90`) retorna `None` quando o
+  escore é `None`; `max_severity` sobre tudo-`None` retorna `None`
+  (`src/intensicare/schemas/severity.py:176-182`, `:150-173`); a linha 115
+  então converte esse `None` — "nada foi avaliado" — na string `"normal"`.
+- As severidades de pathway são coagidas individualmente:
+  `"severity": pp.severity or "normal"` (`dashboard.py:353`) — uma pathway
+  com severidade nula é apresentada como `normal` antes da agregação.
+- O próprio comentário do módulo declara a intenção (`dashboard.py:100-107`):
   "Floor is 'normal': a bed with no alerts, no active pathways, and no
-  scores is still 'normal', not null — fixes beds silently disappearing from
-  severity views".
+  scores is still 'normal', not null — fixes beds silently disappearing
+  from severity views" (citação mantida em inglês, texto literal do
+  comentário de código).
 
-### 1.2 End-to-end trace: score absent to bed state shown
+### 1.2 Rastreamento ponta a ponta: escore ausente até o estado de leito exibido
 
-1. A patient has no `ClinicalScore` rows (or none for MEWS/NEWS2): the
-   window-function subqueries (`dashboard.py:209-265`) return no row for
-   that `mpi_id`, so `mews_map.get(p.mpi_id)` is `None` (`dashboard.py:317`).
-2. No active alerts: `alert_severities.get(p.mpi_id)` is `None`
+1. Um paciente não tem linhas `ClinicalScore` (ou nenhuma para MEWS/NEWS2):
+   as subconsultas de função de janela (`dashboard.py:209-265`) não
+   retornam nenhuma linha para aquele `mpi_id`, então
+   `mews_map.get(p.mpi_id)` é `None` (`dashboard.py:317`).
+2. Nenhum alerta ativo: `alert_severities.get(p.mpi_id)` é `None`
    (`dashboard.py:333`).
-3. No active pathways: `active_pathways` is `[]` (`dashboard.py:346-355`).
+3. Nenhuma pathway ativa: `active_pathways` é `[]` (`dashboard.py:346-355`).
 4. `derive_bed_severity(None, [], None, None, thresholds)` →
-   `max_severity(None, None, None)` → `None` → floored to `"normal"`
+   `max_severity(None, None, None)` → `None` → piso em `"normal"`
    (`dashboard.py:360-366`, `:115`).
-5. `PatientBedSummary.severity = "normal"` (`dashboard.py:402`); the
-   triple-encoded rendering for `normal` is a green circle labeled "Normal"
-   with description "Sem alerta ativo"
+5. `PatientBedSummary.severity = "normal"` (`dashboard.py:402`); a
+   renderização de codificação tripla para `normal` é um círculo verde
+   rotulado "Normal" com descrição "Sem alerta ativo"
    (`src/intensicare/schemas/severity.py:79-85`).
 
-Result: **a patient who was never assessed is displayed exactly as a patient
-assessed and found well.** This is the concrete code-level confirmation of
-candidate-inventory item 1.1g and the mechanism class of HAZ-0005 (E1
-occurred-in-predecessor). It also interacts with the upstream defect recorded
-in the hazard log: scorers that treat absent inputs as zero produce a low
-score, which this function then bands as `normal` with full confidence.
+Resultado: **um paciente que nunca foi avaliado é exibido exatamente como
+um paciente avaliado e considerado bem.** Esta é a confirmação concreta em
+nível de código do item 1.1g do candidate-inventory e da classe de
+mecanismo do HAZ-0005 (E1 ocorrido-no-predecessor). Também interage com o
+defeito upstream registrado no hazard log: scorers que tratam entradas
+ausentes como zero produzem um escore baixo, que esta função então
+classifica em faixa como `normal` com total confiança.
 
-### 1.3 Discrepancy analysis
+### 1.3 Análise de discrepância
 
-- **Missing-data semantics**: the design goal ("never null") is solved in the
-  wrong direction — the type system is forced to answer with a severity when
-  the honest answer is "not evaluated". V2's
-  `docs/05-clinical-safety/evaluation-status-semantics.md` §3.3 and
-  prohibition P-1/P-2 make this state unrepresentable.
-- **Population**: the same floor applies to every bed regardless of whether
-  the patient is in the approved population (HAZ-0036 adjacency).
-- **Aggregation**: `critical_count` (`dashboard.py:367-368`) counts only
-  derived `critical`; a unit of 20 unassessed beds reports zero critical and
-  zero anything-else — maximum reassurance from zero information (P-3, P-8).
+- **Semântica de dado ausente**: o objetivo de design ("never null") é
+  resolvido na direção errada — o sistema de tipos é forçado a responder
+  com uma severidade quando a resposta honesta é "não avaliado".
+  `docs/05-clinical-safety/evaluation-status-semantics.md` §3.3 e a
+  proibição P-1/P-2 da V2 tornam esse estado não representável.
+- **População**: o mesmo piso se aplica a todo leito independentemente de
+  o paciente estar na população aprovada (adjacência ao HAZ-0036).
+- **Agregação**: `critical_count` (`dashboard.py:367-368`) conta apenas o
+  `critical` derivado; uma unidade de 20 leitos não avaliados reporta zero
+  crítico e zero qualquer-outra-coisa — tranquilidade máxima a partir de
+  zero informação (P-3, P-8).
 
-### 1.4 Verdict — floor-to-normal pattern
+### 1.4 Veredito — padrão de piso-para-normal
 
-**REJECT** (entire pattern: the `or "normal"` floor at `dashboard.py:115`,
-the `pp.severity or "normal"` coercion at `dashboard.py:353`, and the
-absence of any not-evaluated state in `PatientBedSummary`). The legitimate
-requirement buried in it — "a bed must never silently disappear from the
-severity view" — is already superseded by V2's `not_evaluated` state, which
-keeps the bed visible with an honest label (SAF-0006). Rationale: this is
-the failure mode that actually occurred in the predecessor (HAZ-0005, E1).
+**REJECT** (o padrão inteiro: o piso `or "normal"` em `dashboard.py:115`,
+a coerção `pp.severity or "normal"` em `dashboard.py:353`, e a ausência de
+qualquer estado não-avaliado em `PatientBedSummary`). A exigência legítima
+enterrada nele — "um leito nunca deve desaparecer silenciosamente da
+visão de severidade" — já é superada pelo estado `not_evaluated` da V2,
+que mantém o leito visível com um rótulo honesto (SAF-0006). Racional:
+este é o modo de falha que de fato ocorreu no predecessor (HAZ-0005, E1).
 PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).
 
 ---
 
-## 2. Alert generation engine (`alert_engine.py`)
+## 2. Engine de geração de alerta (`alert_engine.py`)
 
-### 2.1 Implemented logic (verbatim summary, cited)
+### 2.1 Lógica implementada (resumo verbatim, citado)
 
-`check_score_against_thresholds` (`src/intensicare/services/alert_engine.py:20-131`):
+`check_score_against_thresholds`
+(`src/intensicare/services/alert_engine.py:20-131`):
 
-1. Threshold lookup — its **own** two-tier resolution (unit, then
-   tenant-global), lines 32-44. It does **not** call
-   `threshold_resolver.resolve_threshold` (see `thresholds-seed-review.md`
-   §2) and has **no bed tier**.
-2. `config is None` → `return None` (lines 46-48). No record of the no-fire.
-3. Severity banding (lines 50-62): `score >= critical_threshold` →
-   `critical`; `>= urgent_threshold` → `urgent`; `>= watch_threshold` →
-   `watch`; below `watch` → `None` → `return None`.
-4. Rate limit (lines 68-75): Redis key per `mpi_id + score_type`;
-   `config.rate_limit_per_hour or 10` (hardcoded fallback 10/h); at limit →
-   `return None`. No record.
-5. Cooldown (lines 77-83): only if `config.cooldown_minutes` is truthy;
-   Redis key per `mpi_id + score_type + severity`; in cooldown →
-   `return None`. No record.
-6. Alert creation (lines 93-110): title/body from `build_alert_copy`;
+1. Busca de limiar — sua **própria** resolução de dois níveis (unidade,
+   depois tenant-global), linhas 32-44. **Não** chama
+   `threshold_resolver.resolve_threshold` (ver `thresholds-seed-review.md`
+   §2) e **não tem nível de leito**.
+2. `config is None` → `return None` (linhas 46-48). Nenhum registro do
+   não-disparo.
+3. Classificação de severidade (linhas 50-62): `score >=
+   critical_threshold` → `critical`; `>= urgent_threshold` → `urgent`;
+   `>= watch_threshold` → `watch`; abaixo de `watch` → `None` →
+   `return None`.
+4. Limite de taxa (linhas 68-75): chave Redis por `mpi_id + score_type`;
+   `config.rate_limit_per_hour or 10` (fallback hardcoded de 10/h); no
+   limite → `return None`. Sem registro.
+5. Cooldown (linhas 77-83): apenas se `config.cooldown_minutes` for
+   truthy; chave Redis por `mpi_id + score_type + severity`; em cooldown →
+   `return None`. Sem registro.
+6. Criação de alerta (linhas 93-110): título/corpo de `build_alert_copy`;
    `Alert(..., severity, status="active", ...)`. **`definition_version_id`
-   is never set** although the column and the
-   `alert_definition_version` table exist
-   (`src/intensicare/models/alert.py:36-40`,
+   nunca é definido**, embora a coluna e a tabela
+   `alert_definition_version` existam (`src/intensicare/models/alert.py:36-40`,
    `src/intensicare/models/alert_definition_version.py:12-30`).
-7. Rate-limit counter + cooldown key set (lines 112-121; 1-hour window,
-   cooldown TTL `cooldown_minutes * 60`).
-8. Best-effort WebSocket publish (lines 123-172): failure is logged and
-   swallowed — generated but possibly never displayed (HAZ-0015).
+7. Contador de limite de taxa + chave de cooldown definida (linhas
+   112-121; janela de 1 hora, TTL de cooldown `cooldown_minutes * 60`).
+8. Publicação WebSocket de melhor-esforço (linhas 123-172): a falha é
+   logada e engolida — gerado, mas possivelmente nunca exibido (HAZ-0015).
 
-`process_clinical_score` (lines 175-192): patient-cache miss → `return None`
-(lines 184-185) — **no tenant, no alert, no record**.
+`process_clinical_score` (linhas 175-192): falha no cache de paciente →
+`return None` (linhas 184-185) — **nenhum tenant, nenhum alerta, nenhum
+registro**.
 
-Wiring (OBSERVED `src/intensicare/services/vitals.py:388-408`): MEWS, NEWS2,
-SOFA, and qSOFA scores are all routed through `process_clinical_score` on
-every vitals ingestion.
+Fiação (OBSERVED `src/intensicare/services/vitals.py:388-408`): os
+escores MEWS, NEWS2, SOFA e qSOFA são todos roteados por
+`process_clinical_score` em toda ingestão de vitais.
 
-### 2.2 Findings
+### 2.2 Achados
 
-- **F2.1 (HAZ-0021 — silent no-fire, four paths).** Missing config, below
-  watch, rate-limited, in-cooldown, and patient-cache-miss all return `None`
-  with no persisted reason. A no-fire is indistinguishable from a negative
-  evaluation.
-- **F2.2 (HAZ-0021/HAZ-0005).** SOFA and qSOFA are scored and checked, but
-  migration 0038 seeds thresholds only for MEWS and NEWS2
-  (`alembic/versions/0038_seed_default_threshold_config.py:48-71`), so under
-  default configuration **SOFA/qSOFA can never alert**, silently, on every
-  patient (path 2.1 step 2).
-- **F2.3 (defect).** The unit-tier query (lines 38-40) filters
-  `unit == unit` but not `bed_id IS NULL`. If both a unit-level and a
-  bed-level row exist for the same tenant/unit/score_type,
-  `scalar_one_or_none()` raises `MultipleResultsFound` — the scoring path
-  throws instead of alerting; if only a bed-level row exists for that unit it
-  is silently misapplied unit-wide.
-- **F2.4 (version opacity, HAZ-0036-adjacent).** Alerts carry no rule
-  version (`definition_version_id` never stamped), so the exact logic that
-  produced a given alert cannot be reconstructed. The registry tables
-  (`alert_definition_version`, `algorithm_registry`) exist but the live path
-  bypasses them.
-- **F2.5 (second, undisciplined creation path).** `ews_nrt_runner.py`
-  constructs `Alert()` directly, bypassing cooldown/rate-limit, with an
-  explicit in-code wiring warning
-  (`src/intensicare/services/ews_nrt_runner.py:656-670`). Two engines, two
-  disciplines (HAZ-0016/HAZ-0020 class).
+- **F2.1 (HAZ-0021 — não-disparo silencioso, quatro caminhos).**
+  Configuração ausente, abaixo de watch, limitado por taxa, e em
+  cooldown, e falha de cache de paciente todos retornam `None` sem
+  motivo persistido. Um não-disparo é indistinguível de uma avaliação
+  negativa.
+- **F2.2 (HAZ-0021/HAZ-0005).** SOFA e qSOFA são pontuados e checados,
+  mas a migração 0038 semeia limiares apenas para MEWS e NEWS2
+  (`alembic/versions/0038_seed_default_threshold_config.py:48-71`), então
+  sob configuração padrão **SOFA/qSOFA nunca conseguem alertar**,
+  silenciosamente, em todo paciente (caminho 2.1 passo 2).
+- **F2.3 (defeito).** A consulta de nível de unidade (linhas 38-40)
+  filtra `unit == unit`, mas não `bed_id IS NULL`. Se existem tanto uma
+  linha de nível-unidade quanto uma de nível-leito para o mesmo
+  tenant/unidade/score_type, `scalar_one_or_none()` dispara
+  `MultipleResultsFound` — o caminho de scoring dispara exceção em vez de
+  alertar; se apenas uma linha de nível-leito existe para aquela unidade,
+  ela é silenciosamente mal aplicada em toda a unidade.
+- **F2.4 (opacidade de versão, adjacente ao HAZ-0036).** Os alertas não
+  carregam nenhuma versão de regra (`definition_version_id` nunca
+  carimbado), então a lógica exata que produziu um dado alerta não pode
+  ser reconstruída. As tabelas de registro (`alert_definition_version`,
+  `algorithm_registry`) existem, mas o caminho em produção as contorna.
+- **F2.5 (segundo caminho de criação, sem disciplina).**
+  `ews_nrt_runner.py` constrói `Alert()` diretamente, contornando
+  cooldown/limite-de-taxa, com um aviso explícito de fiação no código
+  (`src/intensicare/services/ews_nrt_runner.py:656-670`). Dois engines,
+  duas disciplinas (classe HAZ-0016/HAZ-0020).
 
-### 2.3 Verdict — alert engine
+### 2.3 Veredito — engine de alerta
 
-**TRANSFORM.** The concept — configured, per-scope thresholds evaluated on
-score write, with severity bands and burden controls — carries forward; the
-implementation does not: silent suppression (F2.1), coverage gaps that
-silently disable scores (F2.2), the resolution defect (F2.3), version
-opacity (F2.4), and the duplicate creation path (F2.5) are each
-disqualifying for RETAIN/REFINE. V2 requires: no-fire reasons persisted
-(SAF-0019), a single resolution service, a stamped rule version on every
-alert, and one creation path.
+**TRANSFORM.** O conceito — limiares configurados por escopo, avaliados
+na escrita do escore, com faixas de severidade e controles de carga —
+segue adiante; a implementação não: supressão silenciosa (F2.1), lacunas
+de cobertura que desabilitam escores silenciosamente (F2.2), o defeito de
+resolução (F2.3), a opacidade de versão (F2.4), e o caminho de criação
+duplicado (F2.5) desqualificam cada um para RETAIN/REFINE. A V2 exige:
+motivos de não-disparo persistidos (SAF-0019), um único serviço de
+resolução, uma versão de regra carimbada em todo alerta, e um único
+caminho de criação.
 PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).
 
 ---
 
-## 3. FINDING 2 — assistido (attended) precedence and rollup (bed, sector, dashboard)
+## 3. FINDING 2 — precedência e rollup de assistido (leito, setor, dashboard)
 
-Sources: `docs/rules/alert-threshold/` RULE-ALERTAS-005..011, 027-029,
-RULE-TRILHAS-ENGINE-004, RULE-INDICADORES-ETL-001/002/006 (all
-manifest-hashed; the rule records cite the audited upstream repos at their
-own pinned commits) and `src/intensicare/services/domain_alertas.py`
-(ratified re-implementations of RULE-ALERTAS-001/002).
+Fontes: `docs/rules/alert-threshold/` RULE-ALERTAS-005..011, 027-029,
+RULE-TRILHAS-ENGINE-004, RULE-INDICADORES-ETL-001/002/006 (todos hasheados
+no manifesto; os registros de regra citam os repositórios upstream
+auditados em seus próprios commits fixados) e
+`src/intensicare/services/domain_alertas.py` (reimplementações ratificadas
+da RULE-ALERTAS-001/002).
 
-### 3.1 The precedence chain as implemented
+### 3.1 A cadeia de precedência conforme implementada
 
-- **Bed color**: worst pathway color with red-dominates precedence
-  (RULE-ALERTAS-005/006; LARANJA — interactive sepsis — outranks all on
-  automatic beds per 006).
-- **Attended override (the masking step)**: if `assistido === true`, the
-  rendered status key is `ASSISTIDO` (blue) **regardless of the alert value**
-  — border, background, ball color, gender-icon color — at patient/bed card
-  and at trilha chip level (RULE-ALERTAS-011, duplicated verbatim in two
-  components; RULE-TRILHAS-ENGINE-004 repeats it at the pathway tab).
-- **Attendance determination**: a bed is attended only if every non-NEUTRO
-  pathway is attended; an all-NEUTRO bed is *not* attended
+- **Cor do leito**: pior cor de pathway com precedência
+  vermelho-domina (RULE-ALERTAS-005/006; LARANJA — sepse interativa —
+  supera todos em leitos automáticos conforme 006).
+- **Override de atendido (o passo de mascaramento)**: se
+  `assistido === true`, a chave de status renderizada é `ASSISTIDO`
+  (azul) **independentemente do valor do alerta** — borda, fundo, cor da
+  bolinha, cor do ícone de gênero — em nível de card de paciente/leito e
+  em nível de chip de trilha (RULE-ALERTAS-011, duplicada verbatim em
+  dois componentes; RULE-TRILHAS-ENGINE-004 repete na aba de pathway).
+- **Determinação de atendimento**: um leito só é atendido se toda pathway
+  não-NEUTRA estiver atendida; um leito todo-NEUTRO *não* é atendido
   (RULE-ALERTAS-009).
-- **Unmasked parallel channel**: `alerta_nao_assistido` keeps the
-  attendance-ignoring worst color per bed (RULE-ALERTAS-007/008) and feeds
-  the sector `total_alertas` KPI (RULE-ALERTAS-028).
-- **Sector card**: ASSISTIDO takes top priority; otherwise the
-  **highest-count** color wins, not the highest severity
-  (RULE-INDICADORES-ETL-006); at 100% assisted the whole card flips to
+- **Canal paralelo não mascarado**: `alerta_nao_assistido` mantém a pior
+  cor por leito ignorando o atendimento (RULE-ALERTAS-007/008) e
+  alimenta o KPI de setor `total_alertas` (RULE-ALERTAS-028).
+- **Card de setor**: ASSISTIDO tem prioridade máxima; caso contrário, a
+  cor de **maior contagem** vence, não a de maior severidade
+  (RULE-INDICADORES-ETL-006); a 100% de atendimento, o card inteiro vira
   ASSISTIDO (RULE-INDICADORES-ETL-002).
-- **Sector counts with absent data**: `aggregate_alert_counts`
-  (`src/intensicare/services/domain_alertas.py:87-112`) counts a
-  movimentacao whose four pathway alerts are **all `None`** as `NEUTRO`
-  (`_worst_alert_color`, lines 75-84: anything not VERMELHO/AMARELO —
-  including all-absent — returns NEUTRO). Absence becomes "no alert" in the
-  sector denominator (HAZ-0005 at rollup level).
+- **Contagens de setor com dado ausente**: `aggregate_alert_counts`
+  (`src/intensicare/services/domain_alertas.py:87-112`) conta uma
+  movimentacao cujos quatro alertas de pathway são **todos `None`** como
+  `NEUTRO` (`_worst_alert_color`, linhas 75-84: qualquer coisa que não
+  seja VERMELHO/AMARELO — incluindo tudo-ausente — retorna NEUTRO). A
+  ausência se torna "sem alerta" no denominador do setor (HAZ-0005 em
+  nível de rollup).
 
-### 3.2 Clinical safety assessment — may attendance mask severity?
+### 3.2 Avaliação de segurança clínica — o atendimento pode mascarar a severidade?
 
-**Yes, in the primary visual channel.** Once a clinician marks a pathway
-attended, the red/amber state disappears from the card, chip, and tab and is
-replaced by blue; at 100% attendance an entire sector's card stops showing
-severity. "Attended" is an acknowledgement of awareness, not evidence of
-resolution: a patient can be attended and still deteriorating, and the color
-channel now under-reports exactly the patients already known to be sickest.
-Mitigations exist but are secondary: `alerta_nao_assistido` preserves
-unmasked severity in sector KPIs (007/008/028), and the count-buckets keep a
-VERMELHO tally. Two aggravating defects: (a) the sector card resolves ties by
-**count**, so one red bed among five amber beds shows amber
-(RULE-INDICADORES-ETL-006) — an aggregate more reassuring than its worst
-member (violates V2 prohibition P-3); (b) when neither attended nor alerted
-the status key is the empty string and **no** border/background is rendered
-at all (RULE-ALERTAS-011 edge case) — unevaluated is rendered as
-absence-of-signal (HAZ-0005 again).
+**Sim, no canal visual primário.** Uma vez que um clínico marca uma
+pathway como atendida, o estado vermelho/âmbar desaparece do card, chip e
+aba e é substituído por azul; a 100% de atendimento, o card inteiro de um
+setor deixa de mostrar severidade. "Atendido" é um reconhecimento de
+ciência, não evidência de resolução: um paciente pode estar atendido e
+ainda em deterioração, e o canal de cor agora sub-reporta exatamente os
+pacientes já sabidamente mais graves. Mitigações existem, mas são
+secundárias: `alerta_nao_assistido` preserva a severidade não mascarada
+nos KPIs de setor (007/008/028), e os buckets de contagem mantêm uma
+apuração de VERMELHO. Dois defeitos agravantes: (a) o card de setor
+resolve empates por **contagem**, então um leito vermelho entre cinco
+leitos âmbar mostra âmbar (RULE-INDICADORES-ETL-006) — um agregado mais
+tranquilizador que seu pior membro (viola a proibição P-3 da V2); (b)
+quando nem atendido nem alertado, a chave de status é a string vazia e
+**nenhuma** borda/fundo é renderizada de forma alguma (caso de borda da
+RULE-ALERTAS-011) — não-avaliado é renderizado como ausência-de-sinal
+(HAZ-0005 novamente).
 
-### 3.3 Verdict — assistido precedence family
+### 3.3 Veredito — família de precedência assistido
 
-**REJECT** the override-precedence (ASSISTIDO replacing the severity color:
-RULE-ALERTAS-011, RULE-TRILHAS-ENGINE-004, RULE-INDICADORES-ETL-002/006
-flip behavior) and the count-based sector tie-break. **TRANSFORM** the
-underlying concepts that are sound: (i) acknowledgement state must be
-visible *alongside* — never instead of — severity; (ii) an
-attendance-ignoring severity channel (the `alerta_nao_assistido` idea) is
-the correct invariant and should become the primary channel, not the
-fallback; (iii) highest-severity-wins rollup (already present in V1's own
-newer `schemas/severity.py:150-182` "P0-10 highest-severity-wins, never
-last-writer-wins") is the correct aggregation and contradicts the older
-frontend count-based card — evidence V1 itself identified the defect.
+**REJECT** a precedência de override (ASSISTIDO substituindo a cor de
+severidade: comportamento de flip da RULE-ALERTAS-011,
+RULE-TRILHAS-ENGINE-004, RULE-INDICADORES-ETL-002/006) e o desempate de
+setor baseado em contagem. **TRANSFORM** os conceitos subjacentes que são
+sólidos: (i) o estado de reconhecimento deve ser visível *ao lado de* —
+nunca em vez de — a severidade; (ii) um canal de severidade que ignora o
+atendimento (a ideia do `alerta_nao_assistido`) é o invariante correto e
+deve se tornar o canal primário, não o fallback; (iii) o rollup de
+maior-severidade-vence (já presente no próprio `schemas/severity.py:150-182`
+mais novo da V1, "P0-10 highest-severity-wins, never last-writer-wins") é
+a agregação correta e contradiz o card baseado em contagem do frontend
+mais antigo — evidência que a própria V1 identificou o defeito.
 PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).
 
 ---
 
-## 4. FINDING 3 — cooldown / de-duplication / grouping windows
+## 4. FINDING 3 — janelas de cooldown / deduplicação / agrupamento
 
-### 4.1 Values found (all OBSERVED, cited)
+### 4.1 Valores encontrados (todos OBSERVED, citados)
 
-| Mechanism | Value | Source |
+| Mecanismo | Valor | Fonte |
 |---|---|---|
-| Per-severity cooldown | `cooldown_minutes` config column; skipped entirely when NULL/0; seed 0038 leaves it NULL | `alert_engine.py:77-83,116-120`; `0038_seed...py:48-71` |
-| Rate limit | `rate_limit_per_hour` config column; hardcoded fallback **10/h** per patient+score; 1-hour Redis window | `alert_engine.py:68-75,112-115` |
-| Resolver defaults (dataclass, unused by live path) | watch/urgent/critical 0; rate 10/h; cooldown 5 min | `threshold_resolver.py:17-35` |
-| Notification dedup | `dedup_key` TTL **300 s** (5 min) | `notification_worker.py:41-42,108-125` |
-| Notification retry | backoff 1,2,4,8,16,32 s; max 6 tries; then DLQ + operational alert | `notification_worker.py:30-32,190-213` |
-| Declarative catalog suppression | cooldown PT4H / PT6H / PT12H; rate limits 2-3 per 24 h per patient; `dedup_key: patient_id+alert_id` | `docs/plan/_work/alerts/early-warning-scores.yaml` (hash-and-note) |
-| Correlation join windows | SA-AKI 72 h; resp+hemo 6 h; QTc+electrolyte 24 h; exam redundancy per-class 120-720 h | `correlation_engine.py:60-74` |
-| Read-time grouping | group by (mpi_id, score_type); zero information loss; `escalating` flag pierces the rollup | `api/v1/alerts.py:172-254`; `schemas/alerts.py:40-67` |
-| Content-diff dedup while red | re-notify only when red content changes | RULE-ALERTAS-016 (`docs/rules/alert-threshold/`) |
+| Cooldown por severidade | coluna de configuração `cooldown_minutes`; pulada inteiramente quando NULL/0; a semeadura 0038 a deixa NULL | `alert_engine.py:77-83,116-120`; `0038_seed...py:48-71` |
+| Limite de taxa | coluna de configuração `rate_limit_per_hour`; fallback hardcoded **10/h** por paciente+escore; janela Redis de 1 hora | `alert_engine.py:68-75,112-115` |
+| Padrões do resolvedor (dataclass, não usado pelo caminho em produção) | watch/urgent/critical 0; taxa 10/h; cooldown 5 min | `threshold_resolver.py:17-35` |
+| Deduplicação de notificação | TTL de `dedup_key` **300 s** (5 min) | `notification_worker.py:41-42,108-125` |
+| Retry de notificação | backoff 1,2,4,8,16,32 s; máx 6 tentativas; depois DLQ + alerta operacional | `notification_worker.py:30-32,190-213` |
+| Supressão do catálogo declarativo | cooldown PT4H / PT6H / PT12H; limites de taxa 2-3 por 24 h por paciente; `dedup_key: patient_id+alert_id` | `docs/plan/_work/alerts/early-warning-scores.yaml` (hash-and-note) |
+| Janelas de junção de correlação | SA-AKI 72 h; resp+hemo 6 h; QTc+eletrólito 24 h; redundância de exame por classe 120-720 h | `correlation_engine.py:60-74` |
+| Agrupamento em tempo de leitura | agrupado por (mpi_id, score_type); zero perda de informação; a flag `escalating` atravessa o rollup | `api/v1/alerts.py:172-254`; `schemas/alerts.py:40-67` |
+| Deduplicação por diff-de-conteúdo enquanto vermelho | renotifica apenas quando o conteúdo vermelho muda | RULE-ALERTAS-016 (`docs/rules/alert-threshold/`) |
 
-### 4.2 Clinical defensibility
+### 4.2 Defensabilidade clínica
 
-- The **seeded configuration has no cooldown at all** (0038 leaves
-  `cooldown_minutes` NULL, so `alert_engine.py:78` skips the block):
-  alarm-fatigue protection in production rests solely on the 10/h rate limit
-  — and that limit then **silently discards the 11th alert of the hour with
-  no record** (HAZ-0016 vs HAZ-0022 traded blindly).
-- Cooldown is keyed per severity, so escalation to a higher severity is
-  never blocked by a lower band's cooldown — this part is clinically
-  correct.
-- Same-severity re-deterioration inside a cooldown window is
-  indistinguishable from silence; there is no "suppressed alert" artifact,
-  no escalation timer, and no suppression audit (HAZ-0022, SAF-0022).
-- The declarative catalog windows (PT4H-PT12H, 2-3 per 24 h) are plausible
-  burden budgets but are **enforced nowhere**: the compiler that loads them
-  performs no suppression (section 6), and the live engine reads only
-  `threshold_config`. Two disjoint suppression vocabularies exist.
-- The notification dedup (5 min) sits *below* the alerting layer and can
-  eat a legitimate second notification for a genuinely new alert if the
-  caller reuses a dedup key; suppression is logged but not surfaced
-  clinically.
-- The `escalating` flag in the read-time grouping (`schemas/alerts.py:48-56`)
-  is a genuinely good control: acknowledged members never suppress it, and
-  it is computed only among still-active members.
+- A **configuração semeada não tem nenhum cooldown**: (a 0038 deixa
+  `cooldown_minutes` NULL, então `alert_engine.py:78` pula o bloco): a
+  proteção contra fadiga de alarme em produção repousa unicamente no
+  limite de taxa de 10/h — e esse limite então **descarta silenciosamente
+  o 11º alerta da hora sem registro** (HAZ-0016 vs HAZ-0022 trocados às
+  cegas).
+- O cooldown tem chave por severidade, então o escalonamento para uma
+  severidade maior nunca é bloqueado pelo cooldown de uma faixa menor —
+  esta parte é clinicamente correta.
+- A re-deterioração de mesma severidade dentro de uma janela de cooldown
+  é indistinguível de silêncio; não existe artefato de "alerta
+  suprimido", nenhum temporizador de escalonamento, e nenhuma auditoria
+  de supressão (HAZ-0022, SAF-0022).
+- As janelas do catálogo declarativo (PT4H-PT12H, 2-3 por 24 h) são
+  orçamentos de carga plausíveis, mas são **aplicadas em lugar nenhum**:
+  o compilador que os carrega não realiza nenhuma supressão (seção 6), e
+  o engine em produção lê apenas `threshold_config`. Existem dois
+  vocabulários de supressão desconexos.
+- A deduplicação de notificação (5 min) fica *abaixo* da camada de
+  alerting e pode consumir uma segunda notificação legítima para um
+  alerta genuinamente novo se o chamador reutilizar uma chave de dedup; a
+  supressão é logada, mas não exposta clinicamente.
+- A flag `escalating` no agrupamento em tempo de leitura
+  (`schemas/alerts.py:48-56`) é um controle genuinamente bom: membros
+  reconhecidos nunca a suprimem, e ela é computada apenas entre membros
+  ainda ativos.
 
-### 4.3 Verdict — cooldown/dedup/grouping
+### 4.3 Veredito — cooldown/dedup/agrupamento
 
-**VALIDATE** the window values (no cooldown by default, 10/h, 5-min dedup,
-PT4H-PT12H, 2-3 per 24 h): the missed-re-deterioration vs alarm-fatigue
-trade-off is a clinical judgement that no engineering artifact here
-evidences; every value must be set (or confirmed) by the clinical owner with
-recorded rationale. **REJECT** silent suppression without a persisted,
-reason-coded record (all suppression paths in 4.1 rows 1-2 and 5).
-**REFINE** the ADR-0039 read-time grouping with the escalating override —
-the one artifact in this family designed with explicit
-zero-information-loss reasoning.
+**VALIDATE** os valores de janela (sem cooldown por padrão, 10/h, dedup
+de 5 min, PT4H-PT12H, 2-3 por 24 h): o trade-off entre
+re-deterioração-perdida vs. fadiga-de-alarme é um julgamento clínico que
+nenhum artefato de engenharia aqui evidencia; todo valor deve ser
+definido (ou confirmado) pelo dono clínico com racional registrado.
+**REJECT** a supressão silenciosa sem um registro persistido e
+codificado por motivo (todos os caminhos de supressão nas linhas 1-2 e 5
+de 4.1). **REFINE** o agrupamento em tempo de leitura da ADR-0039 com o
+override `escalating` — o único artefato desta família projetado com
+raciocínio explícito de zero-perda-de-informação.
 PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).
 
 ---
 
-## 5. FINDING 4 — severity model and color mapping
+## 5. FINDING 4 — modelo de severidade e mapeamento de cor
 
-### 5.1 As implemented
+### 5.1 Conforme implementado
 
-- Canonical ordinal severity `normal < watch < urgent < critical` with
-  integer ranks, DB CHECK vocabulary, and highest-severity-wins aggregation
-  (`src/intensicare/schemas/severity.py:15-67,150-182`).
-- **Triple encoding** — color + icon + shape + pt-BR label + description per
-  level (`severity.py:70-147`), explicitly for accessibility ("non-color-only").
-- Criteria-count color mapping exists in the *legacy rule layer*, not in the
-  V1 Python engine: count of triggered criteria mapped to VERMELHO/AMARELO/
-  NEUTRO per pathway (RULE-ALERTAS-001/003/004; re-implemented as ratified
-  utilities in `domain_alertas.py:35-57`).
+- Severidade ordinal canônica `normal < watch < urgent < critical` com
+  ranks inteiros, vocabulário CHECK de BD, e agregação
+  maior-severidade-vence (`src/intensicare/schemas/severity.py:15-67,150-182`).
+- **Codificação tripla** — cor + ícone + forma + rótulo pt-BR + descrição
+  por nível (`severity.py:70-147`), explicitamente para acessibilidade
+  ("não-apenas-cor").
+- O mapeamento de cor por contagem-de-critérios existe na *camada de
+  regra legada*, não no engine Python da V1: contagem de critérios
+  disparados mapeada para VERMELHO/AMARELO/NEUTRO por pathway
+  (RULE-ALERTAS-001/003/004; reimplementada como utilitários ratificados
+  em `domain_alertas.py:35-57`).
 
-### 5.2 Assessment
+### 5.2 Avaliação
 
-- The Python-side model **is** clinically ordinal and non-color-only
-  (rank + icon + shape + label). This is the strongest artifact in the
-  review.
-- Defects: (a) `normal` is a member of the severity enum, so "no concern"
-  and "not evaluated" collapse into one representable value — the type-level
-  root of Finding 1; (b) the `p10_score` mapping (0/3/7/10,
-  `severity.py:58-64`) is an uncited magic scale; (c) the legacy color
-  vocabulary (VERMELHO/AMARELO/NEUTRO + special-case LARANJA + ASSISTIDO)
-  is color-only, inconsistent across surfaces (a fourth LARANJA bucket
-  exists in exactly one frontend type — RULE-INDICADORES-ETL-007), and
-  count-derived rather than severity-derived in places (section 3.2).
+- O modelo do lado Python **é** clinicamente ordinal e não-apenas-cor
+  (rank + ícone + forma + rótulo). Este é o artefato mais forte da
+  revisão.
+- Defeitos: (a) `normal` é um membro do enum de severidade, então "sem
+  preocupação" e "não avaliado" colapsam em um único valor representável
+  — a raiz em nível de tipo da Finding 1; (b) o mapeamento `p10_score`
+  (0/3/7/10, `severity.py:58-64`) é uma escala mágica não citada; (c) o
+  vocabulário de cor legado (VERMELHO/AMARELO/NEUTRO + caso especial
+  LARANJA + ASSISTIDO) é apenas-cor, inconsistente entre superfícies (um
+  quarto balde LARANJA existe em exatamente um tipo de frontend —
+  RULE-INDICADORES-ETL-007), e derivado-de-contagem em vez de
+  derivado-de-severidade em alguns pontos (seção 3.2).
 
-### 5.3 Verdict
+### 5.3 Veredito
 
-**REFINE** the canonical ordinal + triple-encoding + highest-severity-wins
-model (import of the *concept* with V2 changes: remove `normal` from the
-alertable set, add explicit evaluation-status states, evidence the encoding
-choices, drop `p10_score` or evidence it). **REJECT** the criteria-count →
-color mechanism (absence counts as zero → count under-states severity;
-HAZ-0005) and the VERMELHO/AMARELO/NEUTRO/LARANJA color-only vocabulary.
+**REFINE** o modelo ordinal canônico + codificação tripla +
+maior-severidade-vence (importação do *conceito* com mudanças V2:
+remover `normal` do conjunto alertável, adicionar estados explícitos de
+status de avaliação, evidenciar as escolhas de codificação, descartar
+`p10_score` ou evidenciá-lo). **REJECT** o mecanismo
+contagem-de-critérios → cor (ausência conta como zero → a contagem
+subestima a severidade; HAZ-0005) e o vocabulário apenas-cor
+VERMELHO/AMARELO/NEUTRO/LARANJA.
 PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).
 
 ---
 
-## 6. Correlation engine, compiler, copy, notification worker (secondary artifacts)
+## 6. Motor de correlação, compilador, copy, worker de notificação (artefatos secundários)
 
-### 6.1 Correlation engine (`correlation_engine.py`)
+### 6.1 Motor de correlação (`correlation_engine.py`)
 
-Four cross-domain rules; members folded ("member_suppressed") into one
-richer alert; QTc chain amplifies two watch-level members to critical
-(lines 41-102, 165-415). Missing inputs are *recorded* in the result
-(`missing_inputs`, lines 182-217 etc.) — better than the main engine — but a
-not-fired-because-unevaluable result is still `fired=False` with no distinct
-evaluation status, and `emit_correlation_event` returns `None` for any
-non-fired result (lines 608-620). Cut-point review is in
-`thresholds-seed-review.md` §5. Member suppression is a clinical-review
-item: folding ALERT-ELY-POTASSIUM-01 into a correlation must not hide the
-electrolyte alert from workflows that subscribe to it (HAZ-0022).
-**Verdict: VALIDATE** (concept plausible and mostly evidence-anchored;
-suppression semantics and windows require clinical validation).
+Quatro regras entre domínios; membros dobrados ("member_suppressed") em
+um único alerta mais rico; a cadeia de QTc amplifica dois membros em
+nível watch para crítico (linhas 41-102, 165-415). Entradas ausentes são
+*registradas* no resultado (`missing_inputs`, linhas 182-217 etc.) —
+melhor que o engine principal — mas um resultado
+não-disparado-porque-não-avaliável ainda é `fired=False` sem um status de
+avaliação distinto, e `emit_correlation_event` retorna `None` para
+qualquer resultado não disparado (linhas 608-620). A revisão de corte
+está em `thresholds-seed-review.md` §5. A supressão de membro é um item
+de revisão clínica: dobrar ALERT-ELY-POTASSIUM-01 em uma correlação não
+deve esconder o alerta de eletrólito de workflows que o assinam
+(HAZ-0022). **Veredito: VALIDATE** (conceito plausível e majoritariamente
+ancorado em evidência; a semântica e as janelas de supressão exigem
+validação clínica).
 
-### 6.2 Alert compiler (`alert_compiler.py`) — candidate-inventory 1.1h confirmed
+### 6.2 Compilador de alerta (`alert_compiler.py`) — candidate-inventory 1.1h confirmado
 
-- Parses clinical trigger logic **with regular expressions** over free-text
-  `logic` strings (BAND_PATTERN/FACADE_PATTERN, lines 115-137) and ships
-  gates A/B/C over the parse results.
-- `evaluate_alert_definition` (lines 374-414) does not evaluate the rule at
-  all: it looks up the **best-matching test vector** and returns that
-  vector's expected outcome — the test oracle is the implementation.
-  Empty inputs → `False` (lines 392-394); unknown alert → `False`.
+- Parseia lógica de gatilho clínico **com expressões regulares** sobre
+  strings de `logic` em texto livre (BAND_PATTERN/FACADE_PATTERN, linhas
+  115-137) e embarca gates A/B/C sobre os resultados do parse.
+- `evaluate_alert_definition` (linhas 374-414) não avalia a regra de
+  forma alguma: ele busca o **vetor de teste mais correspondente** e
+  retorna o resultado esperado desse vetor — o oráculo de teste é a
+  implementação. Entradas vazias → `False` (linhas 392-394); alerta
+  desconhecido → `False`.
 - OBSERVED 2026-08-15: `grep -l alert_groups docs/plan/_work/alerts/*.yaml`
-  matches **none of the nine** domain YAMLs — the coverage gate's "all
-  zero" pass validates nothing (candidate-inventory 1.1h, "false-green
-  gate"; HAZ-0031 class).
+  não corresponde a **nenhuma das nove** YAMLs de domínio — o passe "all
+  zero" do gate de cobertura não valida nada (candidate-inventory 1.1h,
+  "false-green gate"; classe HAZ-0031).
 
-**Verdict: REJECT** (regex-parsed clinical logic, circular evaluator,
-false-green gate). The *goal* — build-time verification that rendered
-thresholds equal evaluated predicates (Gate C's intent) — is sound and
-should be rebuilt on a real AST in V2.
+**Veredito: REJECT** (lógica clínica parseada por regex, avaliador
+circular, gate false-green). O *objetivo* — verificação em tempo de
+build de que limiares renderizados igualam predicados avaliados (a
+intenção do Gate C) — é sólido e deve ser reconstruído sobre um AST real
+na V2.
 
-### 6.3 Clinical copy (`alert_copy.py`)
+### 6.3 Copy clínico (`alert_copy.py`)
 
-Centralized pt-BR 3-part explanation; unknown score types get a deliberately
-non-committal generic fallback (lines 117-131) — safe by construction.
-Defect: the "por que importa" clauses hardcode guideline claims
-("NEWS2 entre 5 e 6", lines 85-115) while thresholds are operator-configurable
-— an operator override desynchronizes the wording from the firing rule
-(facade/predicate divergence in prose). Unrecognized severity falls back to
-the *least* severe copy (lines 173-201) — under-communication on a model
-mismatch. **Verdict: VALIDATE** (wording requires pt-BR clinician
-validation; bind copy to the configured threshold values, not to prose
-constants; unknown-severity fallback must fail loud, not soft-quiet).
+Explicação centralizada em pt-BR de 3 partes; tipos de escore
+desconhecidos recebem um fallback genérico deliberadamente não
+comprometedor (linhas 117-131) — seguro por construção. Defeito: as
+cláusulas "por que importa" hardcodam alegações de diretriz ("NEWS2
+entre 5 e 6", linhas 85-115) enquanto os limiares são configuráveis pelo
+operador — um override do operador dessincroniza a redação da regra de
+disparo (divergência facade/predicado em prosa). Severidade não
+reconhecida recai para o copy *menos* severo (linhas 173-201) —
+subcomunicação em um descasamento de modelo. **Veredito: VALIDATE**
+(redação exige validação por clínico em pt-BR; vincular o copy aos
+valores de limiar configurados, não a constantes de prosa; o fallback de
+severidade desconhecida deve falhar alto, não silenciosamente).
 
-### 6.4 Notification worker (`notification_worker.py`)
+### 6.4 Worker de notificação (`notification_worker.py`)
 
-Retry with exponential backoff, DLQ with operational alert, atomic dedup —
-sound delivery-durability concepts (HAZ-0015/0017 mitigations). Defects:
-`mobile`/`sms` channels are placeholders that log and drop; **unknown
-channels are silently ignored** (lines 64-73) — a misconfigured channel name
-becomes a silent delivery black hole. **Verdict: TRANSFORM** (retry/DLQ/
-dedup concepts carry; silent channel drops rejected; delivery receipt to a
-human remains unproven — HAZ-0015 stands).
+Retry com backoff exponencial, DLQ com alerta operacional, dedup
+atômico — conceitos sólidos de durabilidade de entrega (mitigações do
+HAZ-0015/0017). Defeitos: os canais `mobile`/`sms` são placeholders que
+logam e descartam; **canais desconhecidos são ignorados
+silenciosamente** (linhas 64-73) — um nome de canal mal configurado se
+torna um buraco negro de entrega silencioso. **Veredito: TRANSFORM**
+(conceitos de retry/DLQ/dedup seguem adiante; descartes silenciosos de
+canal rejeitados; o recebimento de entrega por um humano permanece não
+comprovado — o HAZ-0015 permanece).
 
-### 6.5 ALT-B latency trigger (`altb_trigger.py`)
+### 6.5 Gatilho de latência ALT-B (`altb_trigger.py`)
 
-Latency-governance instrumentation (30 s p95 over 7 days), not alert logic;
-reviewed for completeness. **Verdict: SUPERSEDE** — V2's architecture and
-SLO work defines its own latency governance (HAZ-0030 owns the clinical
-side).
+Instrumentação de governança de latência (p95 de 30 s ao longo de 7
+dias), não lógica de alerta; revisado por completude. **Veredito:
+SUPERSEDE** — a arquitetura e o trabalho de SLO da V2 define sua própria
+governança de latência (o HAZ-0030 é dono do lado clínico).
 
-### 6.6 Alert workflow API (`api/v1/alerts.py`)
+### 6.6 API de workflow de alerta (`api/v1/alerts.py`)
 
-Lifecycle transitions validated with 409s (lines 326-492); read-time
-grouping preserves every member (§4.1). Defects: `resolved_by` not tracked
-(line 118), acknowledge/resolve/escalate all mapped to one ABAC action
-(lines 55-62), no optimistic concurrency (HAZ-0023). **Verdict: TRANSFORM.**
+Transições de ciclo de vida validadas com 409s (linhas 326-492); o
+agrupamento em tempo de leitura preserva todo membro (§4.1). Defeitos:
+`resolved_by` não é rastreado (linha 118), acknowledge/resolve/escalate
+todos mapeados para uma única ação ABAC (linhas 55-62), sem concorrência
+otimista (HAZ-0023). **Veredito: TRANSFORM.**
 
 ---
 
-## 7. Zero/absence handling — consolidated HAZ-0005 sweep (FINDING 6)
+## 7. Tratamento de zero/ausência — varredura consolidada do HAZ-0005 (FINDING 6)
 
-Every reviewed path, from source:
+Todo caminho revisado, a partir da fonte:
 
-| # | Path | Behavior on absent/None/zero | Cited | Assessment |
+| # | Caminho | Comportamento em ausente/None/zero | Citado | Avaliação |
 |---|---|---|---|---|
-| 1 | Bed severity, no scores/alerts/pathways | floored to `normal` | `dashboard.py:115` | REJECT (Finding 1) |
-| 2 | Pathway severity null | coerced to `"normal"` | `dashboard.py:353` | REJECT |
-| 3 | Sector rollup, all four pathway alerts None | counted as `NEUTRO` | `domain_alertas.py:75-84,109-112` | REJECT |
-| 4 | Criterion flag None or non-1 | not counted as in-alert | `domain_alertas.py:53-57` (RULE-ALERTAS-004) | REJECT — unknown coerced to not-in-alert |
-| 5 | Alert engine, no threshold config | silent `None` | `alert_engine.py:46-48` | REJECT — no-fire without record |
-| 6 | Alert engine, patient cache miss | silent `None` | `alert_engine.py:184-185` | REJECT |
-| 7 | Alert engine, SOFA/qSOFA (no seeded config) | never alert | `vitals.py:400-408` + `0038:48-71` | REJECT — structural silent no-fire |
-| 8 | Correlation, missing inputs | `fired=False`, missing list recorded, no event emitted | `correlation_engine.py:182-217,608-620` | REFINE — reason capture exists, status contract missing |
-| 9 | Compiler, empty inputs / unknown alert | `False` | `alert_compiler.py:388-394` | REJECT |
-| 10 | Frontend status key empty (not attended, no alert) | no border/background rendered at all | RULE-ALERTAS-011 edge case | REJECT — unevaluated rendered as absence |
-| 11 | Attendance, all-NEUTRO bed | treated as *not* attended | RULE-ALERTAS-009 | conservative direction; acceptable concept |
-| 12 | Reference ranges, empty config table | silent hardcoded defaults | `api/reference_ranges.py:99-117` | REJECT (see seed review §4) |
-| 13 | Notification, unknown channel | silently ignored | `notification_worker.py:73` | REJECT |
-| 14 | Grouping, unknown score type | grouped as `"UNKNOWN"`, never dropped | `api/v1/alerts.py:147-169` | REFINE — the one absence path that stays visible |
-| 15 | 24 h history empty | falls back to 50 most recent rows regardless of age | `dashboard.py:503-542` | VALIDATE — stale-as-current risk (HAZ-0006); age must be explicit |
+| 1 | Severidade de leito, sem escores/alertas/pathways | piso em `normal` | `dashboard.py:115` | REJECT (Finding 1) |
+| 2 | Severidade de pathway nula | coagida para `"normal"` | `dashboard.py:353` | REJECT |
+| 3 | Rollup de setor, quatro alertas de pathway todos None | contado como `NEUTRO` | `domain_alertas.py:75-84,109-112` | REJECT |
+| 4 | Flag de critério None ou não-1 | não contado como em-alerta | `domain_alertas.py:53-57` (RULE-ALERTAS-004) | REJECT — desconhecido coagido para não-em-alerta |
+| 5 | Engine de alerta, sem configuração de limiar | `None` silencioso | `alert_engine.py:46-48` | REJECT — não-disparo sem registro |
+| 6 | Engine de alerta, falha de cache de paciente | `None` silencioso | `alert_engine.py:184-185` | REJECT |
+| 7 | Engine de alerta, SOFA/qSOFA (sem configuração semeada) | nunca alerta | `vitals.py:400-408` + `0038:48-71` | REJECT — não-disparo silencioso estrutural |
+| 8 | Correlação, entradas ausentes | `fired=False`, lista de ausentes registrada, nenhum evento emitido | `correlation_engine.py:182-217,608-620` | REFINE — captura de motivo existe, contrato de status ausente |
+| 9 | Compilador, entradas vazias / alerta desconhecido | `False` | `alert_compiler.py:388-394` | REJECT |
+| 10 | Chave de status do frontend vazia (não atendido, sem alerta) | nenhuma borda/fundo renderizado de forma alguma | caso de borda da RULE-ALERTAS-011 | REJECT — não-avaliado renderizado como ausência |
+| 11 | Atendimento, leito todo-NEUTRO | tratado como *não* atendido | RULE-ALERTAS-009 | direção conservadora; conceito aceitável |
+| 12 | Faixas de referência, tabela de configuração vazia | padrões hardcoded silenciosos | `api/reference_ranges.py:99-117` | REJECT (ver seed review §4) |
+| 13 | Notificação, canal desconhecido | ignorado silenciosamente | `notification_worker.py:73` | REJECT |
+| 14 | Agrupamento, tipo de escore desconhecido | agrupado como `"UNKNOWN"`, nunca descartado | `api/v1/alerts.py:147-169` | REFINE — o único caminho de ausência que permanece visível |
+| 15 | Histórico de 24 h vazio | recai para as 50 linhas mais recentes independentemente da idade | `dashboard.py:503-542` | VALIDATE — risco de obsoleto-como-atual (HAZ-0006); a idade deve ser explícita |
 
-Pattern: with two exceptions (rows 8 and 14), **every absence path resolves
-toward reassurance or silence**. This is systemic, not incidental — the
-absence of an evaluation-status type forces every call site to invent a
-coercion, and every coercion chose the unsafe direction.
+Padrão: com duas exceções (linhas 8 e 14), **todo caminho de ausência se
+resolve rumo à tranquilidade ou ao silêncio**. Isso é sistêmico, não
+incidental — a ausência de um tipo de status de avaliação força todo
+ponto de chamada a inventar uma coerção, e toda coerção escolheu a
+direção insegura.
 
 ---
 
-## 8. Summary of verdicts (this record)
+## 8. Resumo de vereditos (este registro)
 
-| Artifact | Verdict |
+| Artefato | Veredito |
 |---|---|
-| Floor-to-normal bed severity (`derive_bed_severity` + coercions) | **REJECT** |
-| Alert engine (`alert_engine.py`) | **TRANSFORM** |
-| Assistido override precedence (bed/pathway/sector) | **REJECT** (override) / **TRANSFORM** (acknowledgement-alongside-severity, unmasked channel) |
-| Sector count-based color tie-break | **REJECT** |
-| Cooldown/rate-limit/dedup window values | **VALIDATE** (values) / **REJECT** (silent suppression) |
-| ADR-0039 read-time grouping + escalating flag | **REFINE** |
-| Severity model (ordinal + triple encoding + max-wins) | **REFINE** |
-| Criteria-count → color mechanism | **REJECT** |
-| Correlation engine | **VALIDATE** |
-| Alert compiler + gates | **REJECT** |
-| Clinical copy | **VALIDATE** |
-| Notification worker | **TRANSFORM** |
-| ALT-B trigger | **SUPERSEDE** |
-| Alert workflow API | **TRANSFORM** |
+| Severidade de leito com piso-para-normal (`derive_bed_severity` + coerções) | **REJECT** |
+| Engine de alerta (`alert_engine.py`) | **TRANSFORM** |
+| Precedência de override assistido (leito/pathway/setor) | **REJECT** (override) / **TRANSFORM** (reconhecimento-ao-lado-da-severidade, canal não mascarado) |
+| Desempate de cor de setor baseado em contagem | **REJECT** |
+| Valores de janela de cooldown/limite-de-taxa/dedup | **VALIDATE** (valores) / **REJECT** (supressão silenciosa) |
+| Agrupamento em tempo de leitura da ADR-0039 + flag escalating | **REFINE** |
+| Modelo de severidade (ordinal + codificação tripla + máximo-vence) | **REFINE** |
+| Mecanismo contagem-de-critérios → cor | **REJECT** |
+| Motor de correlação | **VALIDATE** |
+| Compilador de alerta + gates | **REJECT** |
+| Copy clínico | **VALIDATE** |
+| Worker de notificação | **TRANSFORM** |
+| Gatilho ALT-B | **SUPERSEDE** |
+| API de workflow de alerta | **TRANSFORM** |
 
-All verdicts: PROPOSAL — AWAITING NAMED CLINICAL REVIEW
+Todos os vereditos: PROPOSAL — AWAITING NAMED CLINICAL REVIEW
 (reviewer: rodaquino-OMNI).

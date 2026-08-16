@@ -1,21 +1,24 @@
 ---
 id: LEGREV-EWS-NEWS2
-title: Legacy review record — NEWS2 as implemented in IntensiCare V1 vs RCP NEWS2 (2017)
+title: Registro de revisão legada — NEWS2 conforme implementado no IntensiCare V1 vs RCP NEWS2 (2017)
 label: PROPOSAL
 statement: >
-  Forensic review of every NEWS2 score, rule, and threshold implemented in the legacy
-  V1 repository, verified from source code at the cycle-1 pin, against the published
-  Royal College of Physicians NEWS2 (2017) definition verified from the issuer's report.
-  Verdict is a PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).
+  Revisão forense de cada escore, regra e limiar do NEWS2 implementado no
+  repositório legado V1, verificado a partir do código-fonte no pin do
+  ciclo-1, contra a definição publicada do Royal College of Physicians NEWS2
+  (2017), verificada a partir do relatório do próprio emissor. O veredito é
+  uma PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).
 provenance:
-  source_repo: intensicare (legacy V1, READ-ONLY) + intensicare-V2 + rcp.ac.uk
-  path_or_url: /Users/familia/intensicare (see per-file citation table, section 0)
-  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (legacy HEAD at pin; per-file SHA-256 below)
-  section_or_lines: per-citation line references throughout
+  source_repo: intensicare (legado V1, READ-ONLY) + intensicare-V2 + rcp.ac.uk
+  path_or_url: /Users/familia/intensicare (ver tabela de citação por arquivo, seção 0)
+  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD legado no pin; SHA-256 por arquivo abaixo)
+  section_or_lines: referências de linha por citação ao longo do documento
   date_collected: 2026-08-15
-  collector: legacy EWS forensics reviewer (cycle-1 Task 1 agent); accountable reviewer rodaquino-OMNI
-  transformation: verbatim code excerpts plus reviewer analysis; published bands transcribed from issuer PDF
-  confidence: high
+  collector: revisor forense de EWS legado (agente da Tarefa 1, ciclo-1); revisor responsável rodaquino-OMNI
+  transformation: >
+    traduzido EN→pt-BR, tranche 3, GDEC-0008 item 8 (trechos de código verbatim
+    mais análise do revisor; faixas publicadas transcritas do PDF do emissor)
+  confidence: alta
   owner: UNASSIGNED — VALIDATION REQUIRED
   validation_status: VALIDATION REQUIRED
 links:
@@ -28,22 +31,25 @@ supersedes: null
 superseded_by: null
 ---
 
-# NEWS2 — legacy review record (cycle 1, Task 1)
+> Traduzido EN→pt-BR em 2026-08-16 (GDEC-0008 item 8, tranche 3); original EN preservado no histórico git.
+
+# NEWS2 — registro de revisão legada (ciclo 1, Tarefa 1)
 
 > **PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).**
-> This record reviews; it approves nothing. Verdict vocabulary per
-> `docs/00-governance/legacy-import-policy.md` §4. Candidate: **CAND-0001**
+> Este registro revisa; não aprova nada. Vocabulário de veredito conforme
+> `docs/00-governance/legacy-import-policy.md` §4. Candidato: **CAND-0001**
 > (`docs/05-clinical-safety/pathway-portfolio/candidate-inventory.md`).
 
-## 0. Citation base — files and hashes
+## 0. Base de citação — arquivos e hashes
 
-All legacy paths are relative to `/Users/familia/intensicare/` at HEAD
-`1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79` (2026-08-15). Files marked **[pin]** match
-`docs/archive/legacy-provenance/legacy-pin-cycle-1.md`; files marked **[reviewer-hash]**
-are **not in that manifest** and were hashed by this reviewer at review time
-(`shasum -a 256`, 2026-08-15) — OBSERVED.
+Todos os caminhos legados são relativos a `/Users/familia/intensicare/` no HEAD
+`1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79` (2026-08-15). Arquivos marcados
+**[pin]** correspondem a
+`docs/archive/legacy-provenance/legacy-pin-cycle-1.md`; arquivos marcados
+**[reviewer-hash]** **não estão naquele manifesto** e foram hasheados por este
+revisor no momento da revisão (`shasum -a 256`, 2026-08-15) — OBSERVED.
 
-| File | SHA-256 | Manifest |
+| Arquivo | SHA-256 | Manifesto |
 |---|---|---|
 | `src/intensicare/services/news2.py` | `d3399fe2bb9853222dde6b16167a4f6093c6daac7b1559474b628deeff246bc8` | [pin] |
 | `src/intensicare/services/ews_nrt_runner.py` | `9ad826e9e31be584a17285a721697243e8654d9209ca68b9abec1230ed3c7fe6` | [pin] |
@@ -59,18 +65,19 @@ are **not in that manifest** and were hashed by this reviewer at review time
 | `alembic/versions/0029_ratification_record.py` | `cfd0e7e40d62f628fa6335018a547a6d418931ce5861f239bb3f2f5f7ce1afbe` | [reviewer-hash] |
 | `docs/plan/_work/alerts/early-warning-scores.yaml` | `712d9ccde209d099f80c4d5abb11e77e33564e03f347f931a363537c1031e9b8` | [reviewer-hash] |
 | `docs/audit/fullspectrum/CLINICAL_SIGNOFF.md` | `7499a00ddfa6309f0190177d9474ba8e0db781d515bd3cbe72b890e74c178f91` | [reviewer-hash] |
-| `tests/test_news2.py` (intent evidence only) | `bbf8aaf7261f6e19659d7f7638d7cc988385ef00e317a5fc238f8f64a9e4ced0` | [reviewer-hash] |
-| `tests/test_ews_nrt.py` (intent evidence only) | `89091fe372bb90c2131491d63b6bbe1ae2356e38854ffaa777c951ade422bde8` | [reviewer-hash] |
-| `tests/property/test_scorer_properties.py` (intent evidence only) | `154bc0b0aaa41392ce25f36df8a8a5fde277f15d01a7995cc96ac185b276e964` | [reviewer-hash] |
+| `tests/test_news2.py` (apenas evidência de intenção) | `bbf8aaf7261f6e19659d7f7638d7cc988385ef00e317a5fc238f8f64a9e4ced0` | [reviewer-hash] |
+| `tests/test_ews_nrt.py` (apenas evidência de intenção) | `89091fe372bb90c2131491d63b6bbe1ae2356e38854ffaa777c951ade422bde8` | [reviewer-hash] |
+| `tests/property/test_scorer_properties.py` (apenas evidência de intenção) | `154bc0b0aaa41392ce25f36df8a8a5fde277f15d01a7995cc96ac185b276e964` | [reviewer-hash] |
 
-## 1. Formula as implemented (OBSERVED, from source)
+## 1. Fórmula conforme implementada (OBSERVED, a partir da fonte)
 
-Scoring engine: `src/intensicare/services/news2.py`. Seven components summed
-(`calculate_news2`, news2.py:244-308): respiratory rate, SpO2, supplemental O2,
-systolic BP, heart rate, consciousness (AVPU string), temperature. Version constant
-`NEWS2_VERSION = "NEWS2-v3.0.0"` (news2.py:14).
+Motor de scoring: `src/intensicare/services/news2.py`. Sete componentes
+somados (`calculate_news2`, news2.py:244-308): frequência respiratória, SpO2,
+O2 suplementar, PA sistólica, frequência cardíaca, consciência (string AVPU),
+temperatura. Constante de versão `NEWS2_VERSION = "NEWS2-v3.0.0"`
+(news2.py:14).
 
-Band engine (news2.py:76-98), verbatim core:
+Motor de faixas (news2.py:76-98), núcleo verbatim:
 
 ```python
 def _score_numeric(value, thresholds):
@@ -86,243 +93,276 @@ def _score_numeric(value, thresholds):
     return 0
 ```
 
-Implemented bands (all OBSERVED at the cited lines):
+Faixas implementadas (todas OBSERVED nas linhas citadas):
 
-- Respiratory rate (news2.py:101-115): `<=8:3, 9-11:1, 12-20:0, 21-24:2, >=25:3`.
-- SpO2 Scale 1, non-hypercapnic (news2.py:161-170): `>=96:0, 94-95:1, 92-93:2, <=91:3`.
-- SpO2 Scale 2, `hypercapnic=True, on_o2=True` (news2.py:139-148):
+- Frequência respiratória (news2.py:101-115): `<=8:3, 9-11:1, 12-20:0, 21-24:2, >=25:3`.
+- SpO2 Escala 1, não hipercápnico (news2.py:161-170): `>=96:0, 94-95:1, 92-93:2, <=91:3`.
+- SpO2 Escala 2, `hypercapnic=True, on_o2=True` (news2.py:139-148):
   `>=97:3, 95-96:2, 93-94:1, <=92:0`.
-- SpO2 Scale 2, `hypercapnic=True, on_o2=False` (news2.py:149-159):
+- SpO2 Escala 2, `hypercapnic=True, on_o2=False` (news2.py:149-159):
   `>=93:0, 88-92:1, 86-87:2, 84-85:3, <=83:3`.
-- Supplemental O2 (news2.py:173-175): `return 2 if on_o2 else 0`.
-- Systolic BP (news2.py:178-192): `<=90:3, 91-100:2, 101-110:1, 111-219:0, >=220:3`.
-- Heart rate (news2.py:195-210): `<=40:3, 41-50:1, 51-90:0, 91-110:1, 111-130:2, >=131:3`.
-- Consciousness (news2.py:213-224): `None -> 0`; `"A" -> 0`; **any other string -> 3**.
-- Temperature (news2.py:227-241): `<=35.0:3, 35.1-36.0:1, 36.1-38.0:0, 38.1-39.0:1, >=39.1:2`.
-- Scale-2 selection (news2.py:275-284): `use_scale2 = hypercapnic`;
-  `on_o2=bool(supplemental_o2)` is passed into `score_spo2`.
-- Aggregate risk (news2.py:22-27, 51-58): `>=7 -> "high"`, `>=5 -> "medium"`, else `"low"`.
-- Red-score property (news2.py:60-73): `requires_urgent_assessment` is true when total
-  `>=5` **or** any of the six physiological components equals 3 (supplemental O2 excluded).
+- O2 suplementar (news2.py:173-175): `return 2 if on_o2 else 0`.
+- PA sistólica (news2.py:178-192): `<=90:3, 91-100:2, 101-110:1, 111-219:0, >=220:3`.
+- Frequência cardíaca (news2.py:195-210): `<=40:3, 41-50:1, 51-90:0, 91-110:1, 111-130:2, >=131:3`.
+- Consciência (news2.py:213-224): `None -> 0`; `"A" -> 0`; **qualquer outra
+  string -> 3**.
+- Temperatura (news2.py:227-241): `<=35.0:3, 35.1-36.0:1, 36.1-38.0:0, 38.1-39.0:1, >=39.1:2`.
+- Seleção de Escala 2 (news2.py:275-284): `use_scale2 = hypercapnic`;
+  `on_o2=bool(supplemental_o2)` é passado para `score_spo2`.
+- Risco agregado (news2.py:22-27, 51-58): `>=7 -> "high"`, `>=5 -> "medium"`,
+  senão `"low"`.
+- Propriedade de escore vermelho (news2.py:60-73): `requires_urgent_assessment`
+  é verdadeiro quando o total `>=5` **ou** qualquer um dos seis componentes
+  fisiológicos é igual a 3 (O2 suplementar excluído).
 
-Production call sites (OBSERVED):
+Pontos de chamada em produção (OBSERVED):
 
-- Ingestion (vitals.py:310-334): `calculate_news2(..., hypercapnic=False, ...)` —
-  hard-coded `False`; result persisted as `ClinicalScore(score_type="NEWS2",
-  algorithm_version=NEWS2_VERSION, components=asdict(...))` (models/clinical_score.py:13-32).
-- Alerting (vitals.py:396-398 → `alert_engine.process_clinical_score`): compares
-  **aggregate only** against `threshold_config` watch/urgent/critical
-  (alert_engine.py:50-59); NEWS2 defaults seeded watch=3, urgent=5, critical=7
+- Ingestão (vitals.py:310-334): `calculate_news2(..., hypercapnic=False, ...)`
+  — `False` hardcoded; resultado persistido como
+  `ClinicalScore(score_type="NEWS2", algorithm_version=NEWS2_VERSION,
+  components=asdict(...))` (models/clinical_score.py:13-32).
+- Alerting (vitals.py:396-398 → `alert_engine.process_clinical_score`):
+  compara **apenas o agregado** contra `threshold_config`
+  watch/urgent/critical (alert_engine.py:50-59); os padrões do NEWS2 são
+  semeados watch=3, urgent=5, critical=7
   (0038_seed_default_threshold_config.py:61-70).
-- NRT runner (ews_nrt_runner.py:206-224): aggregate computed with `hypercapnic=False`
-  (ews_nrt_runner.py:209), but the per-parameter SpO2 red-score is computed as
-  `score_spo2(vs.spo2, hypercapnic=bool(vs.supplemental_o2))` (ews_nrt_runner.py:220).
-- **The NRT runner has no production caller.** `process_ews_nrt` /
-  `process_ews_after_vital_insert` are imported only by tests (grep across
-  `src/`, 2026-08-15 — OBSERVED); `ingest_vitals` never calls them despite the
-  docstring instruction (ews_nrt_runner.py:685).
-- Bed severity (dashboard.py:79-115): `derive_bed_severity` maps the NEWS2 aggregate
-  through watch/urgent/critical bands and floors at `"normal"` — "a bed with no
-  alerts, no active pathways, and no scores is still 'normal'" (dashboard.py:100-107).
+- Runner NRT (ews_nrt_runner.py:206-224): o agregado é calculado com
+  `hypercapnic=False` (ews_nrt_runner.py:209), mas o escore vermelho de SpO2
+  por parâmetro é calculado como
+  `score_spo2(vs.spo2, hypercapnic=bool(vs.supplemental_o2))`
+  (ews_nrt_runner.py:220).
+- **O runner NRT não tem chamador em produção.** `process_ews_nrt` /
+  `process_ews_after_vital_insert` são importados apenas por testes (grep em
+  `src/`, 2026-08-15 — OBSERVED); `ingest_vitals` nunca os chama apesar da
+  instrução na docstring (ews_nrt_runner.py:685).
+- Severidade de leito (dashboard.py:79-115): `derive_bed_severity` mapeia o
+  agregado do NEWS2 pelas faixas watch/urgent/critical e tem piso em
+  `"normal"` — "a bed with no alerts, no active pathways, and no scores is
+  still 'normal'" (dashboard.py:100-107).
 
-## 2. Authoritative published definition (SOURCE, verified from issuer)
+## 2. Definição publicada autoritativa (SOURCE, verificada a partir do emissor)
 
-**Royal College of Physicians. *National Early Warning Score (NEWS) 2: Standardising
-the assessment of acute-illness severity in the NHS.* Updated report of a working
-party. London: RCP, 2017.** URL (issuer PDF, fetched and read 2026-08-15):
-`https://www.rcp.ac.uk/media/a4ibkkbf/news2-final-report_0_0.pdf` (report pages 29-31,
-35 = Chart 1, Chart 2, Chart 3).
+**Royal College of Physicians. *National Early Warning Score (NEWS) 2:
+Standardising the assessment of acute-illness severity in the NHS.* Relatório
+atualizado de um working party. Londres: RCP, 2017.** URL (PDF do emissor,
+obtido e lido em 2026-08-15):
+`https://www.rcp.ac.uk/media/a4ibkkbf/news2-final-report_0_0.pdf` (páginas do
+relatório 29-31, 35 = Chart 1, Chart 2, Chart 3).
 
-Chart 1 (transcribed from the fetched PDF — SOURCE):
+Chart 1 (transcrito do PDF obtido — SOURCE):
 
-| Parameter | 3 | 2 | 1 | 0 | 1 | 2 | 3 |
+| Parâmetro | 3 | 2 | 1 | 0 | 1 | 2 | 3 |
 |---|---|---|---|---|---|---|---|
-| Respiration rate (per min) | ≤8 | | 9–11 | 12–20 | | 21–24 | ≥25 |
-| SpO2 Scale 1 (%) | ≤91 | 92–93 | 94–95 | ≥96 | | | |
-| SpO2 Scale 2 (%) | ≤83 | 84–85 | 86–87 | 88–92; ≥93 on air | 93–94 on oxygen | 95–96 on oxygen | ≥97 on oxygen |
-| Air or oxygen? | | Oxygen | | Air | | | |
-| Systolic BP (mmHg) | ≤90 | 91–100 | 101–110 | 111–219 | | | ≥220 |
-| Pulse (per min) | ≤40 | | 41–50 | 51–90 | 91–110 | 111–130 | ≥131 |
-| Consciousness | | | | Alert | | | CVPU |
-| Temperature (°C) | ≤35.0 | | 35.1–36.0 | 36.1–38.0 | 38.1–39.0 | ≥39.1 | |
+| Frequência respiratória (por min) | ≤8 | | 9–11 | 12–20 | | 21–24 | ≥25 |
+| SpO2 Escala 1 (%) | ≤91 | 92–93 | 94–95 | ≥96 | | | |
+| SpO2 Escala 2 (%) | ≤83 | 84–85 | 86–87 | 88–92; ≥93 em ar ambiente | 93–94 em O2 | 95–96 em O2 | ≥97 em O2 |
+| Ar ou oxigênio? | | Oxigênio | | Ar | | | |
+| PA sistólica (mmHg) | ≤90 | 91–100 | 101–110 | 111–219 | | | ≥220 |
+| Pulso (por min) | ≤40 | | 41–50 | 51–90 | 91–110 | 111–130 | ≥131 |
+| Consciência | | | | Alerta | | | CVPU |
+| Temperatura (°C) | ≤35,0 | | 35,1–36,0 | 36,1–38,0 | 38,1–39,0 | ≥39,1 | |
 
-Chart 2 (SOURCE, verbatim structure): aggregate 0–4 = Low → ward-based response;
-**red score (3 in any individual parameter) = Low–medium → urgent ward-based
-response**; aggregate 5–6 = Medium → key threshold for urgent response; aggregate
-≥7 = High → urgent or emergency response.
+Chart 2 (SOURCE, estrutura verbatim): agregado 0–4 = Baixo → resposta baseada
+na enfermaria; **escore vermelho (3 em qualquer parâmetro individual) =
+Baixo–médio → resposta urgente baseada na enfermaria**; agregado 5–6 = Médio →
+limiar-chave para resposta urgente; agregado ≥7 = Alto → resposta urgente ou
+de emergência.
 
-Scale-2 governance (SOURCE, report p.31): "A competent clinical decision-maker
-should make the decision about whether to use the Scale 2 oxygen saturation
-section of the NEWS chart, which is specific to patients with hypercapnic
-respiratory failure (usually COPD) who require their 'usual' oxygen saturations
-to be set at 88–92% ... the Scale 1 oxygen saturation section of the chart should
-be clearly crossed out." Chart 3 footnote: "ONLY use Scale 2 under the direction
-of a qualified clinician."
+Governança da Escala 2 (SOURCE, relatório p.31): "A competent clinical
+decision-maker should make the decision about whether to use the Scale 2
+oxygen saturation section of the NEWS chart, which is specific to patients
+with hypercapnic respiratory failure (usually COPD) who require their
+'usual' oxygen saturations to be set at 88–92% ... the Scale 1 oxygen
+saturation section of the chart should be clearly crossed out." (citação
+mantida em inglês, texto literal do relatório). Nota de rodapé do Chart 3:
+"ONLY use Scale 2 under the direction of a qualified clinician."
 
-Population (SOURCE, report §2): "The NEWS was designed for use in patients aged
-16 years and more and is not recommended for use in children aged under 16 years
-or during pregnancy." Consciousness scores **new-onset** confusion ("no score if
-chronic" — Chart 3).
+População (SOURCE, relatório §2): "The NEWS was designed for use in patients
+aged 16 years and more and is not recommended for use in children aged under
+16 years or during pregnancy." (citação mantida em inglês, texto literal).
+Consciência pontua confusão de **início novo** ("no score if chronic" —
+Chart 3).
 
-**December 2022 clarification: NOT VERIFIED.** The RCP resource pages
-(`https://www.rcp.ac.uk/resources/national-early-warning-score-news-2/`, fetched
-2026-08-15) surface a November 2022 *Clinical Medicine* special issue but no
-December 2022 clarification document. No claim from it is used in this review.
-VALIDATION REQUIRED if V2 wishes to cite it.
+**Esclarecimento de dezembro de 2022: NÃO VERIFICADO.** As páginas de
+recursos do RCP
+(`https://www.rcp.ac.uk/resources/national-early-warning-score-news-2/`,
+obtidas em 2026-08-15) mostram uma edição especial de *Clinical Medicine* de
+novembro de 2022, mas nenhum documento de esclarecimento de dezembro de
+2022. Nenhuma alegação dele é usada nesta revisão. VALIDATION REQUIRED se a
+V2 quiser citá-lo.
 
-## 3. Discrepancy analysis — implemented vs published
+## 3. Análise de discrepâncias — implementado vs publicado
 
-Faithful (OBSERVED = SOURCE): respiratory rate; SpO2 Scale 1; supplemental O2 (+2,
-oxygen vs air); systolic BP; pulse; temperature; consciousness Alert=0 / CVPU=3
-(API path); aggregate cut-points 5 and 7. Float inputs are rounded to 1 decimal
-before banding (news2.py:87-90), matching the chart's 0.1 °C resolution; band
-comparisons are inclusive and contiguous — no gap defects found in Scale 1/RR/SBP/HR/temperature.
+Fiel (OBSERVED = SOURCE): frequência respiratória; SpO2 Escala 1; O2
+suplementar (+2, oxigênio vs ar); PA sistólica; pulso; temperatura;
+consciência Alerta=0 / CVPU=3 (caminho API); cortes agregados 5 e 7. As
+entradas float são arredondadas para 1 casa decimal antes da classificação
+em faixas (news2.py:87-90), correspondendo à resolução de 0,1 °C do chart;
+as comparações de faixa são inclusivas e contíguas — nenhum defeito de
+lacuna encontrado em Escala 1/FR/PAS/FC/temperatura.
 
-Discrepancies (D-1 … D-9):
+Discrepâncias (D-1 … D-9):
 
-| # | Item | Implemented | Published (RCP 2017) | Direction / severity |
+| # | Item | Implementado | Publicado (RCP 2017) | Direção / severidade |
 |---|---|---|---|---|
-| D-1 | Scale 2, hypercapnic **on O2**, low SpO2 | `<=92 -> 0` (news2.py:144-147) | ≤83→3, 84–85→2, 86–87→1, 88–92→0 (low bands apply regardless of oxygen) | **Under-scores profound hypoxaemia to 0** (e.g. SpO2 70% on O2 scores 0 vs published 3). Most dangerous single-band defect in the file. |
-| D-2 | Scale 2, hypercapnic **off O2** | 88–92→1, 86–87→2, 84–85→3 (news2.py:150-159) | 88–92→0, 86–87→1, 84–85→2 | Over-scores by one band, including scoring the BTS 88–92% target range as abnormal (alarm-fatigue direction). ≤83→3 and ≥93 on air→0 match. |
-| D-3 | Scale-2 selection mechanism | `hypercapnic` parameter exists but no ingestion surface supplies it: `schemas/vitals.py` has no such field (schemas/vitals.py:16-88); both call sites hard-code `hypercapnic=False` (vitals.py:313; ews_nrt_runner.py:209) | Scale 2 chosen by "a competent clinical decision-maker" and used for hypercapnic respiratory failure | **Scale 2 is unreachable in every production aggregate path.** A COPD/hypercapnic patient is always scored on Scale 1 (see §4.1). |
-| D-4 | Scale-2 misselection in NRT red-param path | `score_spo2(vs.spo2, hypercapnic=bool(vs.supplemental_o2))` (ews_nrt_runner.py:220) — supplemental O2 selects Scale 2, and `on_o2` defaults False so the off-O2 Scale-2 bands apply | Supplemental oxygen never selects Scale 2 | Any on-O2 non-hypercapnic patient with SpO2 88–92 gets param score 1 instead of Scale 1's red 3 → **suppresses the single-red-parameter trigger**; also internally inconsistent with the aggregate (computed Scale 1) in the same snapshot. Dead code today (runner unwired) but a latent trap. |
-| D-5 | Risk tiers | `low / medium / high` only (news2.py:51-58; re-derived at vitals.py:511-519) | Four tiers: 0–4 Low; **red score = Low–medium**; 5–6 Medium; ≥7 High | The Low–medium (single red) tier is absent from the persisted/exposed category; `requires_urgent_assessment` (news2.py:60-73) captures the trigger but has **no production caller** (grep 2026-08-15). |
-| D-6 | Red-score alerting | Production alerting compares aggregate only (alert_engine.py:50-59). The red-parameter alert exists only in the unwired NRT runner (ews_nrt_runner.py:265-316) and in a design YAML (early-warning-scores.yaml:11-58) | Score of 3 in any single parameter → urgent ward-based review | Partially mitigated by default watch=3 (a single red raises aggregate to ≥3 → "watch" alert), but severity is misgraded (watch vs urgent) and the mitigation collapses if a tenant raises `watch_threshold` (threshold_resolver.py:50-117 allows per-bed/unit/tenant overrides with no floor). |
-| D-7 | Consciousness via HL7 path | MLLP parser accepts only `A/V/P/U`; `"C"` → `None` (mllp_listener.py:200-204) → consciousness scores **0** (news2.py:219-220) | New confusion (C) scores 3 | **New-onset confusion arriving via HL7 ORU scores 0.** The API path is correct (`AVPU_VALUES` admits C, schemas/vitals.py:13; scorer gives 3). Path-dependent under-scoring. |
-| D-8 | Consciousness fallback | Any non-"A" string → 3 (news2.py:221-224); GCS is collected (schemas/vitals.py:73) but never mapped to consciousness when AVPU is absent | ACVPU assessment; chronic confusion scores 0 ("no score if chronic", Chart 3) | Over-scoring direction for unrecognized tokens (fail-loud, acceptable); but chronic confusion cannot be represented, and a comatose patient with GCS recorded and AVPU absent scores 0 (ties into HAZ-0005). |
-| D-9 | Population gating | None anywhere in the scoring/ingestion path (no age, no pregnancy checks — OBSERVED across news2.py, vitals.py, schemas/vitals.py) | Designed for ≥16 years; not for children <16 or pregnancy | Out-of-population output is produced silently. Feeds VAL-0006/VAL-0007 (`docs/02-users-and-workflows/g1-validation-backlog.md`). |
+| D-1 | Escala 2, hipercápnico **em O2**, SpO2 baixo | `<=92 -> 0` (news2.py:144-147) | ≤83→3, 84–85→2, 86–87→1, 88–92→0 (as faixas baixas se aplicam independentemente do oxigênio) | **Subestima hipoxemia profunda para 0** (p.ex. SpO2 70% em O2 pontua 0 vs 3 publicado). O defeito de faixa única mais perigoso do arquivo. |
+| D-2 | Escala 2, hipercápnico **fora de O2** | 88–92→1, 86–87→2, 84–85→3 (news2.py:150-159) | 88–92→0, 86–87→1, 84–85→2 | Superestima em uma faixa, incluindo pontuar a faixa-alvo BTS de 88–92% como anormal (direção de fadiga de alarme). ≤83→3 e ≥93 em ar ambiente→0 correspondem. |
+| D-3 | Mecanismo de seleção da Escala 2 | O parâmetro `hypercapnic` existe, mas nenhuma superfície de ingestão o fornece: `schemas/vitals.py` não tem esse campo (schemas/vitals.py:16-88); ambos os pontos de chamada hardcodam `hypercapnic=False` (vitals.py:313; ews_nrt_runner.py:209) | Escala 2 escolhida por "a competent clinical decision-maker" e usada para insuficiência respiratória hipercápnica | **A Escala 2 é inalcançável em todo caminho de agregado em produção.** Um paciente DPOC/hipercápnico é sempre pontuado na Escala 1 (ver §4.1). |
+| D-4 | Seleção incorreta de Escala 2 no caminho de parâmetro vermelho do NRT | `score_spo2(vs.spo2, hypercapnic=bool(vs.supplemental_o2))` (ews_nrt_runner.py:220) — O2 suplementar seleciona a Escala 2, e `on_o2` tem padrão False, então as faixas de Escala 2 fora-de-O2 se aplicam | O2 suplementar nunca seleciona a Escala 2 | Qualquer paciente em O2 não hipercápnico com SpO2 88–92 recebe escore de parâmetro 1 em vez do vermelho 3 da Escala 1 → **suprime o gatilho de parâmetro-único-vermelho**; também internamente inconsistente com o agregado (Escala 1 computada) no mesmo snapshot. Código morto hoje (runner não conectado), mas uma armadilha latente. |
+| D-5 | Níveis de risco | Apenas `low / medium / high` (news2.py:51-58; re-derivado em vitals.py:511-519) | Quatro níveis: 0–4 Baixo; **escore vermelho = Baixo–médio**; 5–6 Médio; ≥7 Alto | O nível Baixo–médio (vermelho único) está ausente da categoria persistida/exposta; `requires_urgent_assessment` (news2.py:60-73) captura o gatilho, mas **não tem chamador em produção** (grep 2026-08-15). |
+| D-6 | Alerting de escore vermelho | O alerting em produção compara apenas o agregado (alert_engine.py:50-59). O alerta de parâmetro vermelho existe apenas no runner NRT não conectado (ews_nrt_runner.py:265-316) e em um YAML de design (early-warning-scores.yaml:11-58) | Escore de 3 em qualquer parâmetro único → revisão urgente baseada na enfermaria | Parcialmente mitigado pelo watch=3 padrão (um único vermelho eleva o agregado para ≥3 → alerta "watch"), mas a severidade é classificada incorretamente (watch vs urgent) e a mitigação desmorona se um tenant elevar `watch_threshold` (threshold_resolver.py:50-117 permite overrides por leito/unidade/tenant sem piso). |
+| D-7 | Consciência via caminho HL7 | O parser MLLP aceita apenas `A/V/P/U`; `"C"` → `None` (mllp_listener.py:200-204) → consciência pontua **0** (news2.py:219-220) | Confusão nova (C) pontua 3 | **Confusão de início novo chegando via HL7 ORU pontua 0.** O caminho da API está correto (`AVPU_VALUES` admite C, schemas/vitals.py:13; o scorer dá 3). Subestimação dependente de caminho. |
+| D-8 | Fallback de consciência | Qualquer string não-"A" → 3 (news2.py:221-224); o GCS é coletado (schemas/vitals.py:73), mas nunca mapeado para consciência quando o AVPU está ausente | Avaliação ACVPU; confusão crônica pontua 0 ("no score if chronic", Chart 3) | Direção de superestimação para tokens não reconhecidos (falha alto, aceitável); mas confusão crônica não pode ser representada, e um paciente comatoso com GCS registrado e AVPU ausente pontua 0 (relaciona-se ao HAZ-0005). |
+| D-9 | Gating populacional | Nenhum em nenhum ponto do caminho de scoring/ingestão (nenhuma checagem de idade, nenhuma de gravidez — OBSERVED em news2.py, vitals.py, schemas/vitals.py) | Projetado para ≥16 anos; não para crianças <16 nem gravidez | Saída fora da população é produzida silenciosamente. Alimenta VAL-0006/VAL-0007 (`docs/02-users-and-workflows/g1-validation-backlog.md`). |
 
-Version-identity finding (OBSERVED): migration 0008 and 0021 describe NEWS2-v2/v3
-Scale-2 behavior as "supplemental_o2 now auto-activates Scale 2" and "84-85: score
-2 → 3" claimed "per RCP 2017" (0008_seed_news2_v2_0_0.py:8-11;
-0021_activate_news2_v3_0_0.py:7-12, 34-38), and 0029 records NEWS2-v3.0.0 as
-ratified with that behavior (0029_ratification_record.py:13-15). Both claims
-contradict the published chart (Scale 2 84–85 = 2; supplemental O2 never selects
-the scale), and the **current** code has since inverted the auto-activation
-(news2.py:118-122, 275-280) **without changing the version string** — so persisted
-`algorithm_version = "NEWS2-v3.0.0"` does not identify the algorithm that actually
-ran. `RAT-NEWS2-SCALE-2` does not appear in the approved table of
-`docs/audit/fullspectrum/CLINICAL_SIGNOFF.md` (only MEWS and threshold items do),
-so the Scale-2 "ratification" trail terminates in a migration docstring.
-INFERENCE: the legacy ratification record for NEWS2 cannot be relied on.
+Achado de identidade de versão (OBSERVED): as migrações 0008 e 0021 descrevem
+o comportamento de Escala 2 do NEWS2-v2/v3 como "supplemental_o2 now
+auto-activates Scale 2" e "84-85: score 2 → 3" alegado "per RCP 2017"
+(0008_seed_news2_v2_0_0.py:8-11; 0021_activate_news2_v3_0_0.py:7-12, 34-38),
+e a 0029 registra o NEWS2-v3.0.0 como ratificado com esse comportamento
+(0029_ratification_record.py:13-15). Ambas as alegações contradizem o chart
+publicado (Escala 2 84–85 = 2; O2 suplementar nunca seleciona a escala), e o
+código **atual** desde então inverteu a auto-ativação (news2.py:118-122,
+275-280) **sem mudar a string de versão** — então o
+`algorithm_version = "NEWS2-v3.0.0"` persistido não identifica o algoritmo
+que de fato rodou. `RAT-NEWS2-SCALE-2` não aparece na tabela aprovada de
+`docs/audit/fullspectrum/CLINICAL_SIGNOFF.md` (apenas itens de MEWS e de
+limiar aparecem), então a trilha de "ratificação" da Escala 2 termina em uma
+docstring de migração. INFERENCE: o registro de ratificação legado do NEWS2
+não pode ser confiado.
 
-## 4. NEWS2-specific mandatory assessments
+## 4. Avaliações obrigatórias específicas do NEWS2
 
-### 4.1 SpO2 Scale 1 vs Scale 2 (hypercapnic respiratory failure)
+### 4.1 SpO2 Escala 1 vs Escala 2 (insuficiência respiratória hipercápnica)
 
-- **Implemented at all?** Yes, in the scorer (news2.py:123-170) — both Scale-2
-  branches exist.
-- **How selected?** By a `hypercapnic: bool` function argument only. There is no
-  patient flag, no order, no clinician workflow, and no ingestion field that can
-  set it; every production call passes `False` (vitals.py:313; ews_nrt_runner.py:209).
-  The RCP requirement of a documented decision by a competent clinical
-  decision-maker has no counterpart.
-- **What happens to a COPD patient scored on Scale 1?** OBSERVED consequence: a
-  hypercapnic patient held at the BTS target 88–92% on O2 scores SpO2 3 (≤91) or
-  2 (=92) plus 2 for oxygen — a chronic aggregate of 4–5 from being *at target*,
-  i.e. systematic over-scoring/alarm-fatigue and a permanently red SpO2 parameter.
-  Conversely, if the Scale-2 ON-O2 branch were ever reached, D-1 would score
-  profound hypoxaemia 0. Both directions are clinically wrong; only the
-  over-scoring direction is reachable today.
+- **Implementado de alguma forma?** Sim, no scorer (news2.py:123-170) —
+  ambos os ramos de Escala 2 existem.
+- **Como é selecionado?** Apenas por um argumento de função `hypercapnic:
+  bool`. Não há flag de paciente, nem prescrição, nem workflow de clínico, e
+  nenhum campo de ingestão que possa defini-lo; toda chamada em produção
+  passa `False` (vitals.py:313; ews_nrt_runner.py:209). A exigência do RCP de
+  uma decisão documentada por um decisor clínico competente não tem
+  contrapartida.
+- **O que acontece com um paciente DPOC pontuado na Escala 1?** Consequência
+  OBSERVED: um paciente hipercápnico mantido na faixa-alvo BTS de 88–92% em
+  O2 pontua SpO2 3 (≤91) ou 2 (=92) mais 2 pelo oxigênio — um agregado
+  crônico de 4–5 por estar *na meta*, ou seja, superestimação
+  sistemática/fadiga de alarme e um parâmetro de SpO2 permanentemente
+  vermelho. Reciprocamente, se o ramo de Escala 2 EM-O2 fosse alguma vez
+  alcançado, o D-1 pontuaria hipoxemia profunda como 0. Ambas as direções são
+  clinicamente erradas; apenas a direção de superestimação é alcançável
+  hoje.
 
-### 4.2 Supplemental-oxygen scoring
+### 4.2 Scoring de oxigênio suplementar
 
-`+2 if on_o2 else 0` (news2.py:173-175) matches the published "Air or oxygen?"
-row. Defect: `None` (unknown) is indistinguishable from "on air" — both score 0
-(zero-coercion of an unknown; see §5).
+`+2 if on_o2 else 0` (news2.py:173-175) corresponde à linha publicada "Air or
+oxygen?". Defeito: `None` (desconhecido) é indistinguível de "em ar ambiente"
+— ambos pontuam 0 (coerção a zero de um desconhecido; ver §5).
 
-### 4.3 Consciousness mapping
+### 4.3 Mapeamento de consciência
 
-AVPU string; A=0, C/V/P/U=3 (news2.py:213-224) — matches published CVPU=3 on the
-API path (ACVPU admitted, schemas/vitals.py:13). Defects: HL7 path drops "C" to
-None → 0 (D-7); no GCS fallback (D-8); no chronic-vs-new confusion distinction;
-`None` → 0 (§5).
+String AVPU; A=0, C/V/P/U=3 (news2.py:213-224) — corresponde ao CVPU=3
+publicado no caminho da API (ACVPU admitido, schemas/vitals.py:13).
+Defeitos: o caminho HL7 rebaixa "C" para None → 0 (D-7); nenhum fallback de
+GCS (D-8); nenhuma distinção crônica-vs-nova de confusão; `None` → 0 (§5).
 
-### 4.4 Single-parameter red-score trigger
+### 4.4 Gatilho de escore vermelho de parâmetro único
 
-Present in three disconnected forms, none effective in production: property
-`requires_urgent_assessment` (news2.py:60-73, no caller); NRT runner red-param
-edge trigger (ews_nrt_runner.py:265-316, runner unwired); design YAML
-ALERT-EWS-NEWS2-DETERIORATION-01 (early-warning-scores.yaml:11-58, "docs/plan"
-tier). Production behavior is aggregate-threshold-only (D-6).
+Presente em três formas desconectadas, nenhuma efetiva em produção:
+propriedade `requires_urgent_assessment` (news2.py:60-73, sem chamador);
+gatilho de borda de parâmetro vermelho do runner NRT
+(ews_nrt_runner.py:265-316, runner não conectado); YAML de design
+ALERT-EWS-NEWS2-DETERIORATION-01 (early-warning-scores.yaml:11-58, nível
+"docs/plan"). O comportamento em produção é apenas-limiar-agregado (D-6).
 
-### 4.5 Aggregate trigger thresholds vs implemented alerting
+### 4.5 Limiares de gatilho agregado vs alerting implementado
 
-Published 0 / 1–4 / 5–6 / ≥7 map to implemented category cut-points 5 and 7
-(faithful) but alerting uses configurable watch=3 / urgent=5 / critical=7
-(0038_seed_default_threshold_config.py:61-70; resolver bed ≻ unit ≻ tenant,
-threshold_resolver.py:50-117). watch=3 is an institutional addition (not RCP);
-the 5/6 and ≥7 severities align with medium/high. No floor prevents an operator
-raising thresholds above the published trigger levels; mutations are audited
-(threshold_resolver.py:120-150) but not clinically bounded.
+Os publicados 0 / 1–4 / 5–6 / ≥7 mapeiam para os cortes de categoria
+implementados 5 e 7 (fiel), mas o alerting usa watch=3 / urgent=5 /
+critical=7 configuráveis (0038_seed_default_threshold_config.py:61-70;
+resolvedor leito ≻ unidade ≻ tenant, threshold_resolver.py:50-117). watch=3
+é uma adição institucional (não RCP); as severidades 5/6 e ≥7 se alinham com
+médio/alto. Nenhum piso impede um operador de elevar os limiares acima dos
+níveis de gatilho publicados; as mutações são auditadas
+(threshold_resolver.py:120-150), mas não limitadas clinicamente.
 
-## 5. HAZ-0005 zero-coercion — per-input trace (OBSERVED from source)
+## 5. Coerção a zero do HAZ-0005 — rastreamento por entrada (OBSERVED a partir da fonte)
 
-Mechanism verified from source, independently of the assessment cited in
-`docs/05-clinical-safety/hazard-log.md` HAZ-0005.
+Mecanismo verificado a partir da fonte, independentemente da avaliação citada
+em `docs/05-clinical-safety/hazard-log.md` HAZ-0005.
 
-| Input | Missing-input path | Behavior | Verdict |
+| Entrada | Caminho de entrada ausente | Comportamento | Veredito |
 |---|---|---|---|
-| respiratory_rate | `_score_numeric(None,...)` → news2.py:84-85 `if value is None: return 0` | contributes 0, no marker | **zero-coerced** |
-| spo2 | news2.py:134-135 `if spo2 is None: return 0` | contributes 0, no marker | **zero-coerced** |
-| supplemental_o2 | news2.py:175 `return 2 if on_o2 else 0` — `None` is falsy | unknown ≡ "on air" ≡ 0 | **zero-coerced** |
-| systolic_bp | news2.py:84-85 | contributes 0, no marker | **zero-coerced** |
-| heart_rate | news2.py:84-85 | contributes 0, no marker | **zero-coerced** |
-| avpu | news2.py:219-220 `if avpu is None: return 0` | contributes 0, no marker | **zero-coerced** |
-| temperature | news2.py:84-85 | contributes 0, no marker | **zero-coerced** |
+| respiratory_rate | `_score_numeric(None,...)` → news2.py:84-85 `if value is None: return 0` | contribui 0, sem marcador | **coagido a zero** |
+| spo2 | news2.py:134-135 `if spo2 is None: return 0` | contribui 0, sem marcador | **coagido a zero** |
+| supplemental_o2 | news2.py:175 `return 2 if on_o2 else 0` — `None` é falsy | desconhecido ≡ "em ar ambiente" ≡ 0 | **coagido a zero** |
+| systolic_bp | news2.py:84-85 | contribui 0, sem marcador | **coagido a zero** |
+| heart_rate | news2.py:84-85 | contribui 0, sem marcador | **coagido a zero** |
+| avpu | news2.py:219-220 `if avpu is None: return 0` | contribui 0, sem marcador | **coagido a zero** |
+| temperature | news2.py:84-85 | contribui 0, sem marcador | **coagido a zero** |
 
-No missing-input metadata exists anywhere in the NEWS2 result:
-`NEWS2Components` defaults every field to 0 (news2.py:30-40) and carries no
-status; `calculate_news2` never inspects which inputs were None
-(news2.py:282-302). The all-absent case therefore yields `total_score == 0`,
-`risk_category == "low"` (news2.py:54-58), persisted as a real
-`ClinicalScore` row (vitals.py:320-334) and rendered as bed severity
-`"normal"` (dashboard.py:84-90, 114-115). Intent evidence: the test suite
-*asserts* this behavior as correct — `test_missing_values_default_to_zero`
-expects `total_score == 0` with every input None (tests/test_news2.py:477-486),
-and every per-parameter test class has a `test_none_returns_zero`
-(e.g. tests/test_news2.py:52-53). The response schema's claim "None se dados
-insuficientes" (schemas/vitals.py:99-101) is false for the implemented path —
-documented intent contradicts implementation.
+Nenhum metadado de entrada ausente existe em nenhum lugar do resultado do
+NEWS2: `NEWS2Components` define o padrão de todo campo como 0
+(news2.py:30-40) e não carrega status; `calculate_news2` nunca inspeciona
+quais entradas eram None (news2.py:282-302). O caso de tudo-ausente,
+portanto, produz `total_score == 0`, `risk_category == "low"`
+(news2.py:54-58), persistido como uma linha `ClinicalScore` real
+(vitals.py:320-334) e renderizado como severidade de leito `"normal"`
+(dashboard.py:84-90, 114-115). Evidência de intenção: a suíte de testes
+*afirma* esse comportamento como correto —
+`test_missing_values_default_to_zero` espera `total_score == 0` com toda
+entrada None (tests/test_news2.py:477-486), e toda classe de teste por
+parâmetro tem um `test_none_returns_zero` (p.ex.
+tests/test_news2.py:52-53). A alegação do schema de resposta "None se dados
+insuficientes" (schemas/vitals.py:99-101) é falsa para o caminho
+implementado — a intenção documentada contradiz a implementação.
 
-**Decisive line: news2.py:84-85.** HAZ-0005 is CONFIRMED for NEWS2 for all
-seven inputs, at E1 severity as logged.
+**Linha decisiva: news2.py:84-85.** O HAZ-0005 é CONFIRMED para o NEWS2 nas
+sete entradas, em severidade E1 conforme registrado.
 
-## 6. Clinical verdict — PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)
+## 6. Veredito clínico — PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)
 
-**Verdict: TRANSFORM** (per `legacy-import-policy.md` §4), with element-level
-REJECT and VALIDATE as below. Rationale (INFERENCE from §§3–5): the published
-instrument was transcribed mostly faithfully at the band level, but the
-implementation is unsafe as a whole — missing data is coerced to reassurance
-(HAZ-0005, all seven inputs), the hypercapnic pathway is simultaneously wrong
-(D-1, D-2) and unreachable (D-3), the red-score tier required by Chart 2 is not
-delivered in production (D-5, D-6), ingestion paths disagree on consciousness
-(D-7), there is no population gating (D-9), and the version/ratification trail is
-unreliable (§3, version-identity finding). Nothing may be imported as code.
+**Veredito: TRANSFORM** (conforme `legacy-import-policy.md` §4), com REJECT e
+VALIDATE em nível de elemento como abaixo. Racional (INFERENCE a partir de
+§§3–5): o instrumento publicado foi transcrito majoritariamente com
+fidelidade no nível de faixa, mas a implementação é insegura como um todo —
+dados ausentes são coagidos para tranquilidade (HAZ-0005, todas as sete
+entradas), o caminho hipercápnico está simultaneamente errado (D-1, D-2) e
+inalcançável (D-3), o nível de escore vermelho exigido pelo Chart 2 não é
+entregue em produção (D-5, D-6), os caminhos de ingestão discordam sobre
+consciência (D-7), não há gating populacional (D-9), e a trilha de
+versão/ratificação não é confiável (§3, achado de identidade de versão). Nada
+pode ser importado como código.
 
-Elements proposed to survive into a V2 specification (as *specification content
-re-derived from RCP 2017*, not as legacy code):
+Elementos propostos para sobreviver a uma especificação V2 (como *conteúdo de
+especificação re-derivado do RCP 2017*, não como código legado):
 
-- The seven-parameter band tables that match the published chart (RR, SpO2
-  Scale 1, air/oxygen +2, SBP, pulse, temperature, consciousness) — RETAIN as
-  *published* content, re-specified from the RCP source with V2 acceptance tests.
-- The 5 / 7 aggregate cut-points and the four-tier response model **including the
-  Low–medium single-red tier** — RETAIN from the published chart.
-- The float-rounding guard concept (round to chart resolution before banding)
-  and the versioned `algorithm_registry` idea — REFINE (concept only; V1's
-  version-identity practice is itself a counter-example).
-- Edge-triggered/cooldown alerting design intent in early-warning-scores.yaml —
-  VALIDATE (plausible alarm-fatigue reasoning; unimplemented, unvalidated).
+- As tabelas de faixas de sete parâmetros que correspondem ao chart publicado
+  (FR, SpO2 Escala 1, ar/oxigênio +2, PAS, pulso, temperatura, consciência) —
+  RETAIN como conteúdo *publicado*, re-especificado a partir da fonte RCP com
+  testes de aceitação V2.
+- Os cortes agregados 5 / 7 e o modelo de resposta de quatro níveis
+  **incluindo o nível Baixo–médio de vermelho único** — RETAIN a partir do
+  chart publicado.
+- O conceito de guarda de arredondamento de float (arredondar para a
+  resolução do chart antes de classificar em faixas) e a ideia de
+  `algorithm_registry` versionado — REFINE (apenas conceito; a própria
+  prática de identidade de versão da V1 é um contraexemplo).
+- Intenção de design de alerting edge-triggered/cooldown em
+  early-warning-scores.yaml — VALIDATE (raciocínio de fadiga de alarme
+  plausível; não implementado, não validado).
 
-Elements proposed REJECT: both implemented Scale-2 band branches (D-1, D-2);
-`hypercapnic`-by-parameter selection with no clinical workflow (D-3);
-supplemental-O2-as-hypercapnia in the runner (D-4); zero-coercion of every
-missing input (§5); the "NEWS2-v3.0.0" ratification/version trail (§3).
+Elementos propostos REJECT: ambos os ramos de faixa de Escala 2 implementados
+(D-1, D-2); a seleção `hypercapnic`-por-parâmetro sem workflow clínico (D-3);
+O2-suplementar-como-hipercapnia no runner (D-4); coerção a zero de toda
+entrada ausente (§5); a trilha de ratificação/versão "NEWS2-v3.0.0" (§3).
 
-Blocking V2 prerequisites (VALIDATION REQUIRED, not closable by any agent):
-Scale-2 clinical selection workflow design; evaluation-status contract per
-`evaluation-status-semantics.md` (a NEWS2 result with any missing input must be
-`not_evaluated`/`partial` per approved policy, never 0); population gating
-(VAL-0006/VAL-0007); per-input freshness windows (VAL-0023 — V1 applies none:
-a vital-sign row is scored as an atomic unit regardless of which fields are
-stale); threshold-floor governance for configurable alerting.
+Pré-requisitos bloqueantes para a V2 (VALIDATION REQUIRED, não fecháveis por
+nenhum agente): design de workflow de seleção clínica da Escala 2; contrato
+de status de avaliação conforme `evaluation-status-semantics.md` (um
+resultado de NEWS2 com qualquer entrada ausente deve ser
+`not_evaluated`/`partial` conforme política aprovada, nunca 0); gating
+populacional (VAL-0006/VAL-0007); janelas de frescor por entrada (VAL-0023 —
+a V1 não aplica nenhuma: uma linha de sinal vital é pontuada como uma unidade
+atômica independentemente de quais campos estão obsoletos); governança de
+piso de limiar para alerting configurável.
