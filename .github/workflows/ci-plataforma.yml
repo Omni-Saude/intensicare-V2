@@ -1,0 +1,68 @@
+# ci-plataforma.yml — gate de build/teste do monorepo pnpm (SPR-G7-1).
+#
+# Escopo: instala as dependências do workspace (lockfile congelado),
+# compila todos os pacotes/apps (`pnpm -r build`) e roda os testes
+# (`pnpm -r test -- --run`). Complementa — não substitui — `docs-gates.yml`,
+# que continua sendo o único gate de convenções de documentação e conteúdo
+# proibido/PHI.
+#
+# PREMISSA (reversível, GDEC-0015/0017): Node.js 22 LTS + pnpm 9 (ver
+# docs/06-architecture/premissas-de-construcao.md PRE-01).
+#
+# Ambos os jobs abaixo são BLOQUEANTES — nenhum usa `continue-on-error` nem
+# `if: always()` para engolir falha, na mesma linha de `docs-gates.yml`
+# (INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §3 regra 13).
+#
+# O lockfile (`pnpm-lock.yaml`) é responsabilidade de commit do
+# orquestrador, não desta tarefa (ver instrução da fatia SPR-G7-1); até que
+# ele exista no branch, o passo `pnpm install --frozen-lockfile` falha por
+# desenho — isso é esperado e não é um defeito deste workflow.
+#
+# Actions pinadas por SHA de commit completo (nunca tag mutável), na mesma
+# convenção de `docs-gates.yml`. Pin de `actions/checkout` reaproveitado
+# daquele arquivo (já OBSERVADO ali). Pin de `actions/setup-node` (OBSERVADO
+# 2026-08-16 via GitHub REST API, `git/refs/tags/<tag>` resolvido para um
+# objeto de commit, checado contra `git/commits/<sha>` para uma data de
+# commit plausível):
+#
+#   actions/checkout   @ 3d3c42e5aac5ba805825da76410c181273ba90b1  (tag v7.0.1)
+#   actions/setup-node @ 820762786026740c76f36085b0efc47a31fe5020  (tag v7.0.0,
+#     commit datado de 2026-07-14)
+#
+# Re-verificar estes pins periodicamente, como já observado em
+# docs-gates.yml, em vez de confiar neles indefinidamente.
+
+name: CI Plataforma
+
+# Quotado pelo mesmo motivo documentado em docs-gates.yml: uma chave `on:`
+# sem aspas é lida como o booleano `true` por parsers YAML 1.1 estritos.
+"on":
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Configurar Node.js 22 LTS
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+      - name: Ativar pnpm 9 via corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.0.0 --activate
+      - name: Instalar dependências (lockfile congelado)
+        run: pnpm install --frozen-lockfile
+      - name: Build de todos os pacotes/apps do workspace
+        run: pnpm -r build
+      - name: Testes de todos os pacotes/apps do workspace
+        run: pnpm -r test -- --run
