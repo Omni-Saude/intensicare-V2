@@ -30,6 +30,7 @@ import {
 } from "@intensicare/contratos";
 import { checkConnection } from "@intensicare/persistencia";
 import { autenticar } from "./auth.js";
+import { instanciaSegura } from "./problema.js";
 import {
   acknowledgeAlert,
   getPatientEvaluations,
@@ -90,7 +91,7 @@ export function registrarRotasV1(app: FastifyInstance, db: PGlite): void {
         400,
         "Cabeçalho de idempotência ausente ou inválido",
         idempKeyParsed.error.issues[0]?.message ?? `O cabeçalho ${IDEMPOTENCY_KEY_HEADER} é obrigatório.`,
-        request.url,
+        instanciaSegura(request),
       );
     }
     const idempotencyKey = idempKeyParsed.data;
@@ -102,7 +103,7 @@ export function registrarRotasV1(app: FastifyInstance, db: PGlite): void {
         400,
         "Envelope de ingestão malformado",
         corpoParsed.error.issues.map((i) => i.message).join("; "),
-        request.url,
+        instanciaSegura(request),
       );
     }
     const { encontroId, leitoId, pacienteRef, observacoes, contexto } = corpoParsed.data;
@@ -145,7 +146,7 @@ export function registrarRotasV1(app: FastifyInstance, db: PGlite): void {
           422,
           "Reuso de Idempotency-Key com corpo divergente",
           "Esta Idempotency-Key já foi usada com um corpo de requisição diferente. Reenvie o corpo original para obter a resposta original, ou use uma chave nova para uma nova escrita (draft IETF idempotency-key-header).",
-          request.url,
+          instanciaSegura(request),
         );
       case "encounter-not-found":
         return enviarProblema(
@@ -153,10 +154,10 @@ export function registrarRotasV1(app: FastifyInstance, db: PGlite): void {
           404,
           "Encontro não encontrado",
           "Nenhum encontro ativo com este id neste tenant.",
-          request.url,
+          instanciaSegura(request),
         );
       case "mismatch":
-        return enviarProblema(reply, 422, "Envelope incoerente com o encontro", resultado.detail, request.url);
+        return enviarProblema(reply, 422, "Envelope incoerente com o encontro", resultado.detail, instanciaSegura(request));
       case "created":
         reply.header(IDEMPOTENCY_REPLAYED_HEADER, "false");
         return reply.code(201).send(resultado.body);
@@ -195,7 +196,7 @@ export function registrarRotasV1(app: FastifyInstance, db: PGlite): void {
         404,
         "Paciente não encontrado",
         "Nenhuma avaliação encontrada para este paciente neste tenant.",
-        request.url,
+        instanciaSegura(request),
       );
     }
 
@@ -216,7 +217,7 @@ export function registrarRotasV1(app: FastifyInstance, db: PGlite): void {
         428,
         "Cabeçalho If-Match obrigatório",
         `Envie a versão vista do recurso no cabeçalho ${IF_MATCH_HEADER} para reconhecer com segurança de concorrência.`,
-        request.url,
+        instanciaSegura(request),
       );
     }
     const ifMatchParsed = ifMatchHeaderSchema.safeParse(ifMatchBruto);
@@ -226,7 +227,7 @@ export function registrarRotasV1(app: FastifyInstance, db: PGlite): void {
         400,
         "Cabeçalho If-Match inválido",
         ifMatchParsed.error.issues[0]?.message ?? `O cabeçalho ${IF_MATCH_HEADER} deve ser numérico.`,
-        request.url,
+        instanciaSegura(request),
       );
     }
 
@@ -237,7 +238,7 @@ export function registrarRotasV1(app: FastifyInstance, db: PGlite): void {
         400,
         "Corpo de reconhecimento inválido",
         corpoParsed.error.issues[0]?.message ?? "Corpo inválido.",
-        request.url,
+        instanciaSegura(request),
       );
     }
 
@@ -250,7 +251,7 @@ export function registrarRotasV1(app: FastifyInstance, db: PGlite): void {
     });
 
     if (resultado.kind === "not-found") {
-      return enviarProblema(reply, 404, "Alerta não encontrado", "Nenhum alerta com este id neste tenant.", request.url);
+      return enviarProblema(reply, 404, "Alerta não encontrado", "Nenhum alerta com este id neste tenant.", instanciaSegura(request));
     }
 
     if (resultado.kind === "version-conflict") {
@@ -260,7 +261,7 @@ export function registrarRotasV1(app: FastifyInstance, db: PGlite): void {
         status: 412,
         detail:
           "A versão informada em If-Match não confere com a versão corrente do alerta. Redecida com o estado corrente.",
-        instance: request.url,
+        instance: instanciaSegura(request),
         versaoAtual: resultado.atual.versao,
         estadoAtual: resultado.atual.estado,
       };
@@ -273,7 +274,7 @@ export function registrarRotasV1(app: FastifyInstance, db: PGlite): void {
         409,
         "Transição inválida",
         `O alerta está no estado '${resultado.atual.estado}', que não admite a ação "reconhecer".`,
-        request.url,
+        instanciaSegura(request),
       );
     }
 

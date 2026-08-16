@@ -269,20 +269,26 @@ describe("E. autorização exigida em toda rota do contrato /v1", () => {
     expect(r.body).not.toContain(TENANT_G7);
   }, TEMPO_LIMITE_MS);
 
-  it("SEC-0002 — ACHADO-03: /idempotency-example aceita POST sem autenticação (superfície de demonstração; não expõe estado clínico)", async () => {
-    // Superfície não autenticada REMANESCENTE da fundação SPR-G7-1. Não lê
-    // nem grava estado clínico, por isso não é `it.fails`; mas é uma rota
-    // de escrita sem fronteira de autenticação e precisa desaparecer antes
-    // de qualquer ambiente com dado real (registrado como achado médio).
+  // ACHADO-03 CORRIGIDO no mesmo ciclo: a rota de demonstração
+  // `POST /idempotency-example` (fundação SPR-G7-1) foi REMOVIDA. Superfície
+  // de escrita sem fronteira de autenticação é defeito mesmo sem estado
+  // clínico exposto. Este teste agora guarda a ausência dela.
+  it("SEC-0002 — nenhuma superfície de escrita sem autenticação permanece exposta", async () => {
     const r = await app.inject({
       method: "POST",
       url: "/idempotency-example",
       headers: { "idempotency-key": "SYNTH-SEM-AUTH" },
     });
-    expect(r.statusCode).toBe(201);
-    expect(r.json()).toEqual({ received: true });
-    expect(r.body).not.toContain(TENANT_G7);
-    expect(r.body).not.toContain("amh:psr:v1:");
+    expect(r.statusCode).toBe(404);
+
+    // E a rota de escrita real recusa antes de qualquer processamento.
+    const real = await app.inject({
+      method: "POST",
+      url: "/v1/ingestao/observacoes",
+      headers: { "idempotency-key": "SYNTH-SEM-AUTH" },
+      payload: {},
+    });
+    expect(real.statusCode).toBe(401);
   }, TEMPO_LIMITE_MS);
 });
 
@@ -680,8 +686,12 @@ describe("H. superfícies de erro não vazam detalhe interno nem valor clínico"
    * opaca de ocorrência (ex.: o id de correlação já emitido em
    * `x-correlation-id`) em vez da URL crua.
    */
-  it.fails(
-    "SAF-0026/SEC-0015 — o corpo de erro NÃO deveria conter o identificador de sujeito (ACHADO-02: `instance` ecoa o PSR)",
+  // ACHADO-02 CORRIGIDO no mesmo ciclo: `instance` passou a ser a URN opaca
+  // de ocorrência (`urn:intensicare:requisicao:<id>`), correlacionável com a
+  // auditoria pelo cabeçalho `x-correlation-id` — exatamente o
+  // encaminhamento sugerido acima. O teste deixou de ser `it.fails`.
+  it(
+    "SAF-0026/SEC-0015 — o corpo de erro não contém o identificador de sujeito; `instance` é URN opaca de ocorrência",
     async () => {
       const r = await app.inject({
         method: "GET",
@@ -690,6 +700,7 @@ describe("H. superfícies de erro não vazam detalhe interno nem valor clínico"
       });
       expect(r.statusCode).toBe(404);
       expect(decodeURIComponent(r.body)).not.toContain(P002.subjectRef);
+      expect(r.json().instance).toMatch(/^urn:intensicare:requisicao:/);
     },
     TEMPO_LIMITE_MS,
   );

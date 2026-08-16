@@ -19,20 +19,33 @@ describe("apps/api (fundação executável — servidor sobre persistência real
     expect(response.json()).toEqual({ status: "ok" });
   });
 
-  it("POST /idempotency-example sem Idempotency-Key responde 400 problem+json em pt-BR", async () => {
+  // ACHADO-03 (verificação de controles da fatia G7): a rota de exemplo
+  // `POST /idempotency-example` foi removida por aceitar escrita sem
+  // autenticação. Estes testes provam a remoção e que a convenção de
+  // idempotência segue exercida na rota real, autenticada.
+  it("POST /idempotency-example não existe mais (superfície de escrita sem authz removida)", async () => {
     const response = await app.inject({ method: "POST", url: "/idempotency-example" });
-    expect(response.statusCode).toBe(400);
-    expect(response.headers["content-type"]).toContain("application/problem+json");
-    const body = response.json();
-    expect(body.title).toBe("Cabeçalho de idempotência ausente");
+    expect(response.statusCode).toBe(404);
   });
 
-  it("POST /idempotency-example com Idempotency-Key responde 201", async () => {
+  it("a rota de escrita real exige autenticação antes de qualquer validação de corpo", async () => {
     const response = await app.inject({
       method: "POST",
-      url: "/idempotency-example",
+      url: "/v1/ingestao/observacoes",
       headers: { "idempotency-key": "SYNTH-idem-0001" },
+      payload: {},
     });
-    expect(response.statusCode).toBe(201);
+    expect(response.statusCode).toBe(401);
+    expect(response.headers["content-type"]).toContain("application/problem+json");
+  });
+
+  it("nenhum corpo de erro ecoa a URL da requisição (ACHADO-02: SAF-0026/SEC-0015)", async () => {
+    const response = await app.inject({
+      method: "GET",
+      url: "/v1/pacientes/SYNTH-PACIENTE-INEXISTENTE/avaliacoes",
+    });
+    const body = response.json();
+    expect(JSON.stringify(body)).not.toContain("SYNTH-PACIENTE-INEXISTENTE");
+    expect(body.instance).toMatch(/^urn:intensicare:requisicao:/);
   });
 });

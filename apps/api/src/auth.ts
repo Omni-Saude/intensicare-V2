@@ -19,6 +19,7 @@
  */
 import type { FastifyRequest } from "fastify";
 import type { ProblemDetails } from "@intensicare/contratos";
+import { instanciaSegura } from "./problema.js";
 
 export interface ContextoAutenticado {
   tenantId: string;
@@ -56,7 +57,7 @@ export function autenticar(request: FastifyRequest): ResultadoAutenticacao {
         title: "Não autenticado",
         status: 401,
         detail: "Cabeçalho Authorization com token bearer sintético é obrigatório.",
-        instance: request.url,
+        instance: instanciaSegura(request),
       },
     };
   }
@@ -71,7 +72,7 @@ export function autenticar(request: FastifyRequest): ResultadoAutenticacao {
         title: "Token sintético malformado",
         status: 401,
         detail: "O token bearer não está no formato SYNTH-TOKEN.<tenantId>.<atorId>.",
-        instance: request.url,
+        instance: instanciaSegura(request),
       },
     };
   }
@@ -86,7 +87,7 @@ export function autenticar(request: FastifyRequest): ResultadoAutenticacao {
         title: "Token sintético malformado",
         status: 401,
         detail: "O token bearer não está no formato SYNTH-TOKEN.<tenantId>.<atorId>.",
-        instance: request.url,
+        instance: instanciaSegura(request),
       },
     };
   }
