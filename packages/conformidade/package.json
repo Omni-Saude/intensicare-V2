@@ -1,0 +1,29 @@
+{
+  "name": "@intensicare/conformidade",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Harness de conformidade §7.6 executável: os 22 cenários dirigidos pelo consumidor rodados contra as fixtures sintéticas pinadas do repositório. NÃO demonstra compatibilidade com a AMH.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest",
+    "report": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@intensicare/contratos": "workspace:*",
+    "@intensicare/dominio": "workspace:*",
+    "@intensicare/fixtures-sinteticas": "workspace:*"
+  }
+}
