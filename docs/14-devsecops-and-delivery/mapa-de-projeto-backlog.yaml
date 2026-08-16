@@ -3,6 +3,15 @@
 # Espelho de docs/14-devsecops-and-delivery/mapa-de-projeto-ate-producao.md
 # (mesmos IDs, mesma estrutura lógica). Status PROPOSAL: nada aqui decide,
 # aprova, fecha ou encerra gate, bloqueador, risco, hazard, ADR ou OS.
+#
+# EMENDA PÓS-CICLO 6 (2026-08-16): os campos `current_state` de G2, G4, G6 e
+# G7 foram revistos após o primeiro ciclo de construção. NENHUM gate foi
+# aprovado — "PARCIAL" significa que camadas foram percorridas (preparação,
+# decisão, implementação), jamais verificação ou aprovação humana. Fundamento
+# e reconciliação completa em `analise-pos-ciclo-6-mapa-vs-estado.md`.
+# O estado factual duro segue INALTERADO: 0 vias acionáveis; 47/47 linhas
+# inelegíveis; Observation da AMH não consumível; somente candidato a
+# integração; safety case M0; nenhum dado real acessado.
 # Esforço P/M/G é relativo — não é prazo, compromisso, SLA nem data.
 # Nenhum alias YAML; nenhuma data usada como cronograma.
 # tracked_ids lista os IDs principais de cada sprint; faixas extensas são
@@ -367,7 +376,7 @@ phases:
               - "AGT-1 trocou a evidência do gate, não o aprovador humano"
   - id: G2
     title: "Portfólio de vias clínicas (AGENTIFICADO — GDEC-0009/AGT-3/AGT-4)"
-    current_state: BLOQUEADO
+    current_state: PARCIAL
     evidence:
       - "docs/00-governance/registers/agentificacao-g1-g2-2026-08-15.md (AGT-3 contra recomendação, divergência registrada; AGT-4 painel)"
       - "docs/00-governance/registers/risk-register.md RISK-0012 (S5)"
@@ -659,7 +668,7 @@ phases:
               - "espera indeterminada; não é compromisso"
   - id: G4
     title: "Coerência UX/domínio/API"
-    current_state: "NÃO INICIADO"
+    current_state: PARCIAL
     evidence:
       - "nenhum modelo de estados §11, tabela de contrato UI/backend ou teste de acessibilidade nas fontes inventariadas"
       - "baseline de decisão PARCIAL: 7 ADRs aceitos em GDEC-0008 e propagados ao índice em 75838b5 (aceito ≠ implementado); ADR-0002/0006 proposed; ADR-0012..0024 not-started"
@@ -834,7 +843,7 @@ phases:
               - "verificador externo disponível"
   - id: G6
     title: "Design de segurança e segurança clínica"
-    current_state: "NÃO INICIADO"
+    current_state: PARCIAL
     evidence:
       - "docs/05-clinical-safety/hazard-log.md (47/47 OPEN); safety-requirements.md (42 SAF PROPOSAL)"
       - "safety-case-skeleton.md (M0; threat model 27 P0 + 39 P1, zero fechados)"
@@ -964,7 +973,7 @@ phases:
               - "maturidade avança por evidência, nunca por redação"
   - id: G7
     title: "Primeira fatia vertical segura"
-    current_state: "NÃO INICIADO"
+    current_state: PARCIAL
     evidence:
       - "cycle-2-delivery-orchestrator-report.md §9 (nenhum código de produção; stack sem ADR)"
       - "cycle-2-delivery-orchestrator-report.md §8 (fatia G7 com dados sintéticos após aceitação dos ADRs)"

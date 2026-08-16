@@ -354,6 +354,12 @@ campo correspondente do sprint homônimo está no espelho YAML
 
 ### 5.2 G2 — portfólio de vias clínicas (AGENTIFICADO — GDEC-0009/AGT-3/AGT-4)
 
+> **Emenda pós-ciclo 6 (2026-08-16):** estado revisto de `BLOQUEADO` para
+> `PARCIAL`. `SPR-G2-1` foi executado no ciclo 5 e `SPR-G2-3` deixou de estar
+> bloqueado quando o runtime da fatia G7 passou a existir. A promoção a
+> acionável segue sem dado. Fundamento em
+> `analise-pos-ciclo-6-mapa-vs-estado.md` §2.
+
 - **Objetivo**: método de portfólio, pesos MCDA, hard-gates §6.2 e pacote de
   release §6.4 executados **integralmente por agentes**, incluindo a
   promoção sombra→**acionável**, sob **autorização permanente do titular**
@@ -469,8 +475,12 @@ Swimlane 4 — Dependências externas:
 - **Objetivo**: jornada, máquina de estados de domínio, schemas de API/
   evento, estados de erro/degradação, autorização e auditoria concordam,
   provado por testes de contrato de cenário (§11 Gate G4).
-- **Estado**: `NÃO INICIADO` (gate) / `PARCIAL` (baseline de decisão: 7 ADRs
-  aceitos em GDEC-0008 pendentes de propagação; 13 not-started).
+- **Estado**: `PARCIAL` — **emenda pós-ciclo 6 (2026-08-16)**: as 13 minutas
+  `ADR-0012`–`ADR-0024` foram redigidas, os artefatos UX do §11 produzidos
+  (`SPR-G4-3`) e os contratos publicados (`SPR-G4-4`, parcial). O gate em si
+  permanece por abrir: `MG-G4` é ato humano e a validação com usuários
+  (`SPR-G4-5`) depende de terceiros. Fundamento em
+  `analise-pos-ciclo-6-mapa-vs-estado.md` §2.
 - **Evidência**: nenhum modelo de estados §11, nenhuma tabela de contrato
   UI/backend, nenhum teste de acessibilidade (três fontes do inventário);
   requisito vinculante de UI de HAZ-0046 pendente.
@@ -522,7 +532,10 @@ Swimlane 4 — Dependências externas:
   fluxos e processadores (§13).
 - **Estado**: `NÃO INICIADO` (aprovação) / `PARCIAL` (identificação: 47 HAZ
   OPEN, 42 SAF PROPOSAL, threat model com 27 P0 + 39 P1 e zero fechados,
-  safety case M0).
+  safety case M0). **Emenda pós-ciclo 6 (2026-08-16):** `SPR-G6-2` avançou em
+  parte — controles verificados adversarialmente na fatia sintética, com três
+  achados reais dispostos; os 27 P0 seguem OPEN e `MG-G6` continua exigindo
+  verificador terceiro (`DEC-G0-02`).
 - **Épicos**: EPC-G6-1 análise conjunta e controles; EPC-G6-2 verificação
   adversarial e aceite.
 
@@ -551,8 +564,12 @@ Swimlane 4 — Dependências externas:
   explicação/frescor → ação humana concorrente-segura → auditoria imutável →
   evidência automatizada), com caminhos felizes **e** degradados. Não é
   release de produção.
-- **Estado**: `NÃO INICIADO` — explicitamente adiado até ADRs de stack
-  aceitos (relatório §8: "fatia G7 com dados sintéticos após aceitação de
+- **Estado**: `PARCIAL` — **emenda pós-ciclo 6 (2026-08-16)**: `SPR-G7-1`
+  (fundações + CI) e `SPR-G7-2` (fatia vertical sintética, 11 passos com
+  caminhos degradados) foram executados; `MG-G7` (`SPR-G7-3`) permanece ato
+  humano pendente. Fatia não é release de produção. Fundamento em
+  `analise-pos-ciclo-6-mapa-vs-estado.md` §2. Texto original do ciclo 2 a
+  seguir: `NÃO INICIADO` — explicitamente adiado até ADRs de stack aceitos (relatório §8: "fatia G7 com dados sintéticos após aceitação de
   ADR-0001/0003/0005/0009/0010/0011" — aceitos em GDEC-0008 e propagados ao
   índice em `75838b5`, porém ainda sem os ADRs de plataforma 0012+ e sem
   implementação autorizada).
