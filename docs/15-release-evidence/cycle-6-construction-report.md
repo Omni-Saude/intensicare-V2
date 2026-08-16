@@ -10,7 +10,7 @@ source: >-
   mapa-de-projeto-backlog.yaml; INTENSICARE_V2_ORCHESTRATOR_PROMPT.md
   §5/§9/§10/§11/§12/§14/§15/§17/§20; docs/15-release-evidence/cycle-5-execution-report.md
 date_collected: "2026-08-16"
-collector: orquestrador de execução (ciclo 6); levantamento e construção por 22 especialistas estreitos
+collector: orquestrador de execução (ciclo 6); levantamento e construção por 30 especialistas estreitos
 last_updated: "2026-08-16"
 ---
 
@@ -54,13 +54,29 @@ enfraquecida para parecer progresso (anti-padrão 10).
 |---|---|---|
 | 1. SPARK discovery | Árvore de outcomes, exclusões/capacidades adiadas, índice priorizado de famílias de requisitos | 3 saídas antes ausentes agora existem; catálogo formal PRD/USR segue deliberadamente não escrito |
 | 4. Architecture/UX contracts | 13 minutas de ADR (`ADR-0012`–`ADR-0024`), 5 artefatos UX do §11, contratos publicados | ADR baseline completo em minuta; UX §11 documentada; MG-G4 segue ato humano |
-| 5. Connector/security design | Política MCP, plano de perfis FHIR, catálogo de eventos | Documental; suites executáveis de conector seguem pendentes (SPR-G5-1) |
+| 5. Connector/security design | Política MCP, plano de perfis FHIR, catálogo de eventos; suítes de conformidade como código | Suítes executáveis existem; aceitação exige verificador externo (MG-G5) |
 | 6. TDD foundation slice | Monorepo executável + fatia vertical sintética ponta-a-ponta | Fatia demonstrada com dados sintéticos; **MG-G7 permanece ato humano pendente** |
 | 0. Bootstrap (residual) | CODEOWNERS ativado, metadados de mudança, `pnpm verify`, lint, fronteira executável, tranches 3 e 4 de tradução | §15.1 coberto nos itens A–I, com as exceções da seção 5.3 |
 
-Fases 2, 3, 7, 8, 9 e 10 **não avançaram** e não poderiam: dependem de execução
-AMH (OS-01..24), de ambientes production-like inexistentes, de validações
-externas e de atos humanos nominais.
+**Correção de classificação (registrada, não apagada).** Uma primeira leitura
+deste ciclo declarou que as fases 2, 3, 7, 8, 9 e 10 "não avançaram e não
+poderiam". A afirmação estava **errada** para partes de 2, 3, 5, 7, 8 e 10: o
+erro foi tratar "a fase depende de algo externo" como "nada da fase é
+executável". Várias dessas fases eram condicionadas pelo próprio mapa à
+existência de runtime — que passou a existir *dentro deste ciclo*, com a fatia
+G7. A reconciliação completa está em
+`docs/14-devsecops-and-delivery/analise-pos-ciclo-6-mapa-vs-estado.md` §3, e o
+trabalho consequente está na seção 5.4 abaixo.
+
+| Fase (§17) | Parte executada neste ciclo | Parte que segue genuinamente bloqueada |
+|---|---|---|
+| 2. Portfólio | formato de bundle, assinatura, ativação/rollback (`SPR-G2-3`) | promoção a acionável: exige dado real e G3 por via |
+| 3. Contratos AMH | harness §7.6 executável contra fixtures pinadas (`SPR-G3-10`) | execução contra a AMH; ambiente production-like |
+| 5. Conector | suítes de conformidade como código (`SPR-G5-1`) | aceitação por verificador externo (`MG-G5`) |
+| 7. Entrega incremental | segunda regra clínica (RULE-GCS) | via validada com dado real |
+| 8. Prontidão | instrumentação, kill switch, sondas, runbooks (`SPR-G8-1`) | DR exercido, SLO medido em ambiente real, treinamento |
+| 9. Promoção | — | aprovações nominais e ambiente |
+| 10. Vigilância | carga de alarmes, deriva, versão de regra, K-8 (`SPR-OC-1`) | operação real (`MG-G8-PROD`) |
 
 ---
 
@@ -77,6 +93,11 @@ externas e de atos humanos nominais.
 | `SPR-G4-4` | Contratos publicados | `4d5ad80` | Índice, eventos, política MCP, plano FHIR (parcial: AsyncAPI formal pendente) |
 | `SPR-G7-2` | Fatia vertical sintética | `87798af` | 11 passos com caminhos degradados |
 | `SPR-G6-2` (parcial) | Controles SAF/THR/SEC verificados no código | `8ccaaf3`, `957d3cf` | 40 testes adversariais; 3 achados reais, 2 corrigidos, 1 virou requisito de produção |
+| `SPR-G2-3` | Pacote de release clínico assinável | `0a3d102` | Formato, assinatura, ativação/rollback; promoção a acionável recusada fail-closed |
+| `SPR-G3-10`/`SPR-G5-1` | Harness §7.6 executável | `d6b0246` | 22 cenários rodando contra fixtures pinadas; nenhum contra a AMH |
+| (fase 7) | Segunda via clínica | `7ca520b` | RULE-GCS 0.2.0 com gate sedativo fail-closed |
+| `SPR-G8-1` (parcial) | Prontidão operacional | `1423bb3` | Telemetria com redação de PHI por tipo, kill switch, runbooks |
+| `SPR-OC-1` (parcial) | Vigilância contínua | `db489c5` | Carga de alarmes, deriva, K-8 com salvaguardas estruturais |
 
 Saídas SPARK e itens §15.1 fora da numeração de sprints do mapa: árvore de
 outcomes, exclusões consolidadas, índice de famílias (`3b86358`); CODEOWNERS,
@@ -101,9 +122,11 @@ estados obrigatórios do §11, WCAG 2.2 AA de projeto).
 
 **Verificação (OBSERVED, execução real ao fim do ciclo):** `pnpm verify` verde
 de ponta a ponta (exit 0) — typecheck, lint, fronteira de módulos, build,
-testes e os dois gates de documentação. **450 testes verdes**: kernel-clinico
-225, api 70, persistência 33 (mais 1 falha esperada que documenta o ACHADO-01
-da seção 5.1), web 77, domínio 18, contratos 14, fixtures 13. Entre eles, 93
+testes e os dois gates de documentação, sobre **11 pacotes**. **1.026 testes
+verdes**: kernel-clinico 305, rule-bundle 302, api 70, web 77, vigilância 77,
+conformidade 62, observabilidade 55, persistência 33 (mais 1 falha esperada que
+documenta o ACHADO-01 da seção 5.1), domínio 18, contratos 14, fixtures 13.
+Entre eles, 93
 vetores de referência clínicos `CRV-NEWS2-0101..0193` executados red/green com
 asserções sobre status, total, banda, disparo e razões, e testes de propriedade
 (fast-check) sobre limites de banda, determinismo e idempotência.
@@ -214,6 +237,56 @@ comportamento. Vermelho intermitente em suíte de segurança clínica ensina a
 equipe a ignorar vermelho — limites explicitados com a justificativa no próprio
 arquivo de configuração.
 
+## 5.4 Fases destravadas pela existência do runtime
+
+Executadas após a correção de classificação da seção 2. Cada uma entregou
+também a lista do que da sua fase **não** pôde ser feito e por quê — para que a
+próxima classificação seja por evidência, não por impressão.
+
+**Fase 2 — pacote de release assinável (`SPR-G2-3`).** Serialização canônica
+determinística com NFC obrigatório em strings *e* em nomes de chave: sem isso,
+"avaliação" em NFC e em NFD assinariam digests diferentes — defeito invisível
+em corpus pt-BR. Assinatura Ed25519/ECDSA sobre carga que inclui contexto de
+domínio e papel, de modo que uma assinatura de autor não pode ser movida para o
+slot de aprovação; 118 casos de adulteração campo a campo. **Autor ≠ aprovador
+é inexprimível no tipo**, não apenas validado em runtime — verificado
+empiricamente. O `behaviorHash` pina comportamento (digest dos
+`EvaluationRecord` sobre os 93 vetores), respondendo ao defeito legado em que a
+string de versão sobreviveu a uma inversão de comportamento. **Estado factual
+preservado por construção**: `activate({mode: "actionable"})` é recusado
+fail-closed sobre o bundle real do NEWS2, que acumula seis ou mais bloqueios.
+
+**Fases 3 e 5 — harness executável (`SPR-G3-10`, `SPR-G5-1`).** Os 22 cenários
+`CTS-01..CTS-22` deixaram de ser documento e viraram código, rodando contra as
+10 fixtures pinadas por SHA-256. Nenhum cenário foi executado contra o produtor
+AMH — os que dele dependem reportam "não executável sem AMH" com a razão, e
+**nada disso altera "candidato a integração" nem a matriz 47/47**.
+
+**Fase 7 — segunda via clínica.** `RULE-GCS` 0.2.0 implementada (escolhida
+sobre SOFA por ter a especificação mais autossuficiente), provando que a fatia
+comporta mais de uma regra. O gate sedativo do `ADR-0028` é fail-closed: sedação
+confunde a avaliação neurológica e o kernel recusa pontuar, em vez de produzir
+número enganoso. O gate etário foi extraído e compartilhado **sem alterar o
+comportamento do NEWS2** — os 225 testes anteriores seguem verdes. Os 18
+vetores permanecem DRAFT: o documento-fonte declara
+`authorship.independence_confirmed: false` para todos.
+
+**Fase 8 — prontidão operacional (`SPR-G8-1`).** Telemetria compatível com
+OpenTelemetry sem SDK externo, com **redação de PHI implementada como tipo**, e
+teste provando que um identificador sintético não atravessa métrica, log ou
+trace. Kill switch e modo degradado como capacidade de código, com o estado
+degradado visível. `docs/13-operations-and-reliability/` deixou de ser stub:
+runbooks, backup/restore, rollback e a tabela das 12 dimensões do §15.3 com o
+estado real de cada uma — a maioria "não exercida", que é o veredito honesto.
+
+**Fase 10 — vigilância (`SPR-OC-1`).** Carga de alarmes por paciente-dia,
+deriva de fonte e vigilância de versão de regra. Em `KPIR-14`/K-8, **o tipo de
+retorno torna impossível obter o número solto** sem as duas figuras
+companheiras e o denominador — a salvaguarda que a própria definição exige
+contra leitura causal. As duas sub-decisões abertas são expostas como variantes
+explícitas em vez de resolvidas em silêncio. Nenhuma banda aceitável foi
+inventada: `SM-04` e o piso de completude seguem VALIDATION REQUIRED.
+
 ## 6. Premissas de construção assumidas
 
 Registradas em `docs/06-architecture/premissas-de-construcao.md` como
@@ -272,18 +345,25 @@ Nenhum destes é destravável por agente:
 
 ## 9. Próximos executáveis sem ato humano
 
-Em ordem de alavancagem: suites de conformidade de conector como código
-(`SPR-G5-1`); harness §7.6 executável contra fixtures pinadas (`SPR-G3-10`,
-parcial — a parte que não exige sandbox AMH); segunda regra clínica na fatia
-(SOFA ou GCS, specs 0.2.0 já existem); AsyncAPI formal a partir do catálogo de
-eventos; tranche 5 da tradução; ampliação dos estados §11 no frontend a partir
-do modelo agora documentado.
+Em ordem de alavancagem: integrar `RULE-GCS`, o bundle assinável e a
+instrumentação à fatia da API (hoje os pacotes existem e são testados, mas a
+fiação na rota é parcial); SOFA como terceira via; AsyncAPI formal a partir do
+catálogo de eventos; tranche 5 da tradução; ampliação dos estados §11 no
+frontend; e o estado de erro de UI para rejeição de rede (gap real registrado
+na seção 5.3).
+
+**Advertência de sequência (INFERENCE).** Percorrido o `MG-G7`, a V2 deixa de
+ter caminho crítico próprio: todo avanço subsequente de gate depende da AMH, de
+terceiros ou do titular. Aprofundar capacidade sem gate à vista é como se
+acumula trabalho que o dado real depois contradiz — o risco `SR-3` aplicado ao
+produto inteiro. Ponto de decisão do titular, registrado sem recomendação
+embutida no plano (ver `analise-pos-ciclo-6-mapa-vs-estado.md` §5).
 
 ---
 
 ## 10. Método de orquestração
 
-Vinte e cinco especialistas estreitos, todos com fronteira de domínio, escopo de
+Trinta especialistas estreitos, todos com fronteira de domínio, escopo de
 escrita disjunto e critério de aceitação explícitos; nenhum agente genérico.
 Roteamento por classe de tarefa: tier máximo para conteúdo clínico, de segurança
 e verificação adversarial; tier intermediário para trabalho estruturado de
