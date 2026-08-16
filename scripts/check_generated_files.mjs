@@ -44,6 +44,26 @@ function hashDoArquivo(caminhoAbsoluto) {
   return createHash("sha256").update(readFileSync(caminhoAbsoluto)).digest("hex");
 }
 
+/** Primeiras linhas divergentes entre duas versões, para diagnóstico em CI. */
+function primeirasDiferencas(antes, depois, limite = 6) {
+  const a = antes.split("\n");
+  const b = depois.split("\n");
+  const linhas = [];
+  const total = Math.max(a.length, b.length);
+  for (let i = 0; i < total && linhas.length < limite; i += 1) {
+    if (a[i] !== b[i]) {
+      linhas.push(`    linha ${i + 1}:`);
+      linhas.push(`      versionado: ${JSON.stringify(a[i] ?? "<ausente>")}`);
+      linhas.push(`      gerado:     ${JSON.stringify(b[i] ?? "<ausente>")}`);
+    }
+  }
+  if (linhas.length === 0) {
+    return "    (nenhuma linha difere — divergência de bytes invisível em texto: " +
+      "fim de linha, BOM ou espaço final)";
+  }
+  return linhas.join("\n");
+}
+
 function main() {
   const problemas = [];
 
@@ -60,6 +80,7 @@ function main() {
     // Comparação por CONTEÚDO, não por estado do git: a pergunta é "o arquivo
     // que está no repositório é igual ao que o gerador produz?", e a resposta
     // não deve depender de o arquivo estar staged, limpo ou recém-editado.
+    const conteudoAntes = readFileSync(caminhoAbsoluto, "utf8");
     const hashAntes = hashDoArquivo(caminhoAbsoluto);
 
     const [cmd, args] = artefato.comando;
@@ -76,12 +97,18 @@ function main() {
 
     const hashDepois = hashDoArquivo(caminhoAbsoluto);
     if (hashAntes !== hashDepois) {
+      // Mostrar as linhas que mudaram, não só os hashes: quando este gate
+      // falha num runner de CI a que não se tem acesso interativo, um par de
+      // hashes não diz NADA sobre a causa — e a causa costuma ser uma fonte
+      // de não-determinismo sutil (ordem de diretório, locale, instante).
       problemas.push(
         `${artefato.caminho}: o arquivo versionado NÃO corresponde ao que o gerador produz agora ` +
-          `(sha256 ${hashAntes.slice(0, 12)} → ${hashDepois.slice(0, 12)}). ` +
-          `Regenere com \`${cmd} ${args.join(" ")}\` e comite o resultado. ` +
-          `Se a diferença for apenas um instante de geração ou outra fonte de não-determinismo, ` +
-          `corrija o GERADOR — um artefato indiferenciável não pode ser verificado.`,
+          `(sha256 ${hashAntes.slice(0, 12)} → ${hashDepois.slice(0, 12)}).\n` +
+          `${primeirasDiferencas(conteudoAntes, readFileSync(caminhoAbsoluto, "utf8"))}\n` +
+          `    Regenere com \`${cmd} ${args.join(" ")}\` e comite o resultado. ` +
+          `Se a diferença for um instante de geração, ordem de leitura de diretório, locale ou ` +
+          `qualquer outra fonte de não-determinismo, corrija o GERADOR — um artefato ` +
+          `indiferenciável não pode ser verificado.`,
       );
     }
   }

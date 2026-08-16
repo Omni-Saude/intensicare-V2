@@ -164,7 +164,11 @@ export function loadPinnedFixtures(options?: { readonly directory?: string }): P
   // insumo que entra em silêncio é exatamente o que o pin existe para
   // impedir (fail-closed nos dois sentidos — falta e sobra).
   try {
-    for (const entry of readdirSync(directory)) {
+    // `readdirSync` devolve a ordem do sistema de arquivos, que é arbitrária
+    // no ext4 (Linux) e ordenada no APFS (macOS). Sem `sort()`, a ordem das
+    // divergências relatadas dependeria da máquina — e um artefato gerado
+    // precisa ser byte-a-byte reproduzível para poder ser verificado.
+    for (const entry of readdirSync(directory).sort()) {
       if (!entry.endsWith(".json")) continue;
       if (entry in PINNED_FIXTURE_DIGESTS) continue;
       divergences.push(
