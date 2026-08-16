@@ -283,12 +283,12 @@ No current normative MCP server contract was found in the active AMH architectur
 7. Never coerce missing, stale, invalid, partial, conflicting, or unevaluable clinical data to zero, normal, no-risk, or silent no-fire.
 8. Never invent a source timestamp. Preserve the original value, timezone/offset, precision, received time, and quality state.
 9. Real-time delivery must be derived from durable, replayable state or events. WebSocket/SSE/MCP responses are not the clinical system of record.
-10. Clinical rules are immutable, versioned release artifacts. Rule authors may not approve their own clinical content.
+10. Clinical rules are immutable, versioned release artifacts. Rule authors may not approve their own clinical content. *(2026-08-15, AGT-4/GDEC-0009: regra transposta para agentes — agente autor ≠ agente revisor ≠ painel adversarial ≥3 lentes; permanece plenamente vigente.)*
 11. Do not claim clinical effectiveness, regulatory compliance, security, availability, or AMH compatibility without corresponding evidence and named approval.
 12. Use synthetic or formally de-identified data in development and tests. Do not place PHI, credentials, access tokens, patient identifiers, or raw clinical payloads in prompts, source control, logs, traces, fixtures, screenshots, tickets, or agent messages.
 13. No production release may rely on advisory/non-blocking safety, tenant-isolation, migration, security, accessibility, contract, restore, or clinical test gates.
 14. Do not choose microservices, Kubernetes, a cloud provider, a database extension, a broker, or an AI model because the legacy repository used it. Ratify choices through measurable decision drivers and ADRs.
-15. Keep clinical decision authority with accountable humans. Automation may calculate, summarize, route, and explain within approved intended use; it may not silently expand the intended use.
+15. Keep clinical decision authority with accountable humans. Automation may calculate, summarize, route, and explain within approved intended use; it may not silently expand the intended use. *(EMENDADA 2026-08-15, AGT-3/GDEC-0009, decisão do titular contra recomendação do orquestrador: no escopo do Gate G2, a promoção de vias a modo acionável passa a ser exercida por agentes sob autorização permanente de rodaquino-OMNI, condicionada aos itens 1–7 da ata `agentificacao-g1-g2-2026-08-15.md` — a accountability humana concentra-se no ato da autorização; RISK-0012 S5; reserva jurídica em G6/G8. A decisão clínica à beira do leito permanece humana.)*
 
 ## 4. Orchestration policy: specialized agents only
 
@@ -422,6 +422,23 @@ Do not finish SPARK until:
 
 ### Gate G1 — problem and intended use
 
+> **[AGENTIFICADO 2026-08-15 — AGT-1/AGT-2, decisão do titular]** Este gate
+> passa a ser **integralmente executável por agentes**
+> (`docs/00-governance/registers/agentificacao-g1-g2-2026-08-15.md`;
+> GDEC-0009). A observação humana direta deixa de ser exigência de passagem:
+> vale o **dossiê substituto multi-fonte** (literatura, forense do legado,
+> dados retrospectivos, hipóteses do titular ROTULADAS como hipótese —
+> DEC-G0-05 superseded quanto ao G1), verificado por painel adversarial
+> N-de-M (AGT-4), com a ausência de observação registrada como **risco aceito
+> pelo titular** (RISK-0013) e a observação real migrada para o piloto (G8).
+> Os baselines G2-VAL-0025/VAL-0035 passam a ser satisfeitos por **baseline
+> retrospectivo de dados** (AGT-2), com corte histórico fixado antes de
+> qualquer exposição visível a clínicos; a variante observacional do g1-kit
+> permanece disponível, não exigida. BLK-0013 reclassificado G1 → pré-piloto.
+> Critério de passagem operacional: cada item do `g1-validation-backlog.md`
+> resolvido por evidência substituta verificada OU explicitamente carregado
+> como risco aberto para o piloto — nenhum item silenciosamente ignorado.
+
 Do not approve solution architecture until intended users have been observed or the absence is explicitly accepted as a blocking risk. Validate at least:
 
 - who monitors, who acts, who owns escalation, and who closes work;
@@ -517,6 +534,24 @@ Each approved pathway version must be an immutable, signed bundle linking:
 - monitoring thresholds, rollback criteria, kill switch, and retirement date/review cadence.
 
 ### Gate G2 — pathway portfolio
+
+> **[AGENTIFICADO 2026-08-15 — AGT-3/AGT-4, decisão do titular, CONTRA
+> recomendação do orquestrador]** Este gate passa a ser **integralmente
+> executável por agentes, inclusive a promoção a modo acionável**
+> (`docs/00-governance/registers/agentificacao-g1-g2-2026-08-15.md`;
+> GDEC-0009; RISK-0012 S5). O "qualified human committee" é substituído por
+> **autorização permanente do titular** exercida via painel adversarial
+> N-de-M (autor ≠ revisor ≠ ≥3 verificadores com lentes distintas; maioria
+> refuta = morre; trilha imutável). Condições cumulativas VINCULANTES para
+> qualquer promoção a acionável (ata AGT-3, itens 1–7): hard gates §6.2
+> inalterados; independência AGT-4 provada; **G3 aprovado para os insumos da
+> via**; **parecer jurídico OS-16/DEC-G0-03 previamente satisfeito** (a
+> autorização existe, mas só é exercível após o gate jurídico); sombra
+> obrigatória com desempenho medido contra limiares pré-registrados; kill
+> switch e rollback testados, com reversão automática por violação de
+> limiar; registro imutável de cada promoção em release-evidence. Gatilhos
+> de revisita: primeiro parecer OS-16, primeiro evento adverso, ou entrada
+> de segundo revisor clínico humano.
 
 No pathway enters actionable production mode until a qualified human committee approves the portfolio method, the individual release package, residual hazards, and the staged validation plan. Shadow/non-actioning evaluation may precede this approval only with privacy, security, and research/governance authorization.
 
@@ -1229,7 +1264,7 @@ Stop and request the named human authority when:
 - representative user validation contradicts the proposed workflow;
 - a connector cannot preserve identity, encounter, timestamp, units, provenance, or replay semantics;
 - tests validate zero cases, critical suites are skipped, or the environment cannot reproduce the release;
-- a required approval would be self-approval;
+- a required approval would be self-approval; *(emenda 2026-08-15, AGT-3/AGT-4: entre agentes, "self-approval" = mesmo agente/contexto autor e aprovador — vedado; a autorização permanente do titular para o G2 não constitui autoaprovação de agente quando o painel adversarial N-de-M é distinto do autor)*
 - the requested action would silently broaden intended use or automate a clinical decision beyond approved boundaries.
 
 Never:
