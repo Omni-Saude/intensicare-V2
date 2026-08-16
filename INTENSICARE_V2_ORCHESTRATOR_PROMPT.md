@@ -54,7 +54,11 @@ seção prevalece sobre qualquer trecho posterior que presuma estado inicial.
 > foram removidos como pré-condição — a promoção a modo acionável ocorre
 > sob a autorização permanente do titular, a seu critério. As
 > condicionantes por operação do parecer OS-16 persistem como obrigações
-> jurídicas externas, fora deste processo.
+> jurídicas externas, fora deste processo. **[GDEC-0015]** Aceite formal de
+> ADR deixa de ser pré-condição de implementação: construa sobre a opção
+> recomendada como premissa reversível (registro de uma linha); aceites em
+> lote a critério do titular. N-8 = 6 tipos de evento da minuta;
+> ADR-0006 = Opção A, como premissas de construção.
 
 ### 0.1 Leituras obrigatórias, nesta ordem
 

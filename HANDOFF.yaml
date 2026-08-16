@@ -248,7 +248,10 @@ ciclos_3_a_5_2026_08_15_16:
     conteúdo proibido/PHI, PR para main e dados sintéticos como default;
     promoção acionável a critério do titular; condicionantes do parecer
     OS-16 persistem como obrigações jurídicas externas).
-    Próximo GDEC livre: GDEC-0015.
+    GDEC-0015 (travas residuais removidas: aceite de ADR não é mais
+    pré-condição — construção sobre opção recomendada como premissa
+    reversível; N-8 = 6 tipos da minuta; ADR-0006 = Opção A).
+    Próximo GDEC livre: GDEC-0016.
   ciclo_5_execucao:
     relatorio: docs/15-release-evidence/cycle-5-execution-report.md  # leitura obrigatória na retomada
     painel_agt4: >-

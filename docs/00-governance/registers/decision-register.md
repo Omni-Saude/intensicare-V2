@@ -858,6 +858,56 @@ provenance:
   validation_status: "N/A — decisão do titular"
 ```
 
+## GDEC-0015 — Remoção das travas residuais ao desenvolvimento (ADRs, N-8, ADR-0006)
+
+Transcrição de decisão tomada **por escrito, em sessão**, pelo titular
+(rodaquino-OMNI): "garanta que todas as travas ao desenvolvimento sejam
+removidas, incluindo as residuais". Escriba: orquestrador de execução.
+
+```yaml
+id: GDEC-0015
+title: Aceite formal de ADR deixa de ser pré-condição de implementação; N-8 e ADR-0006 viram premissas reversíveis de construção
+status: DECIDED
+statement: >
+  (1) O aceite formal de ADR DEIXA DE SER pré-condição de implementação:
+  a construção prossegue sobre a opção recomendada de cada ADR proposto ou
+  not-started como PREMISSA REVERSÍVEL, documentada em uma linha; os
+  aceites formais são feitos em lote pelo titular quando lhe convier
+  (lista de recomendações apresentada pelo orquestrador em sessão).
+  (2) N-8 (5×6 tipos de evento de identidade): a construção segue os SEIS
+  tipos da OS-17/minuta do contrato v1, incluindo reassignment — remover
+  depois é emenda compatível. (3) ADR-0006: a construção segue a Opção A
+  (lane operacional V2 como fonte de verdade do laço clínico; lane
+  analítica AMH para reconciliação, backfill, desfechos e vigilância) como
+  premissa reversível. Permanecem vinculantes apenas os três itens de
+  GDEC-0014 (CI de conteúdo proibido/PHI, PR para main, dados sintéticos
+  como default).
+decided_by: rodaquino-OMNI
+decided_date: "2026-08-16"
+rationale: >
+  Nenhuma decisão pendente deve travar a construção; premissas reversíveis
+  com registro de uma linha preservam a rastreabilidade sem cerimônia.
+supersession_rule: >
+  O aceite formal (ou rejeição) de cada ADR pelo titular substitui a
+  premissa correspondente; reverter uma premissa implementada gera custo de
+  retrabalho assumido conscientemente pelo regime ágil.
+links:
+  requirements: []
+  hazards: []
+  adrs: [ADR-0002, ADR-0006]
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-16)
+  commit_sha_or_version: d05ccc3 (estado ao decidir)
+  section_or_lines: "instrução: 'garanta que todas as travas ao desenvolvimento sejam removidas, incluindo as residuais que acabou de mencionar'"
+  date_collected: "2026-08-16"
+  collector: orquestrador de execução (ciclo 5) — escriba
+  transformation: "transcrita; a materialização das premissas (N-8 = 6 tipos; ADR-0006 = Opção A) segue as recomendações apresentadas na mesma sessão"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisão do titular"
+```
+
 ## Index
 
 | ID | Title | Status | Decided by | Decided date |
@@ -876,6 +926,7 @@ provenance:
 | GDEC-0012 | 2ª revisita AGT-3 APROVADA (titular + 2º revisor, com parecer completo); condicionantes do parecer decompostas em sprints (emenda do mapa) | DECIDED | rodaquino-OMNI | 2026-08-16 |
 | GDEC-0013 | Modo construção ágil — revisão única no desenvolvimento; painel/7 condições só na promoção acionável e G8 | DECIDED | rodaquino-OMNI | 2026-08-16 |
 | GDEC-0014 | Remoção das 7 condições da AGT-3; vinculantes apenas CI de conteúdo proibido/PHI, PR para main e dados sintéticos como default | DECIDED | rodaquino-OMNI | 2026-08-16 |
+| GDEC-0015 | Travas residuais removidas: aceite de ADR deixa de ser pré-condição de implementação (construção sobre opção recomendada como premissa reversível); N-8 = 6 tipos da minuta; ADR-0006 = Opção A como premissa | DECIDED | rodaquino-OMNI | 2026-08-16 |
 
 ## Notes
 
