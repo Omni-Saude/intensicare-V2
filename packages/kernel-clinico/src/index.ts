@@ -7,12 +7,17 @@
  * funções puras, testáveis sem I/O, sem rede, sem banco de dados e SEM
  * relógio interno (todo tempo entra por parâmetro).
  *
- * Conteúdo desta fatia (SPR-G7-2): avaliador NEWS2 determinístico conforme
- * RULE-NEWS2 0.2.0 (docs/05-clinical-safety/rule-releases/news2/), com os
- * cinco estados de avaliação da ADR-0008, política de insumo ausente da
- * ADR-0026 (classe 1) e gating etário fail-closed da ADR-0027. Nenhuma
- * alegação de efetividade clínica, conformidade regulatória ou segurança
- * comprovada é feita por este pacote.
+ * Conteúdo: DUAS vias clínicas determinísticas, independentes entre si —
+ * - avaliador NEWS2 conforme RULE-NEWS2 0.2.0
+ *   (docs/05-clinical-safety/rule-releases/news2/), classe 1 da ADR-0026;
+ * - avaliador GCS conforme RULE-GCS 0.2.0
+ *   (docs/05-clinical-safety/rule-releases/gcs/), classe 4 da ADR-0026
+ *   (enumeração de instrumento único: NT de primeira classe, sem parcial),
+ *   com o gate de confundimento por sedação FAIL-CLOSED da ADR-0028.
+ *
+ * Ambas usam os cinco estados de avaliação da ADR-0008 e o gate etário
+ * fail-closed da ADR-0027. Nenhuma alegação de efetividade clínica,
+ * conformidade regulatória ou segurança comprovada é feita por este pacote.
  */
 
 /** Versão do pacote do núcleo clínico, para fins de diagnóstico. */
@@ -57,6 +62,47 @@ export type {
   Spo2ScaleAssignmentInput,
 } from "./types.js";
 export { NEWS2_PARAMETER_ORDER } from "./types.js";
+
+// ---------------------------------------------------------------------------
+// Gate etário compartilhado (ADR-0027) — mesma lógica nas duas regras.
+// ---------------------------------------------------------------------------
+
+export { type AgeGateReason, type AgeGateResult, evaluateAgeGate } from "./population.js";
+
+// ---------------------------------------------------------------------------
+// API da avaliação GCS (RULE-GCS 0.2.0)
+// ---------------------------------------------------------------------------
+
+export {
+  evaluateGcs,
+  GCS_CARE_GOALS_ANNOTATION_PT,
+  GCS_COMPONENT_CONTEMPORANEITY_MINUTES,
+  GCS_COMPONENT_EXPIRY_MINUTES,
+  GCS_COMPONENT_WINDOW_MINUTES,
+  GCS_PRE_SEDATION_MAX_AGE_MINUTES,
+  GCS_RASS_PAIRING_MINUTES,
+  GCS_RULE_ID,
+  GCS_RULE_VERSION,
+  GCS_SEDATION_RASS_THRESHOLD,
+  NT_REASON_LABEL_PT,
+  reassessGcsAtReadTime,
+} from "./gcs.js";
+export type {
+  GcsAssessabilityState,
+  GcsComponentContribution,
+  GcsComponentId,
+  GcsComponentObservationInput,
+  GcsComponentValue,
+  GcsEvaluationInput,
+  GcsEvaluationRecord,
+  GcsNoFireReason,
+  GcsNtReason,
+  GcsPreSedationReference,
+  GcsSourceProvidedTotalInput,
+  RassObservationInput,
+  SedativeExposureState,
+} from "./types.js";
+export { GCS_COMPONENT_ORDER } from "./types.js";
 
 // ---------------------------------------------------------------------------
 // Exports legados do esqueleto SPR-G7-1 — mantidos porque @intensicare/dominio

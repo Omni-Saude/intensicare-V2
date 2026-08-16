@@ -29,6 +29,7 @@
  * PREMISSA (reversível, GDEC-0015/0017): estado de sedação ausente não gateia — é anotado "não informado"; gate por RASS é matéria da ADR-0028, fora desta fatia.
  */
 
+import { evaluateAgeGate, MINIMUM_AGE_YEARS } from "./population.js";
 import {
   type AcvpuToken,
   type AgeInput,
@@ -52,8 +53,12 @@ export const NEWS2_RULE_ID = "RULE-NEWS2" as const;
 /** Versão pinada da spec 0.2.0 (ADR-0025: edição canônica RCP 2017). */
 export const NEWS2_RULE_VERSION = "0.2.0" as const;
 
-/** Limiar etário produto-wide (ADR-0027, decisão A27-1). */
-export const MINIMUM_AGE_YEARS = 18;
+/**
+ * Limiar etário produto-wide (ADR-0027, decisão A27-1). Definido em
+ * `./population.js` e reexportado aqui para preservar a superfície pública
+ * histórica deste módulo — mesmo valor, mesmo comportamento.
+ */
+export { MINIMUM_AGE_YEARS };
 
 const EPS = 1e-9;
 const MINUTE_MS = 60_000;
@@ -821,16 +826,20 @@ export function evaluateNews2(input: News2EvaluationInput): EvaluationRecord {
   };
 }
 
-/** Gate populacional fail-closed (spec §1.2; ADR-0027 A27-1/A27-2). */
+/**
+ * Gate populacional fail-closed (spec §1.2; ADR-0027 A27-1/A27-2).
+ *
+ * A parte etária delega a `evaluateAgeGate` (compartilhada com a RULE-GCS);
+ * a ordem de verificação e o vocabulário de razão desta regra permanecem
+ * inalterados: idade desconhecida → idade abaixo do limiar → gravidez.
+ */
 export function evaluatePopulationGate(
   age: AgeInput,
   pregnancy: "documented" | "not_documented",
 ): PopulationGateResult {
-  if (age.kind === "unknown" || !Number.isFinite((age as { years?: number }).years ?? Number.NaN)) {
-    return { passed: false, reason: "unknown_age" };
-  }
-  if (age.kind === "verified" && age.years < MINIMUM_AGE_YEARS) {
-    return { passed: false, reason: "under_age" };
+  const ageGate = evaluateAgeGate(age);
+  if (!ageGate.passed) {
+    return { passed: false, reason: ageGate.reason };
   }
   if (pregnancy === "documented") {
     return { passed: false, reason: "pregnancy_documented" };

@@ -140,11 +140,21 @@ export interface News2EvaluationInput {
   readonly lastValidEvaluationTime?: string | null;
 }
 
-/** Status de um parâmetro individual dentro da avaliação. */
+/**
+ * Status de um parâmetro/componente individual dentro de uma avaliação.
+ *
+ * `not_testable` é o token NT de primeira classe da RULE-GCS (classe 4 da
+ * ADR-0026: enumeração de instrumento único) — "o avaliador tentou e o
+ * componente não era testável". É INALCANÇÁVEL na RULE-NEWS2 (nenhum
+ * parâmetro NEWS2 tem convenção NT publicada) e NUNCA é conversível em
+ * `missing` nem em número (glasgowcomascale.org: "do not use number '1' to
+ * record missing component").
+ */
 export type ParameterStatus =
   | "valid"
   | "missing"
   | "missing_clinical_time"
+  | "not_testable"
   | "stale"
   | "expired"
   | "invalid"
@@ -245,4 +255,207 @@ export interface ReadTimeReassessment {
   readonly reasons: readonly string[];
   /** Idade do insumo mais antigo (minutos) no instante de leitura, se aplicável. */
   readonly oldestInputAgeMinutes: number | null;
+}
+
+// ---------------------------------------------------------------------------
+// RULE-GCS 0.2.0 — Escala de Coma de Glasgow (segunda via determinística)
+//
+// Fontes normativas (lidas integralmente na autoria):
+// - docs/05-clinical-safety/rule-releases/gcs/specification.md (0.2.0)
+// - docs/05-clinical-safety/rule-releases/gcs/reference-vectors.md (18 ativos)
+// - ADR-0008 (cinco estados; precedência P-a; N3 razões; N5 atualidade)
+// - ADR-0026 (política de insumo ausente — CLASSE 4, enumeração de instrumento
+//   único: sem parcial; NT é valor de primeira classe; token fora da
+//   enumeração ⇒ `invalid`) — classe DIFERENTE da classe 1 do NEWS2
+// - ADR-0027 (gate etário fail-closed >=18 produto-wide)
+// - ADR-0028 (confundimento por sedação: A28-1 conjunção-com-exposição,
+//   A28-2 FAIL-CLOSED para sedação desconhecida, A28-5 limiar RASS <= -3,
+//   A28-6 GCS pré-sedação display-only 72 h, A28-7 janelas, A28-8 exibição)
+// ---------------------------------------------------------------------------
+
+/** Os três componentes observáveis do instrumento (spec §3.1). */
+export type GcsComponentId = "eye" | "verbal" | "motor";
+
+/** Ordem canônica dos componentes — determinismo de listas, razões e exibição. */
+export const GCS_COMPONENT_ORDER: readonly GcsComponentId[] = ["eye", "verbal", "motor"];
+
+/**
+ * Vocabulário GOVERNADO de motivos de NT (spec §3.3). Extensão somente por
+ * revisão da especificação e do registro de reason codes da ADR-0008 — nunca
+ * ad hoc. Um motivo fora do vocabulário admissível do componente é falha de
+ * integridade (`invalid`), nunca um NT silencioso.
+ */
+export type GcsNtReason =
+  | "eye_trauma_or_edema"
+  | "endotracheal_intubation"
+  | "tracheostomy"
+  | "aphasia"
+  | "language_barrier"
+  | "deafness"
+  | "neuromuscular_blockade"
+  | "paralysis_other"
+  | "other_documented";
+
+/**
+ * Valor de um componente: inteiro TESTADO da enumeração, ou o token NT de
+ * primeira classe com motivo. O valor 1 significa "testado e ausente" — jamais
+ * "não testado" (spec §3.2; glasgowcomascale.org FAQ).
+ */
+export type GcsComponentValue =
+  | {
+      readonly kind: "score";
+      readonly value: number;
+      /** UCUM adimensional: "{score}", "1" ou vazio. Outra unidade ⇒ `invalid`. */
+      readonly unit?: string;
+    }
+  | { readonly kind: "not_testable"; readonly ntReason: GcsNtReason };
+
+/** Observação de um componente E/V/M (spec §5.1 linhas 2–4). */
+export interface GcsComponentObservationInput {
+  readonly component: GcsComponentId;
+  readonly value: GcsComponentValue;
+  /** Tempo CLÍNICO da fonte; `null` ⇒ atualidade indemonstrável (DOM-0009). */
+  readonly effectiveTime: string | null;
+  readonly receivedTime?: string | null;
+  readonly provenance: ObservationProvenance;
+}
+
+/** Observação de RASS — entrada de GATE apenas (spec §5.1 linha 6). */
+export interface RassObservationInput {
+  /** Ordinal −5..+4 (Sessler 2002); fora do domínio ⇒ `invalid`, nunca clampado. */
+  readonly value: number;
+  readonly effectiveTime: string | null;
+  readonly receivedTime?: string | null;
+  readonly provenance: ObservationProvenance;
+}
+
+/**
+ * Estado de exposição sedativa documentado (spec §5.1 linha 7).
+ * `unknown` NÃO é "sem sedativo": é insumo de gate ausente (A28-2 fail-closed).
+ */
+export type SedativeExposureState =
+  | "none_active"
+  | "active_infusion"
+  | "interrupted_window_documented"
+  | "unknown";
+
+/** Estado de avaliabilidade da avaliação (ADR-0028 §1.1; spec §4). */
+export type GcsAssessabilityState =
+  | "testable"
+  | "sedation_confounded"
+  | "sedation_state_unknown"
+  | "not_applicable";
+
+/**
+ * GCS total fornecido pela fonte (LOINC candidato 9269-2). NUNCA é aceito como
+ * entrada de computação (spec §5.2, OQ-GCS-6): serve só para cross-check da
+ * soma dos três componentes testados.
+ */
+export interface GcsSourceProvidedTotalInput {
+  readonly value: number;
+  readonly effectiveTime: string | null;
+}
+
+/**
+ * Última GCS pré-sedação — EXIBIÇÃO APENAS (ADR-0028 A28-6): idade máxima
+ * 72 h, timestamp visível, jamais entra em cômputo.
+ */
+export interface GcsPreSedationReference {
+  readonly total: number;
+  readonly observedAt: string;
+}
+
+/** Entrada completa de uma avaliação RULE-GCS — todo tempo vem por parâmetro. */
+export interface GcsEvaluationInput {
+  /** Instante da avaliação (ISO 8601). Não há relógio interno no kernel. */
+  readonly evaluationTime: string;
+  readonly age: AgeInput;
+  readonly components: readonly GcsComponentObservationInput[];
+  /** RASS pareado; ausente ⇒ estado de sedação desconhecido (fail-closed). */
+  readonly rass?: RassObservationInput | null;
+  readonly sedativeExposure: SedativeExposureState;
+  readonly sourceProvidedTotal?: GcsSourceProvidedTotalInput | null;
+  readonly lastPreSedationGcs?: GcsPreSedationReference | null;
+  /**
+   * Ordem de limitação terapêutica documentada (spec §1.3.1, HAZ-0044): a
+   * AVALIAÇÃO NÃO é suprimida; apenas anota-se que qualquer vínculo futuro de
+   * alerta/work-item deve consultar as metas de cuidado.
+   */
+  readonly treatmentLimitationOrderDocumented?: boolean;
+  readonly lastValidEvaluationTime?: string | null;
+}
+
+/** Contribuição de um componente, com explicação pt-BR — nunca "ausente → 0". */
+export interface GcsComponentContribution {
+  readonly component: GcsComponentId;
+  readonly status: ParameterStatus;
+  /**
+   * Valor OBSERVADO do componente (exibição). Existe também sob `stale`
+   * (spec §5.3: "último valor e idade exibidos"); é `null` sob NT, ausência,
+   * expiração, quarentena e invalidez. Um valor de componente NUNCA é somável
+   * por si — o único número somado é `total`, e só sob `status: "valid"` do
+   * registro agregado.
+   */
+  readonly value: number | null;
+  /** Motivo governado do NT, quando `status === "not_testable"`. */
+  readonly ntReason: GcsNtReason | null;
+  /** Razão legível por máquina quando o componente não é `valid`. */
+  readonly reason: string | null;
+  readonly effectiveTime: string | null;
+  readonly ageMinutes: number | null;
+  /** Explicação em pt-BR da contribuição (ou da razão de não contribuir). */
+  readonly explanation: string;
+}
+
+/**
+ * Motivo de não disparo (convenção §0.4 do documento de vetores). RULE-GCS
+ * 0.2.0 não define NENHUMA condição de alerta: `fires` é sempre `false`.
+ */
+export type GcsNoFireReason =
+  | "criteria_not_met"
+  | "insufficient_data"
+  | "stale_data"
+  | "invalid_data"
+  | "out_of_population_scope";
+
+/**
+ * Registro de avaliação RULE-GCS — imutável, determinístico, replayável.
+ * O total 3–15 existe SOMENTE quando `status === "valid"` (spec §3.5/§6.1).
+ */
+export interface GcsEvaluationRecord {
+  readonly ruleId: "RULE-GCS";
+  /** Versão pinada da spec (precursor 0.2.0; ADR-0025). */
+  readonly ruleVersion: "0.2.0";
+  readonly evaluationTime: string;
+  /** `partial` é INALCANÇÁVEL nesta regra (spec §6: nenhuma política parcial). */
+  readonly status: EvaluationStatus;
+  /** Razões legíveis por máquina; >= 1 sempre que o status não é `valid` (N3). */
+  readonly reasons: readonly string[];
+  /** Razão dominante pela precedência declarada; `null` apenas sob `valid`. */
+  readonly primaryReason: string | null;
+  /** Total 3–15 — `null` em QUALQUER status diferente de `valid` (HAZ-0005). */
+  readonly total: number | null;
+  readonly components: readonly GcsComponentContribution[];
+  readonly assessability: GcsAssessabilityState;
+  /** RASS efetivamente pareado (ordinal) — `null` quando não pareado/ausente. */
+  readonly pairedRass: number | null;
+  readonly populationGate: PopulationGateResult;
+  readonly notTestableComponents: readonly GcsComponentId[];
+  readonly missingComponents: readonly GcsComponentId[];
+  readonly staleComponents: readonly GcsComponentId[];
+  readonly expiredComponents: readonly GcsComponentId[];
+  readonly invalidComponents: readonly GcsComponentId[];
+  readonly quarantinedComponents: readonly GcsComponentId[];
+  /**
+   * Convenção de exibição ratificada (OQ-GCS-7, ADR-0028 A28-8), p.ex.
+   * "E4 V-NT(intubação endotraqueal) M6" — APRESENTAÇÃO, jamais aritmética.
+   */
+  readonly componentDisplay: string;
+  /** RULE-GCS 0.2.0 não define condição de disparo: sempre `false`. */
+  readonly fires: false;
+  readonly noFireReason: GcsNoFireReason;
+  /** Anotações visíveis obrigatórias, em pt-BR. */
+  readonly annotations: readonly string[];
+  /** Explicação agregada em pt-BR (spec §10). */
+  readonly explanation: string;
 }

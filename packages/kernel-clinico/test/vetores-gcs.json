@@ -1,0 +1,400 @@
+{
+  "provenance": {
+    "source_path": "docs/05-clinical-safety/rule-releases/gcs/reference-vectors.md",
+    "source_title": "RULE-GCS v0.2.0 — vetores de referência clínica (CRV-GCS-0201..0220)",
+    "sections_transcribed": [
+      "§1 Bloco comum",
+      "§2 Painel PANEL-GCS-NORMAL",
+      "§3.1 Totais normais na faixa (limites 3 e 15)",
+      "§3.2 NT por componente e todos-NT",
+      "§3.3 Componente ausente (missing != NT)",
+      "§3.4 Gate RASS / confusão sedativa",
+      "§3.5 Frescor — pareamento RASS e componentes stale",
+      "§3.6 Gate populacional",
+      "§3.7 Enumerações inválidas",
+      "§3.8 Vetores decididos — sedação desconhecida FAIL-CLOSED (GDEC-0007)"
+    ],
+    "rule": "RULE-GCS 0.2.0 (precursor — não assinado; NOT ACTIONABLE)",
+    "data_provenance": "synthetic-only — todos os valores sintéticos; nenhum dado real de paciente",
+    "note": "Transcrição para execução red/green (TDD) conforme a própria disciplina do conjunto CRV (§0 do documento-fonte): a aprovação destes vetores NÃO é evidência clínica; a autoria independente dos vetores permanece pendente (authorship.independence_confirmed: false para todos). Cada vetor do documento-fonte declara UM rótulo de razão; aqui a razão é representada pelo token de razão da spec §6.1 e o campo `reasons` traz o CONJUNTO EXATO emitido pelo avaliador. Expansões declaradas na transcrição: (a) CRV-GCS-0214 não declara `reason` no documento-fonte (só `evaluation_status: stale`) — a transcrição espera os três tokens `stale_input:<componente>` da spec §5.3/§6.1; (b) o documento-fonte usa `no_fire_reason` agregado (criteria_not_met/insufficient_data/stale_data/invalid_data/out_of_population_scope), mantido aqui verbatim; (c) `assessability` é o estado de avaliabilidade da ADR-0028 §1.1, implícito no documento-fonte e explicitado aqui.",
+    "panel": "PANEL-GCS-NORMAL — adulto sintético 58 anos; E4 às 09:00, V5 às 09:02, M6 às 09:03 (contemporâneos, janela mútua de 30 min); RASS 0 às 09:00 (pareado, dentro de 1 h); exposição sedativa none_active (ausência documentada); T = 2026-08-15T12:00:00-03:00. Esperado sem modificação: total 15, status valid.",
+    "evaluation_instant": "2026-08-15T12:00:00-03:00 (= 2026-08-15T15:00:00.000Z)"
+  },
+  "vectors": [
+    {
+      "id": "CRV-GCS-0201",
+      "source_section": "§3.1 Totais normais na faixa",
+      "description": "E4 V5 M6 — total 15 (limite superior), valid",
+      "delta": {},
+      "expected": {
+        "status": "valid",
+        "total": 15,
+        "reasons": [],
+        "primaryReason": null,
+        "assessability": "testable",
+        "noFireReason": "criteria_not_met",
+        "componentStatuses": { "eye": "valid", "verbal": "valid", "motor": "valid" },
+        "componentValues": { "eye": 4, "verbal": 5, "motor": 6 },
+        "componentDisplay": "E4 V5 M6",
+        "pairedRass": 0
+      }
+    },
+    {
+      "id": "CRV-GCS-0202",
+      "source_section": "§3.1 Totais normais na faixa",
+      "description": "E3 V3 M4 — total 10 (meio da faixa), RASS -1 sem sedativo ativo, valid",
+      "delta": {
+        "components": { "eye": { "value": 3 }, "verbal": { "value": 3 }, "motor": { "value": 4 } },
+        "rass": { "value": -1 }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 10,
+        "reasons": [],
+        "primaryReason": null,
+        "assessability": "testable",
+        "noFireReason": "criteria_not_met",
+        "componentStatuses": { "eye": "valid", "verbal": "valid", "motor": "valid" },
+        "componentValues": { "eye": 3, "verbal": 3, "motor": 4 },
+        "componentDisplay": "E3 V3 M4",
+        "pairedRass": -1
+      }
+    },
+    {
+      "id": "CRV-GCS-0203",
+      "source_section": "§3.1 Totais normais na faixa",
+      "description": "E1 V1 M1 — total 3 (limite inferior), coma não sedado (RASS -5, ausência documentada de sedativo), valid; 1 = testado sem resposta, nunca 'não testado'",
+      "delta": {
+        "components": { "eye": { "value": 1 }, "verbal": { "value": 1 }, "motor": { "value": 1 } },
+        "rass": { "value": -5 },
+        "sedativeExposure": "none_active"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "reasons": [],
+        "primaryReason": null,
+        "assessability": "testable",
+        "noFireReason": "criteria_not_met",
+        "componentStatuses": { "eye": "valid", "verbal": "valid", "motor": "valid" },
+        "componentValues": { "eye": 1, "verbal": 1, "motor": 1 },
+        "componentDisplay": "E1 V1 M1",
+        "pairedRass": -5
+      }
+    },
+    {
+      "id": "CRV-GCS-0204",
+      "source_section": "§3.2 NT por componente",
+      "description": "Ocular NT (trauma/edema orbitário) — E-NT V5 M6 → nenhum total (nunca 12, nunca 13); componentes testados exibidos",
+      "delta": { "components": { "eye": { "nt": "eye_trauma_or_edema" } } },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "reasons": ["component_not_testable"],
+        "primaryReason": "component_not_testable",
+        "assessability": "testable",
+        "noFireReason": "insufficient_data",
+        "componentStatuses": { "eye": "not_testable", "verbal": "valid", "motor": "valid" },
+        "componentValues": { "eye": null, "verbal": 5, "motor": 6 },
+        "componentDisplay": "E-NT(trauma orbitário/periorbitário ou edema) V5 M6",
+        "pairedRass": 0
+      }
+    },
+    {
+      "id": "CRV-GCS-0205",
+      "source_section": "§3.2 NT por componente",
+      "description": "CANÔNICO — intubado alerta: E4 M6 V-NT(intubação) → NENHUM total, NÃO GCS 11 (reversão do defeito legado REV-NS-01 §4.2)",
+      "delta": { "components": { "verbal": { "nt": "endotracheal_intubation" } } },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "reasons": ["component_not_testable"],
+        "primaryReason": "component_not_testable",
+        "assessability": "testable",
+        "noFireReason": "insufficient_data",
+        "componentStatuses": { "eye": "valid", "verbal": "not_testable", "motor": "valid" },
+        "componentValues": { "eye": 4, "verbal": null, "motor": 6 },
+        "componentDisplay": "E4 V-NT(intubação endotraqueal) M6",
+        "pairedRass": 0
+      }
+    },
+    {
+      "id": "CRV-GCS-0206",
+      "source_section": "§3.2 NT por componente",
+      "description": "Motor NT (paralisia documentada, outra causa) — E4 V5 M-NT → nenhum total",
+      "delta": { "components": { "motor": { "nt": "paralysis_other" } } },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "reasons": ["component_not_testable"],
+        "primaryReason": "component_not_testable",
+        "assessability": "testable",
+        "noFireReason": "insufficient_data",
+        "componentStatuses": { "eye": "valid", "verbal": "valid", "motor": "not_testable" },
+        "componentValues": { "eye": 4, "verbal": 5, "motor": null },
+        "componentDisplay": "E4 V5 M-NT(paralisia documentada de outra causa)",
+        "pairedRass": 0
+      }
+    },
+    {
+      "id": "CRV-GCS-0207",
+      "source_section": "§3.2 todos-NT",
+      "description": "Todos NT (bloqueio neuromuscular ativo; RASS também não avaliável) — nenhum total, nenhum componente numérico; três NT NÃO são três 1s (a coerção-ao-mínimo legada produzia 3.0)",
+      "delta": {
+        "components": {
+          "eye": { "nt": "neuromuscular_blockade" },
+          "verbal": { "nt": "neuromuscular_blockade" },
+          "motor": { "nt": "neuromuscular_blockade" }
+        },
+        "rass": { "absent": true }
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "reasons": ["component_not_testable"],
+        "primaryReason": "component_not_testable",
+        "assessability": "not_applicable",
+        "noFireReason": "insufficient_data",
+        "componentStatuses": {
+          "eye": "not_testable",
+          "verbal": "not_testable",
+          "motor": "not_testable"
+        },
+        "componentValues": { "eye": null, "verbal": null, "motor": null },
+        "componentDisplay": "E-NT(bloqueio neuromuscular ativo) V-NT(bloqueio neuromuscular ativo) M-NT(bloqueio neuromuscular ativo)",
+        "pairedRass": null
+      }
+    },
+    {
+      "id": "CRV-GCS-0208",
+      "source_section": "§3.3 Componente ausente (missing != NT)",
+      "description": "Verbal AUSENTE (nenhuma observação, sem registro NT) → not_evaluated(missing_required_input:verbal); status e motivo diferem do CRV-GCS-0205",
+      "delta": { "components": { "verbal": { "absent": true } } },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "reasons": ["missing_required_input:verbal"],
+        "primaryReason": "missing_required_input:verbal",
+        "assessability": "testable",
+        "noFireReason": "insufficient_data",
+        "componentStatuses": { "eye": "valid", "verbal": "missing", "motor": "valid" },
+        "componentValues": { "eye": 4, "verbal": null, "motor": 6 },
+        "componentDisplay": "E4 V-ausente M6",
+        "pairedRass": 0
+      }
+    },
+    {
+      "id": "CRV-GCS-0209",
+      "source_section": "§3.4 Gate RASS / confusão sedativa",
+      "description": "RASS -4 + infusão sedativa ativa sem janela de interrupção → sedation_confounded; componentes exibidos, nenhum total (NÃO 4)",
+      "delta": {
+        "components": { "eye": { "value": 1 }, "verbal": { "value": 1 }, "motor": { "value": 2 } },
+        "rass": { "value": -4 },
+        "sedativeExposure": "active_infusion"
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "reasons": ["sedation_confounded"],
+        "primaryReason": "sedation_confounded",
+        "assessability": "sedation_confounded",
+        "noFireReason": "insufficient_data",
+        "componentStatuses": { "eye": "valid", "verbal": "valid", "motor": "valid" },
+        "componentValues": { "eye": 1, "verbal": 1, "motor": 2 },
+        "componentDisplay": "E1 V1 M2",
+        "pairedRass": -4
+      }
+    },
+    {
+      "id": "CRV-GCS-0210",
+      "source_section": "§3.4 Gate RASS / confusão sedativa",
+      "description": "RASS 0 pareado, sem sedativo ativo → testável; total 15 valid (caminho positivo explícito do gate)",
+      "delta": {},
+      "expected": {
+        "status": "valid",
+        "total": 15,
+        "reasons": [],
+        "primaryReason": null,
+        "assessability": "testable",
+        "noFireReason": "criteria_not_met",
+        "componentStatuses": { "eye": "valid", "verbal": "valid", "motor": "valid" },
+        "componentValues": { "eye": 4, "verbal": 5, "motor": 6 },
+        "componentDisplay": "E4 V5 M6",
+        "pairedRass": 0
+      }
+    },
+    {
+      "id": "CRV-GCS-0212",
+      "source_section": "§3.4 Gate RASS / confusão sedativa",
+      "description": "RASS -4 com AUSÊNCIA documentada de sedativo → coma genuíno; escora (total 5, valid) — o refinamento da spec §4.3",
+      "delta": {
+        "components": { "eye": { "value": 1 }, "verbal": { "value": 2 }, "motor": { "value": 2 } },
+        "rass": { "value": -4 },
+        "sedativeExposure": "none_active"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 5,
+        "reasons": [],
+        "primaryReason": null,
+        "assessability": "testable",
+        "noFireReason": "criteria_not_met",
+        "componentStatuses": { "eye": "valid", "verbal": "valid", "motor": "valid" },
+        "componentValues": { "eye": 1, "verbal": 2, "motor": 2 },
+        "componentDisplay": "E1 V2 M2",
+        "pairedRass": -4
+      }
+    },
+    {
+      "id": "CRV-GCS-0214",
+      "source_section": "§3.5 Frescor — componentes stale",
+      "description": "Componentes com 13 h (fora da janela de 12 h, dentro do expiry de 24 h) → stale; total não legível, valores e idades exibidos",
+      "delta": {
+        "components": {
+          "eye": { "minutesBefore": 780 },
+          "verbal": { "minutesBefore": 780 },
+          "motor": { "minutesBefore": 780 }
+        },
+        "rass": { "value": 0, "minutesBefore": 780 }
+      },
+      "expected": {
+        "status": "stale",
+        "total": null,
+        "reasons": ["stale_input:eye", "stale_input:verbal", "stale_input:motor"],
+        "primaryReason": "stale_input:eye",
+        "assessability": "testable",
+        "noFireReason": "stale_data",
+        "componentStatuses": { "eye": "stale", "verbal": "stale", "motor": "stale" },
+        "componentValues": { "eye": 4, "verbal": 5, "motor": 6 },
+        "componentDisplay": "E4(fora da janela) V5(fora da janela) M6(fora da janela)",
+        "pairedRass": 0
+      }
+    },
+    {
+      "id": "CRV-GCS-0215",
+      "source_section": "§3.6 Gate populacional",
+      "description": "Idade desconhecida → not_evaluated(population_unverified); nunca assumir adulto",
+      "delta": { "age": "unknown" },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "reasons": ["population_unverified"],
+        "primaryReason": "population_unverified",
+        "assessability": "not_applicable",
+        "noFireReason": "out_of_population_scope",
+        "componentStatuses": {
+          "eye": "not_evaluated",
+          "verbal": "not_evaluated",
+          "motor": "not_evaluated"
+        },
+        "componentValues": { "eye": null, "verbal": null, "motor": null },
+        "pairedRass": null
+      }
+    },
+    {
+      "id": "CRV-GCS-0216",
+      "source_section": "§3.6 Gate populacional",
+      "description": "Idade 15 (verificada) → not_evaluated(out_of_population_scope) — VAL-0006 BLOCKING",
+      "delta": { "age": 15 },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "reasons": ["out_of_population_scope"],
+        "primaryReason": "out_of_population_scope",
+        "assessability": "not_applicable",
+        "noFireReason": "out_of_population_scope",
+        "componentStatuses": {
+          "eye": "not_evaluated",
+          "verbal": "not_evaluated",
+          "motor": "not_evaluated"
+        },
+        "componentValues": { "eye": null, "verbal": null, "motor": null },
+        "pairedRass": null
+      }
+    },
+    {
+      "id": "CRV-GCS-0217",
+      "source_section": "§3.7 Enumerações inválidas",
+      "description": "E=5 (fora da enumeração 1-4) → invalid(out_of_range:eye); nunca clampar a 4",
+      "delta": { "components": { "eye": { "value": 5 } } },
+      "expected": {
+        "status": "invalid",
+        "total": null,
+        "reasons": ["out_of_range:eye"],
+        "primaryReason": "out_of_range:eye",
+        "assessability": "testable",
+        "noFireReason": "invalid_data",
+        "componentStatuses": { "eye": "invalid", "verbal": "valid", "motor": "valid" },
+        "componentValues": { "eye": null, "verbal": 5, "motor": 6 },
+        "componentDisplay": "E-inválido V5 M6",
+        "pairedRass": 0
+      }
+    },
+    {
+      "id": "CRV-GCS-0218",
+      "source_section": "§3.7 Enumerações inválidas",
+      "description": "M=7 (fora da enumeração 1-6) → invalid(out_of_range:motor); nunca clampar a 6",
+      "delta": { "components": { "motor": { "value": 7 } } },
+      "expected": {
+        "status": "invalid",
+        "total": null,
+        "reasons": ["out_of_range:motor"],
+        "primaryReason": "out_of_range:motor",
+        "assessability": "testable",
+        "noFireReason": "invalid_data",
+        "componentStatuses": { "eye": "valid", "verbal": "valid", "motor": "invalid" },
+        "componentValues": { "eye": 4, "verbal": 5, "motor": null },
+        "componentDisplay": "E4 V5 M-inválido",
+        "pairedRass": 0
+      }
+    },
+    {
+      "id": "CRV-GCS-0219",
+      "source_section": "§3.8 Sedação desconhecida FAIL-CLOSED (GDEC-0007)",
+      "description": "RASS ausente + exposição sedativa desconhecida → not_evaluated(sedation_state_unknown); supersede CRV-GCS-0211; o caminho 0.1.0 'escora com divulgação' foi removido",
+      "delta": { "rass": { "absent": true }, "sedativeExposure": "unknown" },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "reasons": ["sedation_state_unknown"],
+        "primaryReason": "sedation_state_unknown",
+        "assessability": "sedation_state_unknown",
+        "noFireReason": "insufficient_data",
+        "componentStatuses": { "eye": "valid", "verbal": "valid", "motor": "valid" },
+        "componentValues": { "eye": 4, "verbal": 5, "motor": 6 },
+        "componentDisplay": "E4 V5 M6",
+        "pairedRass": null
+      }
+    },
+    {
+      "id": "CRV-GCS-0220",
+      "source_section": "§3.8 Sedação desconhecida FAIL-CLOSED (GDEC-0007)",
+      "description": "RASS 3 h antes da GCS (fora da janela de pareamento de 1 h) + exposição desconhecida → not_evaluated(sedation_state_unknown); supersede CRV-GCS-0213",
+      "delta": { "rass": { "value": -2, "minutesBefore": 360 }, "sedativeExposure": "unknown" },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "reasons": ["sedation_state_unknown"],
+        "primaryReason": "sedation_state_unknown",
+        "assessability": "sedation_state_unknown",
+        "noFireReason": "insufficient_data",
+        "componentStatuses": { "eye": "valid", "verbal": "valid", "motor": "valid" },
+        "componentValues": { "eye": 4, "verbal": 5, "motor": 6 },
+        "componentDisplay": "E4 V5 M6",
+        "pairedRass": null
+      }
+    }
+  ],
+  "retired": [
+    {
+      "id": "CRV-GCS-0211",
+      "superseded_by": "CRV-GCS-0219",
+      "retirement_note": "DECISÃO (GDEC-0007, 2026-08-15, OQ-GCS-2 (b)): fail-closed — estado de sedação desconhecido bloqueia o escore. A expectativa 0.1.0 'escora com divulgação' foi removida."
+    },
+    {
+      "id": "CRV-GCS-0213",
+      "superseded_by": "CRV-GCS-0220",
+      "retirement_note": "DECISÃO (GDEC-0007, 2026-08-15, OQ-GCS-2 (b)): fail-closed. Um RASS não contemporâneo NUNCA conta como gate satisfeito."
+    }
+  ]
+}
