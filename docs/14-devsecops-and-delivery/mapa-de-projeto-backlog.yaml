@@ -1,0 +1,1175 @@
+# =============================================================================
+# IntensiCare V2 — Backlog legível por máquina do mapa até produção
+# Espelho de docs/14-devsecops-and-delivery/mapa-de-projeto-ate-producao.md
+# (mesmos IDs, mesma estrutura lógica). Status PROPOSAL: nada aqui decide,
+# aprova, fecha ou encerra gate, bloqueador, risco, hazard, ADR ou OS.
+# Esforço P/M/G é relativo — não é prazo, compromisso, SLA nem data.
+# Nenhum alias YAML; nenhuma data usada como cronograma.
+# tracked_ids lista os IDs principais de cada sprint; faixas extensas são
+# declaradas em tracked_id_ranges (forma "PREFIXO-aaaa..PREFIXO-bbbb") para
+# manter o arquivo legível — a expansão textual completa está no Markdown.
+# =============================================================================
+
+metadata:
+  title: "Mapa ágil e rastreável do IntensiCare V2 até produção — backlog"
+  status: PROPOSAL
+  language: pt-BR
+  source_branch: cycle-1/clinical-content
+  source_branch_note: "conteúdo originado em cycle-1/clinical-content; integrado à main em 75838b5 durante a produção do mapa"
+  companion_document: docs/14-devsecops-and-delivery/mapa-de-projeto-ate-producao.md
+  estimation_scale:
+    P: "escopo estreito, poucas dependências, baixa incerteza"
+    M: "múltiplos artefatos ou dependências moderadas"
+    G: "transversal, dependência externa, alta incerteza ou validação extensa"
+  id_prefixes_locais_pendentes_ratificacao:
+    - "MD (marco de decisão do titular)"
+    - "MG (marco humano de saída de gate)"
+    - "EPC (épico)"
+    - "SPR (sprint/pacote de trabalho)"
+    - "SR (risco de sequência)"
+    - "OC (operação contínua)"
+  estado_factual_preservado:
+    - "vias acionáveis: 0"
+    - "matriz §7.2: 47/47 inelegíveis"
+    - "Observation AMH: não consumível"
+    - "compatibilidade: somente candidato a integração"
+    - "safety case: maturidade M0"
+    - "ambientes AMH stg/prod: inexistentes"
+
+decision_milestones:
+  - id: MD-1
+    owner: "rodaquino-OMNI (titular)"
+    question: "Enviar pedido de parecer OS-16 e nomear destinatário jurídico"
+    formalization_state: "decidida em GDEC-0008 item 1; ato residual: envio físico + nome do jurista"
+    required_inputs:
+      - docs/11-security-privacy-compliance/lgpd-os16/
+    blocks: [SPR-G1-2, SPR-G1-4, SPR-G1-5, SPR-G1-6, MG-G6, MG-G8-PILOTO]
+    tracked_ids: [BLK-0014, BLK-0013, BLK-0004, HAZ-0047, OS-16]
+    evidence_path: docs/00-governance/registers/decision-register.md
+  - id: MD-2
+    owner: "rodaquino-OMNI (titular)"
+    question: "Decidir C-1 (sinais vitais / Observation não-laboratorial)"
+    formalization_state: "decidida em GDEC-0008 item 2 (O3 + re-ponderação O1-first via sonda OS-22); residuais: composição O3×ADR-0001 e face D-c"
+    required_inputs:
+      - docs/08-interoperability/amh-data/vital-signs-decision/pacote-decisao-c1-sinais-vitais.md
+    blocks: [SPR-G3-6, SPR-G3-7]
+    tracked_ids: [RISK-0003, OS-22, GDEC-0008]
+    evidence_path: docs/00-governance/registers/decision-register.md
+  - id: MD-3
+    owner: "rodaquino-OMNI (titular)"
+    question: "Comissionar pesquisa G1 e destravar ética"
+    formalization_state: "decidida em GDEC-0008 item 3; residuais: preencher pedido §6 (propagação) + sítio/agenda/rota ética"
+    required_inputs:
+      - docs/02-users-and-workflows/g1-kit/pedido-de-comissionamento.md
+    blocks: [SPR-G1-3, SPR-G1-4, SPR-G1-5, SPR-G1-6]
+    tracked_ids: [BLK-0013, RISK-0008, VAL-0035, G2-VAL-0025]
+    evidence_path: docs/02-users-and-workflows/g1-kit/pedido-de-comissionamento.md
+  - id: MD-4
+    owner: "rodaquino-OMNI (titular)"
+    question: "Revisar 8 ADRs propostos + contra-assinar ata AQ-1..6 + fechar N-8 (5×6)"
+    formalization_state: "decidida em parte em GDEC-0008 item 4 (7 ADRs aceitos; ata contra-assinada; propagação ao adr-index concluída em 75838b5); residuais: N-8 e ADR-0006"
+    required_inputs:
+      - docs/06-architecture/adrs/adr-index.md
+      - docs/08-interoperability/amh-data/identity-adjudication/adjudicacao-decisoes-2026-08-15.md
+      - docs/08-interoperability/amh-data/contract-v1/eventos-ciclo-de-vida-identidade.md
+    blocks: [SPR-G3-7, SPR-G3-9, SPR-G4-1, SPR-G7-1]
+    tracked_ids: [ADR-0001, ADR-0003, ADR-0004, ADR-0005, ADR-0006, ADR-0009, ADR-0010, ADR-0011, ASM-0006, ASM-0009, GDEC-0005]
+    evidence_path: docs/00-governance/registers/decision-register.md
+  - id: MD-5
+    owner: "rodaquino-OMNI (titular)"
+    question: "Ratificar N-11..N-14 do contrato v1 + nomear dono AMH"
+    formalization_state: "decidida em parte em GDEC-0008 item 5 (N-11..N-14 ratificadas como emenda compatível); residual: dono AMH (BLK-0015)"
+    required_inputs:
+      - docs/08-interoperability/amh-data/contract-v1/memoria-de-desenho.md
+    blocks: [SPR-G3-8, SPR-G3-9, MG-G3]
+    tracked_ids: [BLK-0015, OS-19, GDEC-0008]
+    evidence_path: docs/00-governance/registers/decision-register.md
+  - id: MD-6
+    owner: "rodaquino-OMNI (titular)"
+    question: "Dar dono às lacunas de classe (MedicationAdministration; contrato de ordem clínica)"
+    formalization_state: "decidida em GDEC-0008 item 6 (OS-23/OS-24 comissionadas, Status ABERTA); residual: execução e resposta AMH"
+    required_inputs:
+      - docs/08-interoperability/amh-data/pathway-source-matrix/lacunas-e-proximas-evidencias.md
+      - docs/08-interoperability/amh-data/ordens-de-servico-amh-2026-08-15.md
+    blocks: [SPR-G3-6]
+    tracked_ids: [BLK-0012, BLK-0016, OS-23, OS-24]
+    evidence_path: docs/08-interoperability/amh-data/ordens-de-servico-amh-2026-08-15.md
+
+phases:
+  - id: G0
+    title: "Autoridade e acesso (residual)"
+    current_state: PARCIAL
+    evidence:
+      - "docs/00-governance/registers/blockers-register.md (9/11 resolvidos; BLK-0002/BLK-0008 OPEN)"
+      - "docs/00-governance/registers/decision-register.md (GDEC-0004; GDEC-0008 persistida em 75838b5, com propagações residuais — SR-1)"
+    entry_criteria: []
+    exit_gate:
+      owner: "rodaquino-OMNI (GDEC-0004)"
+      required_evidence:
+        - "BLK-0002/BLK-0008 fechados (credencial, linha de reporte, segundo revisor)"
+        - "propagações residuais de GDEC-0008 concluídas (tabela Index; pedido §6; traceability §1.1; L-4/L-6; marca P-1) e espelho YAML commitado"
+      blocking_milestone: "nomeações de SPR-G0-2"
+    epics:
+      - id: EPC-G0-1
+        title: "Fundações de governança (residual)"
+        tracked_ids: [GDEC-0008, GDEC-0002, BLK-0002, BLK-0008, RISK-0007]
+        sprints:
+          - id: SPR-G0-1
+            swimlane: engenharia_v2
+            objective: "Propagações residuais de GDEC-0008 concluídas (persistência do registro e adr-index já FEITOS em 75838b5 — não replicados aqui)"
+            deliverables:
+              - "docs/00-governance/registers/decision-register.md (linha GDEC-0008 na tabela Index)"
+              - "docs/02-users-and-workflows/g1-kit/pedido-de-comissionamento.md §6 preenchido com a decisão do item 3"
+              - "docs/05-clinical-safety/pathway-portfolio/hard-gate-assessment.md §7 (marca da decisão P-1 — verificar estado atual antes)"
+              - "docs/08-interoperability/amh-data/pathway-source-matrix/lacunas-e-proximas-evidencias.md (L-4/L-6 → OS-23/24)"
+              - "docs/00-governance/traceability-policy.md §1.1 (prefixos GDEC-0002 + os deste mapa)"
+              - "commit do espelho docs/14-devsecops-and-delivery/mapa-de-projeto-backlog.yaml"
+            definition_of_ready:
+              - "ler-antes-de-escrever (anti-padrões 3/14); verificar git status e mtimes"
+            definition_of_done:
+              - "artefatos atualizados e commitados; gates de CI verdes"
+              - "nenhum status DECIDED em front matter (anti-padrão 6)"
+            dependencies: [GDEC-0008]
+            unlocks: [SPR-G4-1, SPR-G1-3, SPR-G7-1]
+            tracked_ids: [GDEC-0008, GDEC-0002, BLK-0012, BLK-0016]
+            effort: P
+            estimation_assumptions:
+              - "o dono da janela commita o próprio trabalho (padrão do ciclo 2)"
+          - id: SPR-G0-2
+            swimlane: decisoes_titular
+            objective: "BLK-0002/BLK-0008 fechados: credencial verificada, linha de reporte, segundo revisor nomeado"
+            deliverables:
+              - "docs/00-governance/registers/blockers-register.md (entradas atualizadas)"
+              - "docs/00-governance/registers/decision-register.md (nomeações)"
+            definition_of_ready:
+              - "GDEC-0003 vigente"
+            definition_of_done:
+              - "segundo revisor humano nomeado e aceito; verificação de credencial registrada"
+            dependencies: []
+            unlocks: [SPR-G1-8, SPR-G2-1, SPR-G6-1]
+            tracked_ids: [BLK-0002, BLK-0008, GDEC-0003, RISK-0007]
+            effort: P
+            estimation_assumptions:
+              - "existe um segundo profissional qualificado disponível (VALIDATION REQUIRED)"
+          - id: SPR-G0-3
+            swimlane: engenharia_v2
+            objective: "Tradução retroativa EN→pt-BR, tranches 2+"
+            deliverables:
+              - "corpus forense, ADR-0001/0002 e adr-index em pt-BR"
+            definition_of_ready:
+              - "GDEC-0008 item 8 persistido"
+            definition_of_done:
+              - "tranches registradas; CI verde"
+            dependencies: [SPR-G0-1]
+            unlocks: []
+            tracked_ids: [GDEC-0006, GDEC-0008]
+            effort: M
+            estimation_assumptions:
+              - "execução em tranches, não nova decisão"
+  - id: G1
+    title: "Problema e uso pretendido"
+    current_state: PARCIAL
+    evidence:
+      - "docs/02-users-and-workflows/g1-kit/ (5 arquivos PROPOSAL; 43 itens VAL, 42 bloqueiam G1)"
+      - "docs/02-users-and-workflows/g1-kit/plano-de-recrutamento-e-etica.md §11 (campo proibido; 10 ABERTO + 2 PARCIAL)"
+      - "GDEC-0008 item 3 (comissionado); BLK-0013 OPEN"
+    entry_criteria:
+      - "MD-1 residual executado (envio OS-16 + jurista)"
+      - "MD-3 propagada (pedido §6 preenchido — SPR-G0-1)"
+    exit_gate:
+      owner: "revisor nomeado (GDEC-0003) + segundo revisor (SPR-G0-2)"
+      required_evidence:
+        - "evidência de campo dos 42 itens VAL bloqueantes"
+        - "baselines B1-B4a capturados ou perda formalmente aceita (VAL-0005)"
+      blocking_milestone: MG-G1
+    epics:
+      - id: EPC-G1-1
+        title: "Destrave jurídico-ético (OS-16)"
+        tracked_ids: [OS-16, BLK-0014, BLK-0013, BLK-0004]
+        sprints:
+          - id: SPR-G1-1
+            swimlane: decisoes_titular
+            objective: "Residual de MD-1 executado: pedido OS-16 enviado a jurista nomeado"
+            deliverables:
+              - "registro do envio + destinatário em blockers-register.md (BLK-0014) e decision-register.md"
+            definition_of_ready:
+              - "minuta e pedido prontos (docs/11-security-privacy-compliance/lgpd-os16/)"
+            definition_of_done:
+              - "envio registrado com data e escopo (incl. cobertura ética G1)"
+            dependencies: [MD-1]
+            unlocks: [SPR-G1-2]
+            tracked_ids: [BLK-0014, BLK-0013, BLK-0004, HAZ-0047, OS-16]
+            effort: P
+            estimation_assumptions:
+              - "conselho jurídico interno aceita o encargo"
+          - id: SPR-G1-2
+            swimlane: dependencias_externas
+            objective: "Parecer jurídico emitido: 4 pontos da minuta + cobertura ética de pesquisa com humanos + ADR-043 (AMH)/DPO + ratificação AQ-3"
+            deliverables:
+              - "parecer conforme critérios de aceitação da OS-16"
+            definition_of_ready:
+              - "SPR-G1-1 concluído"
+            definition_of_done:
+              - "4 critérios da OS-16 satisfeitos; BLK-0013/BLK-0004 dispostos pelo parecer"
+            dependencies: [SPR-G1-1]
+            unlocks: [SPR-G1-4, SPR-G6-4]
+            tracked_ids: [OS-16, BLK-0013, BLK-0004, HAZ-0045, HAZ-0047, ASM-0004, RISK-0011]
+            effort: G
+            estimation_assumptions:
+              - "sem prazo atribuível a terceiros; escopo estável (ASM-0004)"
+      - id: EPC-G1-2
+        title: "Baselines perecíveis"
+        tracked_ids: [RISK-0008, VAL-0035, G2-VAL-0025, ASM-0007]
+        sprints:
+          - id: SPR-G1-3
+            swimlane: decisoes_titular
+            objective: "Sítio nomeado com anuência, agenda da cápsula de baseline e rota ética escolhida"
+            deliverables:
+              - "registros no pedido-de-comissionamento.md §6 (partes c/d) e plano-de-recrutamento-e-etica.md §11 itens 1-3"
+            definition_of_ready:
+              - "MD-3 formalizada (bloco §6 preenchido — SPR-G0-1)"
+            definition_of_done:
+              - "sítio + anuência + rota registrados"
+            dependencies: [MD-3, SPR-G0-1]
+            unlocks: [SPR-G1-4, SPR-G1-5]
+            tracked_ids: [VAL-0039, VAL-0040, VAL-0041, G2-VAL-0026, RISK-0008]
+            effort: P
+            estimation_assumptions:
+              - "sítio candidato existe entre as unidades do protocolo §3"
+          - id: SPR-G1-4
+            swimlane: dependencias_externas
+            objective: "Cobertura ética efetiva (rota definida no parecer) + recrutamento iniciado"
+            deliverables:
+              - "submissão/dispensa documentada; checklist §11 com 12/12 fechados por dono privacy/legal nomeado"
+            definition_of_ready:
+              - "SPR-G1-2 e SPR-G1-3 concluídos"
+            definition_of_done:
+              - "proibição de campo suspensa por escrito"
+            dependencies: [SPR-G1-2, SPR-G1-3]
+            unlocks: [SPR-G1-5, SPR-G1-6]
+            tracked_ids: [BLK-0013, VAL-0040, VAL-0041, G2-VAL-0001]
+            effort: G
+            estimation_assumptions:
+              - "rota ética depende do teor do parecer (não presumida)"
+          - id: SPR-G1-5
+            swimlane: dependencias_externas
+            objective: "Baselines perecíveis B1-B4a capturados antes de qualquer exposição visível a clínicos"
+            deliverables:
+              - "dados de baseline conforme protocolo-baselines-pereciveis.md"
+            definition_of_ready:
+              - "SPR-G1-4 concluído"
+              - "nenhuma demonstração/treinamento/piloto ocorrida (gatilho §3.5)"
+            definition_of_done:
+              - "B1-B4a medidos e arquivados; B4b desdobrado (ASM-0007)"
+            dependencies: [SPR-G1-3, SPR-G1-4]
+            unlocks: [SPR-G1-7, SPR-OC-1]
+            tracked_ids: [VAL-0035, G2-VAL-0025, RISK-0008, ASM-0007]
+            effort: G
+            estimation_assumptions:
+              - "janela ainda aberta no início da captura (SR-2)"
+      - id: EPC-G1-3
+        title: "Pesquisa de campo e aprovação do gate"
+        tracked_ids: [VAL-0005, BLK-0008]
+        sprints:
+          - id: SPR-G1-6
+            swimlane: dependencias_externas
+            objective: "Protocolo G1 executado: observação e entrevistas por papel, cenários simulados, usuários de tecnologia assistiva"
+            deliverables:
+              - "dados de campo conforme protocolo-pesquisa-g1.md §3-§5"
+            definition_of_ready:
+              - "SPR-G1-4 concluído; moderador independente (§4)"
+            definition_of_done:
+              - "cobertura dos itens C/CI do §6.1; VAL-0033 executado ou NÃO TESTADO explícito"
+            dependencies: [SPR-G1-4]
+            unlocks: [SPR-G1-7]
+            tracked_ids: [VAL-0005, VAL-0012, VAL-0013, VAL-0014, VAL-0015, VAL-0016, VAL-0027, VAL-0031, VAL-0033]
+            effort: G
+            estimation_assumptions:
+              - "estudo completo ou recortes por decisão do titular no pedido §6"
+          - id: SPR-G1-7
+            swimlane: engenharia_v2
+            objective: "Pacote de evidência G1 consolidado; 42 itens VAL dispostos documentalmente"
+            deliverables:
+              - "evidence pack em docs/02-users-and-workflows/ (§18 item 5)"
+              - "atualização dos artefatos de hipóteses (UR/WF)"
+            definition_of_ready:
+              - "dados de SPR-G1-5/SPR-G1-6 existem"
+            definition_of_done:
+              - "cada item VAL com evidência ou lacuna explícita; insumo M1 do safety case preparado"
+            dependencies: [SPR-G1-5, SPR-G1-6]
+            unlocks: [SPR-G1-8, SPR-G4-3]
+            tracked_ids: [VAL-0005, HAZ-0046]
+            tracked_id_ranges: ["VAL-0001..VAL-0043"]
+            effort: M
+            estimation_assumptions:
+              - "conhecimento do titular tratado como hipótese (DEC-G0-05)"
+          - id: SPR-G1-8
+            swimlane: decisoes_titular
+            objective: "MG-G1: uso pretendido aprovado formalmente; ausências aceitas como risco por escrito"
+            deliverables:
+              - "aprovação em decision-register.md; fechamento de BLK-0008; safety case M1 avaliável"
+            definition_of_ready:
+              - "SPR-G1-7 concluído; SPR-G0-2 (segundo revisor p/ conteúdo autorado pelo titular)"
+            definition_of_done:
+              - "registro DECIDED por humano nomeado com regra de supersessão"
+            dependencies: [SPR-G1-7, SPR-G0-2]
+            unlocks: [SPR-G2-1, SPR-G6-5, SPR-G4-3]
+            tracked_ids: [BLK-0008, GDEC-0003, VAL-0005]
+            effort: P
+            estimation_assumptions:
+              - "aprovador diferente do autor (ADR-0007/§4)"
+  - id: G2
+    title: "Portfólio de vias clínicas"
+    current_state: BLOQUEADO
+    evidence:
+      - "docs/05-clinical-safety/pathway-portfolio/hard-gate-assessment.md §7.7 (contagem acionável 0; 0/99 no ciclo 0)"
+      - "docs/05-clinical-safety/pathway-portfolio/portfolio-method.md (EXECUTION BLOCKED: P1/P2)"
+      - "docs/05-clinical-safety/pathway-portfolio/g2-validation-backlog.md (35 itens OPEN)"
+    entry_criteria:
+      - "MG-G1 (portões de programa)"
+      - "fontes evidenciadas via G3 (matriz sai de 0/47)"
+    exit_gate:
+      owner: "comitê qualificado (constituição em SPR-G2-1 — hoje UNASSIGNED)"
+      required_evidence:
+        - "método + pacote de release + hazards residuais + plano de validação escalonado (§6.4)"
+      blocking_milestone: MG-G2
+    epics:
+      - id: EPC-G2-1
+        title: "Método e aprovação de portfólio"
+        tracked_ids: [G2-VAL-0001, HAZ-0043, ASM-0010]
+        sprints:
+          - id: SPR-G2-1
+            swimlane: decisoes_titular
+            objective: "Papéis do método nomeados (P1), pesos MCDA ratificados e comitê qualificado do Gate G2 constituído"
+            deliverables:
+              - "registros em portfolio-method.md + decision-register.md"
+            definition_of_ready:
+              - "SPR-G0-2 (independências §4)"
+            definition_of_done:
+              - "6 papéis nomeados; pesos DECIDED; comitê constituído"
+            dependencies: [SPR-G0-2, SPR-G1-8]
+            unlocks: [SPR-G2-2]
+            tracked_ids: [G2-VAL-0001, RISK-0007]
+            effort: P
+            estimation_assumptions:
+              - "acúmulo de papéis possível com pares de independência preservados"
+          - id: SPR-G2-2
+            swimlane: engenharia_v2
+            objective: "Método executado sobre matriz com fontes evidenciadas; portfólio proposto"
+            deliverables:
+              - "análise MCDA; candidate-inventory.md e hard-gate-assessment.md atualizados"
+            definition_of_ready:
+              - "SPR-G2-1 + progresso material em G3 (fontes deixam de ser 0/47)"
+            definition_of_done:
+              - "contagem honesta recalculada sem enfraquecer gate (anti-padrão 10)"
+            dependencies: [SPR-G2-1, SPR-G3-5]
+            unlocks: [SPR-G2-4]
+            tracked_ids: [G2-VAL-0002]
+            tracked_id_ranges: ["CAND-0001..CAND-0020", "G2-VAL-0002..G2-VAL-0024"]
+            effort: M
+            estimation_assumptions:
+              - "nenhuma via admitida por expectativa"
+          - id: SPR-G2-3
+            swimlane: engenharia_v2
+            objective: "Pacote de release clínico assinável por via candidata (bundle ADR-0007; CRV red/green com aprovador independente)"
+            deliverables:
+              - "bundle assinado, imutável e versionado por via candidata"
+            definition_of_ready:
+              - "ADR-0007 propagado; runtime G7 existente; independência de autoria dos CRV"
+            definition_of_done:
+              - "independência autor≠aprovador satisfeita; vetores executados red/green"
+            dependencies: [SPR-G7-2, SPR-G0-2]
+            unlocks: [SPR-G2-4]
+            tracked_ids: [ADR-0007, ADR-0025, ADR-0026, ADR-0027, ADR-0028, ADR-0029, G2-VAL-0030]
+            tracked_id_ranges: ["G2-VAL-0030..G2-VAL-0035"]
+            effort: G
+            estimation_assumptions:
+              - "specs 0.2.0 não são assináveis até haver mecanismo (ADR-0007) e runtime"
+          - id: SPR-G2-4
+            swimlane: decisoes_titular
+            objective: "MG-G2: comitê qualificado aprova método + pacote + hazards residuais + plano de validação"
+            deliverables:
+              - "registro de aprovação; autorização própria para modo sombra (privacidade/segurança/pesquisa)"
+            definition_of_ready:
+              - "SPR-G2-2/SPR-G2-3 concluídos; SPR-G1-2 (autorização de pesquisa p/ sombra)"
+            definition_of_done:
+              - "aprovação nominal registrada; escopo não generalizado"
+            dependencies: [SPR-G2-2, SPR-G2-3, SPR-G1-2]
+            unlocks: [SPR-G8-3]
+            tracked_ids: [G2-VAL-0035, HAZ-0043, ASM-0010]
+            effort: M
+            estimation_assumptions:
+              - "comitê existe (hoje inexistente — VALIDATION REQUIRED)"
+  - id: G3
+    title: "Compatibilidade AMH"
+    current_state: BLOQUEADO
+    evidence:
+      - "docs/08-interoperability/amh-data/contract-v1/contract-manifest.draft.yaml (DRAFT; pinned false; digest null; IG observada 1.0.0)"
+      - "docs/08-interoperability/conformance/README.md (desenho, não evidência; 22 cenários não executáveis)"
+      - "docs/08-interoperability/amh-data/four-layer-dossier.md (só dev existe)"
+    entry_criteria:
+      - "OS-05 (IG 1.1.0 publicada com digest)"
+      - "MD-4/MD-5 residuais fechados"
+    exit_gate:
+      owner: "donos AMH e V2 (dono AMH pendente — BLK-0015)"
+      required_evidence:
+        - "pinagem por digest; matriz com dados populados e latência/completude medidas; testes §7.6 em ambiente production-like; concessão por interface/via/tenant/modo"
+      blocking_milestone: MG-G3
+    epics:
+      - id: EPC-G3-1
+        title: "Execução AMH das ordens de serviço"
+        tracked_ids: [OS-01, OS-05, OS-17, OS-18, OS-19, OS-20, OS-22, OS-23, OS-24]
+        sprints:
+          - id: SPR-G3-1
+            swimlane: execucao_amh
+            objective: "OS-01..OS-06: IG 1.1.0 publicada com digest citável (identifier autoritativo; 12 tenants; sem bypass; ADR-006 (AMH) superseded)"
+            deliverables:
+              - "package IG 1.1.0 + notas + política de compatibilidade (critérios das OS)"
+            definition_of_ready:
+              - "priorização AMH da onda A/B"
+            definition_of_done:
+              - "critérios de aceitação de cada OS satisfeitos e confirmados pelo dono AMH"
+            dependencies: []
+            unlocks: [SPR-G3-2, SPR-G3-3, SPR-G3-9]
+            tracked_ids: [OS-01, OS-02, OS-03, OS-04, OS-05, OS-06]
+            effort: G
+            estimation_assumptions:
+              - "trabalho inteiramente do lado AMH; V2 não escreve"
+          - id: SPR-G3-2
+            swimlane: execucao_amh
+            objective: "OS-07..OS-09: produtor conforme (1ª evidência camada 3) e partições HAPI (camada 2)"
+            deliverables:
+              - "validação FHIR registrada; povoamento medido por tenant; partições verificadas"
+            definition_of_ready:
+              - "SPR-G3-1 (OS-05)"
+            definition_of_done:
+              - "critérios das OS-07/08/09 confirmados"
+            dependencies: [SPR-G3-1]
+            unlocks: [SPR-G3-5]
+            tracked_ids: [OS-07, OS-08, OS-09]
+            effort: G
+            estimation_assumptions:
+              - "depende de OS-05 publicada"
+          - id: SPR-G3-3
+            swimlane: execucao_amh
+            objective: "OS-10..OS-15: espinha PSR (SP-1..SP-5, SP-7); dado real somente após OS-16"
+            deliverables:
+              - "tabela tenant→PJ; DDL em dev sintético; chave; consent_decision_ref; backfill medido"
+            definition_of_ready:
+              - "SPR-G3-1"
+            definition_of_done:
+              - "critérios das OS-10..15 confirmados"
+            dependencies: [SPR-G3-1]
+            unlocks: [SPR-G3-4]
+            tracked_ids: [OS-10, OS-11, OS-12, OS-13, OS-14, OS-15]
+            effort: G
+            estimation_assumptions:
+              - "gate de dado real permanece em MD-1/OS-16"
+          - id: SPR-G3-4
+            swimlane: execucao_amh
+            objective: "OS-17/OS-18: eventos de ciclo de vida (latência declarada E medida) + resolve(ref, as_of) fail-closed"
+            deliverables:
+              - "fixtures dos 6 tipos incl. inválidas; teste de replay reconstruindo história"
+            definition_of_ready:
+              - "SPR-G3-3; N-8 fechado antes do congelamento (SPR-G3-7)"
+            definition_of_done:
+              - "critérios das OS-17/18 confirmados"
+            dependencies: [SPR-G3-3, SPR-G3-7]
+            unlocks: [SPR-G3-5]
+            tracked_ids: [OS-17, OS-18, ASM-0009]
+            effort: G
+            estimation_assumptions:
+              - "condição declarada de passagem do G3 (AQ-5)"
+          - id: SPR-G3-5
+            swimlane: execucao_amh
+            objective: "OS-19/OS-20: contrato publicado no repo AMH + Observation populada via caminho estruturado (cobertura LOINC medida)"
+            deliverables:
+              - "manifesto completo com dono nomeado; povoamento e vínculo Encounter medidos"
+            definition_of_ready:
+              - "SPR-G3-2 e SPR-G3-4"
+            definition_of_done:
+              - "critérios das OS-19/20 confirmados; matriz §7.2 sai de 0 fontes evidenciadas"
+            dependencies: [SPR-G3-2, SPR-G3-4, SPR-G3-8]
+            unlocks: [SPR-G3-9, SPR-G2-2]
+            tracked_ids: [OS-19, OS-20, BLK-0015, RISK-0003]
+            effort: G
+            estimation_assumptions:
+              - "sequência de ondas da própria ordem de serviço"
+          - id: SPR-G3-6
+            swimlane: execucao_amh
+            objective: "OS-22 (sonda Bronze — ordem zero de C-1), OS-23 (MedicationAdministration), OS-24 (contrato de ordem clínica)"
+            deliverables:
+              - "resultado da sonda registrado; critérios das OS-23/24 atendidos"
+            definition_of_ready:
+              - "OS-22/23/24 propagadas (SPR-G0-1); MD-2/MD-6"
+            definition_of_done:
+              - "sonda respondida (re-pondera O3→O1-first se positiva); OS-23/24 com evidência de camada 2/3"
+            dependencies: [MD-2, MD-6, SPR-G0-1]
+            unlocks: [SPR-G3-9]
+            tracked_ids: [OS-22, OS-23, OS-24, BLK-0012, BLK-0016, RISK-0003]
+            effort: M
+            estimation_assumptions:
+              - "OS-22 é barata e primeira (ordem de execução zero)"
+          - id: SPR-G3-8
+            swimlane: execucao_amh
+            objective: "Dono AMH do contrato nomeado (producer.owner; critério 6 da OS-19)"
+            deliverables:
+              - "campo owner preenchido no manifesto publicado"
+            definition_of_ready:
+              - "MD-5"
+            definition_of_done:
+              - "BLK-0015 disposto"
+            dependencies: [MD-5]
+            unlocks: [SPR-G3-5, SPR-G3-9]
+            tracked_ids: [BLK-0015, OS-19]
+            effort: P
+            estimation_assumptions:
+              - "o titular, CEO de ambas, pode designar sem terceiros"
+      - id: EPC-G3-2
+        title: "Contrato v1 e conformidade"
+        tracked_ids: [BLK-0015, ASM-0002, ASM-0006]
+        sprints:
+          - id: SPR-G3-7
+            swimlane: decisoes_titular
+            objective: "Residuais de MD-4/MD-2: N-8 (5×6), composição O3×ADR-0001, face D-c; decisão sobre ADR-0006"
+            deliverables:
+              - "registros em decision-register.md + memoria-de-desenho.md §8"
+            definition_of_ready:
+              - "pacotes de decisão já existentes"
+            definition_of_done:
+              - "cada ponto com registro escrito e regra de supersessão"
+            dependencies: [MD-2, MD-4]
+            unlocks: [SPR-G3-4, SPR-G3-9, SPR-G4-1]
+            tracked_ids: [ASM-0006, ASM-0009, ADR-0006, GDEC-0008]
+            effort: P
+            estimation_assumptions:
+              - "nenhum novo insumo é necessário (pacotes prontos)"
+          - id: SPR-G3-9
+            swimlane: engenharia_v2
+            objective: "Posições V2 de N-1..N-10 consolidadas para fechamento bilateral (ato conjunto com o dono AMH — BLK-0015); contracts.lock pinado por digest após o fechamento"
+            deliverables:
+              - "contracts.lock com digests reais (sai de draft); memória de desenho atualizada"
+            definition_of_ready:
+              - "SPR-G3-1 (IG 1.1.0), SPR-G3-7, SPR-G3-8"
+            definition_of_done:
+              - "todos os campos pinados com digest; zero VALIDATION_REQUIRED em campos de pin"
+            dependencies: [SPR-G3-1, SPR-G3-5, SPR-G3-6, SPR-G3-7, SPR-G3-8]
+            unlocks: [SPR-G3-10]
+            tracked_ids: [BLK-0015, ASM-0002, ASM-0006, OS-19]
+            effort: M
+            estimation_assumptions:
+              - "re-pinagem AMH a cada sessão (ASM-0002)"
+          - id: SPR-G3-10
+            swimlane: engenharia_v2
+            objective: "Harness §7.6 executável como código; 22 cenários executados contra sandbox pinado"
+            deliverables:
+              - "suite executável + relatório dos 22 cenários (falhas documentadas)"
+            definition_of_ready:
+              - "ADRs de stack aceitos e propagados (SPR-G4-2); sandbox AMH pinado existente"
+            definition_of_done:
+              - "22/22 executados com relatório"
+            dependencies: [SPR-G3-9, SPR-G4-2, SPR-G3-11]
+            unlocks: [SPR-G5-1]
+            tracked_ids: [OS-17, OS-18, ASM-0009, SEC-0051]
+            tracked_id_ranges: ["SEC-0051..SEC-0059"]
+            effort: G
+            estimation_assumptions:
+              - "sandbox AMH pinado disponível (dependência externa real)"
+      - id: EPC-G3-3
+        title: "Ambiente e audiência do gate"
+        tracked_ids: [RISK-0004]
+        sprints:
+          - id: SPR-G3-11
+            swimlane: dependencias_externas
+            objective: "Ambientes AMH stg/prod existentes e alcançáveis (decisão de orçamento + provisionamento)"
+            deliverables:
+              - "ambientes provisionados com credenciais e tfstate"
+            definition_of_ready:
+              - "decisão de orçamento do titular (lacuna L-14)"
+            definition_of_done:
+              - "ambiente production-like alcançável para os testes §7.6"
+            dependencies: []
+            unlocks: [SPR-G3-10, SPR-G5-2, SPR-G8-2]
+            tracked_ids: [RISK-0004]
+            effort: G
+            estimation_assumptions:
+              - "espera indeterminada; não é compromisso"
+  - id: G4
+    title: "Coerência UX/domínio/API"
+    current_state: "NÃO INICIADO"
+    evidence:
+      - "nenhum modelo de estados §11, tabela de contrato UI/backend ou teste de acessibilidade nas fontes inventariadas"
+      - "baseline de decisão PARCIAL: 7 ADRs aceitos em GDEC-0008 e propagados ao índice em 75838b5 (aceito ≠ implementado); ADR-0002/0006 proposed; ADR-0012..0024 not-started"
+    entry_criteria:
+      - "SPR-G0-1 (propagação de GDEC-0008)"
+      - "evidência G1 (SPR-G1-7) para UX fundamentada"
+    exit_gate:
+      owner: "AUTH-UX + AUTH-PRODUCT (interinos; validação por usuários obrigatória)"
+      required_evidence:
+        - "jornada × máquina de estados × schemas × erros/degradação × autorização × auditoria concordando, com testes de contrato de cenário"
+      blocking_milestone: MG-G4
+    epics:
+      - id: EPC-G4-1
+        title: "Programa de ADRs restante"
+        tracked_ids: [ADR-0002, ADR-0006, ADR-0012, ADR-0024, RISK-0010]
+        sprints:
+          - id: SPR-G4-1
+            swimlane: engenharia_v2
+            objective: "ADR-0002 completado; ADR-0006 instruído; ADR-0012..0024 redigidos em ordem de dependência"
+            deliverables:
+              - "15 ADRs com opções, consequências e premissas §2.2 com dono"
+            definition_of_ready:
+              - "SPR-G0-1; premissas ASM-0008/ASM-0011 com dono"
+            definition_of_done:
+              - "cada ADR completo; capacidades descritas como requisito, nunca fornecedor escolhido fora de ADR (§3.14)"
+            dependencies: [SPR-G0-1, MD-4, SPR-G3-7]
+            unlocks: [SPR-G4-2]
+            tracked_ids: [ADR-0002, ADR-0006, ADR-0012, ADR-0013, ADR-0014, ADR-0015, ADR-0016, ADR-0017, ADR-0018, ADR-0019, ADR-0020, ADR-0021, ADR-0022, ADR-0023, ADR-0024, ASM-0008, ASM-0011, RISK-0010]
+            effort: G
+            estimation_assumptions:
+              - "redação em lotes por dependência (stack primeiro)"
+          - id: SPR-G4-2
+            swimlane: decisoes_titular
+            objective: "ADRs aceitos por lote (arquitetura executável); estados propagados no mesmo ato"
+            deliverables:
+              - "aceites em decision-register.md + adr-index.md"
+            definition_of_ready:
+              - "SPR-G4-1"
+            definition_of_done:
+              - "aceite formal registrado; propagação simultânea (anti-SR-8)"
+            dependencies: [SPR-G4-1]
+            unlocks: [SPR-G4-4, SPR-G7-1, SPR-G3-10]
+            tracked_ids: [ADR-0012, ADR-0013, ADR-0014, ADR-0015, ADR-0016, ADR-0017, ADR-0018, ADR-0019, ADR-0020, ADR-0021, ADR-0022, ADR-0023, ADR-0024, RISK-0010]
+            effort: M
+            estimation_assumptions:
+              - "aceite precede qualquer implementação dependente"
+      - id: EPC-G4-2
+        title: "UX e contratos baseados em evidência"
+        tracked_ids: [HAZ-0046, VAL-0033]
+        sprints:
+          - id: SPR-G4-3
+            swimlane: engenharia_v2
+            objective: "Artefatos UX §11 completos (estados obrigatórios; tabela UI↔backend; requisito HAZ-0046) fundamentados na evidência G1"
+            deliverables:
+              - "IA, modelo de estados, service blueprint, tabela de contrato por elemento (local conforme índice §16)"
+            definition_of_ready:
+              - "evidência G1 disponível (SPR-G1-7); senão, rotulado hipótese"
+            definition_of_done:
+              - "cada elemento de UI mapeado a fonte/estado/erro/authz/audit; WCAG 2.2 AA planejado"
+            dependencies: [SPR-G1-7, SPR-G1-8]
+            unlocks: [SPR-G4-5, SPR-G7-2]
+            tracked_ids: [HAZ-0046, GDEC-0004]
+            effort: G
+            estimation_assumptions:
+              - "preferência pessoal não é critério de aceite (DEC-G0-05)"
+          - id: SPR-G4-4
+            swimlane: engenharia_v2
+            objective: "Contratos publicados: OpenAPI, AsyncAPI, perfis FHIR/terminologia, política MCP"
+            deliverables:
+              - "contratos versionados (local conforme índice §16) antes de implementação (§12.1)"
+            definition_of_ready:
+              - "SPR-G4-2 (ADR-0012/0013/0014 aceitos)"
+            definition_of_done:
+              - "contratos versionados e revisados"
+            dependencies: [SPR-G4-2]
+            unlocks: [SPR-G5-1, SPR-G7-2]
+            tracked_ids: [ADR-0012, ADR-0013, ADR-0014]
+            effort: G
+            estimation_assumptions:
+              - "nenhum connector implementado antes do contrato"
+          - id: SPR-G4-5
+            swimlane: dependencias_externas
+            objective: "Validação com usuários (cenários simulados de tempo crítico) e usuários de tecnologias assistivas sobre os artefatos §11"
+            deliverables:
+              - "relatórios com medidas de usabilidade, compreensão, recuperação de erro e carga cognitiva"
+            definition_of_ready:
+              - "SPR-G4-3; participantes recrutados (herda infraestrutura de SPR-G1-4/6)"
+            definition_of_done:
+              - "critérios mensuráveis definidos antes; resultados registrados mesmo se contrários"
+            dependencies: [SPR-G4-3, SPR-G1-4]
+            unlocks: [SPR-G4-6]
+            tracked_ids: [VAL-0027, VAL-0031, VAL-0033]
+            effort: G
+            estimation_assumptions:
+              - "usuários de TA disponíveis; senão NÃO TESTADO explícito"
+          - id: SPR-G4-6
+            swimlane: decisoes_titular
+            objective: "MG-G4: coerência aprovada com testes de contrato de cenário como evidência"
+            deliverables:
+              - "registro de aprovação por fatia"
+            definition_of_ready:
+              - "SPR-G4-4/SPR-G4-5; testes de cenário existentes (G7)"
+            definition_of_done:
+              - "coerência provada por cenário (schemas gerados são insuficientes)"
+            dependencies: [SPR-G4-4, SPR-G4-5, SPR-G7-2]
+            unlocks: [SPR-G8-3]
+            tracked_ids: [HAZ-0046]
+            effort: M
+            estimation_assumptions:
+              - "aprovação por fatia vertical, não em bloco"
+  - id: G5
+    title: "Conformidade de conectores"
+    current_state: "NÃO INICIADO"
+    evidence:
+      - "docs/08-interoperability/conformance/contract-v1/ (7 artefatos PROPOSAL; nenhum cenário executado)"
+    entry_criteria:
+      - "contratos publicados (SPR-G4-4)"
+    exit_gate:
+      owner: "aceitador de conformidade externo (a nomear; implementador ≠ aceitador — §4)"
+      required_evidence:
+        - "testes de contrato, semântica, segurança, proveniência, replay, falha, carga, observabilidade e recuperação contra sistema representativo"
+      blocking_milestone: MG-G5
+    epics:
+      - id: EPC-G5-1
+        title: "Conformidade executável"
+        tracked_ids: [OS-17, OS-18]
+        sprints:
+          - id: SPR-G5-1
+            swimlane: engenharia_v2
+            objective: "Suites de conformidade de conector como código (AMH primeiro; FHIR/HL7/MCP conforme contratos)"
+            deliverables:
+              - "suites executáveis contra fixtures pinadas"
+            definition_of_ready:
+              - "SPR-G4-4; SPR-G3-10 (harness base)"
+            definition_of_done:
+              - "execução local verde contra fixtures"
+            dependencies: [SPR-G4-4, SPR-G3-10]
+            unlocks: [SPR-G5-2]
+            tracked_ids: [OS-17, OS-18, SEC-0051]
+            effort: G
+            estimation_assumptions:
+              - "fixtures sintéticas pinadas suficientes para a fase local"
+          - id: SPR-G5-2
+            swimlane: dependencias_externas
+            objective: "MG-G5: execução contra sistema representativo + aceitação por verificador externo"
+            deliverables:
+              - "relatório aceito por verificador independente"
+            definition_of_ready:
+              - "SPR-G5-1; SPR-G3-11 (ambiente)"
+            definition_of_done:
+              - "aceitação registrada por verificador ≠ implementador"
+            dependencies: [SPR-G5-1, SPR-G3-11]
+            unlocks: [SPR-G8-3]
+            tracked_ids: [RISK-0004]
+            effort: M
+            estimation_assumptions:
+              - "verificador externo disponível"
+  - id: G6
+    title: "Design de segurança e segurança clínica"
+    current_state: "NÃO INICIADO"
+    evidence:
+      - "docs/05-clinical-safety/hazard-log.md (47/47 OPEN); safety-requirements.md (42 SAF PROPOSAL)"
+      - "safety-case-skeleton.md (M0; threat model 27 P0 + 39 P1, zero fechados)"
+    entry_criteria:
+      - "parecer OS-16 (SPR-G1-2)"
+      - "controles implementáveis (código existe — SPR-G7-1)"
+    exit_gate:
+      owner: "humanos autorizados + privacy/legal (BLK-0004 reclassificado para G6/G8)"
+      required_evidence:
+        - "controles de alta severidade verificados; P0/P1 dispostos; isolamento adversarial; aprovação legal de fluxos/processadores"
+      blocking_milestone: MG-G6
+    epics:
+      - id: EPC-G6-1
+        title: "Análise conjunta e controles"
+        tracked_ids: [HAZ-0027, HAZ-0043, ASM-0010]
+        sprints:
+          - id: SPR-G6-1
+            swimlane: engenharia_v2
+            objective: "Sessões conjuntas hazard×ameaça realizadas (8 hazards joint); L de HAZ-0027/0043/0045 reavaliado por dono nomeado"
+            deliverables:
+              - "atas + atualizações de S/L por humano nomeado"
+            definition_of_ready:
+              - "SPR-G0-2 (donos nomeados)"
+            definition_of_done:
+              - "sessões realizadas com participantes humanos; registros persistidos"
+            dependencies: [SPR-G0-2]
+            unlocks: [SPR-G6-4]
+            tracked_ids: [HAZ-0003, HAZ-0013, HAZ-0014, HAZ-0028, HAZ-0029, HAZ-0034, HAZ-0041, HAZ-0042, HAZ-0027, HAZ-0043, ASM-0010]
+            effort: M
+            estimation_assumptions:
+              - "sessões exigem humanos; agentes só preparam material"
+          - id: SPR-G6-2
+            swimlane: engenharia_v2
+            objective: "Controles SAF de alta severidade implementados e verificados no código (kernel com mutation testing)"
+            deliverables:
+              - "controle a controle: implementação + teste que o verifica"
+            definition_of_ready:
+              - "SPR-G7-1 (código existe); ADRs 0015..0018 aceitos"
+            definition_of_done:
+              - "verificação por teste; SAST/SCA/secret/IaC/SBOM ativos (§14/§15)"
+            dependencies: [SPR-G7-1, SPR-G4-2]
+            unlocks: [SPR-G6-3, SPR-G6-4]
+            tracked_ids: [SAF-0001, SAF-0042, SEC-0001, THR-0068]
+            tracked_id_ranges: ["SAF-0001..SAF-0042", "THR-0001..THR-0083", "SEC-0001..SEC-0059"]
+            effort: G
+            estimation_assumptions:
+              - "implementação depende de stack aceita"
+      - id: EPC-G6-2
+        title: "Verificação adversarial e aceite"
+        tracked_ids: [BLK-0004, RISK-0011]
+        sprints:
+          - id: SPR-G6-3
+            swimlane: dependencias_externas
+            objective: "Evidência adversarial de isolamento de tenant + pentest por verificador independente (implementador ≠ verificador)"
+            deliverables:
+              - "relatório de pentest; achados triados"
+            definition_of_ready:
+              - "SPR-G6-2"
+            definition_of_done:
+              - "relatório entregue e triado"
+            dependencies: [SPR-G6-2]
+            unlocks: [SPR-G6-4, SPR-G8-2]
+            tracked_ids: [RISK-0007]
+            effort: G
+            estimation_assumptions:
+              - "verificador terceiro contratável (DEC-G0-02 exige terceiro no G6)"
+          - id: SPR-G6-4
+            swimlane: decisoes_titular
+            objective: "MG-G6: risco residual aceito por humanos autorizados; P0/P1 dispostos; aprovação privacy/legal dos fluxos"
+            deliverables:
+              - "registro de aceite com regra de supersessão; HAZ-0045 disposto (barreira fora da V2 — RISK-0011)"
+            definition_of_ready:
+              - "SPR-G1-2 (parecer); SPR-G6-1/2/3"
+            definition_of_done:
+              - "aceite nominal registrado por autoridade com escopo real"
+            dependencies: [SPR-G1-2, SPR-G6-1, SPR-G6-2, SPR-G6-3]
+            unlocks: [SPR-G8-3, SPR-G6-5]
+            tracked_ids: [BLK-0004, HAZ-0045, RISK-0011]
+            effort: M
+            estimation_assumptions:
+              - "autoridade com escopo real (não interina onde §4 exige terceiro)"
+          - id: SPR-G6-5
+            swimlane: engenharia_v2
+            objective: "Safety case progride M1→M2/M3 com slots E-* populados por evidência real; residual de BLK-0017 verificado (SAF-0042 em safety-requirements.md) e submetido à disposição de AUTH-CLINSAFETY"
+            deliverables:
+              - "safety-case-skeleton atualizado sem promoção por agente (§7 do skeleton)"
+            definition_of_ready:
+              - "MG-G1 alcançado (M1); evidências de G6/G7 existentes"
+            definition_of_done:
+              - "slots atualizados com evidência; defeaters retirados só com evidência"
+              - "BLK-0017 disposto por humano (não fechado por este mapa)"
+            dependencies: [SPR-G1-8, SPR-G6-4, SPR-G7-2]
+            unlocks: [SPR-G8-3]
+            tracked_ids: [HAZ-0045, HAZ-0046, HAZ-0047, SAF-0042, BLK-0017]
+            effort: M
+            estimation_assumptions:
+              - "maturidade avança por evidência, nunca por redação"
+  - id: G7
+    title: "Primeira fatia vertical segura"
+    current_state: "NÃO INICIADO"
+    evidence:
+      - "cycle-2-delivery-orchestrator-report.md §9 (nenhum código de produção; stack sem ADR)"
+      - "cycle-2-delivery-orchestrator-report.md §8 (fatia G7 com dados sintéticos após aceitação dos ADRs)"
+    entry_criteria:
+      - "ADRs aceitos e propagados (SPR-G4-2)"
+      - "fixtures sintéticas pinadas"
+    exit_gate:
+      owner: "revisor independente da regra (≠ autor) + AUTH-* pertinentes"
+      required_evidence:
+        - "11 passos do §14 demonstrados com caminhos felizes e degradados; evidência automatizada completa"
+      blocking_milestone: MG-G7
+    epics:
+      - id: EPC-G7-1
+        title: "Fundação executável e fatia sintética"
+        tracked_ids: [ADR-0007, ADR-0010, ADR-0019, HAZ-0005]
+        sprints:
+          - id: SPR-G7-1
+            swimlane: engenharia_v2
+            objective: "Fundações executáveis: estrutura de código, CI com estágios §15.2, ambientes V2 (ADR-0019), política de dados sintéticos"
+            deliverables:
+              - "pipeline verde com gates bloqueantes (nenhum advisory — anti-padrão 11)"
+            definition_of_ready:
+              - "SPR-G0-1 + SPR-G4-2 (ADRs aceitos e propagados)"
+            definition_of_done:
+              - "estágios §15.2 ativos; SBOM/assinatura/deploy por digest presentes"
+            dependencies: [SPR-G0-1, SPR-G4-2, MD-4]
+            unlocks: [SPR-G6-2, SPR-G7-2]
+            tracked_ids: [ADR-0010, ADR-0019, ADR-0022]
+            effort: G
+            estimation_assumptions:
+              - "nada implementado antes do aceite formal (critério 12 do encargo)"
+          - id: SPR-G7-2
+            swimlane: engenharia_v2
+            objective: "Fatia vertical sintética completa (11 passos §14; uma regra; feliz + degradados) com evidência automatizada"
+            deliverables:
+              - "fatia demonstrável + relatório de evidência automatizada; revisão independente da avaliação determinística registrada"
+            definition_of_ready:
+              - "SPR-G7-1; SPR-G4-3/SPR-G4-4 (estados e contratos da fatia); fixture sintética pinada"
+            definition_of_done:
+              - "11/11 passos demonstrados; testes §14 da fatia verdes; ausente→normal silencioso proibido (HAZ-0005)"
+            dependencies: [SPR-G7-1, SPR-G4-3, SPR-G4-4]
+            unlocks: [SPR-G2-3, SPR-G4-6, SPR-G6-5]
+            tracked_ids: [ADR-0007, ADR-0008, ADR-0009, ADR-0010, ADR-0011, HAZ-0005]
+            effort: G
+            estimation_assumptions:
+              - "dados 100% sintéticos; AMH real não é pré-requisito (fixture pinada)"
+          - id: SPR-G7-3
+            swimlane: decisoes_titular
+            objective: "MG-G7: fatia aceita como fundação (revisor independente ≠ autor); explícito não é produção"
+            deliverables:
+              - "registro de aceitação em decision-register.md"
+            definition_of_ready:
+              - "SPR-G7-2"
+            definition_of_done:
+              - "aceitação nominal registrada"
+            dependencies: [SPR-G7-2]
+            unlocks: [SPR-G8-1]
+            tracked_ids: [ADR-0007, GDEC-0003]
+            effort: P
+            estimation_assumptions:
+              - "independência autor≠aprovador"
+  - id: G8
+    title: "Piloto e promoção a produção"
+    current_state: "NÃO INICIADO"
+    evidence:
+      - "nenhuma das 12 dimensões do go/no-go (§15.3) com evidência"
+      - "ambientes AMH stg/prod inexistentes (RISK-0004) — condição não satisfazível unilateralmente pela V2"
+    entry_criteria:
+      - "MG-G2, MG-G3, MG-G4, MG-G5, MG-G6, MG-G7"
+      - "ambientes AMH production-like (SPR-G3-11)"
+    exit_gate:
+      owner: "autoridade de go-live (≠ dono do pipeline — §4; segundo humano exigido — DEC-G0-06/RISK-0007)"
+      required_evidence:
+        - "registro go/no-go de 12 dimensões (§15.3) por etapa (shadow → piloto → produção)"
+      blocking_milestone: "MG-G8-PILOTO"
+      blocking_milestone_producao: "MG-G8-PROD"
+    epics:
+      - id: EPC-G8-1
+        title: "Prontidão operacional e validações"
+        tracked_ids: [ADR-0020, RISK-0004]
+        sprints:
+          - id: SPR-G8-1
+            swimlane: engenharia_v2
+            objective: "Prontidão operacional: SLOs medidos, monitoramento, kill switches, runbooks, treinamento, backup/restore/DR e migração/rollback ensaiados"
+            deliverables:
+              - "evidência de exercício por dimensão (não render de infra — §20)"
+            definition_of_ready:
+              - "MG-G7; ADR-0020 aceito"
+            definition_of_done:
+              - "cada dimensão com exercício registrado"
+            dependencies: [SPR-G7-3, SPR-G4-2]
+            unlocks: [SPR-G8-3]
+            tracked_ids: [ADR-0020, RISK-0004]
+            effort: G
+            estimation_assumptions:
+              - "ambiente V2 próprio existe (ADR-0019)"
+          - id: SPR-G8-2
+            swimlane: dependencias_externas
+            objective: "Validação clínica/fatores humanos representativa; acessibilidade; pentest final; conformidade AMH em ambiente production-like"
+            deliverables:
+              - "relatórios aceitos por verificadores independentes"
+            definition_of_ready:
+              - "SPR-G3-11 (ambientes); SPR-G4-5; SPR-G6-3"
+            definition_of_done:
+              - "relatórios aceitos e registrados"
+            dependencies: [SPR-G3-11, SPR-G4-5, SPR-G6-3]
+            unlocks: [SPR-G8-3]
+            tracked_ids: [VAL-0033, RISK-0004]
+            effort: G
+            estimation_assumptions:
+              - "espera indeterminada por ambiente AMH; sem data"
+      - id: EPC-G8-2
+        title: "Piloto e produção"
+        tracked_ids: [RISK-0008, RISK-0007]
+        sprints:
+          - id: SPR-G8-3
+            swimlane: decisoes_titular
+            objective: "MG-G8-PILOTO: go/no-go de shadow/piloto (12 dimensões §15.3); shadow primeiro; autorização de pesquisa/privacidade para sombra"
+            deliverables:
+              - "registro go/no-go completo, nominal e datado; kill switch e autoridade de rollback nomeada"
+            definition_of_ready:
+              - "SPR-G8-1/SPR-G8-2; MG-G2 (SPR-G2-4); SPR-G6-5 (safety case)"
+              - "baselines B1-B4a já capturados (SR-2)"
+            definition_of_done:
+              - "registro completo por dimensão"
+            dependencies: [SPR-G8-1, SPR-G8-2, SPR-G2-4, SPR-G4-6, SPR-G5-2, SPR-G6-4, SPR-G6-5, SPR-G1-5, MG-G3]
+            unlocks: [SPR-G8-4]
+            tracked_ids: [BLK-0004, RISK-0008]
+            effort: M
+            estimation_assumptions:
+              - "piloto destruiria a janela de baseline — captura obrigatoriamente anterior"
+          - id: SPR-G8-4
+            swimlane: engenharia_v2
+            objective: "Shadow + piloto supervisionado com artefato assinado idêntico; evidência operacional coletada"
+            deliverables:
+              - "evidência de operação real (alarmes, latência, incidentes); desvios triados"
+            definition_of_ready:
+              - "SPR-G8-3"
+            definition_of_done:
+              - "artefato idêntico por digest; evidência coletada"
+            dependencies: [SPR-G8-3]
+            unlocks: [SPR-G8-5]
+            tracked_ids: [GDEC-0007, KPIR-14]
+            effort: G
+            estimation_assumptions:
+              - "piloto limitado por sítio/capacidade validada"
+          - id: SPR-G8-5
+            swimlane: decisoes_titular
+            objective: "MG-G8-PROD: go/no-go de produção — artefato idêntico, aprovações, monitoramento, rollback; autoridade de go-live distinta"
+            deliverables:
+              - "registro nominal; rollout por capacidade validada, não contagem de features"
+            definition_of_ready:
+              - "SPR-G8-4"
+            definition_of_done:
+              - "registro go/no-go de produção completo"
+            dependencies: [SPR-G8-4]
+            unlocks: [SPR-OC-1, SPR-OC-3]
+            tracked_ids: [RISK-0007]
+            effort: M
+            estimation_assumptions:
+              - "autoridade de go-live distinta nomeada"
+
+continuous_operations:
+  epics:
+    - id: EPC-OC-1
+      title: "Vigilância e manutenção de evidência (fase 10 do §17)"
+      tracked_ids: [ASM-0002, RISK-0007, ADR-0025]
+      sprints:
+        - id: SPR-OC-1
+          swimlane: engenharia_v2
+          objective: "Vigilância contínua: KPI de missão K-8/KPIR-14 (altas vivas da UTI — monitorização, não alegação de efetividade), carga de alarmes vs baselines, incidentes, deriva, vigilância de versão de score (ADR-0025)"
+          deliverables:
+            - "painéis/relatórios recorrentes de vigilância"
+          definition_of_ready:
+            - "MG-G8-PROD; baselines de SPR-G1-5 disponíveis"
+          definition_of_done:
+            - "ciclo de vigilância operante com revisão registrada"
+          dependencies: [SPR-G8-5, SPR-G1-5]
+          unlocks: []
+          tracked_ids: [ADR-0025]
+          effort: G
+          estimation_assumptions:
+            - "métricas SM/HM avaliáveis porque os baselines foram capturados"
+        - id: SPR-OC-2
+          swimlane: engenharia_v2
+          objective: "Re-pinagem AMH recorrente (ASM-0002) + detecção de mudança de contrato a cada ciclo"
+          deliverables:
+            - "novo EVID-* por re-pinagem; relatório de deteccao-mudanca-contrato"
+          definition_of_ready:
+            - "contrato pinado (SPR-G3-9)"
+          definition_of_done:
+            - "re-pinagem registrada por ciclo"
+          dependencies: [SPR-G3-9]
+          unlocks: []
+          tracked_ids: [ASM-0002, EVID-0012]
+          effort: P
+          estimation_assumptions:
+            - "recorrente; esforço por ciclo"
+        - id: SPR-OC-3
+          swimlane: decisoes_titular
+          objective: "Revisão recorrente de gates/hazards/riscos/decisões (regras de supersessão); reavaliação da concentração de autoridade"
+          deliverables:
+            - "atas de revisão recorrente em decision-register.md"
+          definition_of_ready:
+            - "MG-G8-PROD"
+          definition_of_done:
+            - "revisão registrada por ciclo"
+          dependencies: [SPR-G8-5]
+          unlocks: []
+          tracked_ids: [RISK-0007]
+          effort: M
+          estimation_assumptions:
+            - "recorrente; sem data fixa neste mapa"
+
+critical_path:
+  - from: MD-1
+    to: SPR-G1-2
+    dependency_type: titular
+  - from: SPR-G1-2
+    to: SPR-G1-4
+    dependency_type: externa
+  - from: SPR-G1-4
+    to: SPR-G1-5
+    dependency_type: externa
+  - from: SPR-G1-5
+    to: SPR-G1-7
+    dependency_type: externa
+  - from: SPR-G1-7
+    to: MG-G1
+    dependency_type: titular
+  - from: SPR-G0-1
+    to: SPR-G4-1
+    dependency_type: v2
+  - from: SPR-G4-1
+    to: SPR-G4-2
+    dependency_type: titular
+  - from: SPR-G4-2
+    to: SPR-G7-1
+    dependency_type: v2
+  - from: SPR-G7-1
+    to: SPR-G7-2
+    dependency_type: v2
+  - from: SPR-G7-2
+    to: MG-G7
+    dependency_type: titular
+  - from: SPR-G3-1
+    to: SPR-G3-5
+    dependency_type: amh
+  - from: SPR-G3-5
+    to: SPR-G3-9
+    dependency_type: amh
+  - from: SPR-G3-9
+    to: SPR-G3-10
+    dependency_type: v2
+  - from: SPR-G3-11
+    to: SPR-G3-10
+    dependency_type: externa
+  - from: SPR-G3-10
+    to: MG-G3
+    dependency_type: titular
+  - from: MG-G3
+    to: MG-G8-PILOTO
+    dependency_type: titular
+  - from: MG-G7
+    to: MG-G8-PILOTO
+    dependency_type: titular
+  - from: SPR-G1-5
+    to: MG-G8-PILOTO
+    dependency_type: externa
+
+sequence_risks:
+  - id: SR-1
+    condition: "propagações residuais de GDEC-0008 não persistidas (linha na tabela-índice do registro; pedido §6; traceability-policy §1.1; L-4/L-6; marca P-1) e espelho YAML deste mapa não rastreado"
+    consequence: "fontes internas divergem entre si; o mapa perde o espelho legível por máquina em sessão futura (anti-padrões 4/7)"
+    mitigation: "SPR-G0-1 primeiro; commit do YAML pelo dono da janela correta (anti-padrão 14)"
+    tracked_ids: [GDEC-0008]
+  - id: SR-2
+    condition: "qualquer demonstração, treinamento ou piloto visível a clínicos antes da captura B1-B4a"
+    consequence: "perda permanente dos baselines; SM-01/SM-04/HM-02/HM-05 inavaliáveis para sempre"
+    mitigation: "serialização dura: SPR-G1-5 antes de qualquer exposição; prioridade de sequência, não data"
+    tracked_ids: [RISK-0008, VAL-0035, G2-VAL-0025, ASM-0007]
+  - id: SR-3
+    condition: "implementação (G7) ou escolha tecnológica antes de ADR aceito e propagado"
+    consequence: "tecnologia fora do processo de ADR (§3.14); retrabalho; fronteira decidida por omissão"
+    mitigation: "DoR de SPR-G7-1 exige SPR-G4-2; capacidades descritas como requisito até lá"
+    tracked_ids: [RISK-0010]
+  - id: SR-4
+    condition: "espera indeterminada de terceiros: parecer, ética, usuários, pentest, ambientes AMH stg/prod"
+    consequence: "caminhos do titular/AMH/externos param sem data prevista; pressão por atalho"
+    mitigation: "explicitar espera; avançar trilha sintética V2; jamais converter dependência em compromisso"
+    tracked_ids: [BLK-0013, BLK-0014, BLK-0015, RISK-0004]
+  - id: SR-5
+    condition: "colisão de rótulos N-* (dois namespaces) e dispersão de VAL-*/N-* sem registro central"
+    consequence: "rastreabilidade ambígua em contrato e conformidade; citação errada em release evidence"
+    mitigation: "steward desambiguar na propagação (SPR-G0-1); registrar em traceability-policy §1.1"
+    tracked_ids: [GDEC-0002]
+  - id: SR-6
+    condition: "consumidor de eventos implementado antes do fechamento de N-8 (5×6 tipos)"
+    consequence: "retrabalho de contrato/consumidor; risco clínico em reassignment sem alcance definido"
+    mitigation: "ASM-0009 (tipo desconhecido = erro fail-closed) até SPR-G3-7; quarentena fail-closed proposta (N-13)"
+    tracked_ids: [ASM-0006, ASM-0009]
+  - id: SR-7
+    condition: "tratar preparação como conclusão (kit, harness, minuta, specs 0.2.0, CRV DRAFT)"
+    consequence: "gate declarado satisfeito sem evidência de execução (anti-padrões 1/15)"
+    mitigation: "estados deste mapa separam preparação/decisão/implementação/verificação/aprovação; contagens honestas preservadas"
+    tracked_ids: [GDEC-0007]
+  - id: SR-8
+    condition: "propagações pendentes acumulam (adr-index, pedido §6, hard-gate §7, L-4/L-6)"
+    consequence: "fontes divergem entre si; próxima sessão re-deriva estado errado"
+    mitigation: "SPR-G0-1 como primeiro sprint V2; ler-antes-de-escrever"
+    tracked_ids: [GDEC-0007, GDEC-0008]
+  - id: SR-9
+    condition: "confusão nominal entre gates de ciclo de vida (G0–G8) e hard-gates 1–11 do §6.2"
+    consequence: "leitura errada de estados (ex.: hard-gate 4 FAIL lido como Gate G4)"
+    mitigation: "este mapa usa Gn só para ciclo de vida e 'hard-gate n (§6.2)' para elegibilidade"
+    tracked_ids: [GDEC-0007]
