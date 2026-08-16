@@ -807,6 +807,57 @@ provenance:
   validation_status: "N/A — decisão do titular"
 ```
 
+## GDEC-0014 — Remoção das condições da AGT-3; permanecem vinculantes apenas CI, PR para main e dados sintéticos
+
+Transcrição de decisão tomada **por escrito, em sessão**, pelo titular
+(rodaquino-OMNI). Escriba: orquestrador de execução.
+
+```yaml
+id: GDEC-0014
+title: Remoção das 7 condições da AGT-3 — vinculantes apenas CI (conteúdo proibido/PHI + convenções), PR para main e dados sintéticos como default
+status: DECIDED
+statement: >
+  Complementando GDEC-0013: ficam removidas TAMBÉM as 7 condições
+  cumulativas da AGT-3 (ata GDEC-0009) e toda exigência de painel/revisão
+  como pré-condição vinculante, em qualquer fase. Permanecem vinculantes
+  APENAS: (1) os gates de CI existentes (conteúdo proibido/PHI e
+  convenções); (2) PR para main; (3) dados sintéticos como default de
+  desenvolvimento. A promoção de vias a modo acionável passa a ocorrer sob
+  a autorização permanente do titular (GDEC-0009/AGT-3, mantida como
+  autorização), a seu critério, sem conjunto fixo de condições de processo.
+decided_by: rodaquino-OMNI
+decided_date: "2026-08-16"
+rationale: >
+  Plataforma em construção; aval de segundo médico e parecer jurídico
+  favorável já existem; o excesso de condições impedia desenvolvimento
+  ágil.
+supersession_rule: >
+  Supersede os itens 1-7 do bloco AGT-3 da ata GDEC-0009 como CONDIÇÕES
+  vinculantes (a autorização permanente em si permanece), o resíduo de
+  revisão única do GDEC-0013 e as referências às 7 condições no prompt
+  (§0/§3/§6.4/Gate G2) e no mapa. Registro de posição divergente do
+  escriba (INFERENCE, não bloqueia): recomenda-se recriar um gate mínimo
+  de promoção acionável (período de sombra + kill switch) quando houver
+  runtime. Observação factual: as condicionantes por operação do parecer
+  OS-16 são obrigações jurídicas externas apontadas pelo parecerista e
+  persistem por força própria, fora do alcance desta decisão de processo.
+links:
+  requirements: []
+  hazards: []
+  adrs: []
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-16)
+  commit_sha_or_version: 8927248 (estado ao decidir)
+  section_or_lines: "instrução: 'remova também as condições da AGT-3, mantenha intactos apenas CI de conteúdo proibido/PHI, PR para main, dados sintéticos como default'"
+  date_collected: "2026-08-16"
+  collector: orquestrador de execução (ciclo 5) — escriba
+  transformation: "transcrita; posição divergente do escriba e observação sobre obrigações jurídicas externas registradas na supersession_rule"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisão do titular"
+```
+
 ## Index
 
 | ID | Title | Status | Decided by | Decided date |
@@ -824,6 +875,7 @@ provenance:
 | GDEC-0011 | Contra-assinatura GDEC-0009; revisita AGT-3 aprovada pelo 2º revisor; OS-16 ENVIADA (jurista Dr. Lucas Alves de Sousa, OAB/GO 45.457) | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0012 | 2ª revisita AGT-3 APROVADA (titular + 2º revisor, com parecer completo); condicionantes do parecer decompostas em sprints (emenda do mapa) | DECIDED | rodaquino-OMNI | 2026-08-16 |
 | GDEC-0013 | Modo construção ágil — revisão única no desenvolvimento; painel/7 condições só na promoção acionável e G8 | DECIDED | rodaquino-OMNI | 2026-08-16 |
+| GDEC-0014 | Remoção das 7 condições da AGT-3; vinculantes apenas CI de conteúdo proibido/PHI, PR para main e dados sintéticos como default | DECIDED | rodaquino-OMNI | 2026-08-16 |
 
 ## Notes
 
@@ -862,3 +914,6 @@ provenance:
   da decisão do titular removendo os excessos de verificação do caminho de
   desenvolvimento; prompt §0 banner MODO CONSTRUÇÃO + mapa §2.2 item 9).
   Próximo ID disponível: `GDEC-0014`.
+- **Nota (2026-08-16, mesma sessão):** `GDEC-0014` alocado (remoção das 7
+  condições da AGT-3; só CI/PR/sintético permanecem vinculantes). Próximo
+  ID disponível: `GDEC-0015`.

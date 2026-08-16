@@ -242,11 +242,13 @@ ciclos_3_a_5_2026_08_15_16:
     AGT-3 aprovada; OS-16 ENVIADA a Dr. Lucas Alves de Sousa OAB/GO 45.457 e
     parecer RECEBIDO favorável); GDEC-0012 (2ª revisita aprovada; condição 4
     satisfeita NO PLANO JURÍDICO; condicionantes POR OPERAÇÃO em 5 sprints:
-    SPR-G6-6/G6-7/G4-7/G3-13/G0-4); GDEC-0013 (MODO CONSTRUÇÃO: revisão
-    única substitui painéis/duplas checagens no desenvolvimento; pacotes de
-    tarefa e handoffs formais opcionais; painel + 7 condições AGT-3 só na
-    promoção acionável e G8 — prompt §0 banner e mapa §2.2 item 9).
-    Próximo GDEC livre: GDEC-0014.
+    SPR-G6-6/G6-7/G4-7/G3-13/G0-4); GDEC-0013 (MODO CONSTRUÇÃO — prompt §0
+    banner e mapa §2.2 item 9); GDEC-0014 (7 condições da AGT-3 e painéis
+    REMOVIDOS como vinculantes em qualquer fase; vinculantes apenas CI de
+    conteúdo proibido/PHI, PR para main e dados sintéticos como default;
+    promoção acionável a critério do titular; condicionantes do parecer
+    OS-16 persistem como obrigações jurídicas externas).
+    Próximo GDEC livre: GDEC-0015.
   ciclo_5_execucao:
     relatorio: docs/15-release-evidence/cycle-5-execution-report.md  # leitura obrigatória na retomada
     painel_agt4: >-

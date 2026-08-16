@@ -193,3 +193,10 @@ artefato. Tier econômico jamais participa de conteúdo clínico (§0.5).
 > condicionantes por operação do parecer. **Gatilho de revisita
 > remanescente: primeiro evento adverso em sombra/piloto.** Exercício
 > prático segue barrado pela condição 3 (G3 por via) e pelas condições 5-7.
+
+> **Nota do escriba (2026-08-16 — GDEC-0014):** por decisão do titular, as
+> **7 condições do AGT-3 e o painel N-de-M do AGT-4 deixam de ser
+> vinculantes**; a autorização permanente permanece e é exercida a critério
+> do titular. Vinculantes apenas: CI de conteúdo proibido/PHI, PR para
+> `main`, dados sintéticos como default. Ver `decision-register.md`
+> GDEC-0013/GDEC-0014.

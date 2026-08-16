@@ -183,6 +183,13 @@ do encargo). As mais materiais:
    sombra→acionável (SPR-G2-4/MG-G2) e nos gates de piloto/produção (G8).
    Gates de CI, PR para `main` e dados sintéticos como default permanecem.
    Primeira exposição a usuário real ou dado real reabre a calibração.
+10. **GDEC-0014 (2026-08-16 — decisão do titular).** As **7 condições da
+    AGT-3 e o painel N-de-M deixam de ser vinculantes em qualquer sprint**
+    (inclusive SPR-G2-4/MG-G2 e G8): a promoção a modo acionável ocorre sob
+    a autorização permanente do titular, a seu critério. Vinculantes
+    apenas: CI de conteúdo proibido/PHI, PR para `main`, dados sintéticos
+    como default. As condicionantes por operação do parecer OS-16 persistem
+    como obrigações jurídicas externas.
 
 ### 2.3 O que já está FEITO e não será replicado como trabalho futuro
 
