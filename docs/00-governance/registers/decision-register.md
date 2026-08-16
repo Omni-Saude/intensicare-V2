@@ -908,6 +908,60 @@ provenance:
   validation_status: "N/A — decisão do titular"
 ```
 
+## GDEC-0016 — Aceite em lote dos ADRs pendentes, com três modificações do titular
+
+Transcrição de decisão tomada **por escrito, em sessão**, pelo titular
+(rodaquino-OMNI): "aceito todos exceto estes detalhados a seguir".
+Escriba: orquestrador de execução.
+
+```yaml
+id: GDEC-0016
+title: Aceite em lote — ADR-0002/0006 (Opção A) + direções dos 13 not-started, com modificações em ADR-0014/0021/0024
+status: DECIDED
+statement: >
+  (1) ADR-0002 ACEITO — Opção A (monolito modular com fronteiras impostas).
+  (2) ADR-0006 ACEITO — Opção A (lane operacional V2 autoritativa no laço
+  clínico; lane analítica AMH para reconciliação/backfill/desfechos/
+  vigilância). (3) Direções dos treze not-started (ADR-0012..0024) ACEITAS
+  conforme a lista apresentada em sessão, com TRÊS modificações do titular:
+  ADR-0014 — MANTER MCP no MVP (superfície de ferramentas incluída, não
+  excluída); ADR-0021 — o frontend deve melhorar a comunicação e ajustar
+  termos quando necessário, não somente exibir o texto do backend; UX e UI
+  são muito importantes (de primeira classe); ADR-0024 — MANTER IA/ML:
+  inclusão governada com possibilidade e conector para agentes clínicos
+  serem incluídos no workflow. As minutas formais dos treze são trabalho de
+  implementação, com registro de uma linha ao redigir (GDEC-0013/0015).
+decided_by: rodaquino-OMNI
+decided_date: "2026-08-16"
+rationale: >
+  Fecha de uma vez o backlog decisório de arquitetura para a construção;
+  as modificações refletem prioridades de produto do titular (integração
+  por MCP, excelência de UX/UI, agentes clínicos no workflow).
+supersession_rule: >
+  Cada minuta formal redigida na implementação materializa a direção aceita;
+  divergência material entre minuta e direção volta ao titular em uma linha.
+  Nota do escriba (não bloqueia): recomenda-se que a saída de agentes
+  clínicos (ADR-0024) seja sempre atribuída e registrada ao lado do registro
+  determinístico de avaliação, e que os ajustes de termos do frontend
+  (ADR-0021) preservem o estado clínico originado no backend — condições de
+  auditabilidade, não de processo.
+links:
+  requirements: []
+  hazards: []
+  adrs: [ADR-0002, ADR-0006, ADR-0012, ADR-0013, ADR-0014, ADR-0015, ADR-0016, ADR-0017, ADR-0018, ADR-0019, ADR-0020, ADR-0021, ADR-0022, ADR-0023, ADR-0024]
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-16)
+  commit_sha_or_version: 25faa46 (estado ao decidir)
+  section_or_lines: "instrução: 'aceito todos exceto estes detalhados a seguir: ADR-0014 manter MCP; ADR-0021 Frontend deve melhorar a comunicação e ajustar termos quando necessário...; ADR-0024 manter IA/ML com possibilidade e conector para agentes clínicos serem incluídos no workflow'"
+  date_collected: "2026-08-16"
+  collector: orquestrador de execução (ciclo 5) — escriba
+  transformation: "transcrita; recomendações de auditabilidade do escriba anotadas na supersession_rule"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisão do titular"
+```
+
 ## Index
 
 | ID | Title | Status | Decided by | Decided date |
@@ -927,6 +981,7 @@ provenance:
 | GDEC-0013 | Modo construção ágil — revisão única no desenvolvimento; painel/7 condições só na promoção acionável e G8 | DECIDED | rodaquino-OMNI | 2026-08-16 |
 | GDEC-0014 | Remoção das 7 condições da AGT-3; vinculantes apenas CI de conteúdo proibido/PHI, PR para main e dados sintéticos como default | DECIDED | rodaquino-OMNI | 2026-08-16 |
 | GDEC-0015 | Travas residuais removidas: aceite de ADR deixa de ser pré-condição de implementação (construção sobre opção recomendada como premissa reversível); N-8 = 6 tipos da minuta; ADR-0006 = Opção A como premissa | DECIDED | rodaquino-OMNI | 2026-08-16 |
+| GDEC-0016 | Aceite em lote: ADR-0002 e ADR-0006 aceitos (Opção A); direções dos 13 not-started aceitas com 3 modificações (0014 mantém MCP; 0021 frontend melhora comunicação/ajusta termos, UX/UI de 1ª classe; 0024 mantém IA/ML com conector para agentes clínicos) | DECIDED | rodaquino-OMNI | 2026-08-16 |
 
 ## Notes
 

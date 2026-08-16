@@ -44,6 +44,20 @@ pendente. **Resumo: das oito ADRs do ciclo 2 redigidas em 2026-08-15 (`ADR-0001`
 Os treze IDs de piso restantes estão `not-started`: o ID e o tópico estão reservados,
 nenhuma minuta existe, e nenhuma posição é implicada pela reserva.
 
+> **Atualização 2026-08-16 (GDEC-0016 — aceite em lote do titular; supera as
+> frases acima sobre `ADR-0002`/`ADR-0006` "permanecem proposed"):**
+> `ADR-0002` e `ADR-0006` **aceitos** (Opção A de cada). As **direções** dos
+> treze `not-started` (`ADR-0012`–`ADR-0024`) foram **aceitas** conforme a
+> lista da sessão, com três modificações do titular: **ADR-0014 — MANTER
+> MCP** no MVP (superfície de ferramentas incluída); **ADR-0021 — o frontend
+> deve melhorar a comunicação e ajustar termos quando necessário**, não
+> apenas exibir o texto do backend — UX e UI são de primeira classe (os
+> estados clínicos continuam originados no backend; a camada de apresentação
+> é dona da linguagem); **ADR-0024 — MANTER IA/ML**, inclusão governada com
+> possibilidade e conector para agentes clínicos no workflow. As minutas
+> formais dos treze são trabalho de implementação (registro de uma linha ao
+> redigir); nada disso bloqueia construção (GDEC-0013/0015).
+
 **Política de idioma (SOURCE: DEC-G0-10, 2026-08-15).** Material produzido a partir de
 2026-08-15 é redigido em **pt-BR**. `ADR-0003`, `ADR-0004` e `ADR-0005` estão, portanto,
 em pt-BR. `ADR-0001` e `ADR-0002` foram traduzidas retroativamente para pt-BR na
@@ -65,11 +79,11 @@ Este arquivo é a **fonte única de verdade para o próximo número disponível 
 | [`ADR-template.md`](./ADR-template.md) | Conjunto de campos obrigatórios e regras de autoria per §10 | PROPOSAL |
 | [`adr-index.md`](./adr-index.md) | Este arquivo — ciclo de vida, backlog, grafo de dependência | PROPOSAL |
 | [`ADR-0001-amh-platform-boundary.md`](./ADR-0001-amh-platform-boundary.md) | Opções para a fronteira de plataforma AMH (§7.3) — **pt-BR** (traduzido 2026-08-15, GDEC-0008 item 8, tranche 2) | **accepted** (2026-08-15, GDEC-0008) |
-| [`ADR-0002-modular-monolith-and-extraction-criteria.md`](./ADR-0002-modular-monolith-and-extraction-criteria.md) | Baseline de monolito modular e critérios de extração de serviço (§9.1 princípio 8) — **pt-BR** (traduzido 2026-08-15, GDEC-0008 item 8, tranche 2) | proposed |
+| [`ADR-0002-modular-monolith-and-extraction-criteria.md`](./ADR-0002-modular-monolith-and-extraction-criteria.md) | Baseline de monolito modular e critérios de extração de serviço (§9.1 princípio 8) — **pt-BR** (traduzido 2026-08-15, GDEC-0008 item 8, tranche 2) | accepted (GDEC-0016, Opção A) |
 | [`ADR-0003-tenancy-organizacao-facility-propriedade-de-recurso.md`](./ADR-0003-tenancy-organizacao-facility-propriedade-de-recurso.md) | Grão de tenant, hierarquia org/facility/unit/bed, invariância de propriedade de recurso (§10 item 3) — **pt-BR** | **accepted** (2026-08-15, GDEC-0008) |
 | [`ADR-0004-identidade-paciente-encontro-mpi.md`](./ADR-0004-identidade-paciente-encontro-mpi.md) | Identidade de paciente/encounter/MPI, identificador de fronteira, semântica de merge/unmerge (§7.4) — **pt-BR** | **accepted** (2026-08-15, GDEC-0008); direção decidida em 2026-08-15; reconciliação C2 executada em 2026-08-15 |
 | [`ADR-0005-modelo-canonico-observacao-proveniencia-qualidade-correcao-tempo.md`](./ADR-0005-modelo-canonico-observacao-proveniencia-qualidade-correcao-tempo.md) | Modelo canônico de observação: proveniência, dimensões de qualidade, correção, tempo (§10 item 5) — **pt-BR** | **accepted** (2026-08-15, GDEC-0008) |
-| [`ADR-0006-fonte-de-verdade-operacional-analitica-e-reconciliacao.md`](./ADR-0006-fonte-de-verdade-operacional-analitica-e-reconciliacao.md) | Fonte de verdade operacional × analítica, precedência/conflito/correção/replay/reconciliação; alegação Gold/Athena como hipótese com método (§10 item 6) — **pt-BR** | proposed (2026-08-15) |
+| [`ADR-0006-fonte-de-verdade-operacional-analitica-e-reconciliacao.md`](./ADR-0006-fonte-de-verdade-operacional-analitica-e-reconciliacao.md) | Fonte de verdade operacional × analítica, precedência/conflito/correção/replay/reconciliação; alegação Gold/Athena como hipótese com método (§10 item 6) — **pt-BR** | accepted (GDEC-0016, Opção A) |
 | [`ADR-0007-rule-bundle-format-signing-approval-activation-rollback-retirement.md`](./ADR-0007-rule-bundle-format-signing-approval-activation-rollback-retirement.md) | Ciclo de vida de rule-bundle; codifica estruturalmente autor ≠ aprovador (§6.4, §10 item 7) — **pt-BR** | **accepted** (2026-08-15, GDEC-0007) |
 | [`ADR-0008-evaluation-status-and-completeness-freshness-semantics.md`](./ADR-0008-evaluation-status-and-completeness-freshness-semantics.md) | Semântica de status de avaliação em cinco estados; política de escore parcial (§10 item 8) — **pt-BR**, acoplada à ADR-0026 | **accepted** (2026-08-15, GDEC-0007) |
 | [`ADR-0009-maquina-de-estados-alerta-item-de-trabalho.md`](./ADR-0009-maquina-de-estados-alerta-item-de-trabalho.md) | Máquina de estados de alerta/item de trabalho: concorrência, idempotência, auditoria, timers de escalada; supressão jamais oculta no-fire (§10 item 9) — **pt-BR** | **accepted** (2026-08-15, GDEC-0008) |
@@ -191,11 +205,11 @@ Significado das colunas:
 | ID | §10 | Tópico | Status | Bloqueia gate | Fase mais cedo | Titular decisor | Autoridade candidata (PROPOSAL) |
 |---|---|---|---|---|---|---|---|
 | [ADR-0001](./ADR-0001-amh-platform-boundary.md) | 1 | Fronteira de plataforma pretendida com a AMH-data | **accepted** (2026-08-15, GDEC-0008) — formulação do titular: "a V2 SEMPRE consome dados da AMH; nunca ingestão direta" | G3 | 3 | **rodaquino-OMNI** | `AUTH-DATA-PLATFORM` + `AUTH-AMH-OWNER` (conjunta) — ambas detidas por rodaquino-OMNI per DEC-G0-04 |
-| [ADR-0002](./ADR-0002-modular-monolith-and-extraction-criteria.md) | 2 | Monolito modular e critérios de extração de serviço | **proposed** | G4 | 4 | UNASSIGNED | `AUTH-PRODUCT` + `AUTH-OPERATIONS` |
+| [ADR-0002](./ADR-0002-modular-monolith-and-extraction-criteria.md) | 2 | Monolito modular e critérios de extração de serviço | **accepted** (GDEC-0016, Opção A) | G4 | 4 | rodaquino-OMNI | `AUTH-PRODUCT` + `AUTH-OPERATIONS` |
 | [ADR-0003](./ADR-0003-tenancy-organizacao-facility-propriedade-de-recurso.md) | 3 | Modelo de tenant / organização / facility e propriedade de recurso | **accepted** (2026-08-15, GDEC-0008) — grão A (CNPJ raiz 1:1) + enforcement E-c (defesa em profundidade) | G3, G6 | 3 | **rodaquino-OMNI** | `AUTH-DATA-PLATFORM` + `AUTH-SECURITY` — ambas detidas por rodaquino-OMNI per DEC-G0-04/DEC-G0-02 |
 | [ADR-0004](./ADR-0004-identidade-paciente-encontro-mpi.md) | 4 | Identidade de paciente/encounter/MPI, identificador de fronteira e tratamento de merge/unmerge | **accepted** (2026-08-15, GDEC-0008); direção decidida em 2026-08-15; reconciliação C2 executada — ver seu §5.5 | G3 | 3 | **rodaquino-OMNI** | `AUTH-DATA-PLATFORM` + `AUTH-AMH-OWNER` — ambas detidas por rodaquino-OMNI per DEC-G0-04 |
 | [ADR-0005](./ADR-0005-modelo-canonico-observacao-proveniencia-qualidade-correcao-tempo.md) | 5 | Modelo canônico de observação, proveniência, qualidade, correção, e tempo | **accepted** (2026-08-15, GDEC-0008) — opção A (fato imutável append-only), minuta M1–M10 | G3, G4 | 3 | **rodaquino-OMNI** | `AUTH-DATA-PLATFORM` + `AUTH-CLINSAFETY` — ambas detidas por rodaquino-OMNI per DEC-G0-04/GDEC-0003 |
-| [ADR-0006](./ADR-0006-fonte-de-verdade-operacional-analitica-e-reconciliacao.md) | 6 | Fonte de verdade operacional versus analítica e reconciliação | **proposed** (2026-08-15) | G3 | 3 | UNASSIGNED | `AUTH-DATA-PLATFORM` + `AUTH-CLINSAFETY` |
+| [ADR-0006](./ADR-0006-fonte-de-verdade-operacional-analitica-e-reconciliacao.md) | 6 | Fonte de verdade operacional versus analítica e reconciliação | **accepted** (GDEC-0016, Opção A) | G3 | 3 | rodaquino-OMNI | `AUTH-DATA-PLATFORM` + `AUTH-CLINSAFETY` |
 | [ADR-0007](./ADR-0007-rule-bundle-format-signing-approval-activation-rollback-retirement.md) | 7 | Formato de rule bundle, assinatura, aprovação, ativação, rollback, aposentadoria | **accepted** (2026-08-15, GDEC-0007) | G2, G6 | 2 | rodaquino-OMNI (cláusulas clínicas, GDEC-0003); cláusulas de segurança UNASSIGNED | `AUTH-CLINSAFETY` + `AUTH-SECURITY` |
 | [ADR-0008](./ADR-0008-evaluation-status-and-completeness-freshness-semantics.md) | 8 | Semântica de status de avaliação; completude e frescor de escore/via | **accepted** (2026-08-15, GDEC-0007) | G2, G4 | 2 | rodaquino-OMNI (cláusulas clínicas, GDEC-0003) | `AUTH-CLINSAFETY` |
 | [ADR-0009](./ADR-0009-maquina-de-estados-alerta-item-de-trabalho.md) | 9 | Máquina de estados de alerta/item de trabalho, concorrência, idempotência, auditoria, timers de escalada | **accepted** (2026-08-15, GDEC-0008) — Q1-A (máquina única de WorkItem) + Q2-A (concorrência otimista) | G4 | 4 | **rodaquino-OMNI** (cláusulas clínicas, GDEC-0003) | `AUTH-CLINSAFETY` + `AUTH-UX` — cláusulas de UX UNASSIGNED, não fechadas por esta aceitação |

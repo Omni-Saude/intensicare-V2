@@ -1,7 +1,7 @@
 ---
 id: ADR-0002
 title: Estratégia de unidade de implantação — baseline de monolito modular e os critérios exigidos para extrair um serviço
-status: proposed
+status: accepted  # GDEC-0016 (2026-08-16, titular): Opção A — monolito modular com fronteiras impostas
 status_history:
   - status: not-started
     date: 2026-08-14
