@@ -7,9 +7,11 @@
  * `pnpm --filter @intensicare/rule-bundle test` executa.
  */
 import { defineConfig } from "vitest/config";
+import { sharedTestConfig } from "../../vitest.shared.js";
 
 export default defineConfig({
   test: {
+    ...sharedTestConfig,
     include: ["test/**/*.test.ts"],
     environment: "node",
   },

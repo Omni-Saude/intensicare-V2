@@ -8,9 +8,11 @@
  * compiladas em `dist/`, executando cada teste duas vezes.
  */
 import { defineConfig } from "vitest/config";
+import { sharedTestConfig } from "../../vitest.shared.js";
 
 export default defineConfig({
   test: {
+    ...sharedTestConfig,
     include: ["src/**/*.test.ts"],
     environment: "node",
   },

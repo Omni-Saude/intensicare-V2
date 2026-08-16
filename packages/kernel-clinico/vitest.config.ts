@@ -6,9 +6,11 @@
  * de testes que `pnpm --filter @intensicare/kernel-clinico test` executa.
  */
 import { defineConfig } from "vitest/config";
+import { sharedTestConfig } from "../../vitest.shared.js";
 
 export default defineConfig({
   test: {
+    ...sharedTestConfig,
     include: ["src/**/*.test.ts", "test/**/*.test.ts"],
     environment: "node",
   },
