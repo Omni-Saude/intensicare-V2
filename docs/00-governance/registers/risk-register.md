@@ -326,6 +326,11 @@ provenance:
   validation_status: "VALIDAÇÃO NECESSÁRIA — gatilhos de revisão individuais já registrados por papel (ver cada DEC-G0-nn em g0-resolucoes-2026-08-15.md); nenhum gatilho consolidado de \"segunda pessoa\" existe ainda para a concentração como um todo"
 ```
 
+**Atualização 2026-08-15 (GDEC-0010):** segundo revisor clínico nomeado
+(Dr. Marcelo Villaca Lima, CRM-SP 112678) — primeira mitigação nominal da
+concentração de pessoa única. O risco permanece **OPEN** até aceite formal,
+verificação de credencial e definição dos demais pares de independência (§4).
+
 ## RISK-0008 — Janela de baseline perecível aberta e sem data de fechamento (pt-BR — conteúdo novo, 2026-08-15)
 
 ```yaml

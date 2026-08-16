@@ -92,6 +92,12 @@ second reviewer is required for any content rodaquino-OMNI personally authors
 (author ≠ approver applies to humans too). See
 `decision-register.md` GDEC-0003.
 
+**Atualização 2026-08-15 (GDEC-0010):** segundo revisor clínico **NOMEADO** —
+Dr. Marcelo Villaca Lima (Cardiologia e Terapia Intensiva, CRM-SP 112678).
+Permanece **OPEN** até: aceite formal por escrito do nomeado; verificação
+independente da credencial; registro da linha de reporte. A nomeação dispara
+o gatilho de revisita da AGT-3 (GDEC-0009) — revisita ABERTA.
+
 ## BLK-0003 — No named security decision owner
 
 ```yaml
@@ -269,6 +275,12 @@ The blocker stays **OPEN**: the intended-use statement itself
 approved by the named reviewer, and permanent role acceptance with verified
 credential and reporting line is outstanding. See `decision-register.md`
 GDEC-0003.
+
+**Atualização 2026-08-15 (GDEC-0010):** segundo revisor clínico nomeado
+(Dr. Marcelo Villaca Lima, CRM-SP 112678) — destrava a leitura estrita de
+autor ≠ aprovador para a aprovação do uso pretendido (MG-G1), cujo conteúdo
+carrega hipóteses autoradas pelo titular. Fechamento pleno segue exigindo a
+aprovação formal do uso pretendido (SPR-G1-8) e o aceite do nomeado.
 
 ## BLK-0009 — GitHub App installation access not revalidated
 
@@ -724,13 +736,13 @@ Escrito por escriba de governança; nenhum mérito decidido aqui.
 | ID | Title | Gate | Who must act | Status (2026-08-15) |
 |---|---|---|---|---|
 | BLK-0001 | No named product decision owner | G0 | AUTH-PRODUCT | RESOLVIDO (interino) |
-| BLK-0002 | No named clinical safety decision owner | G0 | AUTH-CLINSAFETY | OPEN — resolução parcial (GDEC-0003) |
+| BLK-0002 | No named clinical safety decision owner | G0 | AUTH-CLINSAFETY | OPEN — parcial (GDEC-0003); 2º revisor nomeado (GDEC-0010), aceite+credencial pendentes |
 | BLK-0003 | No named security decision owner | G0 | AUTH-SECURITY | RESOLVIDO COM ESCOPO |
 | BLK-0004 | No named privacy/legal decision owner | G0 → G6/G8 | AUTH-PRIVACY-LEGAL | RECLASSIFICADO |
 | BLK-0005 | No named data-platform decision owner | G0 | AUTH-DATA-PLATFORM | RESOLVIDO |
 | BLK-0006 | No named UX decision owner | G0 | AUTH-UX | RESOLVIDO COM RESTRIÇÃO |
 | BLK-0007 | No named operations decision owner | G0 | AUTH-OPERATIONS | RESOLVIDO |
-| BLK-0008 | No named intended-use approver | G0 | AUTH-INTENDED-USE | OPEN — resolução parcial (GDEC-0003) |
+| BLK-0008 | No named intended-use approver | G0 | AUTH-INTENDED-USE | OPEN — parcial (GDEC-0003); 2º revisor nomeado (GDEC-0010) |
 | BLK-0009 | GitHub App installation access not revalidated | G0 | AUTH-DATA-PLATFORM + AUTH-SECURITY | RESOLVIDO POR RATIFICAÇÃO |
 | BLK-0010 | AMH license/ownership authority unestablished | G0 | AUTH-DATA-PLATFORM + AUTH-AMH-OWNER | RESOLVIDO POR CONCESSÃO ESCRITA |
 | BLK-0011 | Branch protection for `main` not configured | G0 | AUTH-SECURITY + repo admin | EXECUTADO |

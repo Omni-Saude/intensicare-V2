@@ -581,6 +581,59 @@ provenance:
   validation_status: "N/A — decisão do titular; contra-assinatura recomendada; reserva jurídica de AGT-3 permanece com AUTH-PRIVACY-LEGAL em G6/G8"
 ```
 
+## GDEC-0010 — Nomeação do segundo revisor clínico (SPR-G0-2) — dispara revisita da AGT-3
+
+Transcrição de decisão tomada **por escrito, em sessão**, pelo titular
+(rodaquino-OMNI). O orquestrador do mapa é escriba, não decisor.
+
+```yaml
+id: GDEC-0010
+title: Segundo revisor clínico nomeado — Dr. Marcelo Villaca Lima (CRM-SP 112678)
+status: DECIDED
+statement: >
+  O titular nomeia Dr. Marcelo Villaca Lima — Cardiologia e Terapia
+  Intensiva — CRM-SP 112678 — como SEGUNDO REVISOR CLÍNICO da V2
+  (SPR-G0-2 do mapa até produção): revisor de conteúdo clínico autorado
+  materialmente pelo titular (regra autor ≠ aprovador — ADR-0007/GDEC-0007)
+  e candidato a co-titular de AUTH-CLINSAFETY. Esta nomeação NÃO fecha, por
+  si: (1) o aceite formal por escrito do nomeado; (2) a verificação
+  independente da credencial (CRM-SP 112678); (3) o registro da linha de
+  reporte. EFEITO VINCULANTE: a entrada de um segundo revisor clínico
+  humano é gatilho nomeado de revisita da AGT-3 (ata GDEC-0009) — a
+  revisita fica ABERTA por esta nomeação, a ser conduzida pelo titular com
+  o revisor; até sua conclusão a AGT-3 permanece nos termos da ata (e segue
+  não exercível de todo modo, condições 3-4: G3 por via + parecer OS-16).
+decided_by: rodaquino-OMNI (titular; papéis interinos GDEC-0004; revisor clínico GDEC-0003)
+decided_date: "2026-08-15"
+rationale: >
+  Fecha a perna de nomeação de BLK-0002/BLK-0008; mitiga RISK-0007
+  (concentração de autoridade); remove a ambiguidade de autoaprovação no
+  MG-G1 (dossiê SPR-G1-9 contém hipóteses do titular); a revisita da AGT-3
+  ocorreria de qualquer forma no primeiro parecer OS-16, antes de a
+  autorização ser exercível — adiar a nomeação não preservava nada
+  (análise registrada na sessão do mapa).
+supersession_rule: >
+  Aceite formal + verificação de credencial + linha de reporte registrados
+  atualizam BLK-0002/0008; recusa do nomeado ou falha na verificação da
+  credencial reabre esta decisão. A revisita da AGT-3 aberta por esta
+  entrada segue os gatilhos da própria ata GDEC-0009.
+links:
+  requirements: []
+  hazards: []
+  adrs: [ADR-0007]
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-15), item 3 (SPR-G0-2)
+  commit_sha_or_version: 3f21429 (estado ao decidir)
+  section_or_lines: "instrução: 'SPR-G0-2 (segundo revisor) - Dr. Marcelo Villaca Lima — Cardiologia e Terapia Intensiva — CRM-SP 112678'"
+  date_collected: "2026-08-15"
+  collector: orquestrador do mapa até produção — escriba
+  transformation: "transcrita; pendências e efeito de gatilho explicitados pelo escriba"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "VALIDATION REQUIRED — aceite do nomeado e verificação independente da credencial pendentes"
+```
+
 ## Index
 
 | ID | Title | Status | Decided by | Decided date |
@@ -594,6 +647,7 @@ provenance:
 | GDEC-0007 | Revisão clínica do ciclo 1 — 98 pontos (97 aceitos; K-8 modificado: vidas_salvas mantido como altas vivas da UTI) | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0008 | Fila de decisão pós-ciclo-2 — OS-16, C-1=O3, G1 comissionado, ADRs aceitos, N-11..14, OS novas, housekeeping, tradução | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0009 | Agentificação dos Gates G1 e G2 (AGT-1..AGT-4; AGT-3 contra recomendação do orquestrador) | DECIDED | rodaquino-OMNI | 2026-08-15 |
+| GDEC-0010 | Segundo revisor clínico nomeado — Dr. Marcelo Villaca Lima, CRM-SP 112678 (aceite + verificação pendentes; dispara revisita AGT-3) | DECIDED | rodaquino-OMNI | 2026-08-15 |
 
 ## Notes
 
@@ -619,3 +673,6 @@ provenance:
   (agentificação G1/G2); linha de Index do `GDEC-0008`, ausente na
   integração anterior, acrescentada nesta passada (housekeeping de escriba).
   Próximo ID disponível: `GDEC-0010`.
+- **Nota (2026-08-15, sessão do mapa — SPR-G0-2):** `GDEC-0010` alocado
+  (nomeação do segundo revisor clínico; gatilho de revisita da AGT-3
+  disparado e registrado). Próximo ID disponível: `GDEC-0011`.

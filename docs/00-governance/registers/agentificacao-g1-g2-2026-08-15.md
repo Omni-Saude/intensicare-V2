@@ -135,3 +135,14 @@ artefato. Tier econômico jamais participa de conteúdo clínico (§0.5).
    ata trata apenas de G1 e G2.
 5. Recomenda-se contra-assinatura do titular sobre esta ata (mesmo padrão da
    ata AQ-1..6), pois as decisões chegaram ao escriba por sessão interativa.
+
+---
+
+> **Nota do escriba (2026-08-15, posterior à ata — GDEC-0010):** o gatilho de
+> revisita da AGT-3 — "entrada de qualquer segundo revisor clínico humano" —
+> foi **DISPARADO** pela nomeação registrada em GDEC-0010 (Dr. Marcelo
+> Villaca Lima, CRM-SP 112678). A revisita da AGT-3 está **ABERTA**, a
+> conduzir pelo titular com o revisor nomeado; até sua conclusão, a
+> autorização permanece nos termos desta ata — e segue **não exercível** de
+> todo modo (condições 3-4). A contra-assinatura recomendada no item 5
+> permanece **pendente**.

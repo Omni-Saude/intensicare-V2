@@ -199,6 +199,12 @@ de decisão que C-1 — sem isso não há a quem atribuir. Depois, AMH.
 classe. E dentro desta matriz, ela é a única lacuna que sozinha impede **duas** regras
 (SOFA-CV e GCS) mesmo que tudo o mais fosse entregue.
 
+> **Atualização (2026-08-15 — GDEC-0008 item 6):** esta lacuna **agora tem ordem de
+> serviço**: OS-23 (profile `MedicationAdministration` + fonte povoada; BLK-0012),
+> comissionada ao lado AMH, Status: ABERTA (`../ordens-de-servico-amh-2026-08-15.md`
+> §11). O bloqueador permanece **OPEN** até execução e aceitação da evidência de camada
+> 2/3 pela AMH; nada nesta atualização fecha a lacuna.
+
 ---
 
 ### L-5 — Não existe fonte de dispositivo/ventilador
@@ -246,6 +252,12 @@ dono nomeado.
 publicada. Mas um sistema que nunca recebe uma ordem de escala 2 pontua pacientes
 hipercápnicos na escala errada, silenciosamente. Isso é consequência de L-6, não defeito da
 regra.
+
+> **Atualização (2026-08-15 — GDEC-0008 item 6):** esta lacuna **agora tem ordem de
+> serviço**: OS-24 (contrato de ordem clínica com semântica de revogação; BLK-0016),
+> comissionada ao lado AMH, Status: ABERTA (`../ordens-de-servico-amh-2026-08-15.md`
+> §11). O bloqueador permanece **OPEN** até execução e aceitação da evidência de camada
+> 2/3 pela AMH; nada nesta atualização fecha a lacuna.
 
 ---
 
