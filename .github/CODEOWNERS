@@ -1,84 +1,112 @@
 # CODEOWNERS — IntensiCare V2
 #
-# STATUS: SKELETON ONLY. NO RULE BELOW IS ACTIVE.
+# STATUS: ATIVO (parcial). Ver nota de ativação abaixo.
 #
-# Every path-ownership line in this file is commented out (prefixed with
-# `#`). GitHub does not enforce a commented-out CODEOWNERS line, so this
-# file currently has NO effect on review requirements.
+# ATIVAÇÃO (2026-08-16): a pré-condição que este arquivo declarava desde a
+# sua criação — "um humano nomeado por papel" — foi satisfeita para a
+# maioria dos papéis `AUTH-*` por decisão do próprio titular, registrada em
+# `docs/00-governance/registers/g0-resolucoes-2026-08-15.md` (`DEC-G0-01` a
+# `DEC-G0-06`) e alocada como `docs/00-governance/registers/decision-
+# register.md` `GDEC-0004`. O handle GitHub correspondente é
+# `@rodaquino-OMNI` (mesmo titular de `docs/00-governance/authority-
+# model.md` §5). Nenhum outro dono foi inventado: onde nenhuma decisão
+# registrada nomeia um titular, a linha permanece comentada — ver "Papéis
+# não ativados" abaixo.
 #
-# Why: prompt §15.1 requires "ownership/CODEOWNERS for clinical, security,
-# data, UX, operations, and ADR areas." But every one of those decision-
-# owner roles is, as of 2026-08-14, `UNASSIGNED — VALIDATION REQUIRED`
-# per docs/00-governance/authority-model.md §1, and Gate G0 is blocked on
-# naming them — see docs/00-governance/registers/blockers-register.md
-# (BLK-0001 through BLK-0008, all status: OPEN).
+# Cobertura por papel e a decisão que a sustenta:
+#   AUTH-PRODUCT        rodaquino-OMNI, interino  — DEC-G0-01
+#   AUTH-SECURITY       rodaquino-OMNI, interino, somente decisões de fase
+#                        de projeto (verificação de intrusão em G6 exige
+#                        terceiro independente, não o titular) — DEC-G0-02
+#   AUTH-DATA-PLATFORM  rodaquino-OMNI, interino — DEC-G0-04
+#   AUTH-UX             rodaquino-OMNI, interino — DEC-G0-05
+#   AUTH-OPERATIONS     rodaquino-OMNI, interino — DEC-G0-06
+#   AUTH-CLINSAFETY     rodaquino-OMNI, PARCIAL — apenas artefatos do
+#                        ciclo 1 (GDEC-0003); segundo revisor clínico
+#                        nomeado, Dr. Marcelo Villaca Lima (CRM-SP 112678,
+#                        GDEC-0010), aceite/credencial PENDENTES;
+#                        `blockers-register.md` BLK-0002 segue OPEN
+#   AUTH-INTENDED-USE   rodaquino-OMNI, PARCIAL — mesma base de GDEC-0003/
+#                        GDEC-0010; BLK-0008 segue OPEN
+#   AUTH-PRIVACY-LEGAL  NÃO ativado — ver "Papéis não ativados" abaixo
 #
-# No agent may invent a person, team, or GitHub handle to fill these
-# rules in (docs/00-governance/evidence-notation.md §2 usage rule 7; this
-# task's decisions_prohibited explicitly bars inventing GitHub usernames).
-# A real CODEOWNERS handle is a claim that a specific account will be
-# requested for review — writing a fake one would be worse than writing
-# none, because it would silently fail to notify anyone while looking
-# like it works.
+# Ativar um titular como CODEOWNER de um caminho não fecha, por si só, o
+# bloqueador correspondente em `blockers-register.md` nem substitui a
+# aceitação plena do papel — é apenas o encaminhamento de revisão de PR.
+# Onde o papel é PARCIAL (AUTH-CLINSAFETY, AUTH-INTENDED-USE), a revisão de
+# PR por rodaquino-OMNI não dispensa a regra autor ≠ aprovador para
+# conteúdo que ele próprio redigiu (ver authority-model.md §5, restrição
+# registrada em DEC-G0-anteriores/GDEC-0003).
 #
-# HOW TO ACTIVATE THIS FILE
-# 1. A named human is assigned to each `AUTH-*` role in
-#    docs/00-governance/authority-model.md §1 (this closes the relevant
-#    slice of Gate G0).
-#  2. That human (or a team containing them) gets a real GitHub handle —
-#     either `@individual-username` or `@intensicare-v2/team-slug` for an
-#     org team created for this purpose.
-# 3. Uncomment the matching line below and replace the UNASSIGNED marker
-#    with the real `@handle`.
-# 4. Record the assignment as a DECIDED entry in
-#    docs/00-governance/registers/decision-register.md, per
-#    docs/00-governance/evidence-notation.md §2 rule 3 (a PROPOSAL/
-#    UNASSIGNED role only becomes binding when a named human authority
-#    ratifies it).
+# Papéis não ativados:
+#   AUTH-PRIVACY-LEGAL — DEC-G0-03 apenas RECLASSIFICOU este bloqueador de
+#   pré-condição do Gate G0 para pré-condição dos Gates G6/G8; nenhum
+#   humano foi nomeado para a decisão substantiva de base legal/LGPD
+#   (`blockers-register.md` BLK-0004 segue sem titular designado). As
+#   linhas de `docs/11-security-privacy-compliance/` abaixo recebem
+#   `@rodaquino-OMNI` apenas na qualidade de titular de AUTH-SECURITY
+#   (que compartilha o caminho) — isso NÃO constitui nomeação de
+#   AUTH-PRIVACY-LEGAL nem decide base legal alguma.
+#
+# No agent may invent a person, team, or GitHub handle to fill a rule not
+# covered above (docs/00-governance/evidence-notation.md §2 usage rule 7).
+#
+# Format reference: each active line is `<path-pattern>  <handle-or-team>
+# [<handle-or-team> ...]`. Later matching lines override earlier ones, per
+# GitHub's CODEOWNERS rules.
 #
 # Path-to-role mapping below is derived from:
 #   - prompt §15.1 area list (clinical, security, data, UX, operations, ADR)
 #   - prompt §16 documentation architecture (docs/ tree)
-#   - docs/00-governance/authority-model.md §1 (AUTH-* role IDs)
-#
-# Format reference (for when this is activated): each active line is
-# `<path-pattern>  <handle-or-team> [<handle-or-team> ...]`. Later
-# matching lines override earlier ones, per GitHub's CODEOWNERS rules.
+#   - docs/00-governance/authority-model.md §1/§5 (AUTH-* role IDs)
 
-# --- Clinical safety area (AUTH-CLINSAFETY) ---------------------------------
-# /docs/05-clinical-safety/          UNASSIGNED — VALIDATION REQUIRED
-# /docs/06-architecture/adrs/**      UNASSIGNED — VALIDATION REQUIRED  (clinical-touching ADRs; see also ADR area below)
+# --- Clinical safety area (AUTH-CLINSAFETY) — PARCIAL, ver nota acima ----
+/docs/05-clinical-safety/          @rodaquino-OMNI
+/docs/06-architecture/adrs/**      @rodaquino-OMNI  # ADRs de conteúdo clínico; ver também área ADR abaixo
 
 # --- Security area (AUTH-SECURITY) ------------------------------------------
-# /docs/11-security-privacy-compliance/   UNASSIGNED — VALIDATION REQUIRED
-# /.github/workflows/                     UNASSIGNED — VALIDATION REQUIRED
-# /scripts/check_forbidden_content.py     UNASSIGNED — VALIDATION REQUIRED
+/docs/11-security-privacy-compliance/   @rodaquino-OMNI
+/.github/workflows/                     @rodaquino-OMNI
+/scripts/check_forbidden_content.py     @rodaquino-OMNI
 
 # --- Privacy/legal area (AUTH-PRIVACY-LEGAL) --------------------------------
-# /docs/11-security-privacy-compliance/   UNASSIGNED — VALIDATION REQUIRED  (LGPD basis, retention, residency — shares path with security; both must review)
+# Caminho compartilhado com AUTH-SECURITY (linha acima). @rodaquino-OMNI é
+# incluído aqui apenas como titular de AUTH-SECURITY — AUTH-PRIVACY-LEGAL
+# em si permanece sem titular nomeado (ver "Papéis não ativados" acima).
+/docs/11-security-privacy-compliance/   @rodaquino-OMNI
 
 # --- Data-platform area (AUTH-DATA-PLATFORM) --------------------------------
-# /docs/07-data-and-provenance/       UNASSIGNED — VALIDATION REQUIRED
-# /docs/08-interoperability/          UNASSIGNED — VALIDATION REQUIRED
+/docs/07-data-and-provenance/       @rodaquino-OMNI
+/docs/08-interoperability/          @rodaquino-OMNI
 
 # --- UX area (AUTH-UX) -------------------------------------------------------
-# /docs/02-users-and-workflows/       UNASSIGNED — VALIDATION REQUIRED
-# /docs/10-ux-and-accessibility/      UNASSIGNED — VALIDATION REQUIRED
+/docs/02-users-and-workflows/       @rodaquino-OMNI
+/docs/10-ux-and-accessibility/      @rodaquino-OMNI
 
 # --- Operations area (AUTH-OPERATIONS) --------------------------------------
-# /docs/13-operations-and-reliability/    UNASSIGNED — VALIDATION REQUIRED
-# /docs/14-devsecops-and-delivery/        UNASSIGNED — VALIDATION REQUIRED
+/docs/13-operations-and-reliability/    @rodaquino-OMNI
+/docs/14-devsecops-and-delivery/        @rodaquino-OMNI
 
 # --- ADR area (no single AUTH-* role — ADRs cut across all of them) --------
-# /docs/06-architecture/adrs/         UNASSIGNED — VALIDATION REQUIRED  (requires review from every AUTH-* role the decision touches, per decision-rights.md)
+/docs/06-architecture/adrs/         @rodaquino-OMNI  # requer leitura por todo papel AUTH-* que a decisão toque, per decision-rights.md
 
 # --- Product / intended use (AUTH-PRODUCT, AUTH-INTENDED-USE) --------------
-# /docs/01-vision-and-intended-use/   UNASSIGNED — VALIDATION REQUIRED
-# /docs/04-product-requirements/      UNASSIGNED — VALIDATION REQUIRED
+/docs/01-vision-and-intended-use/   @rodaquino-OMNI  # AUTH-INTENDED-USE é PARCIAL — ver nota acima
+/docs/04-product-requirements/      @rodaquino-OMNI
 
 # --- Governance itself (no self-approval — see decision-rights.md §3) ------
-# /docs/00-governance/                UNASSIGNED — VALIDATION REQUIRED
+/docs/00-governance/                @rodaquino-OMNI
+
+# --- Plataforma/monorepo e automação (cobertura acrescentada 2026-08-16) ---
+# Nenhum papel AUTH-* dedicado existe para código de plataforma; cobertura
+# atribuída ao único titular nomeado em qualquer papel AUTH-* (ver cabeçalho
+# acima), sem inventar outro dono.
+/apps/           @rodaquino-OMNI
+/packages/       @rodaquino-OMNI
+/scripts/        @rodaquino-OMNI
+/.github/        @rodaquino-OMNI
 
 # --- Fallback: no default owner -------------------------------------------
 # Deliberately no `*` catch-all rule. An inactive catch-all would imply a
-# universal reviewer exists; none does yet.
+# universal reviewer exists for paths with no AUTH-* mapping above (e.g.
+# repository root files outside docs/apps/packages/scripts/.github).

@@ -1,0 +1,57 @@
+# metadados-gates.yml — gate de metadados de mudança (§15.1 item G).
+#
+# Escopo: roda scripts/check_change_metadata.py sobre todo Pull Request
+# aberto contra `main`, verificando que o corpo do PR ou algum commit do
+# intervalo base..head referencia ao menos um ID da taxonomia de
+# rastreabilidade (docs/00-governance/traceability-policy.md §1/§1.1),
+# per docs/14-devsecops-and-delivery/politica-de-metadados-de-mudanca.md.
+#
+# Complementa — não substitui — docs-gates.yml (convenções de
+# documentação + conteúdo proibido/PHI) e ci-plataforma.yml (build/teste
+# do monorepo). Nenhum dos três é alterado por este arquivo.
+#
+# BLOQUEANTE: o job abaixo não usa `continue-on-error` nem `if: always()`
+# para engolir falha, na mesma disciplina de docs-gates.yml e
+# ci-plataforma.yml (INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §3 regra 13).
+#
+# `fetch-depth: 0` é necessário (não o padrão raso de 1 commit) para que
+# `git log <base>..<head>` consiga resolver o intervalo completo do PR —
+# um checkout raso faria o script falhar por não conseguir ler os
+# commits, não por ausência real de referência.
+#
+# Actions pinadas por SHA de commit completo (nunca tag mutável), mesma
+# convenção e mesmos pins já OBSERVADOS em docs-gates.yml:
+#
+#   actions/checkout    @ 3d3c42e5aac5ba805825da76410c181273ba90b1  (tag v7.0.1)
+#   actions/setup-python @ 5fda3b95a4ea91299a34e894583c3862153e4b97  (tag v7.0.0)
+
+name: Metadados Gates
+
+# Quotado pelo mesmo motivo documentado em docs-gates.yml: uma chave `on:`
+# sem aspas é lida como o booleano `true` por parsers YAML 1.1 estritos.
+"on":
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  change-metadata:
+    name: change-metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (histórico completo — necessário para git log do intervalo)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.x"
+      - name: Verificar referência a ID de taxonomia (corpo do PR ou commits)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python3 scripts/check_change_metadata.py --base "$BASE_SHA" --head "$HEAD_SHA"

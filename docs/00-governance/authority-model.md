@@ -3,7 +3,7 @@ doc_id: GOV-AUTHORITY-MODEL
 status: PROPOSAL
 owner: UNASSIGNED — VALIDATION REQUIRED
 source: INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §5 (Gate G0), §4 (Required specialist pool)
-last_updated: 2026-08-15
+last_updated: 2026-08-16
 ---
 
 # Authority Model
@@ -24,14 +24,42 @@ approver."
 
 | Role ID | Role | Accountable for | Owner (name) | Status |
 |---|---|---|---|---|
-| `AUTH-PRODUCT` | Product decision owner | Product scope, prioritization, outcome tree, non-clinical acceptance | UNASSIGNED — VALIDATION REQUIRED | OPEN |
-| `AUTH-CLINSAFETY` | Clinical safety decision owner | Hazard acceptance, safety-case sign-off, residual-risk acceptance | UNASSIGNED — VALIDATION REQUIRED | OPEN |
-| `AUTH-SECURITY` | Security decision owner | Threat-model acceptance, penetration-test acceptance, security exceptions | UNASSIGNED — VALIDATION REQUIRED | OPEN |
-| `AUTH-PRIVACY-LEGAL` | Privacy/legal decision owner | LGPD basis, processor terms, residency, retention, legal holds | UNASSIGNED — VALIDATION REQUIRED | OPEN |
-| `AUTH-DATA-PLATFORM` | Data-platform decision owner | AMH boundary, contract acceptance, data-quality policy | UNASSIGNED — VALIDATION REQUIRED | OPEN |
-| `AUTH-UX` | UX decision owner | Participant-research acceptance, accessibility sign-off, workflow acceptance | UNASSIGNED — VALIDATION REQUIRED | OPEN |
-| `AUTH-OPERATIONS` | Operations decision owner | SLO/RTO/RPO acceptance, go-live operational readiness | UNASSIGNED — VALIDATION REQUIRED | OPEN |
-| `AUTH-INTENDED-USE` | Intended-use approver | Care setting, population, exclusions, advisory-vs-directive boundary | UNASSIGNED — VALIDATION REQUIRED | OPEN |
+| `AUTH-PRODUCT` | Product decision owner | Product scope, prioritization, outcome tree, non-clinical acceptance | rodaquino-OMNI (interino) | RESOLVIDO (interino) — `DEC-G0-01` |
+| `AUTH-CLINSAFETY` | Clinical safety decision owner | Hazard acceptance, safety-case sign-off, residual-risk acceptance | rodaquino-OMNI (**parcial** — apenas artefatos do ciclo 1); 2º revisor clínico nomeado, Dr. Marcelo Villaca Lima (CRM-SP 112678), aceite/credencial **PENDENTES** | OPEN — parcial (`BLK-0002`) — `GDEC-0003`/`GDEC-0010` |
+| `AUTH-SECURITY` | Security decision owner | Threat-model acceptance, penetration-test acceptance, security exceptions | rodaquino-OMNI (interino; **somente decisões de fase de projeto** — aceitação do Gate G6 exige verificador terceiro independente) | RESOLVIDO COM ESCOPO — `DEC-G0-02` |
+| `AUTH-PRIVACY-LEGAL` | Privacy/legal decision owner | LGPD basis, processor terms, residency, retention, legal holds | UNASSIGNED — VALIDATION REQUIRED | RECLASSIFICADO (G0 → G6/G8) — `DEC-G0-03`; papel em si segue sem titular, ver `BLK-0004` |
+| `AUTH-DATA-PLATFORM` | Data-platform decision owner | AMH boundary, contract acceptance, data-quality policy | rodaquino-OMNI (interino; ver também `AUTH-AMH-OWNER` em §2) | RESOLVIDO — `DEC-G0-04` |
+| `AUTH-UX` | UX decision owner | Participant-research acceptance, accessibility sign-off, workflow acceptance | rodaquino-OMNI (interino; conhecimento clínico próprio vale como hipótese de especialista, nunca como evidência de observação do Gate G1) | RESOLVIDO COM RESTRIÇÃO — `DEC-G0-05` |
+| `AUTH-OPERATIONS` | Operations decision owner | SLO/RTO/RPO acceptance, go-live operational readiness | rodaquino-OMNI (interino) | RESOLVIDO — `DEC-G0-06` |
+| `AUTH-INTENDED-USE` | Intended-use approver | Care setting, population, exclusions, advisory-vs-directive boundary | rodaquino-OMNI (**parcial** — apenas artefatos do ciclo 1); 2º revisor clínico nomeado, Dr. Marcelo Villaca Lima (CRM-SP 112678) | OPEN — parcial (`BLK-0008`) — `GDEC-0003`/`GDEC-0010` |
+
+**Atualização 2026-08-16 (pt-BR — propagação de decisão já registrada, não
+nomeação nova).** SOURCE (`registers/g0-resolucoes-2026-08-15.md` `DEC-G0-01`
+a `DEC-G0-06`; `registers/decision-register.md` `GDEC-0003`, `GDEC-0004`,
+`GDEC-0010`; `registers/blockers-register.md` `BLK-0001`–`BLK-0008`): as
+colunas *Owner (name)* e *Status* acima foram atualizadas para eliminar a
+contradição que existia entre este §1 (integralmente `UNASSIGNED` até
+2026-08-15) e o §5 abaixo (que já nomeava rodaquino-OMNI nos mesmos 8
+papéis desde 2026-08-15). Esta edição **copia** para §1 o que os registros
+citados já haviam decidido — não decide, nomeia ou aceita nada por si
+mesma. Em particular: `AUTH-PRODUCT`, `AUTH-SECURITY`, `AUTH-DATA-
+PLATFORM`, `AUTH-UX` e `AUTH-OPERATIONS` têm rodaquino-OMNI como titular
+interino, com as restrições de escopo de `DEC-G0-02` e `DEC-G0-05`
+preservadas na coluna *Owner*. `AUTH-CLINSAFETY` e `AUTH-INTENDED-USE`
+permanecem **parciais**: rodaquino-OMNI foi aceito como revisor/aprovador
+de conteúdo clínico apenas para artefatos do ciclo 1 (`GDEC-0003`), e um
+segundo revisor clínico — Dr. Marcelo Villaca Lima, CRM-SP 112678 — foi
+**nomeado** (`GDEC-0010`), mas seu aceite formal por escrito e a
+verificação independente de credencial seguem **PENDENTES**; por isso
+`BLK-0002` e `BLK-0008` continuam `OPEN`, não `RESOLVIDO`, exatamente como
+já registrado em `blockers-register.md`. `AUTH-PRIVACY-LEGAL` **não tem
+titular nomeado**: `DEC-G0-03` apenas reclassificou o bloqueador de
+pré-condição do Gate G0 para pré-condição dos Gates G6/G8, condicionando o
+desenvolvimento a dados sintéticos até parecer jurídico — a designação do
+papel em si permanece em aberto (`BLK-0004`). O estado corrente e mais
+detalhado de cada bloqueador sempre prevalece em
+`registers/blockers-register.md` e `registers/decision-register.md`; esta
+tabela é um resumo, não a fonte primária.
 
 ## 2. AMH owners (external authority, not V2-internal)
 
@@ -92,20 +120,38 @@ requires validation and ratification by the named owners above once they exist.
   has a named, reachable human and the escalation model in §3 has itself been
   validated. Until then, see `registers/blockers-register.md`.
 
+**Nota (2026-08-16, pt-BR).** O primeiro item acima descreve o escopo da
+tarefa do ciclo 0 que redigiu esta seção — não descreve o documento como um
+todo a partir de 2026-08-15. §5 abaixo nomeia rodaquino-OMNI por decisão do
+próprio titular (`DEC-G0-01`–`DEC-G0-09`), e a tabela de §1 foi atualizada
+na mesma linha em 2026-08-16 para propagar essas decisões já registradas
+(ver a nota logo após a tabela de §1). Os itens 2 e 3 acima permanecem
+válidos sem ressalva: nenhuma aceitação de risco ou política nova ocorre
+neste documento, e o Gate G0 segue não fechado por ele isoladamente — dois
+papéis (`AUTH-CLINSAFETY`, `AUTH-INTENDED-USE`) permanecem parciais e um
+(`AUTH-PRIVACY-LEGAL`) permanece sem titular nomeado, conforme
+`registers/blockers-register.md`.
+
 ---
 
 ## 5. Apêndice — titulares interinos nomeados (2026-08-15)
 
-**Nota de idioma e de forma:** esta seção é conteúdo **novo**, redigida em
-pt-BR conforme `decision-register.md` `GDEC-0006` (política de idioma,
-DEC-G0-10). Os §§1–4 acima são o corpus do ciclo 0, em inglês, e **não são
-reescritos** por esta adição — permanecem como registro histórico do estado
-"nenhum titular nomeado" que vigorava até 2026-08-14. Este §5 é a fonte
-prática e atual de quem detém cada papel; onde houver conflito aparente
-entre "UNASSIGNED" nas tabelas de §1–2 e este apêndice, **este apêndice
-prevalece por ser posterior e mais específico**, mas nenhuma tabela acima
-foi alterada — a discrepância é intencional e documenta a evolução no
-tempo, não um erro.
+**Nota de idioma e de forma:** esta seção é conteúdo redigido em pt-BR
+conforme `decision-register.md` `GDEC-0006` (política de idioma,
+DEC-G0-10). Os §§2–4 acima permanecem o corpus do ciclo 0, em inglês, e
+não são reescritos por esta adição — continuam como registro histórico do
+estado "nenhum titular nomeado" que vigorava até 2026-08-14 para os itens
+que não são os 8 papéis de §1. **Atualização 2026-08-16:** a tabela de §1
+(apenas as colunas *Owner (name)* e *Status*) **foi propagada** com o que
+os registros abaixo já haviam decidido, corrigindo a contradição interna
+que existia entre um §1 integralmente "UNASSIGNED" e este §5 nomeando
+rodaquino-OMNI nos mesmos 8 papéis — ver a nota após a tabela de §1 para o
+detalhe da propagação. Essa propagação não é uma nomeação nova: ela copia
+para §1 o que `DEC-G0-01`–`DEC-G0-06`, `GDEC-0003` e `GDEC-0010` já haviam
+registrado. §2 (titularidade AMH) permanece como estava, fora do escopo
+desta correção. Este §5 continua sendo a fonte narrativa mais completa de
+quem detém cada papel e por quê; onde §1 é apenas um resumo tabular, este
+apêndice traz o detalhe e a restrição de escopo.
 
 **Titular único:** `rodaquino-OMNI` — CEO e acionista principal da OMNI e da
 AMH, médico intensivista. Autoridade e fundamento de cada papel estão
