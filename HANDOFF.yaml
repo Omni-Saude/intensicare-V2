@@ -342,6 +342,22 @@ ciclo_6_construcao_2026_08_16:
     - "BLK-0015: dono AMH do contrato (producer.owner)"
     - "Ratificação clínica: janela de sobreposição temporal por parâmetro (proposta em packages/kernel-clinico/README.md) e taxonomia de razões de status (reference-vectors.md §1)"
     - "Ratificação de prefixos documento-locais em traceability-policy.md §1.1 (MD/MG/EPC/SPR/SR/OC/AO)"
+    - >-
+      DECISÃO DE GOVERNANÇA PENDENTE — checks obrigatórios da proteção da main.
+      Hoje só doc-conventions e forbidden-content são obrigatórios; o CI de
+      plataforma (build-and-test: build, typecheck, lint, fronteira de módulos
+      e 1.026 testes) e o gate de metadados NÃO são. Na prática isso os torna
+      advisory, o que o anti-padrão 11 do próprio prompt proíbe. O orquestrador
+      NÃO alterou a proteção por conta própria: GDEC-0014 enumera de forma
+      exaustiva o que é vinculante ("os gates de CI existentes", e só havia
+      docs-gates quando foi escrita), e como enforce_admins=true um check
+      obrigatório bloqueia também o titular. Ampliar o conjunto vinculante é
+      decisão dele, não de agente. Comando, se aprovar:
+      gh api -X PATCH repos/Omni-Saude/intensicare-V2/branches/main/protection/required_status_checks
+      -f 'contexts[]=doc-conventions' -f 'contexts[]=forbidden-content'
+      -f 'contexts[]=build-and-test'  (acrescentar change-metadata se quiser o
+      gate de rastreabilidade também vinculante). Reversível pelo mesmo comando
+      sem o contexto extra.
   proximos_executaveis_sem_humano: ["integrar RULE-GCS + rule-bundle + observabilidade na rota da API (pacotes existem e sao testados; fiacao parcial)", "SOFA como terceira via", "AsyncAPI formal", "SPR-G0-3 tranche 5", "ampliar estados §11 no frontend", "estado de erro de UI para rejeicao de rede (gap real registrado)"]
   advertencia_de_sequencia: >-
     INFERENCE do orquestrador, ponto de decisao do titular: percorrido o

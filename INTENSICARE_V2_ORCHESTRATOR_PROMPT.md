@@ -153,6 +153,25 @@ trabalho não commitado antes de escrever.
     marcado; CPF com dígito verificador inválido em fixtures.
 13. Tratar aprovação em um contexto como aprovação no próximo: cada gate humano
     é um ato nomeado, datado e com regra de supersessão.
+14. (ciclo 6) **Verde local que não é verde em checkout limpo.** `pnpm verify`
+    passava na máquina do desenvolvedor e o CI falhava: o `typecheck` rodava
+    antes do `build`, e os pacotes do workspace resolvem tipos por
+    `dist/*.d.ts`. Quem já tinha buildado nunca via o erro. Verde por acidente
+    é pior que vermelho, porque mente. Regra: validar como o CI valida —
+    `node_modules` e `dist` removidos, `pnpm install --frozen-lockfile`.
+15. (ciclo 6) **Política duplicada à mão diverge em silêncio.** Duas falhas de
+    CI deste ciclo tiveram a mesma causa estrutural: a sequência do `verify`
+    existia em duas cópias (script e workflow) e os limites de tempo de teste
+    eram reescritos pacote a pacote. Nos dois casos as cópias carregavam o
+    mesmo defeito, e bastava criar um pacote novo para o esquecimento voltar.
+    Regra: uma definição, um caminho de execução; o CI chama o mesmo comando
+    que o desenvolvedor chama.
+16. (ciclo 6) **Artefato gerado e versionado sem gate de regeneração.** Um
+    relatório gerado é lido como evidência, mas nada garante que corresponda ao
+    código atual — e ele continua plausível depois de divergir. Se o gerador
+    emite instante de execução, o arquivo fica indiferenciável e não há como
+    checar. Regra: gerador determinístico + regeneração comparada por hash no
+    CI (`scripts/check_generated_files.mjs`).
 
 ### 0.5 Roteamento inteligente de modelos e agentes especializados
 
