@@ -228,7 +228,7 @@ Atenciosamente,
 
 | # | Verificação | Estado |
 |---|---|---|
-| 1 | Destinatário definido, com habilitação em direito brasileiro e experiência em proteção de dados no setor de saúde | **PENDENTE** |
+| 1 | Destinatário definido, com habilitação em direito brasileiro e experiência em proteção de dados no setor de saúde | **PARCIAL** — instituição decidida: conselho jurídico interno (GDEC-0008 item 1); **nome do jurista individual e envio pendentes** (ato do titular; BLK-0014) |
 | 2 | Campos entre colchetes preenchidos | **PENDENTE** |
 | 3 | Premissas P-1 a P-7 da minuta conferidas e corrigidas onde necessário | **PENDENTE** |
 | 4 | Anexos A-1 a A-4 disponibilizados; A-5 e A-6 decididos | **PENDENTE** |

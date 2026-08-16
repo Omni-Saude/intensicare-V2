@@ -731,6 +731,16 @@ logo HAZ-0045 está com defeito de análise declarado e aberto até que o
 requisito exista") e §4 ("Pendência aberta gerada por esta disposição").
 Escrito por escriba de governança; nenhum mérito decidido aqui.
 
+**Verificação OBSERVADA (2026-08-15, ciclo 5 — transcrição, sem fechamento):**
+`docs/05-clinical-safety/safety-requirements.md` **contém SAF-0042** ("Telemetria de
+anomalia de identidade: detecção compensatória, explicitamente insuficiente" —
+§SAF-0042), acrescentado em 2026-08-15 pela sessão paralela; a tabela de mapeamento
+daquele arquivo vincula HAZ-0045 → SAF-0042 (`DET`, compensatório). A condição
+habilitante deste bloqueador ("SAF-0042 ausente") **não é mais verdadeira**. O status
+permanece **OPEN** porque a disposição (aceitar SAF-0042 como resposta ao defeito de
+análise declarado, ou determinar disposição alternativa) cabe a AUTH-CLINSAFETY —
+humano nomeado; nenhum agente fecha bloqueador.
+
 ## Index
 
 | ID | Title | Gate | Who must act | Status (2026-08-15) |
@@ -751,7 +761,7 @@ Escrito por escriba de governança; nenhum mérito decidido aqui.
 | BLK-0014 | OS-16 — pedido de parecer redigido, NÃO ENVIADO; destinatário jurídico não definido | G6, G8 | rodaquino-OMNI | OPEN — parcialmente resolvido (GDEC-0008 item 1) |
 | BLK-0015 | Contrato v1 — dono AMH não nomeado (critério 6 da OS-19 insatisfazível pela minuta) | G3 | rodaquino-OMNI (lado AMH) | OPEN |
 | BLK-0016 | Contrato de ordem clínica sem dono | G2 | AUTH-DATA-PLATFORM / titular | OPEN |
-| BLK-0017 | SAF-0042 ausente — defeito de análise declarado de HAZ-0045 | G6 | AUTH-CLINSAFETY | OPEN — verificar hazard-log/safety-requirements (em resolução paralela) |
+| BLK-0017 | SAF-0042 ausente — defeito de análise declarado de HAZ-0045 | G6 | AUTH-CLINSAFETY | OPEN — SAF-0042 OBSERVADO existente em `safety-requirements.md`; disposição humana pendente |
 
 **Nota do steward (2026-08-15, segunda integração, pt-BR — conteúdo novo):**
 `BLK-0012`..`BLK-0015` não são bloqueadores do Gate G0 — são bloqueadores de
