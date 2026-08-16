@@ -146,3 +146,22 @@ artefato. Tier econômico jamais participa de conteúdo clínico (§0.5).
 > autorização permanece nos termos desta ata — e segue **não exercível** de
 > todo modo (condições 3-4). A contra-assinatura recomendada no item 5
 > permanece **pendente**.
+
+---
+
+> **Contra-assinatura registrada em 2026-08-15 por decisão escrita do titular
+> (GDEC-0011 item 1).** Eu, rodaquino-OMNI (autoridade constituída —
+> GDEC-0004; revisor clínico — GDEC-0003), contra-assino as decisões
+> AGT-1..AGT-4 desta ata como minhas, incluindo, com ciência expressa, a
+> AGT-3 decidida **contra a recomendação do orquestrador** (RISK-0012, S5),
+> sob as 7 condições cumulativas e os gatilhos de revisita nela nomeados.
+> Regra de supersessão: os próprios gatilhos da ata. — *Transcrito pelo
+> escriba por instrução escrita do titular.*
+>
+> **Revisita da AGT-3 (aberta por GDEC-0010) — CONCLUÍDA em 2026-08-15
+> (GDEC-0011 item 2):** AGT-3 **APROVADA** pelo segundo revisor clínico
+> nomeado, Dr. Marcelo Villaca Lima (CRM-SP 112678), conforme atestado por
+> escrito pelo titular em sessão. A autorização permanece nos termos desta
+> ata, agora ratificada também por segundo revisor clínico. Gatilhos
+> remanescentes: **primeiro parecer jurídico** (OS-16 — pedido já enviado,
+> GDEC-0011 item 3) e **primeiro evento adverso** em sombra/piloto.

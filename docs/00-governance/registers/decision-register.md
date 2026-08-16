@@ -634,6 +634,66 @@ provenance:
   validation_status: "VALIDATION REQUIRED — aceite do nomeado e verificação independente da credencial pendentes"
 ```
 
+## GDEC-0011 — Sessão de fechamento do G0 residual: contra-assinatura da ata GDEC-0009; revisita AGT-3 aprovada; MD-1 residual executado
+
+Transcrição de decisões e atos tomados **por escrito, em sessão**, pelo
+titular (rodaquino-OMNI). O orquestrador do mapa é escriba, não decisor.
+
+```yaml
+id: GDEC-0011
+title: Contra-assinatura GDEC-0009 + revisita AGT-3 aprovada pelo 2º revisor + OS-16 enviada (jurista Dr. Lucas Alves de Sousa, OAB/GO 45.457)
+status: DECIDED
+statement: >
+  (1) CONTRA-ASSINATURA: o titular contra-assina a ata AGT-1..AGT-4
+  (GDEC-0009) como decisão própria, incluindo, com ciência expressa, a
+  AGT-3 decidida contra a recomendação do orquestrador (RISK-0012, S5),
+  sob as 7 condições cumulativas e os gatilhos de revisita nela nomeados
+  (bloco apenso à ata). (2) REVISITA AGT-3, aberta por GDEC-0010,
+  CONCLUÍDA: AGT-3 APROVADA pelo segundo revisor clínico nomeado,
+  Dr. Marcelo Villaca Lima (CRM-SP 112678), conforme atestado por escrito
+  pelo titular; a autorização permanente segue nos termos da ata, agora
+  ratificada também por segundo revisor clínico; gatilhos remanescentes:
+  primeiro parecer jurídico e primeiro evento adverso. A participação na
+  revisita constitui exercício do papel; o aceite formal por escrito do
+  próprio nomeado e a verificação independente da credencial permanecem
+  pendências de forma (GDEC-0010). (3) MD-1 RESIDUAL EXECUTADO: o pedido
+  de parecer OS-16 foi FISICAMENTE ENVIADO ao conselho jurídico interno;
+  jurista responsável nomeado: Dr. Lucas Alves de Sousa — OAB/GO nº
+  45.457. BLK-0014 fica EXECUTADO; o relógio externo do parecer
+  (SPR-G1-2) inicia a contar; BLK-0013 e BLK-0004 permanecem OPEN até o
+  parecer dispô-los; DEC-G0-03 (somente dados sintéticos até o parecer)
+  permanece integral.
+decided_by: rodaquino-OMNI (titular; papéis interinos GDEC-0004; revisor clínico GDEC-0003)
+decided_date: "2026-08-15"
+rationale: >
+  Fecha o residual de MD-1 — o único prazo externo do programa, que
+  concentra o dado real, o baseline retrospectivo (SPR-G1-10) e a
+  exercibilidade da promoção acionável (AGT-3 condição 4) — e consolida a
+  agentificação de G1/G2 com contra-assinatura e ratificação por segundo
+  revisor clínico, na sequência recomendada pela análise da sessão do mapa
+  (a revisita ocorreria de qualquer forma no primeiro parecer).
+supersession_rule: >
+  Item 2: os gatilhos remanescentes da ata GDEC-0009 reabrem a AGT-3 —
+  incluindo o recebimento do próprio parecer OS-16. Item 3: o recebimento
+  do parecer dispõe BLK-0013/BLK-0004 e destrava dado real, baseline
+  retrospectivo e exercibilidade (condição 4).
+links:
+  requirements: []
+  hazards: [HAZ-0045, HAZ-0047]
+  adrs: []
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-15), itens 1-3
+  commit_sha_or_version: f2c918b (estado ao decidir)
+  section_or_lines: "instruções: 'contra-assino a ata GDEC-0009'; 'AGT-3 aprovada pelo Dr. Marcelo'; 'MD-1 residual — envio físico do pedido OS-16 executado + jurista é o Dr Lucas Alves de Sousa OAB/GO nº 45.457'"
+  date_collected: "2026-08-15"
+  collector: orquestrador do mapa até produção — escriba
+  transformation: "transcrita; pendências de forma e efeitos sobre bloqueadores explicitados pelo escriba"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisões do titular; exceção: aprovação do 2º revisor atestada pelo titular, registro assinado pelo próprio nomeado recomendado"
+```
+
 ## Index
 
 | ID | Title | Status | Decided by | Decided date |
@@ -648,6 +708,7 @@ provenance:
 | GDEC-0008 | Fila de decisão pós-ciclo-2 — OS-16, C-1=O3, G1 comissionado, ADRs aceitos, N-11..14, OS novas, housekeeping, tradução | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0009 | Agentificação dos Gates G1 e G2 (AGT-1..AGT-4; AGT-3 contra recomendação do orquestrador) | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0010 | Segundo revisor clínico nomeado — Dr. Marcelo Villaca Lima, CRM-SP 112678 (aceite + verificação pendentes; dispara revisita AGT-3) | DECIDED | rodaquino-OMNI | 2026-08-15 |
+| GDEC-0011 | Contra-assinatura GDEC-0009; revisita AGT-3 aprovada pelo 2º revisor; OS-16 ENVIADA (jurista Dr. Lucas Alves de Sousa, OAB/GO 45.457) | DECIDED | rodaquino-OMNI | 2026-08-15 |
 
 ## Notes
 
@@ -676,3 +737,6 @@ provenance:
 - **Nota (2026-08-15, sessão do mapa — SPR-G0-2):** `GDEC-0010` alocado
   (nomeação do segundo revisor clínico; gatilho de revisita da AGT-3
   disparado e registrado). Próximo ID disponível: `GDEC-0011`.
+- **Nota (2026-08-15, fechamento do G0 residual):** `GDEC-0011` alocado
+  (contra-assinatura; revisita AGT-3 concluída; OS-16 enviada). Próximo ID
+  disponível: `GDEC-0012`.

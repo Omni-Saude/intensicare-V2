@@ -98,6 +98,11 @@ Permanece **OPEN** até: aceite formal por escrito do nomeado; verificação
 independente da credencial; registro da linha de reporte. A nomeação dispara
 o gatilho de revisita da AGT-3 (GDEC-0009) — revisita ABERTA.
 
+**Atualização 2026-08-15 (GDEC-0011 item 2):** o nomeado **exerceu o papel**
+na revisita da AGT-3 (aprovada), conforme atestado por escrito pelo titular.
+Aceite formal por escrito do próprio nomeado, verificação independente da
+credencial e linha de reporte seguem pendentes — o bloqueador permanece OPEN.
+
 ## BLK-0003 — No named security decision owner
 
 ```yaml
@@ -599,6 +604,13 @@ titular**. Status permanece **OPEN**, agora qualificado como
 nome individual ainda não ocorreram — o prazo externo ainda não começou a
 contar.
 
+**Atualização 2026-08-15 (GDEC-0011 item 3) — EXECUTADO:** o pedido de
+parecer foi **fisicamente enviado** ao conselho jurídico interno; jurista
+responsável nomeado: **Dr. Lucas Alves de Sousa — OAB/GO nº 45.457**. O ato
+que este bloqueador exigia (envio + destinatário individual) está completo;
+o relógio externo do parecer (SPR-G1-2) inicia. BLK-0013 e BLK-0004
+permanecem OPEN até o parecer dispô-los; DEC-G0-03 permanece integral.
+
 ## BLK-0015 — Contrato v1 — dono AMH não nomeado (critério 6 da OS-19 insatisfazível pela minuta) (pt-BR — conteúdo novo, 2026-08-15)
 
 ```yaml
@@ -758,7 +770,7 @@ humano nomeado; nenhum agente fecha bloqueador.
 | BLK-0011 | Branch protection for `main` not configured | G0 | AUTH-SECURITY + repo admin | EXECUTADO |
 | BLK-0012 | Classe D — ausência de profile `MedicationAdministration` na IG AMH | G2 | AUTH-DATA-PLATFORM | OPEN |
 | BLK-0013 | Cobertura jurídica/ética de pesquisa com participantes humanos não coberta por `DEC-G0-03` | G1 → G8 (GDEC-0009) | rodaquino-OMNI | OPEN — reclassificado pré-piloto |
-| BLK-0014 | OS-16 — pedido de parecer redigido, NÃO ENVIADO; destinatário jurídico não definido | G6, G8 | rodaquino-OMNI | OPEN — parcialmente resolvido (GDEC-0008 item 1) |
+| BLK-0014 | OS-16 — pedido de parecer ENVIADO ao jurista nomeado (Dr. Lucas Alves de Sousa, OAB/GO 45.457) | G6, G8 | rodaquino-OMNI | EXECUTADO (2026-08-15, GDEC-0011); parecer pendente — BLK-0013/BLK-0004 seguem OPEN |
 | BLK-0015 | Contrato v1 — dono AMH não nomeado (critério 6 da OS-19 insatisfazível pela minuta) | G3 | rodaquino-OMNI (lado AMH) | OPEN |
 | BLK-0016 | Contrato de ordem clínica sem dono | G2 | AUTH-DATA-PLATFORM / titular | OPEN |
 | BLK-0017 | SAF-0042 ausente — defeito de análise declarado de HAZ-0045 | G6 | AUTH-CLINSAFETY | OPEN — SAF-0042 OBSERVADO existente em `safety-requirements.md`; disposição humana pendente |
