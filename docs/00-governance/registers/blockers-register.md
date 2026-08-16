@@ -174,6 +174,16 @@ complementação solicitada. Disposição fail-closed: este bloqueador permanece
 no estado atual e DEC-G0-03 permanece integral (só dados sintéticos) até a
 complementação; a designação plena de AUTH-PRIVACY-LEGAL segue aberta.
 
+**Atualização 2026-08-16 (complementação recebida):** seções VII/VIII
+recebidas — critérios OS-16 de conteúdo **satisfeitos** (análise atualizada
+no arquivo do parecer). O gatilho de parecer de DEC-G0-03 está **atendido**;
+dado real permanece condicionado **por operação** às condicionantes do
+próprio parecer (índice: instrumento+RIPD+tombamento+segregação; laço:
+caráter consultivo documentado; baseline: corte+minimização). A designação
+plena de AUTH-PRIVACY-LEGAL segue aberta (o parecerista emitiu o parecer;
+assunção do papel não foi decidida). Pendências de forma: PDF original;
+anexação ao ADR-043 (ato AMH).
+
 ## BLK-0005 — No named data-platform decision owner
 
 ```yaml
@@ -573,6 +583,14 @@ antes de qualquer campo** (este bloqueador só se dispõe, para campo, com a
 aprovação ética). Eficácia pendente da complementação de forma dos
 critérios OS-16 (iii)/(iv) — ver análise no arquivo do parecer recebido.
 
+**Atualização 2026-08-16 (complementação recebida):** com o parecer
+completo, a via **retrospectiva** (baseline AGT-2) está **juridicamente
+coberta** — alínea "f", condicionantes do item V.1 (corte documentado,
+acesso mínimo, sem transferência; reclassificação obrigatória se a
+finalidade mudar para publicação). A via de **campo** permanece bloqueada
+até aprovação **CEP/CONEP + TCLE** (item V.2) — este bloqueador segue OPEN
+para campo, coberto para retrospectivo.
+
 ## BLK-0014 — OS-16 — pedido de parecer redigido, NÃO ENVIADO; destinatário jurídico não definido (pt-BR — conteúdo novo, 2026-08-15)
 
 ```yaml
@@ -778,7 +796,7 @@ humano nomeado; nenhum agente fecha bloqueador.
 | BLK-0001 | No named product decision owner | G0 | AUTH-PRODUCT | RESOLVIDO (interino) |
 | BLK-0002 | No named clinical safety decision owner | G0 | AUTH-CLINSAFETY | OPEN — parcial (GDEC-0003); 2º revisor nomeado (GDEC-0010), aceite+credencial pendentes |
 | BLK-0003 | No named security decision owner | G0 | AUTH-SECURITY | RESOLVIDO COM ESCOPO |
-| BLK-0004 | No named privacy/legal decision owner | G0 → G6/G8 | AUTH-PRIVACY-LEGAL | RECLASSIFICADO — parecer OS-16 recebido (favorável); complementação (iii)/(iv) pendente |
+| BLK-0004 | No named privacy/legal decision owner | G0 → G6/G8 | AUTH-PRIVACY-LEGAL | RECLASSIFICADO — parecer OS-16 COMPLETO (2026-08-16); gatilho DEC-G0-03 atendido; dado real condicionado por operação; designação do papel aberta |
 | BLK-0005 | No named data-platform decision owner | G0 | AUTH-DATA-PLATFORM | RESOLVIDO |
 | BLK-0006 | No named UX decision owner | G0 | AUTH-UX | RESOLVIDO COM RESTRIÇÃO |
 | BLK-0007 | No named operations decision owner | G0 | AUTH-OPERATIONS | RESOLVIDO |
@@ -787,7 +805,7 @@ humano nomeado; nenhum agente fecha bloqueador.
 | BLK-0010 | AMH license/ownership authority unestablished | G0 | AUTH-DATA-PLATFORM + AUTH-AMH-OWNER | RESOLVIDO POR CONCESSÃO ESCRITA |
 | BLK-0011 | Branch protection for `main` not configured | G0 | AUTH-SECURITY + repo admin | EXECUTADO |
 | BLK-0012 | Classe D — ausência de profile `MedicationAdministration` na IG AMH | G2 | AUTH-DATA-PLATFORM | OPEN |
-| BLK-0013 | Cobertura jurídica/ética de pesquisa com participantes humanos não coberta por `DEC-G0-03` | G1 → G8 (GDEC-0009) | rodaquino-OMNI | OPEN — rota definida pelo parecer OS-16 (retrospectivo: alínea f; campo: CEP/CONEP); complementação pendente |
+| BLK-0013 | Cobertura jurídica/ética de pesquisa com participantes humanos não coberta por `DEC-G0-03` | G1 → G8 (GDEC-0009) | rodaquino-OMNI | OPEN p/ campo (CEP/CONEP+TCLE); via retrospectiva COBERTA pelo parecer completo (2026-08-16, item V.1) |
 | BLK-0014 | OS-16 — pedido de parecer ENVIADO ao jurista nomeado (Dr. Lucas Alves de Sousa, OAB/GO 45.457) | G6, G8 | rodaquino-OMNI | EXECUTADO (2026-08-15, GDEC-0011); parecer pendente — BLK-0013/BLK-0004 seguem OPEN |
 | BLK-0015 | Contrato v1 — dono AMH não nomeado (critério 6 da OS-19 insatisfazível pela minuta) | G3 | rodaquino-OMNI (lado AMH) | OPEN |
 | BLK-0016 | Contrato de ordem clínica sem dono | G2 | AUTH-DATA-PLATFORM / titular | OPEN |

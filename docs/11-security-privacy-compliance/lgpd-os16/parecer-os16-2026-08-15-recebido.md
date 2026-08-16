@@ -199,17 +199,15 @@ por esta atualização.
 
 ---
 
-## Complementação recebida (2026-08-16) — transcrição fiel
+## Complementação recebida (2026-08-16) — registro de recepção
 
-### VII. O que este parecer NÃO cobre
-
-Adoto expressamente a lista de exclusões da minuta §7, itens 1 a 26 (ANVISA/SaMD; certificação de S-RES; normas CFM e demais conselhos; sigilo profissional; ANS; contratos do art. 39 — cuja **exigência** afirmo, mas cuja **redação** não faço aqui; instrumento entre controladores; contratos
-com instituições; transferência internacional; residência de dados; provedores de LLM; crianças e adolescentes; titulares falecidos; dados de trabalhadores; RIPD — exigido, não elaborado; ROPA; encarregado; resposta a incidentes; prazos de retenção; direitos do titular; art. 20 além do
-respondido em Q-15; responsabilidade civil e sanções; regime CEP/CONEP além do enquadramento de rota do item V; concorrência; discriminação em outros regimes).
-
-### VIII. Condições de revisão (Q-25)
-
-Este parecer deve ser **revisitado** se ocorrer qualquer um: (1) alteração legislativa ou regulamentação/decisão da ANPD sobre grupos econômicos em saúde, art. 11 ou art. 20; (2) mudança material da arquitetura examinada (novo commit de referência que altere o índice, o PSR ou os fluxos); (3) início efetivo de tratamento de dado real (gatilho de reavaliação prática); (4) decurso de 24 meses da assinatura; (5) qualquer incidente de segurança envolvendo os dados examinados.
+As seções **VII** (o que o parecer não cobre — adoção expressa das
+exclusões da minuta §7, itens 1-26) e **VIII** (condições de revisão —
+5 condições, prazo de **24 meses**) foram recebidas do parecerista em
+2026-08-16 e **integradas in-loco ao corpo do parecer acima**, entre os
+itens VI e IX (inserção pela sessão de execução do ciclo 5, que também
+atualizou o front matter). O teor integral consta lá; este bloco permanece
+apenas como marco temporal da recepção.
 
 ---
 

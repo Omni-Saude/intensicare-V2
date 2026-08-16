@@ -177,3 +177,11 @@ artefato. Tier econômico jamais participa de conteúdo clínico (§0.5).
 > anterior). Fail-closed até a revisita e a complementação: **a condição 4
 > permanece NÃO satisfeita** e DEC-G0-03 permanece integral. Gatilho
 > remanescente após esta: primeiro evento adverso em sombra/piloto.
+
+> **Nota do escriba (2026-08-16, complementação recebida):** seções VII/VIII
+> do parecer recebidas — critérios de conteúdo da OS-16 **satisfeitos**.
+> A **condição 4 está satisfeita no plano jurídico**, sob as condicionantes
+> por operação do próprio parecer; a exercibilidade prática segue barrada
+> pela **condição 3** (G3 aprovado por via — hoje 0 vias). A **2ª revisita
+> desta autorização segue ABERTA**, a conduzir pelo titular (com o 2º
+> revisor), tendo o parecer completo como insumo.
