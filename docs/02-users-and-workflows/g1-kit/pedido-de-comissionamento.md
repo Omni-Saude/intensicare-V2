@@ -230,49 +230,77 @@ As ações 2 e 5 são as de maior retorno por unidade de esforço em todo o kit.
 
 ---
 
-## 6. Bloco de resposta — a ser preenchido **por humano nomeado**
+## 6. Bloco de resposta — preenchido por decisão do humano nomeado
 
 > **Nenhum agente pode preencher, sugerir preenchimento ou registrar como preenchido qualquer
-> campo abaixo.** Enquanto vazio, este documento permanece PROPOSAL, e o Gate G1 permanece
-> aberto — **SOURCE** (`../../00-governance/decision-rights.md` §1, regra 4): "Silêncio não é
-> consentimento. Uma PROPOSAL não revisada permanece PROPOSAL indefinidamente."
+> campo abaixo** por iniciativa própria. — **Nota de proveniência (2026-08-15):** o bloco abaixo
+> foi preenchido pelo escriba por **transcrição de instrução escrita, item a item, do titular
+> nomeado** em sessão de 2026-08-15 (mesmo padrão de GDEC-0007/GDEC-0008: decisão humana,
+> transcrição de agente), à luz de GDEC-0008 item 3 e GDEC-0009 (ata
+> `../../00-governance/registers/agentificacao-g1-g2-2026-08-15.md`, AGT-1/AGT-2). O registro
+> mestre permanece o decision-register.
 
 ```text
 DECISÃO SOBRE O PEDIDO DE COMISSIONAMENTO DA PESQUISA G1
 
-Decidido por (nome):        ____________________________________
-Papéis exercidos:           ____________________________________
-Data (AAAA-MM-DD):          ____________________________________
+Decidido por (nome):        rodaquino-OMNI (titular nomeado)
+Papéis exercidos:           AUTH-PRODUCT, AUTH-UX, AUTH-CLINSAFETY —
+                            interinos (GDEC-0004; revisor clínico GDEC-0003)
+Data (AAAA-MM-DD):          2026-08-15
 
-(a) Aprovar o protocolo como desenho:        [ ] sim  [ ] sim com alterações  [ ] não
-(b) Comissionar a execução:                  [ ] sim  [ ] parcial  [ ] não
-(c) Priorizar a cápsula de baseline:         [ ] sim  [ ] não
+(a) Aprovar o protocolo como desenho:        [x] sim  [ ] sim com alterações  [ ] não
+    (GDEC-0008 item 3)
+(b) Comissionar a execução:                  [x] sim  [ ] parcial  [ ] não
+    (no escopo agentificado — GDEC-0009: dossiê substituto multi-fonte +
+    baseline retrospectivo; campo = variante observacional opcional,
+    pré-piloto)
+(c) Priorizar a cápsula de baseline:         [x] sim  [ ] não
+    (via retrospectiva — AGT-2: corte histórico fixado ANTES de qualquer
+    exposição visível a clínicos)
 (d) Rota de VAL-0005:                        [ ] observação comissionada
-                                             [ ] risco bloqueante aceito
+                                             [x] risco bloqueante aceito
+    (AGT-1; RISK-0013)
 
 Opção escolhida:            [ ] A   [ ] B   [ ] C   [ ] D
+    (nenhuma das quatro na forma original: rota GDEC-0009 — equivalente a
+    C para a observação direta, com substituto multi-fonte + baseline
+    retrospectivo comissionados; A/B permanecem disponíveis como variante
+    observacional opcional pré-piloto)
 
 Razão (obrigatória, em detalhe suficiente para que um revisor futuro
 avalie se ela ainda se sustenta):
-_______________________________________________________________
-_______________________________________________________________
+Decisão ditada por escrito pelo titular nesta sessão: comissionamento
+mantido integralmente no escopo agentificado de GDEC-0009 — o dossiê
+substituto multi-fonte (AGT-1) e o baseline retrospectivo com corte
+histórico pré-exposição (AGT-2) satisfazem a evidência do G1; o campo
+observacional permanece opcional, pré-piloto, gateado em ética
+(BLK-0013). A ausência de observação direta é aceita como risco
+bloqueante formal (RISK-0013), exatamente a válvula prevista pelo texto
+do Gate G1.
 
 Regra de supersessão (o que obrigaria a revisitar esta decisão):
-_______________________________________________________________
+Gatilhos nomeados na ata GDEC-0009: primeiro parecer jurídico (OS-16),
+primeiro evento adverso em sombra/piloto, ou entrada de segundo revisor
+clínico humano; adicionalmente, o comissionamento da variante
+observacional antes do piloto reabre os itens (c)/(d).
 
 Se (d) = risco aceito, reconhecimento expresso:
-[ ] Reconheço que os baselines VAL-0035 / G2-VAL-0025 serão
+[x] Reconheço que os baselines VAL-0035 / G2-VAL-0025 serão
     permanentemente perdidos a partir da primeira exposição visível
     a clínicos, e que nenhuma alegação futura de melhoria ou de
     não-piora poderá ser sustentada nem refutada.
+    (Mitigação parcial por AGT-2: o baseline retrospectivo com corte
+    pré-exposição preserva as dimensões derivadas de dados; os
+    componentes observacionais — interrupções, fadiga — permanecem
+    perdíveis; vieses declarados em RISK-0013.)
 
 Alterações exigidas ao protocolo (se houver):
-_______________________________________________________________
+Nenhuma. O kit passa a valer como especificação da variante
+observacional opcional (GDEC-0009/AGT-1).
 
-Registro: esta decisão deve ser transcrita para
-docs/00-governance/registers/decision-register.md (e, se rota = risco
-aceito, também para risk-register.md), com ID alocado pelo steward de
-governança.
+Registro: decisão registrada em
+docs/00-governance/registers/decision-register.md (GDEC-0008 item 3;
+GDEC-0009) e risk-register.md (RISK-0013 — rota de risco aceito).
 ```
 
 ---
