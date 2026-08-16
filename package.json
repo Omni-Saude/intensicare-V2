@@ -20,7 +20,8 @@
     "check:boundaries": "node scripts/check_module_boundaries.mjs",
     "check:docs": "python3 scripts/check_doc_conventions.py",
     "check:forbidden": "python3 scripts/check_forbidden_content.py",
-    "verify": "pnpm typecheck && pnpm lint && pnpm check:boundaries && pnpm build && pnpm test && pnpm check:docs && pnpm check:forbidden"
+    "verify": "pnpm build && pnpm typecheck && pnpm lint && pnpm check:boundaries && pnpm test && pnpm check:generated && pnpm check:docs && pnpm check:forbidden",
+    "check:generated": "node scripts/check_generated_files.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.8",

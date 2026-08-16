@@ -1,6 +1,6 @@
 # Relatório de execução do harness de conformidade §7.6 — contrato AMH×IntensiCare v1
 
-*Gerado em 2026-08-16T16:36:15.239Z por `@intensicare/conformidade`.*
+*Artefato gerado por `@intensicare/conformidade` — não editar à mão.*
 
 ## 0. O que este relatório NÃO é
 

@@ -50,7 +50,14 @@ export function renderReport(report: HarnessReport): string {
     "# Relatório de execução do harness de conformidade §7.6 — contrato AMH×IntensiCare v1",
   );
   lines.push("");
-  lines.push(`*Gerado em ${report.generatedAtUtc} por \`@intensicare/conformidade\`.*`);
+  // Sem timestamp de geração DE PROPÓSITO: este relatório é um artefato
+  // gerado e versionado, verificado no CI por regeneração + `git diff
+  // --exit-code` (§15.1 item H). Um instante autodeclarado mudaria a cada
+  // execução e tornaria o arquivo indiferenciável — impossível de checar, e
+  // portanto livre para divergir do código em silêncio. Quando o relatório
+  // foi gerado é uma pergunta que o histórico do git responde com mais
+  // autoridade do que o próprio arquivo.
+  lines.push("*Artefato gerado por `@intensicare/conformidade` — não editar à mão.*");
   lines.push("");
   lines.push("## 0. O que este relatório NÃO é");
   lines.push("");

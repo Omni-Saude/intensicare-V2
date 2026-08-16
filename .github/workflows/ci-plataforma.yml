@@ -85,13 +85,19 @@ jobs:
           corepack prepare pnpm@9.0.0 --activate
       - name: Instalar dependências (lockfile congelado)
         run: pnpm install --frozen-lockfile
-      - name: Verificação de tipos (typecheck) de todos os pacotes/apps
-        run: pnpm typecheck
-      - name: Lint e formatação (Biome — biome.jsonc)
-        run: pnpm lint
-      - name: Fronteira de módulo (ADR-0002 §5.1 C5)
-        run: pnpm check:boundaries
-      - name: Build de todos os pacotes/apps do workspace
-        run: pnpm -r build
-      - name: Testes de todos os pacotes/apps do workspace
-        run: pnpm -r test -- --run
+      # UM ÚNICO comando, deliberadamente: `pnpm verify` é a MESMA sequência
+      # que o desenvolvedor roda localmente (README, seção "Como desenvolver").
+      #
+      # Antes, este workflow repetia a lista de passos à mão. As duas cópias
+      # divergiam sem que ninguém notasse — e ambas carregavam o mesmo defeito
+      # latente: `typecheck` antes de `build`. Como os pacotes do workspace
+      # resolvem tipos por `dist/*.d.ts`, o typecheck só passava em máquina que
+      # já tivesse buildado antes; em checkout limpo (isto é, no CI e em
+      # qualquer clone novo) quebrava com TS2307. O verify local ficava verde
+      # por acidente — pior que vermelho, porque mentia.
+      #
+      # Uma definição, um caminho de execução: verde local passa a significar
+      # verde no CI. A atribuição da falha continua legível no log, que mostra
+      # qual etapa do `verify` quebrou.
+      - name: Verificação completa (pnpm verify — mesma sequência do local)
+        run: pnpm verify
