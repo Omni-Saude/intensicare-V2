@@ -748,6 +748,65 @@ provenance:
   validation_status: "N/A — decisão do titular com aprovação do 2º revisor, atestada por escrito"
 ```
 
+## GDEC-0013 — Modo construção ágil: remoção dos excessos de verificação durante o desenvolvimento
+
+Transcrição de decisão tomada **por escrito, em sessão**, pelo titular
+(rodaquino-OMNI — dono do repositório, CEO de OMNI e AMH, médico
+intensivista). O orquestrador de execução é escriba, não decisor.
+
+```yaml
+id: GDEC-0013
+title: Modo construção ágil — revisão única substitui painéis e duplas/triplas checagens durante o desenvolvimento
+status: DECIDED
+statement: >
+  A plataforma está em CONSTRUÇÃO — não em uso clínico nem em produção — e
+  o excesso de cautela estava impedindo o desenvolvimento. Ficam removidos
+  do caminho de desenvolvimento: (1) o painel adversarial N-de-M por
+  artefato (AGT-4) — durante a construção, revisão única (humana ou por
+  agente distinto do autor) basta; o aval do segundo revisor clínico
+  (Dr. Marcelo Villaca Lima, GDEC-0010..0012) e o parecer jurídico
+  favorável (OS-16, Dr. Lucas Alves de Sousa) são lastro suficiente;
+  (2) pacotes de tarefa formais, escopos de escrita disjuntos obrigatórios,
+  handoffs em formato fixo e relatórios cerimoniais — viram prática a
+  critério do executor; (3) documentos por escrito como pré-condição de
+  trabalho — decisão material registra-se em uma linha, não em dossiê.
+  PERMANECEM (custo zero de agilidade, mantidos pelo escriba salvo ordem em
+  contrário): gates de CI (convenções + conteúdo proibido/PHI), PR para
+  main, dados sintéticos como default de desenvolvimento, e o painel
+  N-de-M com as 7 condições da AGT-3 exclusivamente na promoção de via a
+  modo ACIONÁVEL (SPR-G2-4/MG-G2) e nos gates de piloto/produção (G8).
+decided_by: rodaquino-OMNI
+decided_date: "2026-08-16"
+rationale: >
+  Desenvolvimento ágil exige construir; cautela integral fica reservada aos
+  pontos de exposição clínica real (acionável, piloto, produção), onde já
+  existe mecanismo próprio (AGT-3 condições 1-7), e não à construção da
+  plataforma.
+supersession_rule: >
+  Supersede, no escopo do desenvolvimento: prompt §4 (orquestração por
+  especialistas com pacotes), a disciplina de despacho do §0.5, a exigência
+  de painel AGT-4 por artefato (GDEC-0009/AGT-4 permanece para promoção
+  acionável e release) e as DoR/DoD cerimoniais do mapa para sprints de
+  engenharia (mapa §2.2 item 9). Primeira exposição de conteúdo clínico a
+  usuário real ou primeiro tratamento de dado real reabre esta decisão para
+  recalibração.
+links:
+  requirements: []
+  hazards: []
+  adrs: []
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-16)
+  commit_sha_or_version: fc7acd8 (estado ao decidir)
+  section_or_lines: "instrução: 'desbloqueie o desenvolvimento... retirados os excessos como essa exigência de duplas e triplas checagens, múltiplas verificações e documentos por escrito... já temos aval de outro médico e de um advogado, isso é o suficiente'"
+  date_collected: "2026-08-16"
+  collector: orquestrador de execução (ciclo 5) — escriba
+  transformation: "transcrita; itens mantidos (CI/PR/sintético/gate acionável) explicitados pelo escriba como fora do alcance da remoção, sujeitos a ordem em contrário do titular"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisão do titular"
+```
+
 ## Index
 
 | ID | Title | Status | Decided by | Decided date |
@@ -764,6 +823,7 @@ provenance:
 | GDEC-0010 | Segundo revisor clínico nomeado — Dr. Marcelo Villaca Lima, CRM-SP 112678 (aceite + verificação pendentes; dispara revisita AGT-3) | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0011 | Contra-assinatura GDEC-0009; revisita AGT-3 aprovada pelo 2º revisor; OS-16 ENVIADA (jurista Dr. Lucas Alves de Sousa, OAB/GO 45.457) | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0012 | 2ª revisita AGT-3 APROVADA (titular + 2º revisor, com parecer completo); condicionantes do parecer decompostas em sprints (emenda do mapa) | DECIDED | rodaquino-OMNI | 2026-08-16 |
+| GDEC-0013 | Modo construção ágil — revisão única no desenvolvimento; painel/7 condições só na promoção acionável e G8 | DECIDED | rodaquino-OMNI | 2026-08-16 |
 
 ## Notes
 
@@ -798,3 +858,7 @@ provenance:
 - **Nota (2026-08-16, fechamento da sessão do mapa):** `GDEC-0012` alocado
   (2ª revisita AGT-3 aprovada; decomposição das condicionantes em sprints).
   Próximo ID disponível: `GDEC-0013`.
+- **Nota (2026-08-16, modo construção):** `GDEC-0013` alocado (transcrição
+  da decisão do titular removendo os excessos de verificação do caminho de
+  desenvolvimento; prompt §0 banner MODO CONSTRUÇÃO + mapa §2.2 item 9).
+  Próximo ID disponível: `GDEC-0014`.

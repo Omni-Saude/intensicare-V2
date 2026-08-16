@@ -169,6 +169,20 @@ do encargo). As mais materiais:
    viram os sprints SPR-G0-4, SPR-G3-13, SPR-G4-7, SPR-G6-6 e SPR-G6-7
    (esta emenda). Nenhuma operação de dado real inicia sem a sua
    condicionante satisfeita.
+9. **Modo construção ágil (GDEC-0013, 2026-08-16 — decisão do titular).**
+   Os excessos de verificação ficam removidos do caminho de
+   desenvolvimento. Para TODOS os sprints da swimlane Engenharia/agentes
+   V2, leia-se doravante: **DoR = dependências satisfeitas; DoD = objetivo
+   entregue + CI verde**; as exigências de painel AGT-4 por artefato,
+   pacotes de tarefa formais, escopos de escrita disjuntos e handoffs em
+   formato fixo deixam de ser vinculantes (viram prática a critério do
+   executor). Conteúdo clínico durante a construção: **revisão única**
+   (revisor distinto do autor) basta — lastro: aval do 2º revisor clínico
+   (GDEC-0010..0012) e parecer jurídico OS-16. O painel N-de-M e as 7
+   condições da AGT-3 permanecem vinculantes **somente** na promoção
+   sombra→acionável (SPR-G2-4/MG-G2) e nos gates de piloto/produção (G8).
+   Gates de CI, PR para `main` e dados sintéticos como default permanecem.
+   Primeira exposição a usuário real ou dado real reabre a calibração.
 
 ### 2.3 O que já está FEITO e não será replicado como trabalho futuro
 

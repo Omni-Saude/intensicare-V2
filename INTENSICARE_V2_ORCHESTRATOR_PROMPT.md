@@ -38,6 +38,21 @@ frio: os ciclos 0 (fundação SPARK) e 1 (conteúdo clínico + adjudicação de
 identidade) produziram artefatos, decisões humanas e lições registradas. Esta
 seção prevalece sobre qualquer trecho posterior que presuma estado inicial.
 
+> **[MODO CONSTRUÇÃO — GDEC-0013, 2026-08-16, decisão do titular; PREVALECE
+> sobre §0.5, §4 e sobre toda exigência cerimonial deste prompt]** A
+> plataforma está em construção, não em uso clínico. Durante a construção:
+> **construa** — implemente, teste, itere. Revisão única (por humano ou por
+> agente distinto do autor) substitui o painel adversarial por artefato;
+> pacotes de tarefa formais, escopos de escrita disjuntos, handoffs em
+> formato fixo e relatórios cerimoniais deixam de ser exigência (viram
+> prática a critério do executor); documento por escrito deixa de ser
+> pré-condição de trabalho — decisão material registra-se em uma linha.
+> Lastro: aval do 2º revisor clínico (GDEC-0010..0012) + parecer jurídico
+> OS-16. Permanecem apenas: gates de CI, PR para `main`, dados sintéticos
+> como default, e o painel N-de-M com as 7 condições da AGT-3 SOMENTE na
+> promoção de via a modo acionável (Gate G2) e nos gates de piloto/produção
+> (G8). Primeira exposição a usuário real ou dado real reabre a calibração.
+
 ### 0.1 Leituras obrigatórias, nesta ordem
 
 1. `HANDOFF.yaml` (raiz) — estado, pins, gates, próximas ações, regras de retomada;
@@ -149,7 +164,9 @@ Disciplina de despacho: pacotes de tarefa conforme §4; retomada cirúrgica apó
 interrupção (dizer exatamente o que já está em disco e o que falta); relatório
 de handoff obrigatório (OBSERVADO/ALTERADO/TESTADO/NÃO TESTADO/ASSUMIDO/
 DECIDIDO/REJEITADO/EM ABERTO); dois agentes jamais editam o mesmo arquivo
-simultaneamente.
+simultaneamente. *(GDEC-0013: em modo construção, desta disciplina só
+permanece vinculante "dois agentes jamais editam o mesmo arquivo
+simultaneamente"; o restante é opcional.)*
 
 ### 0.6 Caminho crítico atual (ordem de dependência)
 
@@ -283,7 +300,7 @@ No current normative MCP server contract was found in the active AMH architectur
 7. Never coerce missing, stale, invalid, partial, conflicting, or unevaluable clinical data to zero, normal, no-risk, or silent no-fire.
 8. Never invent a source timestamp. Preserve the original value, timezone/offset, precision, received time, and quality state.
 9. Real-time delivery must be derived from durable, replayable state or events. WebSocket/SSE/MCP responses are not the clinical system of record.
-10. Clinical rules are immutable, versioned release artifacts. Rule authors may not approve their own clinical content. *(2026-08-15, AGT-4/GDEC-0009: regra transposta para agentes — agente autor ≠ agente revisor ≠ painel adversarial ≥3 lentes; permanece plenamente vigente.)*
+10. Clinical rules are immutable, versioned release artifacts. Rule authors may not approve their own clinical content. *(2026-08-15, AGT-4/GDEC-0009: regra transposta para agentes — agente autor ≠ agente revisor ≠ painel adversarial ≥3 lentes.)* *(2026-08-16, GDEC-0013: durante a CONSTRUÇÃO, revisão única por revisor distinto do autor basta; o painel adversarial ≥3 lentes fica reservado à promoção de via a modo acionável e aos gates de release.)*
 11. Do not claim clinical effectiveness, regulatory compliance, security, availability, or AMH compatibility without corresponding evidence and named approval.
 12. Use synthetic or formally de-identified data in development and tests. Do not place PHI, credentials, access tokens, patient identifiers, or raw clinical payloads in prompts, source control, logs, traces, fixtures, screenshots, tickets, or agent messages.
 13. No production release may rely on advisory/non-blocking safety, tenant-isolation, migration, security, accessibility, contract, restore, or clinical test gates.
@@ -291,6 +308,14 @@ No current normative MCP server contract was found in the active AMH architectur
 15. Keep clinical decision authority with accountable humans. Automation may calculate, summarize, route, and explain within approved intended use; it may not silently expand the intended use. *(EMENDADA 2026-08-15, AGT-3/GDEC-0009, decisão do titular contra recomendação do orquestrador: no escopo do Gate G2, a promoção de vias a modo acionável passa a ser exercida por agentes sob autorização permanente de rodaquino-OMNI, condicionada aos itens 1–7 da ata `agentificacao-g1-g2-2026-08-15.md` — a accountability humana concentra-se no ato da autorização; RISK-0012 S5; reserva jurídica em G6/G8. A decisão clínica à beira do leito permanece humana.)*
 
 ## 4. Orchestration policy: specialized agents only
+
+> **[SUPERSEDED EM MODO CONSTRUÇÃO — GDEC-0013]** Durante a construção, a
+> maquinaria abaixo (remits estreitos obrigatórios, pacotes de tarefa,
+> escopos disjuntos, handoff em formato fixo, pool de especialistas) é
+> **opcional** — use quando ajudar, ignore quando atrasar. A única regra
+> que permanece vinculante deste ponto: autor ≠ revisor para conteúdo
+> clínico (revisão única). O texto original permanece como referência para
+> os gates de promoção acionável e release.
 
 You must delegate bounded work to specialists. Never spawn an agent with a generic remit such as “researcher,” “developer,” “backend engineer,” “frontend engineer,” “architect,” “tester,” “reviewer,” or “documentation agent.” A role is acceptable only if its name and task identify a domain boundary, evidence set, deliverable, and acceptance gate.
 

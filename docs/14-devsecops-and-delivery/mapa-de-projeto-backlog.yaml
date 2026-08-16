@@ -17,6 +17,7 @@ metadata:
   source_branch: cycle-1/clinical-content
   source_branch_note: "conteúdo originado em cycle-1/clinical-content; integrado à main em 75838b5 durante a produção do mapa"
   amendment_note: "emenda GDEC-0009 (agentificação G1/G2 — ata registers/agentificacao-g1-g2-2026-08-15.md, ac4b1bd): sprints SPR-G1-3/4/5/6 opcionais (variante observacional pré-piloto), SPR-G1-7 superseded como exigência, novos SPR-G1-9 (dossiê substituto, AGT-1) e SPR-G1-10 (baseline retrospectivo, AGT-2), G2 100% agentes sob 7 condições (AGT-3/AGT-4); versão verbatim pré-emenda preservada em 9382c8b"
+  amendment_note_gdec_0013: "MODO CONSTRUÇÃO (GDEC-0013, 2026-08-16, decisão do titular; mapa .md §2.2 item 9): para todos os sprints de engenharia_v2, definition_of_ready lê-se como 'dependências satisfeitas' e definition_of_done como 'objetivo entregue + CI verde'; exigências de painel AGT-4 por artefato, pacotes de tarefa, escopos disjuntos e handoffs em formato fixo deixam de ser vinculantes; conteúdo clínico em construção = revisão única (autor ≠ revisor); painel N-de-M e 7 condições da AGT-3 permanecem SOMENTE em SPR-G2-4/MG-G2 e G8"
   companion_document: docs/14-devsecops-and-delivery/mapa-de-projeto-ate-producao.md
   estimation_scale:
     P: "escopo estreito, poucas dependências, baixa incerteza"
