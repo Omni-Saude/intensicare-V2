@@ -55,17 +55,20 @@ propagações documentais residuais e do espelho YAML deste mapa ainda não
 rastreado (ver seção 2.2 e risco SR-1). O mapa trata as seis decisões como
 marcos MD-1..MD-6 com estado de formalização explícito.
 
-**Caminho crítico em uma frase (INFERENCE).** O ato de menor custo e maior
-alavancagem é o residual de MD-1 (enviar o pedido OS-16 e nomear o jurista):
-dele dependem o parecer jurídico, a cobertura ética que destrava o campo G1
-e a captura dos **baselines perecíveis** (RISK-0008/VAL-0035 — a única
-medição do programa que não pode ser feita depois), além do gate de dado
-real de toda a cadeia AMH. Em paralelo e independentes: a execução AMH
-(OS-01..24, rumo à IG 1.1.0 e ao contrato publicado), e o trabalho V2 de
-ADRs restantes (13 not-started), UX §11 e fundação de testes — que
-convergem em G3/G4 e habilitam a fatia vertical sintética (G7) sem esperar
-dado real. G8 permanece condicionado a ambiente AMH production-like hoje
-inexistente e a validações humanas externas, sem data atribuível.
+**Caminho crítico em uma frase (INFERENCE).** Após GDEC-0009 (agentificação
+de G1/G2), o parecer OS-16 concentra ainda mais o caminho: do residual de
+MD-1 (enviar o pedido e nomear o jurista) dependem o dado real de toda a
+cadeia AMH, o **baseline retrospectivo** (AGT-2 — cujo corte histórico deve
+ser fixado antes de qualquer exposição visível a clínicos, RISK-0008) e a
+própria **exercibilidade** da promoção acionável por agentes (AGT-3,
+condição 4). Em paralelo e independentes: a execução AMH (OS-01..24, rumo à
+IG 1.1.0 e ao contrato publicado), o dossiê substituto multi-fonte do G1
+(SPR-G1-9 — pode iniciar de imediato) e o trabalho V2 de ADRs restantes
+(13 not-started), UX §11 e fundação de testes — que convergem em G3/G4 e
+habilitam a fatia vertical sintética (G7) sem esperar dado real. G8
+permanece condicionado a ambiente AMH production-like hoje inexistente e a
+validações humanas externas (a observação real de usuários migrou para o
+piloto — AGT-1), sem data atribuível.
 
 **O que este mapa não é.** Não é cronograma nem promessa: é um grafo de
 dependências condicionado por evidências e decisões, com trabalho separado
@@ -136,6 +139,26 @@ do encargo). As mais materiais:
    `conformance/contract-v1/mapeamento-seguranca-tenant.md`); VAL-* e N-*
    sem registro centralizado; divergência N-8 (5×6 tipos de evento,
    ASM-0006/ASM-0009). Ver SR-5/SR-6.
+7. **GDEC-0009 — Gates G1/G2 agentificados** (commit `ac4b1bd`, decisão do
+   titular; ata `registers/agentificacao-g1-g2-2026-08-15.md`): AGT-1 — a
+   observação direta de usuários deixa de ser exigência do G1 (dossiê
+   substituto multi-fonte por agentes + risco bloqueante formalmente
+   ACEITO; DEC-G0-05 superseded quanto ao G1; BLK-0013 reclassificado
+   G1→pré-piloto; RISK-0013); AGT-2 — baselines G2-VAL-0025/VAL-0035
+   satisfeitos por reconstrução retrospectiva de dados (o perecível passa a
+   ser o **corte histórico pré-exposição**; dado real atrás de OS-16);
+   AGT-3 — autorização permanente para o G2 100% por agentes, inclusive
+   promoção a ACIONÁVEL, sob 7 condições cumulativas vinculantes (exercível
+   somente após parecer OS-16 e G3 aprovado por via; RISK-0012 S5; decisão
+   CONTRA a recomendação do orquestrador, divergência registrada; gatilhos
+   de revisita nomeados); AGT-4 — independência autor≠aprovador transposta
+   a agentes via painel adversarial (autor, revisor, ≥3 verificadores de
+   lentes distintas; maioria refuta = artefato morre). `ac4b1bd` também
+   acrescentou a linha GDEC-0008 à tabela-índice do decision-register
+   (residual de SPR-G0-1 concluído). Contra-assinatura do titular sobre a
+   ata recomendada e pendente. Esta versão do mapa incorpora a emenda nas
+   fases G1/G2 (commit próprio, separado do verbatim `9382c8b`); G3..G8
+   permanecem inalterados (ata, "o que NÃO muda").
 
 ### 2.3 O que já está FEITO e não será replicado como trabalho futuro
 
@@ -154,16 +177,17 @@ aprovar, propagar) — nunca como redação nova (anti-padrão 15).
 
 Primeira coluna operacional do mapa (encargo §2.1). Fonte da fila:
 `cycle-2-delivery-orchestrator-report.md` §8; estado de formalização:
-`decision-register.md` GDEC-0008 (corpo; **não commitado** — SR-1). Nenhuma
+`decision-register.md` GDEC-0008 (persistida em `75838b5`; linha da
+tabela-índice acrescentada em `ac4b1bd`). Nenhuma
 decisão é presumida além do texto citado. Autoridade em todos os marcos:
 rodaquino-OMNI (titular; papéis interinos GDEC-0004; revisor clínico
 GDEC-0003).
 
 | Marco | Questão (fila §8) | IDs existentes | Insumos obrigatórios | Estado de formalização (OBSERVADO) | Ato residual bloqueante | Bloqueia (fases/sprints) | Critério para considerar formalizada | Artefato de registro |
 |---|---|---|---|---|---|---|---|---|
-| **MD-1** | Enviar pedido de parecer OS-16 e nomear destinatário jurídico | BLK-0014; BLK-0013; HAZ-0047; BLK-0004; OS-16 | `docs/11-security-privacy-compliance/lgpd-os16/` (minuta + pedido prontos) | Decidida em GDEC-0008 item 1 (destinatário institucional: conselho jurídico interno; escopo ampliado p/ ética G1) | **Envio físico + nome do jurista individual** | G1 inteiro (campo): SPR-G1-2 e SPR-G1-4..6; G6/G8 (dado real); OS-11/13/15 (dado real, lado AMH) e reativação da OS-21 (usos secundários) | Pedido enviado a jurista nomeado, com data e escopo registrados | `decision-register.md` (emenda a GDEC-0008 ou nova entrada GDEC com o próximo ID livre na integração) + `blockers-register.md` BLK-0014 |
+| **MD-1** | Enviar pedido de parecer OS-16 e nomear destinatário jurídico | BLK-0014; BLK-0013; HAZ-0047; BLK-0004; OS-16 | `docs/11-security-privacy-compliance/lgpd-os16/` (minuta + pedido prontos) | Decidida em GDEC-0008 item 1 (destinatário institucional: conselho jurídico interno; escopo ampliado p/ ética — pós-GDEC-0009, de campo futuro pré-piloto) | **Envio físico + nome do jurista individual** | SPR-G1-2 (parecer); dado real (OS-11/13/15) e reativação da OS-21; baseline retrospectivo (SPR-G1-10, AGT-2); exercibilidade da promoção acionável (AGT-3 condição 4); campo futuro opcional (SPR-G1-4, BLK-0013 pré-piloto); G6/G8 | Pedido enviado a jurista nomeado, com data e escopo registrados | `decision-register.md` (emenda a GDEC-0008 ou nova entrada GDEC com o próximo ID livre na integração) + `blockers-register.md` BLK-0014 |
 | **MD-2** | Decidir C-1 (sinais vitais / Observation não-laboratorial) | GDEC-0008 item 2; RISK-0003; OS-22 | `vital-signs-decision/pacote-decisao-c1-sinais-vitais.md` | Decidida: **O3** com re-ponderação automática O1-first se sonda Bronze positiva; sonda = ordem de execução zero (OS-22) | Confirmar interpretação de composição O3×ADR-0001; fixar face D-c (escopo estreito×amplo); executar OS-22 (AMH) | SPR-G3-6; escopo de ADR-0001 na implementação; matriz §7.2 (linhas M-01) | Confirmação/correção da composição registrada; face D-c fixada por escrito | `decision-register.md` + pacote C-1 (transcrição já existente) |
-| **MD-3** | Comissionar pesquisa G1 e destravar ética | BLK-0013; RISK-0008; VAL-0035; G2-VAL-0025; GDEC-0008 item 3 | `g1-kit/pedido-de-comissionamento.md` (bloco §6 ainda vazio) | Decidida: "comissionar TUDO agora"; campo gateado apenas na cobertura ética (MD-1) | Preencher bloco §6 do pedido (propagação); atos de sítio/agenda/rota ética (VAL-0039/0040/0041) | SPR-G1-3..7; captura de baselines (SR-2) | Bloco §6 preenchido + sítio/agenda/rota ética registrados | `g1-kit/pedido-de-comissionamento.md` §6 + `decision-register.md` |
+| **MD-3** | Comissionar pesquisa G1 e destravar ética | BLK-0013; RISK-0008; VAL-0035; G2-VAL-0025; GDEC-0008 item 3 | `g1-kit/pedido-de-comissionamento.md` (bloco §6 ainda vazio) | Decidida: "comissionar TUDO agora" (GDEC-0008 item 3); **superada em parte por GDEC-0009** (AGT-1/AGT-2): campo deixa de ser exigência do G1 — o kit vira especificação da variante observacional opcional | Preencher bloco §6 do pedido (ditado pelo titular — ver SPR-G0-1); atos de sítio/agenda/rota apenas SE a variante observacional for comissionada (SPR-G1-3) | SPR-G1-3 (variante opcional); consolidação SPR-G1-7 | Bloco §6 preenchido com a decisão ditada; variante observacional registrada como opcional | `g1-kit/pedido-de-comissionamento.md` §6 + `decision-register.md` |
 | **MD-4** | Revisar os 8 ADRs propostos + contra-assinar ata AQ-1..6 + fechar N-8 (5×6) | ADR-0001/0003/0004/0005/0009/0010/0011; ADR-0006; ASM-0006; ASM-0009; GDEC-0005; GDEC-0008 item 4 | ADRs individuais; `identity-adjudication/adjudicacao-decisoes-2026-08-15.md`; `contract-v1/eventos-ciclo-de-vida-identidade.md` | Decidida em parte: 7 ADRs aceitos; ata contra-assinada; ADR-0006 permanece proposed; **N-8 não fechado** | Fechar N-8 (5×6 tipos de evento); decidir ADR-0006 (propagação ao adr-index concluída em `75838b5`; residuais documentais em SPR-G0-1) | SPR-G3-9 (contrato), SPR-G4-1, consumidor de eventos (ASM-0009 fail-closed até lá); G7 (DoR) | N-8 fechado por escrito; estados propagados; ADR-0006 decidido ou explicitamente diferido | `decision-register.md`; `adr-index.md`; `contract-v1/memoria-de-desenho.md` §8 |
 | **MD-5** | Ratificar N-11..N-14 do contrato v1 + nomear dono AMH | BLK-0015; GDEC-0008 item 5; OS-19 | `contract-v1/memoria-de-desenho.md` §8.1; `contract-manifest.draft.yaml` | Decidida em parte: N-11..N-14 **ratificadas** (emenda compatível) | **Nomear dono AMH do contrato** (`producer.owner`; critério 6 da OS-19 — ato do lado AMH) | SPR-G3-8/9 (negociação N-1..N-10, publicação OS-19); MG-G3 | Dono AMH nomeado no manifesto publicado | `contract-manifest` publicado no repo AMH + `blockers-register.md` BLK-0015 |
 | **MD-6** | Dar dono às lacunas de classe (MedicationAdministration; ordem clínica) | BLK-0012; BLK-0016; OS-23; OS-24; GDEC-0008 item 6 | `pathway-source-matrix/lacunas-e-proximas-evidencias.md` §L-4/§L-6; OS-23/OS-24 (redigidas, Status: ABERTA) | Decidida: OS-23/OS-24 comissionadas ao lado AMH | Execução e resposta AMH (profile + fonte povoada; contrato de ordem); propagar L-4/L-6 → OS-23/24 (SPR-G0-1) | RULE-GCS inteira (gate sedativo fail-closed), SOFA-CV, NEWS2 escala/limitação; SPR-G3-6 | OS-23/OS-24 atendidas com evidência de camada 2/3 aceita | `ordens-de-servico-amh-2026-08-15.md` §11 + `blockers-register.md` BLK-0012/0016 |
@@ -231,7 +255,7 @@ campo correspondente do sprint homônimo está no espelho YAML
 | Sprint | Swimlane | Objetivo verificável | Entregáveis (caminho) | DoR | DoD | Verificações §14/§15 | Dependências → Desbloqueia | IDs rastreados | Esforço | Premissas |
 |---|---|---|---|---|---|---|---|---|---|---|
 | **SPR-G0-2** | Decisões do titular | BLK-0002/BLK-0008 fechados: credencial verificada, linha de reporte, segundo revisor nomeado | Entradas atualizadas em `blockers-register.md`; nomeação registrada em `decision-register.md` | GDEC-0003 vigente | Segundo revisor humano nomeado e aceito; verificação de credencial registrada | — | RISK-0007 mitigação → G1 aprovação, G6/G8 pares de independência §4 | BLK-0002, BLK-0008, GDEC-0003, RISK-0007 | P | Existe um segundo profissional qualificado disponível (VALIDATION REQUIRED) |
-| **SPR-G0-1** | Engenharia/agentes V2 | Propagações residuais de GDEC-0008 concluídas (persistência do registro e adr-index já FEITOS em `75838b5` — não replicados aqui) | Linha GDEC-0008 na tabela Index do `decision-register.md`; `g1-kit/pedido-de-comissionamento.md` §6 preenchido com a decisão do item 3; `hard-gate-assessment.md` §7 com marca da decisão P-1 (verificar estado atual antes); `lacunas-e-proximas-evidencias.md` L-4/L-6 → OS-23/24; `traceability-policy.md` §1.1 (prefixos GDEC-0002 + os deste mapa); commit do espelho `mapa-de-projeto-backlog.yaml` | Ler-antes-de-escrever (anti-padrões 3/14); verificar `git status`/mtimes | Artefatos atualizados e commitados; gates CI verdes; nenhum status DECIDED em front matter (anti-padrão 6) | `check_doc_conventions` + `check_forbidden_content` (§15.1) | GDEC-0008 → **todos** os sprints que citam decisão de GDEC-0008 | GDEC-0008, GDEC-0002, BLK-0012, BLK-0016 | P | O dono da janela commita o próprio trabalho (padrão do ciclo 2) |
+| **SPR-G0-1** | Engenharia/agentes V2 | Propagações residuais de GDEC-0008/0009 concluídas. **Já FEITOS** (não replicados): persistência do registro e adr-index (`75838b5`); linha GDEC-0008 na tabela Index (`ac4b1bd`); commit do espelho YAML (`9382c8b`); `pedido-de-comissionamento.md` §6 e `traceability-policy.md` §1.1 (ditados/decididos pelo titular — D#/D4 desta sessão) | Residuais: `hard-gate-assessment.md` §7 com marca da decisão P-1 (verificar estado atual antes); `lacunas-e-proximas-evidencias.md` L-4/L-6 → OS-23/24 | Ler-antes-de-escrever (anti-padrões 3/14); verificar `git status`/mtimes | Artefatos atualizados e commitados; gates CI verdes; nenhum status DECIDED em front matter (anti-padrão 6) | `check_doc_conventions` + `check_forbidden_content` (§15.1) | GDEC-0008 → **todos** os sprints que citam decisão de GDEC-0008 | GDEC-0008, GDEC-0009, GDEC-0002, BLK-0012, BLK-0016 | P | O dono da janela commita o próprio trabalho (padrão do ciclo 2) |
 | **SPR-G0-3** | Engenharia/agentes V2 | Tradução retroativa EN→pt-BR, tranches 2+ | Corpus forense, ADR-0001/0002, adr-index em pt-BR | GDEC-0008 item 8 persistido | Tranches registradas; CI verde | `check_doc_conventions` | — (não bloqueia gate) | GDEC-0006, GDEC-0008 | M | Execução em tranches, não nova decisão |
 
 - **Marco humano de saída**: nomeações de BLK-0002/0008 (ato do titular).
@@ -241,71 +265,108 @@ campo correspondente do sprint homônimo está no espelho YAML
 - **Riscos de sequência**: SR-1 (decisão não persistida), SR-8 (propagações
   pendentes).
 
-### 5.1 G1 — problema e uso pretendido
+### 5.1 G1 — problema e uso pretendido (AGENTIFICADO — GDEC-0009/AGT-1/AGT-2)
 
-- **Objetivo**: usuários pretendidos observados (ou ausência aceita como
-  risco bloqueante); fronteiras de população/setting; comportamento
-  consultivo; validação §11 com clínicos e usuários de tecnologia assistiva
-  (prompt §5 Gate G1).
-- **Estado**: `PARCIAL` (preparação FEITA; decisão de comissionar tomada;
-  **execução de campo BLOQUEADA** por BLK-0013).
-- **Evidência**: kit G1 (5 arquivos PROPOSAL, 43 itens VAL mapeados — 42
-  bloqueiam G1, `protocolo-pesquisa-g1.md` §6.1); comissionamento GDEC-0008
-  item 3 (não propagado ao pedido §6); K-10/G2-VAL-0025 comissionado
-  (GDEC-0007); campo proibido até fechamento por dono privacy/legal nomeado
-  (`plano-de-recrutamento-e-etica.md` §11: 10 ABERTO + 2 PARCIAL).
-- **Lacunas**: cobertura jurídico-ética (MD-1→BLK-0013); sítio/agenda/rota
-  ética; captura dos baselines perecíveis; execução do protocolo; pacote de
-  evidência; aprovação formal do uso pretendido (BLK-0008).
-- **Épicos**: EPC-G1-1 destrave jurídico-ético (OS-16); EPC-G1-2 baselines
-  perecíveis; EPC-G1-3 pesquisa de campo e aprovação.
+- **Objetivo**: fronteiras de população/setting, resposta humana e
+  comportamento consultivo estabelecidos. Por decisão do titular (AGT-1), a
+  observação direta de usuários **deixa de ser exigência de passagem**: vale
+  a válvula do próprio gate — **dossiê substituto multi-fonte** produzido e
+  verificado por agentes (SPR-G1-9) + ausência de observação **aceita como
+  risco bloqueante por escrito** (RISK-0013). A observação real migra para o
+  piloto supervisionado (G8), onde ocorre por construção.
+- **Estado**: `PARCIAL` (preparação FEITA; campo deixou de ser exigência —
+  GDEC-0009; dossiê substituto e baseline retrospectivo ainda não
+  produzidos; aprovação humana do uso pretendido pendente).
+- **Evidência**: ata `registers/agentificacao-g1-g2-2026-08-15.md`
+  (AGT-1/AGT-2, DECIDED, `ac4b1bd`); BLK-0013 reclassificado G1→pré-piloto
+  (índice do blockers-register); RISK-0013 registrado; DEC-G0-05
+  **superseded quanto ao G1** (o princípio "conhecimento do titular =
+  hipótese" permanece e vai no rótulo do dossiê); kit G1 (5 arquivos)
+  permanece válido como especificação da **variante observacional
+  opcional**; banner [AGENTIFICADO] no prompt §5.
+- **Lacunas**: dossiê substituto multi-fonte (SPR-G1-9, painel AGT-4);
+  baseline retrospectivo com corte histórico fixado (SPR-G1-10 — dado real
+  atrás de OS-16/DEC-G0-03); aprovação formal do uso pretendido (BLK-0008 —
+  ato humano que permanece); contra-assinatura da ata (recomendada,
+  pendente).
+- **Épicos**: EPC-G1-1 destrave jurídico (OS-16); EPC-G1-2 baseline
+  retrospectivo (AGT-2) + variante observacional opcional; EPC-G1-3 dossiê
+  substituto e aprovação.
 
 | Sprint | Swimlane | Objetivo verificável | Entregáveis (caminho) | DoR | DoD | Verificações §14/§15 | Dependências → Desbloqueia | IDs rastreados | Esforço | Premissas |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **SPR-G1-1** | Decisões do titular | Residual de MD-1 executado: pedido OS-16 enviado a jurista nomeado | Registro do envio + destinatário em `blockers-register.md` BLK-0014 e `decision-register.md` | Minuta e pedido prontos (`lgpd-os16/`) | Envio registrado com data e escopo (incl. cobertura ética G1) | — | MD-1 → SPR-G1-2; OS-11/13/15/21 (dado real, lado AMH) | BLK-0014, BLK-0013, BLK-0004, HAZ-0047, OS-16 | P | Conselho jurídico interno aceita o encargo |
-| **SPR-G1-3** | Decisões do titular | Sítio nomeado com anuência, agenda da cápsula de baseline e rota ética escolhida | Registros em `g1-kit/pedido-de-comissionamento.md` §6 (partes c/d) e `plano-de-recrutamento-e-etica.md` §11 itens 1-3 | MD-3 formalizada (bloco §6 preenchido — SPR-G0-1) | Sítio+anuência+rota registrados ("a decisão de agenda é a decisão de existir") | — | MD-3 → SPR-G1-4/5 | VAL-0039, VAL-0040, VAL-0041, G2-VAL-0026, RISK-0008 | P | Sítio candidato existe entre as unidades relacionadas no protocolo §3 |
-| **SPR-G1-8** | Decisões do titular | **MG-G1**: uso pretendido aprovado formalmente pelo revisor nomeado; ausências aceitas como risco por escrito | Aprovação em `decision-register.md`; fechamento de BLK-0008; atualização do safety case (M0→M1 avaliável) | SPR-G1-7; SPR-G0-2 (segundo revisor, para conteúdo autorado pelo titular) | Registro DECIDED por humano nomeado com regra de supersessão | — | → G2 (portões de programa), G4 (validação UX com evidência), safety case M1 | BLK-0008, GDEC-0003, VAL-0005 | P | Aprovador ≠ autor (ADR-0007/§4) |
-| **SPR-G1-7** | Engenharia/agentes V2 | Pacote de evidência G1 consolidado; 42 itens VAL do backlog dispostos documentalmente | Evidence pack em `docs/02-users-and-workflows/` (§18 item 5); atualização dos artefatos de hipóteses (UR/WF) | SPR-G1-5/6 (dados existem) | Cada item VAL com evidência ou lacuna explícita; insumo E-* do safety case (M1) preparado | `check_doc_conventions` | → SPR-G1-8; EPC-G4-2 (UX baseada em evidência) | VAL-0001..0043 (conforme mapeamento §6.1), HAZ-0046 (estudo de compreensão E-6.9) | M | Conhecimento do titular tratado como hipótese, não evidência (DEC-G0-05) |
-| **SPR-G1-2** | Dependências externas | Parecer jurídico emitido cobrindo os 4 pontos da minuta + cobertura ética de pesquisa com humanos + ADR-043 (AMH)/DPO + ratificação AQ-3 | Parecer anexado conforme critérios da OS-16 (emissor qualificado, escopo, o que não cobre, condições de mudança) | SPR-G1-1 | 4 critérios de aceitação da OS-16 satisfeitos; BLK-0013/BLK-0004 dispostos pelo parecer | — | SPR-G1-1 → SPR-G1-4/5/6; G6/G8 (aprovação privacy/legal); OS-11/13/15 dado real | OS-16, BLK-0013, BLK-0004, HAZ-0045, HAZ-0047, ASM-0004, RISK-0011 | G | Sem prazo atribuível a terceiros; escopo estável (ASM-0004 P-1..P-7) |
-| **SPR-G1-4** | Dependências externas | Cobertura ética efetiva (rota CEP/CONEP ou equivalente definida no parecer) + recrutamento iniciado | Submissão/dispensa documentada; checklist §11 com 12/12 fechados por dono privacy/legal nomeado | SPR-G1-2, SPR-G1-3 | "NO FIELDWORK" suspenso por escrito | — | → SPR-G1-5/6 | BLK-0013, VAL-0040, VAL-0041, G2-VAL-0001 | G | Rota ética depende do teor do parecer (não presumida) |
-| **SPR-G1-5** | Dependências externas | **Baselines perecíveis B1-B4a capturados antes de qualquer exposição visível a clínicos** | Dados de baseline conforme `protocolo-baselines-pereciveis.md` (cápsula ≈28 pessoa-dias, estimativa do pedido §3) | SPR-G1-4; **nenhuma demonstração/treinamento/piloto ocorrida** (gatilho §3.5) | B1-B4a medidos e arquivados; B4b desdobrado (ASM-0007) | — | → SM-01/SM-04/HM-02/HM-05 avaliáveis; SPR-OC-1 | VAL-0035, G2-VAL-0025, RISK-0008, ASM-0007 | G | Janela ainda aberta no início da captura (SR-2) |
-| **SPR-G1-6** | Dependências externas | Protocolo G1 executado: observação e entrevistas por papel, cenários simulados de tempo crítico, usuários de tecnologia assistiva | Dados de campo conforme `protocolo-pesquisa-g1.md` §3-§5 e `guias-de-observacao-e-entrevista.md` | SPR-G1-4; moderador ≠ UX designer (§4) | Cobertura dos itens C/CI do §6.1; VAL-0033 executado ou marcado NÃO TESTADO | §11 (validação com usuários reais) | → SPR-G1-7 | VAL-0005, VAL-0012..0016, VAL-0027, VAL-0031, VAL-0033 | G | Estudo completo (≈139 pd) ou recortes por decisão do titular no pedido §6 |
+| **SPR-G1-1** | Decisões do titular | Residual de MD-1 executado: pedido OS-16 enviado a jurista nomeado | Registro do envio + destinatário em `blockers-register.md` BLK-0014 e `decision-register.md` | Minuta e pedido prontos (`lgpd-os16/`) | Envio registrado com data e escopo (incl. cobertura ética de campo futuro — BLK-0013, pré-piloto) | — | MD-1 → SPR-G1-2 | BLK-0014, BLK-0013, BLK-0004, HAZ-0047, OS-16 | P | Conselho jurídico interno aceita o encargo |
+| **SPR-G1-3** | Decisões do titular | **Opcional/pré-piloto (GDEC-0009)**: se o titular comissionar a variante observacional, sítio nomeado com anuência, agenda e rota ética escolhida | Registros em `g1-kit/pedido-de-comissionamento.md` §6 (partes c/d) e `plano-de-recrutamento-e-etica.md` §11 itens 1-3 | Decisão do titular de comissionar a variante (não exigida para o G1 — AGT-1) | Sítio+anuência+rota registrados | — | MD-3 → SPR-G1-4 | VAL-0039, VAL-0040, VAL-0041, G2-VAL-0026, GDEC-0009 | P | Kit G1 permanece válido como especificação da variante |
+| **SPR-G1-8** | Decisões do titular | **MG-G1**: uso pretendido aprovado formalmente pelo revisor nomeado, com evidência substituta (AGT-1) e risco aceito registrado por escrito | Aprovação em `decision-register.md`; fechamento de BLK-0008; atualização do safety case (M0→M1 avaliável) | SPR-G1-9 (dossiê aprovado pelo painel AGT-4); SPR-G1-10 (corte histórico fixado); SPR-G0-2 (segundo revisor, p/ conteúdo autorado pelo titular) | Registro DECIDED por humano nomeado com regra de supersessão | — | → G2 (portões de programa), G4 (UX com evidência), safety case M1 | BLK-0008, GDEC-0003, GDEC-0009, VAL-0005 | P | AGT-1 trocou a evidência do gate, não o aprovador humano |
+| **SPR-G1-9** | Engenharia/agentes V2 | **NOVO (AGT-1) — dossiê substituto multi-fonte**: literatura de fatores humanos/fluxo de UTI + forense do legado + dados retrospectivos quando acessíveis + hipóteses do titular **rotuladas como hipótese de especialista**; 42 itens VAL dispostos (cobertos pelo dossiê ou risco aceito registrado) | Dossiê em `docs/02-users-and-workflows/` (§18 item 5); trilha do painel AGT-4 | GDEC-0009 vigente; painel AGT-4 instanciado (SPR-G2-1) | Aprovado por painel AGT-4 (autor, revisor, ≥3 adversariais de lentes distintas; maioria refuta = morre); cada item VAL com evidência ou risco aceito explícito | `check_doc_conventions`; painel AGT-4 | → SPR-G1-8; EPC-G4-2 (UX baseada em evidência) | VAL-0001..0043 (mapeamento §6.1), RISK-0013, GDEC-0009, HAZ-0046 (E-6.9) | M | Pode iniciar de imediato; a perna retrospectiva engrossa quando houver dado real |
+| **SPR-G1-10** | Engenharia/agentes V2 | **NOVO (AGT-2) — baseline retrospectivo**: corte histórico fixado **antes de qualquer exposição visível a clínicos** (gatilho §3.5 define o corte); carga de alertas, proxies de tempo-até-reconhecimento e desfechos reconstruídos do histórico Tasy/Gold, com vieses declarados linha a linha | Baseline retrospectivo arquivado + declaração de vieses (RISK-0013); disposição de G2-VAL-0025/VAL-0035 | Corte histórico fixado e registrado; acesso a dado histórico real (parecer OS-16/DEC-G0-03) | Reconstrução verificada por painel AGT-4; vieses declarados; corte anterior a qualquer exposição | Painel AGT-4 | → SM-01/SM-04/HM-02/HM-05 avaliáveis; SPR-OC-1 | VAL-0035, G2-VAL-0025, RISK-0008, ASM-0007, GDEC-0009, RISK-0013 | M | Dado histórico AMH acessível após parecer (gated em OS-16) |
+| **SPR-G1-7** | Engenharia/agentes V2 | **Superseded como exigência do G1 (GDEC-0009; absorvido por SPR-G1-9)**: permanece apenas como consolidação da variante observacional, se comissionada | Consolidação dos dados de campo da variante em `docs/02-users-and-workflows/` | SPR-G1-5/6 (dados da variante existem) | Cada item VAL da variante com evidência ou lacuna explícita | `check_doc_conventions` | → retroalimenta SPR-G1-9 | VAL-0001..0043 (conforme mapeamento §6.1), HAZ-0046 | M | Executado somente se a variante observacional for comissionada |
+| **SPR-G1-2** | Dependências externas | Parecer jurídico emitido cobrindo os 4 pontos da minuta + cobertura ética de pesquisa com humanos (campo futuro) + ADR-043 (AMH)/DPO + ratificação AQ-3 | Parecer anexado conforme critérios da OS-16 (emissor qualificado, escopo, o que não cobre, condições de mudança) | SPR-G1-1 | 4 critérios de aceitação da OS-16 satisfeitos; BLK-0013/BLK-0004 dispostos pelo parecer | — | SPR-G1-1 → dado real (OS-11/13/15); SPR-G1-10 (dado histórico); exercibilidade AGT-3 (condição 4); SPR-G1-4 (campo futuro); G6/G8 | OS-16, BLK-0013, BLK-0004, HAZ-0045, HAZ-0047, ASM-0004, RISK-0011 | G | Sem prazo atribuível a terceiros; escopo estável (ASM-0004 P-1..P-7); primeiro parecer é gatilho de revisita do AGT-3 |
+| **SPR-G1-4** | Dependências externas | **Opcional/pré-piloto (GDEC-0009)**: cobertura ética efetiva + recrutamento — obrigatória para qualquer campo futuro (BLK-0013) | Submissão/dispensa documentada; checklist §11 com 12/12 fechados por dono privacy/legal nomeado | SPR-G1-2, SPR-G1-3 | Proibição de campo suspensa por escrito | — | → SPR-G1-5/6; campo do piloto (G8) | BLK-0013, VAL-0040, VAL-0041 | G | Rota ética depende do teor do parecer (não presumida) |
+| **SPR-G1-5** | Dependências externas | **Opcional/pré-piloto (GDEC-0009)**: captura observacional B1-B4a da variante, antes de qualquer exposição visível a clínicos | Dados de baseline conforme `protocolo-baselines-pereciveis.md` (cápsula ≈28 pessoa-dias, estimativa do pedido §3) | SPR-G1-3/4; nenhuma exposição ocorrida (gatilho §3.5) | B1-B4a medidos e arquivados; B4b desdobrado (ASM-0007) | — | → SPR-G1-7 (consolidação da variante) | VAL-0035, G2-VAL-0025, RISK-0008, ASM-0007, GDEC-0009 | G | Executada somente se comissionada; a exigência do gate foi satisfeita pela via retrospectiva (SPR-G1-10) |
+| **SPR-G1-6** | Dependências externas | **Opcional/pré-piloto (GDEC-0009)**: protocolo do kit executado (observação, entrevistas, cenários simulados, usuários de TA); a observação real de usuários ocorre por construção no piloto (G8) | Dados de campo conforme `protocolo-pesquisa-g1.md` §3-§5 | SPR-G1-4; moderador ≠ UX designer (§4) | Cobertura dos itens C/CI do §6.1; VAL-0033 executado ou NÃO TESTADO explícito | §11 | → SPR-G1-7 (consolidação da variante) | VAL-0005, VAL-0012..0016, VAL-0027, VAL-0031, VAL-0033 | G | Executada somente se comissionada pelo titular antes do piloto |
 
-- **Marco humano de saída (MG-G1)**: aprovação nominal do uso pretendido.
+- **Marco humano de saída (MG-G1)**: aprovação nominal do uso pretendido —
+  **permanece ato humano** (AGT-1 substituiu a evidência exigida, não o
+  aprovador; BLK-0008).
 - **Dono**: rodaquino-OMNI (interino; segundo revisor por SPR-G0-2).
-- **Entrada**: MD-1 residual executado. **Saída**: MG-G1 + baselines
-  capturados ou perda formalmente aceita (VAL-0005: "silêncio é a única
-  opção que o portão não permite").
-- **Dependências/riscos**: SR-2 (janela perecível); espera indeterminada do
-  parecer (SR-4); retrabalho de UX se G4 andar antes da evidência G1 (SR-3).
+- **Entrada**: GDEC-0009 vigente (o dossiê SPR-G1-9 pode iniciar de
+  imediato); dado real do baseline retrospectivo atrás de MD-1. **Saída**:
+  MG-G1 com dossiê aprovado pelo painel AGT-4 + risco aceito registrado +
+  corte histórico do baseline fixado (VAL-0005: a rota escolhida foi o
+  aceite formal do risco — "silêncio é a única opção que o portão não
+  permite").
+- **Dependências/riscos**: SR-2 (natureza alterada: o perecível é o **corte
+  histórico** pré-exposição); SR-4 (parecer); SR-3 (UX antes da evidência);
+  RISK-0013 (usuário imaginado — aceito pelo titular).
 
-### 5.2 G2 — portfólio de vias clínicas
+### 5.2 G2 — portfólio de vias clínicas (AGENTIFICADO — GDEC-0009/AGT-3/AGT-4)
 
-- **Objetivo**: comitê qualificado aprova método de portfólio, pacote de
-  release individual, hazards residuais e plano de validação escalonado
-  (§6.4).
-- **Estado**: `BLOQUEADO`.
+- **Objetivo**: método de portfólio, pesos MCDA, hard-gates §6.2 e pacote de
+  release §6.4 executados **integralmente por agentes**, incluindo a
+  promoção sombra→**acionável**, sob **autorização permanente do titular**
+  (AGT-3 — decidida CONTRA a recomendação do orquestrador; divergência
+  registrada) e sob **7 condições cumulativas vinculantes** da ata; o
+  "comitê humano qualificado" do §6.4 original fica superseded neste escopo
+  (banner [AGENTIFICADO] no prompt §6.4); independência autor≠aprovador
+  transposta a agentes (AGT-4).
+- **Estado**: `BLOQUEADO` — por **dados** (G3/AMH), não mais por atos
+  humanos; a contagem acionável continua **0** (a ata não cria dados).
 - **Evidência**: 0/99 hard-gates (ciclo 0); §7.7 "actionable-pathway count
-  remains ZERO"; método "EXECUTION BLOCKED" (P1 papéis UNASSIGNED; P2 matriz
-  25/25 INELIGIBLE); GDEC-0007 decidiu conteúdo clínico (97/98), não o gate;
-  G2-VAL-0001..0035 todos OPEN.
-- **Lacunas**: papéis do método; pesos MCDA ratificados; fontes (via G3);
-  runtime para vetores (via G7); comitê.
-- **Épico EPC-G2-1 — método e aprovação de portfólio**
+  remains ZERO"; método "EXECUTION BLOCKED" (P2 matriz; P1 papéis disposto
+  por AGT-3); ata AGT-3/AGT-4 (DECIDED, `ac4b1bd`); RISK-0012 (S5)
+  registrado; G2-VAL-0001..0035 OPEN.
+- **Lacunas**: painel AGT-4 instanciado com trilha imutável; limiares de
+  sombra pré-registrados; fontes (G3); runtime (G7); kill switch/rollback
+  testados; **exercibilidade** (condições 3 e 4: G3 por via + parecer
+  OS-16).
+- **Épico EPC-G2-1 — método e promoção agentificados**
+
+Nota de swimlane: a coluna "Decisões do titular" desta fase é o próprio ato
+já exercido — a autorização permanente GDEC-0009/AGT-3 — e seus **gatilhos
+de revisita nomeados** (primeiro parecer jurídico, primeiro evento adverso
+em sombra/piloto, entrada de segundo revisor clínico humano); não há ato
+humano por item.
 
 | Sprint | Swimlane | Objetivo verificável | Entregáveis | DoR | DoD | Verificações | Dependências → Desbloqueia | IDs | Esforço | Premissas |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **SPR-G2-1** | Decisões do titular | Papéis do método nomeados (P1), pesos MCDA ratificados e comitê qualificado do Gate G2 constituído | Registros em `portfolio-method.md` + `decision-register.md`; G2-VAL-0001 disposto | SPR-G0-2 (independências §4) | 6 papéis nomeados; pesos DECIDED; comitê constituído | — | → SPR-G2-2 | G2-VAL-0001, RISK-0007 | P | Um humano pode acumular papéis com pares de independência preservados |
-| **SPR-G2-4** | Decisões do titular | **MG-G2**: comitê qualificado aprova método+pacote+hazards residuais+plano de validação | Registro de aprovação; modo sombra autorizado somente com autorização de privacidade/segurança/pesquisa | SPR-G2-2/3; SPR-G1-2 (autorização de pesquisa p/ sombra) | Aprovação nominal registrada; nenhuma generalização além do escopo aprovado | — | → admissão de vias; G8 (aprovação de portfólio) | G2-VAL-0001..0035, HAZ-0043 (reavaliar L antes de G2) | M | Comitê existe (hoje inexistente — VALIDATION REQUIRED) |
-| **SPR-G2-2** | Engenharia/agentes V2 | Método executado sobre matriz com fontes evidenciadas; portfólio proposto | Análise MCDA atualizada; `candidate-inventory.md`/`hard-gate-assessment.md` atualizados | SPR-G2-1 + progresso material em G3 (fontes deixam de ser 0/47) | Contagem honesta recalculada sem enfraquecer gate (anti-padrão 10) | §14 (vetores red/green quando houver runtime) | → SPR-G2-3/4 | CAND-0001..0020, G2-VAL-0002..0024 | M | Nenhuma via é admitida por expectativa |
-| **SPR-G2-3** | Engenharia/agentes V2 | Pacote de release clínico assinável por via candidata | Bundle conforme ADR-0007 (assinatura, ativação, rollback); vetores CRV executados red/green com aprovador independente | ADR-0007 propagado; runtime G7 existente; SPR-G0-2 (independência de autoria dos CRV) | Pacote imutável e versionado; independência autor≠aprovador satisfeita | §14 (vetores clínicos independentes, mutação no kernel) | → SPR-G2-4 | ADR-0007, ADR-0025..0029, G2-VAL-0030..0035 | G | Só após fatia G7; specs 0.2.0 "nothing is signable" até lá |
+| **SPR-G2-1** | Engenharia/agentes V2 | Mecanismo AGT-3/AGT-4 instanciado: painel adversarial por artefato (autor, revisor, ≥3 verificadores com lentes mínimas — correção clínica contra fonte primária; segurança/fail-closed; reprodutibilidade), trilha imutável por via/versão, limiares de sombra pré-registrados (falso-positivo, carga de alertas/paciente-dia, no-fire explicado) | Definição operacional do painel + trilha em release-evidence; G2-VAL-0001 disposto por AGT-3 | GDEC-0009 vigente (registro commitado em `ac4b1bd`) | Painel demonstrado em artefato-piloto; trilha imutável gravada; tier econômico excluído de conteúdo clínico (§0.5) | Painel AGT-4 | → SPR-G2-2, SPR-G1-9 | GDEC-0009, RISK-0012, G2-VAL-0001 | M | A composição do painel, vereditos e modelos integram a trilha do artefato |
+| **SPR-G2-4** | Engenharia/agentes V2 | **MG-G2**: promoção sombra→acionável pelo painel sob as 7 condições cumulativas do AGT-3 — (1) hard-gates §6.2 inalterados; (2) independência AGT-4 provada em trilha; (3) **G3 aprovado para os insumos da via**; (4) **parecer OS-16/DEC-G0-03 satisfeito**; (5) sombra medida dentro de limiares pré-registrados; (6) kill switch e rollback testados; (7) registro imutável da promoção | Registro imutável por promoção (versão, evidência, painel, data) em release-evidence | SPR-G2-2/3; SPR-G1-2 (condição 4); MG-G3 por via (condição 3); SPR-G7-2 (sombra exige runtime) | 7/7 condições demonstradas; violação de limiar em produção reverte a via a sombra automaticamente | Painel AGT-4; §14 | → admissão de vias; G8 (aprovação de portfólio) | GDEC-0009, RISK-0012, G2-VAL-0035, HAZ-0043 (reavaliar L antes de G2), ASM-0010 | M | Autorização existe desde já; só se torna exercível com as condições 3-4 |
+| **SPR-G2-2** | Engenharia/agentes V2 | Método executado por agentes sobre matriz com fontes evidenciadas (hard-gates §6.2 inalterados — condição 1); portfólio proposto | Análise MCDA atualizada; `candidate-inventory.md`/`hard-gate-assessment.md` atualizados | SPR-G2-1 + progresso material em G3 (fontes deixam de ser 0/47) | Contagem honesta recalculada sem enfraquecer gate (anti-padrão 10) | §14; painel AGT-4 | → SPR-G2-3/4 | CAND-0001..0020, G2-VAL-0002..0024, GDEC-0009 | M | Nenhuma via é admitida por expectativa |
+| **SPR-G2-3** | Engenharia/agentes V2 | Pacote de release clínico assinável por via candidata | Bundle conforme ADR-0007 (assinatura, ativação, rollback); vetores CRV executados red/green com aprovador-agente independente (AGT-4; §3 regra 10 transposta) | ADR-0007 propagado; runtime G7 existente; painel AGT-4 (independência de autoria dos CRV) | Pacote imutável e versionado; independência autor≠aprovador satisfeita na trilha | §14 (vetores clínicos independentes, mutação no kernel); painel AGT-4 | → SPR-G2-4 | ADR-0007, ADR-0025..0029, G2-VAL-0030..0035, GDEC-0009 | G | Só após fatia G7; specs 0.2.0 "nothing is signable" até lá |
 
-- **Marco (MG-G2)**: aprovação do comitê. **Dono**: comitê qualificado
-  (constituído em SPR-G2-1; hoje UNASSIGNED).
-- **Entrada**: MG-G1 + fontes evidenciadas (G3 parcial). **Saída**: portfólio
-  aprovado com contagem honesta.
-- **Riscos**: SR-7 (tratar specs/CRV como evidência de execução); HAZ-0043
-  reavaliação de L pendente antes de G2 (ASM-0010).
+- **Marco (MG-G2)**: promoção condicionada pelo painel — o **marco humano**
+  é a autorização permanente já exercida (GDEC-0009/AGT-3) mais seus
+  gatilhos de revisita; a accountability concentra-se no ato da autorização
+  (§3.15 emendado). **Dono**: rodaquino-OMNI, por autorização permanente,
+  exercida pelo mecanismo agentico condicionado.
+- **Entrada**: MG-G1 (portões de programa) + fontes evidenciadas (G3
+  parcial). **Saída**: portfólio com contagem honesta; promoções acionáveis
+  somente com condições 3-7 demonstradas.
+- **Riscos**: RISK-0012 (S5 — modo de falha residual: defeito compartilhado
+  entre agentes não é endereçável por redundância, só por diversidade de
+  lentes + sombra medida; reserva jurídica ANVISA/SaMD/CFM para G6/G8);
+  SR-7; HAZ-0043 (reavaliar L antes de G2 — ASM-0010).
 
 ### 5.3 G3 — compatibilidade AMH
 
@@ -581,7 +642,8 @@ Legenda: nós `MD-*` = marcos de decisão do titular; `MG-*` = marcos humanos
 de gate; `SPR-*` = sprints; arestas com rótulo `AMH` = dependência de
 execução AMH; `EXT` = dependência externa; demais = V2/titular. Caminho
 crítico controlável pela V2 em traço grosso (classe `crit`). O grafo
-sumariza: SPR-G0-3, SPR-G1-1, SPR-G1-3, SPR-G2-1, SPR-G2-2, SPR-OC-2 e
+sumariza: SPR-G0-3, SPR-G1-1, SPR-G1-3, SPR-G1-7 (consolidação da variante
+observacional), SPR-G2-1, SPR-G2-2, SPR-OC-2 e
 SPR-OC-3 não têm nó próprio (dependências projetadas nos marcos MD-*/MG-*
 correspondentes); a fonte única e completa das dependências é o campo
 `dependencies` do YAML espelho. Nós `MG-*` equivalem aos sprints de marco
@@ -602,7 +664,7 @@ flowchart TB
     SPRG37["SPR-G3-7 N-8 / O3 / D-c / ADR-0006"]
     SPRG42["SPR-G4-2 aceites ADR-0012..24"]
     MGG1["MG-G1 uso pretendido aprovado"]
-    MGG2["MG-G2 comitê de portfólio"]
+    MGG2["MG-G2 promoção por painel (AGT-3, 7 condições)"]
     MGG3["MG-G3 aprovação bilateral AMH×V2"]
     MGG4["MG-G4 coerência UX/domínio/API"]
     MGG5["MG-G5 conformidade de conectores aceita"]
@@ -625,7 +687,8 @@ flowchart TB
     SPRG71["SPR-G7-1 fundações + CI §15.2"]
     SPRG72["SPR-G7-2 fatia vertical sintética"]
     SPRG23["SPR-G2-3 bundle assinável + CRV"]
-    SPRG17["SPR-G1-7 pacote de evidência G1"]
+    SPRG19["SPR-G1-9 dossiê substituto multi-fonte (AGT-1/AGT-4)"]
+    SPRG110["SPR-G1-10 baseline retrospectivo (AGT-2)"]
     SPRG81["SPR-G8-1 prontidão operacional"]
     SPRG84["SPR-G8-4 shadow + piloto"]
     SPROC1["SPR-OC-1 vigilância contínua"]
@@ -642,8 +705,8 @@ flowchart TB
   subgraph EXT["Dependências externas"]
     SPRG12["SPR-G1-2 parecer jurídico OS-16"]
     SPRG14["SPR-G1-4 ética + recrutamento"]
-    SPRG15["SPR-G1-5 baselines perecíveis B1-B4a"]
-    SPRG16["SPR-G1-6 campo G1"]
+    SPRG15["SPR-G1-5 captura observacional B1-B4a (opcional)"]
+    SPRG16["SPR-G1-6 campo G1 (variante opcional)"]
     SPRG45["SPR-G4-5 validação usuários + TA"]
     SPRG52["SPR-G5-2 execução + aceitação externa"]
     SPRG63["SPR-G6-3 pentest/isolamento adversarial"]
@@ -656,11 +719,14 @@ flowchart TB
   MD3 --> SPRG14
   SPRG14 -->|EXT| SPRG15
   SPRG14 -->|EXT| SPRG16
-  SPRG15 -->|EXT| SPRG17
-  SPRG16 -->|EXT| SPRG17
-  SPRG17 --> MGG1
+  SPRG12 -->|EXT| SPRG110
+  SPRG110 --> MGG1
+  SPRG19 --> MGG1
+  SPRG15 -. "se comissionada, retroalimenta" .-> SPRG19
+  SPRG16 -. "se comissionada, retroalimenta" .-> SPRG19
   SPRG02 --> MGG1
   MGG1 --> SPRG43
+  SPRG19 --> SPRG43
   MGG1 --> SPRG65
   MGG1 --> MGG2
 
@@ -695,7 +761,6 @@ flowchart TB
   SPRG42 --> SPRG71
   MD4 --> SPRG71
   SPRG01 --> SPRG71
-  SPRG17 --> SPRG43
   SPRG43 --> SPRG45
   SPRG14 -->|EXT| SPRG45
   SPRG44 --> SPRG51
@@ -739,11 +804,11 @@ flowchart TB
   SPRG45 -->|EXT| SPRG82
   SPRG63 -->|EXT| SPRG82
   SPRG82 -->|EXT| MGG8P
-  SPRG15 -. "baseline ANTES de exposição (SR-2)" .-> MGG8P
+  SPRG110 -. "corte histórico ANTES de exposição (SR-2)" .-> MGG8P
   MGG8P --> SPRG84
   SPRG84 --> MGG8X
   MGG8X --> SPROC1
-  SPRG15 -->|EXT| SPROC1
+  SPRG110 --> SPROC1
 
   classDef crit stroke-width:4px
   class SPRG01,SPRG41,SPRG42,SPRG71,SPRG72,MGG7 crit
@@ -756,7 +821,7 @@ flowchart TB
 | ID | Condição | Consequência | Mitigação (PROPOSAL) | IDs rastreados |
 |---|---|---|---|---|
 | **SR-1** | Propagações residuais de GDEC-0008 não persistidas (linha na tabela-índice do registro; pedido §6; traceability-policy §1.1; L-4/L-6; marca P-1) e espelho YAML deste mapa não rastreado | Fontes internas divergem entre si; o mapa perde o espelho legível por máquina em sessão futura (anti-padrões 4/7) | SPR-G0-1 primeiro; commit do YAML pelo dono da janela correta (anti-padrão 14) | GDEC-0008 |
-| **SR-2** | Qualquer demonstração, treinamento ou piloto visível a clínicos antes da captura B1-B4a | Perda **permanente** dos baselines; SM-01/SM-04/HM-02/HM-05 inavaliáveis para sempre | Serialização dura: SPR-G1-5 antes de qualquer exposição; tratado como prioridade de sequência, não como data | RISK-0008, VAL-0035, G2-VAL-0025, ASM-0007 |
+| **SR-2** | Qualquer demonstração, treinamento ou piloto visível a clínicos antes de **fixar o corte histórico** do baseline retrospectivo (AGT-2) — e antes da captura B1-B4a, se a variante observacional for comissionada | Contaminação/perda **permanente** do baseline; SM-01/SM-04/HM-02/HM-05 inavaliáveis para sempre | Serialização dura: corte histórico de SPR-G1-10 fixado antes de qualquer exposição (gatilho §3.5 do protocolo continua definindo o corte); prioridade de sequência, não data | RISK-0008, VAL-0035, G2-VAL-0025, ASM-0007, GDEC-0009 |
 | **SR-3** | Implementação (G7) ou escolha tecnológica antes de ADR aceito+propagado | Tecnologia fora do processo de ADR (§3.14); retrabalho; fronteira decidida por omissão | DoR de SPR-G7-1 exige SPR-G4-2; capacidades descritas como requisito até lá | RISK-0010, ADR-0012..0024 |
 | **SR-4** | Espera indeterminada de terceiros: parecer, ética, usuários, pentest, ambientes AMH stg/prod | Caminhos (a)/(c)/(d) param sem data prevista; pressão por atalho | Explicitar espera; avançar T3 (sintético); jamais converter dependência em compromisso (§8 do encargo) | BLK-0013/0014/0015, RISK-0004 |
 | **SR-5** | Colisão de rótulos N-* (dois namespaces) e VAL-*/N-* sem registro central | Rastreabilidade ambígua em contrato e conformidade; citação errada em release evidence | Steward de rastreabilidade desambiguar na propagação (SPR-G0-1); registrar em traceability-policy §1.1 | GDEC-0002 |
@@ -773,8 +838,10 @@ flowchart TB
    (árvore de trabalho de 2026-08-15 sobre `4669915`/`41a115c`). Durante a
    produção deste mapa, a sessão dona da janela integrou `75838b5` à `main`
    (persistindo GDEC-0008 e incluindo a versão inicial deste próprio
-   documento); as seções 2.2 e 5.0 refletem o estado pós-`75838b5`.
-   Modificações de outras sessões foram lidas, jamais editadas.
+   documento) e, depois, `ac4b1bd` (GDEC-0009 — agentificação de G1/G2).
+   A versão verbatim pré-GDEC-0009 está preservada em `9382c8b`; esta
+   versão incorpora a emenda GDEC-0009 (seção 2.2 item 7) em commit
+   próprio. Modificações de outras sessões foram lidas, jamais editadas.
 2. **Prefixos locais** `MD/MG/EPC/SPR/SR/OC` são documento-locais deste mapa
    (PROPOSAL), auto-sinalizados como pendentes de inclusão em
    `traceability-policy.md` §1.1 — mesmo regime das extensões já
@@ -803,8 +870,8 @@ flowchart TB
 | Gate | Dono do gate (hoje) | Critérios de entrada | Evidência exigida na saída | Critério objetivo de saída | Marco humano bloqueante | Estado |
 |---|---|---|---|---|---|---|
 | G0 (residual) | rodaquino-OMNI (GDEC-0004) | — | Donos nomeados + acesso + pinagem + governança | BLK-0002/0008 fechados; propagações residuais de GDEC-0008 concluídas | Nomeações (SPR-G0-2) | PARCIAL |
-| G1 | Revisor nomeado (GDEC-0003) + segundo revisor (SPR-G0-2) | MD-1 residual; MD-3 propagada | Evidência de campo (42 itens VAL) + baselines B1-B4a | Uso pretendido aprovado ou ausência aceita como risco (VAL-0005) | **MG-G1** (SPR-G1-8) | PARCIAL / campo BLOQUEADO |
-| G2 | Comitê qualificado (constituição em SPR-G2-1) | MG-G1; P1/P2 do método | Método + pacote de release + hazards residuais + plano de validação | Aprovação nominal das 4 dimensões (§6.4) | **MG-G2** (SPR-G2-4) | BLOQUEADO |
+| G1 | Revisor nomeado (GDEC-0003) + segundo revisor (SPR-G0-2) | GDEC-0009 vigente; dado real atrás de MD-1 | Dossiê substituto multi-fonte aprovado por painel AGT-4 (SPR-G1-9) + risco aceito registrado (AGT-1/RISK-0013) + corte histórico do baseline fixado (SPR-G1-10) | Uso pretendido aprovado com evidência substituta (VAL-0005 — rota do risco aceito) | **MG-G1** (SPR-G1-8 — permanece ato humano) | PARCIAL |
+| G2 | rodaquino-OMNI por autorização permanente (GDEC-0009/AGT-3), exercida por painel agentico AGT-4 | MG-G1; fontes evidenciadas (G3) | 7 condições cumulativas do AGT-3 (hard-gates inalterados; trilha AGT-4; G3 por via; parecer OS-16; sombra medida; kill switch/rollback; registro imutável) | Promoção com 7/7 condições demonstradas; reversão automática a sombra em violação de limiar | Autorização GDEC-0009 (já exercida) + gatilhos de revisita nomeados | BLOQUEADO (por dados) |
 | G3 | Donos AMH+V2 (BLK-0015 pendente) | OS-05; MD-4/MD-5 residuais | Pinagem por digest; matriz com dados populados medidos; testes §7.6 em ambiente production-like | 6 blocos do §7.6 satisfeitos, por interface/via/tenant/modo | **MG-G3** (audiência bilateral AMH×V2) | BLOQUEADO |
 | G4 | AUTH-UX/AUTH-PRODUCT + validação de usuários | ADRs aceitos+propagados; evidência G1 | Jornada×domínio×API×erro×authz×audit + testes de contrato de cenário | Coerência provada por cenário (não schemas gerados) | **MG-G4** (SPR-G4-6) | NÃO INICIADO |
 | G5 | Aceitador de conformidade externo (a nomear) | Contratos publicados (SPR-G4-4) | 9 famílias de teste §12.4 contra sistema representativo | Suites verdes aceitas por verificador ≠ implementador | **MG-G5** (SPR-G5-2) | NÃO INICIADO |
@@ -830,14 +897,16 @@ Todo item acionável rastreia a pelo menos uma origem documental (encargo
 | SPR-G1-2 | OS-16 (critérios), BLK-0013, BLK-0004, HAZ-0045, HAZ-0047, ASM-0004, RISK-0011 |
 | SPR-G1-3 | VAL-0039/0040/0041, G2-VAL-0026, `pedido-de-comissionamento.md` §6 |
 | SPR-G1-4 | BLK-0013, `plano-de-recrutamento-e-etica.md` §11, G2-VAL-0001 |
-| SPR-G1-5 | RISK-0008, VAL-0035, G2-VAL-0025, ASM-0007, `protocolo-baselines-pereciveis.md` |
-| SPR-G1-6 | VAL-0005, VAL-0012..0016, VAL-0027, VAL-0031, VAL-0033, `protocolo-pesquisa-g1.md` |
-| SPR-G1-7 | 42 itens VAL (§6.1 do protocolo), HAZ-0046, prompt §18 item 5 |
-| SPR-G1-8 | BLK-0008, VAL-0005, GDEC-0003, safety case M1 (skeleton §6) |
-| SPR-G2-1 | G2-VAL-0001, `portfolio-method.md` P1, prompt §6.3 |
+| SPR-G1-5 (opcional — GDEC-0009) | RISK-0008, VAL-0035, G2-VAL-0025, ASM-0007, `protocolo-baselines-pereciveis.md` |
+| SPR-G1-6 (opcional — GDEC-0009) | VAL-0005, VAL-0012..0016, VAL-0027, VAL-0031, VAL-0033, `protocolo-pesquisa-g1.md` |
+| SPR-G1-7 (superseded como exigência — GDEC-0009) | 42 itens VAL (§6.1 do protocolo), HAZ-0046, prompt §18 item 5 |
+| SPR-G1-8 | BLK-0008, VAL-0005, GDEC-0003, GDEC-0009, safety case M1 (skeleton §6) |
+| SPR-G1-9 (novo — AGT-1) | GDEC-0009 (ata AGT-1/AGT-4), RISK-0013, VAL-0001..0043, HAZ-0046, prompt §5 Gate G1 (válvula do risco aceito) |
+| SPR-G1-10 (novo — AGT-2) | GDEC-0009 (ata AGT-2), VAL-0035, G2-VAL-0025, RISK-0008, RISK-0013, ASM-0007 |
+| SPR-G2-1 (reformulado — AGT-3/AGT-4) | GDEC-0009, RISK-0012, G2-VAL-0001, `portfolio-method.md` P1, prompt §6.3 |
 | SPR-G2-2 | CAND-0001..0020, G2-VAL-0002..0024, anti-padrão 10 |
 | SPR-G2-3 | ADR-0007, ADR-0025..0029, CRV (standard), G2-VAL-0030..0035 |
-| SPR-G2-4 | Prompt §6.4, G2-VAL-0001..0035, HAZ-0043, ASM-0010 |
+| SPR-G2-4 (MG-G2, reformulado — AGT-3, 7 condições) | GDEC-0009, RISK-0012, prompt §6.4 (superseded no escopo), G2-VAL-0001..0035, HAZ-0043, ASM-0010 |
 | SPR-G3-1..6 | OS-01..24 (`ordens-de-servico-amh-2026-08-15.md`), AQ-1..6, BLK-0012/0016, RISK-0003 |
 | SPR-G3-7 | ASM-0006, ASM-0009, ADR-0006, GDEC-0008 itens 2/4 |
 | SPR-G3-8 | BLK-0015, OS-19 critério 6 |
