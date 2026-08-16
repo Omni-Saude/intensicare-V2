@@ -33,3 +33,7 @@ coverage/
 .env
 .env.*
 !.env.example
+
+# Cache do Python (gerado pelos scripts de gate)
+__pycache__/
+*.pyc
