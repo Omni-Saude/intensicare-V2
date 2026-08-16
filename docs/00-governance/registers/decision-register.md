@@ -962,6 +962,51 @@ provenance:
   validation_status: "N/A — decisão do titular"
 ```
 
+## GDEC-0017 — Construção integral desbloqueada; autonomia decisória delegada ao orquestrador durante a construção
+
+Transcrição de decisão tomada **por escrito, em sessão**, pelo titular
+(rodaquino-OMNI). Escriba: orquestrador de execução (ciclo 6).
+
+```yaml
+id: GDEC-0017
+title: Tudo desbloqueado para construção; decisões de construção delegadas ao orquestrador como premissas reversíveis
+status: DECIDED
+statement: >
+  (1) TUDO fica considerado desbloqueado para construção. (2) O orquestrador
+  atua de maneira autônoma e toma as próprias decisões de construção
+  (com análise aprofundada quando necessário), registrando cada decisão
+  material como premissa reversível de uma linha (regime GDEC-0013/0015).
+  Permanecem vinculantes os três itens de GDEC-0014: CI de conteúdo
+  proibido/PHI, PR para main, dados sintéticos como default. As
+  condicionantes por operação do parecer OS-16 persistem como obrigações
+  jurídicas externas; atos que exigem terceiros (AMH, jurista, revisores
+  externos) continuam fora do alcance da V2.
+decided_by: rodaquino-OMNI
+decided_date: "2026-08-16"
+rationale: >
+  Continuidade de GDEC-0013..0016: velocidade de construção com
+  rastreabilidade mínima (uma linha por premissa) e reversibilidade.
+supersession_rule: >
+  Decisão do titular sobre qualquer premissa registrada substitui a
+  premissa; primeira exposição a usuário real ou dado real reabre a
+  calibração (herdada de GDEC-0013).
+links:
+  requirements: []
+  hazards: []
+  adrs: []
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-16)
+  commit_sha_or_version: a6e7c0c (estado ao decidir)
+  section_or_lines: "instrução: 'considere tudo como desbloqueado para construção. Atue de maneira autônoma (skip permission) e tome suas decisões usando deep think quando necessário'"
+  date_collected: "2026-08-16"
+  collector: orquestrador de execução (ciclo 6) — escriba
+  transformation: "transcrita; limites mantidos (CI/PR/sintético; obrigações externas do parecer; atos de terceiros) explicitados pelo escriba"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisão do titular"
+```
+
 ## Index
 
 | ID | Title | Status | Decided by | Decided date |
@@ -982,6 +1027,7 @@ provenance:
 | GDEC-0014 | Remoção das 7 condições da AGT-3; vinculantes apenas CI de conteúdo proibido/PHI, PR para main e dados sintéticos como default | DECIDED | rodaquino-OMNI | 2026-08-16 |
 | GDEC-0015 | Travas residuais removidas: aceite de ADR deixa de ser pré-condição de implementação (construção sobre opção recomendada como premissa reversível); N-8 = 6 tipos da minuta; ADR-0006 = Opção A como premissa | DECIDED | rodaquino-OMNI | 2026-08-16 |
 | GDEC-0016 | Aceite em lote: ADR-0002 e ADR-0006 aceitos (Opção A); direções dos 13 not-started aceitas com 3 modificações (0014 mantém MCP; 0021 frontend melhora comunicação/ajusta termos, UX/UI de 1ª classe; 0024 mantém IA/ML com conector para agentes clínicos) | DECIDED | rodaquino-OMNI | 2026-08-16 |
+| GDEC-0017 | Construção integral desbloqueada; decisões de construção delegadas ao orquestrador como premissas reversíveis de uma linha (CI/PR/sintético permanecem; obrigações externas do parecer persistem) | DECIDED | rodaquino-OMNI | 2026-08-16 |
 
 ## Notes
 
@@ -1023,3 +1069,12 @@ provenance:
 - **Nota (2026-08-16, mesma sessão):** `GDEC-0014` alocado (remoção das 7
   condições da AGT-3; só CI/PR/sintético permanecem vinculantes). Próximo
   ID disponível: `GDEC-0015`.
+- **Nota (2026-08-16, mesma sessão):** `GDEC-0015` e `GDEC-0016` alocados
+  (travas residuais removidas; aceite em lote dos ADRs). As notas de
+  alocação destes dois não haviam sido acrescentadas na integração
+  anterior — housekeeping de escriba nesta passada. Próximo ID disponível:
+  `GDEC-0017`.
+- **Nota (2026-08-16, ciclo 6 — construção):** `GDEC-0017` alocado
+  (construção integral desbloqueada; autonomia decisória delegada ao
+  orquestrador com premissas reversíveis de uma linha). Próximo ID
+  disponível: `GDEC-0018`.
