@@ -10,8 +10,8 @@ source: >-
   sugestões"); pedido em pedido-de-parecer.md; base técnica em
   minuta-parecer-os-16.md; guia em modelo-de-resposta-parecer.md
 date_collected: "2026-08-15"
-collector: orquestrador do mapa até produção — escriba
-last_updated: "2026-08-15"
+collector: orquestrador do mapa até produção — escriba; complemento de 2026-08-16 transcrito pelo orquestrador de execução (ciclo 5)
+last_updated: "2026-08-16"
 ---
 
 # Parecer OS-16 — recebido em 2026-08-15
@@ -107,6 +107,40 @@ Lucas Alves de Sousa — OAB/GO nº 45.457
 
 ---
 
+## Complemento recebido em 2026-08-16 — seções VII e VIII (transcrição fiel)
+
+> **Proveniência:** complemento do parecerista retransmitido **por escrito
+> pelo titular** em sessão de 2026-08-16 ao orquestrador de execução
+> (ciclo 5); transcrição fiel; supre os itens (1) e (2) da complementação
+> sugerida abaixo. Original assinado do complemento: a arquivar junto do
+> original do parecer.
+
+### VII. O que este parecer NÃO cobre
+
+Adoto expressamente a lista de exclusões da minuta §7, itens 1 a 26
+(ANVISA/SaMD; certificação de S-RES; normas CFM e demais conselhos; sigilo
+profissional; ANS; contratos do art. 39 — cuja **exigência** afirmo, mas
+cuja **redação** não faço aqui; instrumento entre controladores; contratos
+com instituições; transferência internacional; residência de dados;
+provedores de LLM; crianças e adolescentes; titulares falecidos; dados de
+trabalhadores; RIPD — exigido, não elaborado; ROPA; encarregado; resposta a
+incidentes; prazos de retenção; direitos do titular; art. 20 além do
+respondido em Q-15; responsabilidade civil e sanções; regime CEP/CONEP além
+do enquadramento de rota do item V; concorrência; discriminação em outros
+regimes).
+
+### VIII. Condições de revisão (Q-25)
+
+Este parecer deve ser **revisitado** se ocorrer qualquer um: (1) alteração
+legislativa ou regulamentação/decisão da ANPD sobre grupos econômicos em
+saúde, art. 11 ou art. 20; (2) mudança material da arquitetura examinada
+(novo commit de referência que altere o índice, o PSR ou os fluxos); (3)
+início efetivo de tratamento de dado real (gatilho de reavaliação prática);
+(4) decurso de **24 meses** da assinatura; (5) qualquer incidente de
+segurança envolvendo os dados examinados.
+
+---
+
 ## Análise de conformidade do escriba (não integra o parecer)
 
 Contra os **4 critérios de aceitação da OS-16**:
@@ -115,8 +149,8 @@ Contra os **4 critérios de aceitação da OS-16**:
 |---|---|---|
 | (i) Emissor qualificado, escopo, data | **PARCIAL** | Qualificação (OAB/GO 45.457), escopo (item I) e data/local (Goiânia-GO, 15/08/2026) presentes; assinatura transcrita — **original assinado a arquivar**; "anexado ao ADR-043" é ato do lado AMH (política de zero escrita da V2) — pendente |
 | (ii) Posição explícita nos 4 pontos | **SATISFEITO** | Itens II, III, IV e VI (ponto d), mais a extensão do item V — todos com posição, condicionantes e vedações |
-| (iii) Declara o que não cobre | **AUSENTE** | A seção VII (exclusões) **não veio** no recebido |
-| (iv) Registra condições de mudança | **AUSENTE** | A seção VIII **não veio**; a resposta à Q-25 remete a "item VIII" inexistente no documento |
+| (iii) Declara o que não cobre | **SATISFEITO (complemento 2026-08-16)** | Seção VII recebida por complemento escrito do parecerista (transcrição acima): adota as exclusões da minuta §7, itens 1-26 |
+| (iv) Registra condições de mudança | **SATISFEITO (complemento 2026-08-16)** | Seção VIII recebida (transcrição acima): 5 condições de revisão, incl. início de tratamento de dado real e decurso de **24 meses** (prazo do parecerista, distinto dos 12 do modelo); a remissão da Q-25 agora resolve |
 
 **Resíduos de forma adicionais** (transcritos, não corrigidos): marcador
 `[CONFIRMAR/AJUSTAR]` remanescente no título da vedação do §5º (o conteúdo
@@ -133,6 +167,19 @@ permanecem nos estados atuais (com notas de recepção). O **gatilho de
 revisita da AGT-3 "primeiro parecer jurídico" foi DISPARADO** pela emissão
 — a revisita está registrada como ABERTA na ata.
 
+**Atualização 2026-08-16 (recepção do complemento — transcrição, ciclo 5):**
+os critérios (iii) e (iv) foram **supridos** pelo complemento escrito acima.
+Permanecem pendentes, e a disposição fail-closed segue de pé por eles:
+critério (i) **PARCIAL** — original assinado (parecer + complemento) a
+arquivar; marcador `[CONFIRMAR/AJUSTAR]` do art. 11, §5º não ratificado
+expressamente; Q-23 (uma ou duas etapas) e Q-24 (suficiência dos anexos)
+ainda com placeholders. Portanto: DEC-G0-03 permanece **integral**; a
+**condição 4 da AGT-3 permanece NÃO satisfeita** até o titular dispor da
+suficiência formal (e a condição 3 — G3 por via — segue insatisfeita de
+todo modo); a revisita da AGT-3 aberta pelo gatilho "primeiro parecer"
+permanece **ABERTA**, a conduzir pelo titular. Nenhum bloqueador fechado
+por esta atualização.
+
 ## Complementação sugerida (texto pronto para o titular encaminhar)
 
 > Dr. Lucas, obrigado pelo parecer. Para fechar os critérios formais da
@@ -148,3 +195,61 @@ revisita da AGT-3 "primeiro parecer jurídico" foi DISPARADO** pela emissão
 > Q-23 (etapa única ou duas etapas) e a Q-24 (suficiência dos anexos ou
 > lista do que falta); (5) se possível, encaminhar o original assinado
 > (PDF) para arquivo.
+
+
+---
+
+## Complementação recebida (2026-08-16) — transcrição fiel
+
+### VII. O que este parecer NÃO cobre
+
+Adoto expressamente a lista de exclusões da minuta §7, itens 1 a 26 (ANVISA/SaMD; certificação de S-RES; normas CFM e demais conselhos; sigilo profissional; ANS; contratos do art. 39 — cuja **exigência** afirmo, mas cuja **redação** não faço aqui; instrumento entre controladores; contratos
+com instituições; transferência internacional; residência de dados; provedores de LLM; crianças e adolescentes; titulares falecidos; dados de trabalhadores; RIPD — exigido, não elaborado; ROPA; encarregado; resposta a incidentes; prazos de retenção; direitos do titular; art. 20 além do
+respondido em Q-15; responsabilidade civil e sanções; regime CEP/CONEP além do enquadramento de rota do item V; concorrência; discriminação em outros regimes).
+
+### VIII. Condições de revisão (Q-25)
+
+Este parecer deve ser **revisitado** se ocorrer qualquer um: (1) alteração legislativa ou regulamentação/decisão da ANPD sobre grupos econômicos em saúde, art. 11 ou art. 20; (2) mudança material da arquitetura examinada (novo commit de referência que altere o índice, o PSR ou os fluxos); (3) início efetivo de tratamento de dado real (gatilho de reavaliação prática); (4) decurso de 24 meses da assinatura; (5) qualquer incidente de segurança envolvendo os dados examinados.
+
+---
+
+## Análise de conformidade ATUALIZADA (escriba, 2026-08-16 — não integra o parecer)
+
+| Critério OS-16 | Estado | Evidência |
+|---|---|---|
+| (i) Emissor qualificado, escopo, data | **SATISFEITO nos elementos de emissão** | Qualificação, escopo, data/local e assinatura presentes. Pendências de forma remanescentes: arquivar o **original assinado (PDF/físico)**; "anexado ao ADR-043" = ato do lado AMH (zero escrita da V2) |
+| (ii) Posição explícita nos 4 pontos | **SATISFEITO** | Itens II-VI + extensão V |
+| (iii) Declara o que não cobre | **SATISFEITO** | Seção VII recebida em 2026-08-16: adoção expressa das exclusões da minuta §7, itens 1-26 |
+| (iv) Registra condições de mudança | **SATISFEITO** | Seção VIII recebida em 2026-08-16: 5 condições, com prazo de **24 meses** (termo do parecerista — prevalece sobre os 12 do modelo) |
+
+**Residuais não endereçados na complementação (registrados, não bloqueantes):**
+o marcador "[CONFIRMAR/AJUSTAR]" no título da vedação do §5º — o conteúdo foi
+mantido integralmente no texto emitido e não foi alterado na complementação;
+leitura registrada: **ratificado por conduta**. Q-23 (duas etapas) restou
+**superada** — o parecer veio completo em ato único. Q-24 restou **superada**
+— o parecerista emitiu sem requisitar documentos adicionais.
+
+**Efeitos registrados (fail-closed por operação):**
+
+1. **Critérios de conteúdo da OS-16 satisfeitos.** O gatilho de parecer de
+   DEC-G0-03 está **atendido**; o que o parecer libera, ele libera **sob as
+   próprias condicionantes por operação**: índice cross-PJ — instrumento
+   entre controladores + RIPD prévio + tombamento carimbado + segregação,
+   antes do primeiro apply; laço clínico — caráter consultivo documentado e
+   verificável; baseline retrospectivo — corte histórico documentado +
+   acesso mínimo + sem transferência a terceiros. Nenhuma operação de dado
+   real inicia sem sua condicionante satisfeita.
+2. **BLK-0013**: a via **retrospectiva** está juridicamente coberta (item
+   V.1); a via de **campo** permanece bloqueada até aprovação CEP/CONEP +
+   TCLE (item V.2).
+3. **AGT-3, condição 4**: satisfeita **no plano jurídico**; a **2ª revisita
+   da AGT-3** (gatilho "primeiro parecer") **segue ABERTA**, a conduzir pelo
+   titular; a exercibilidade prática continua barrada pela condição 3 (G3
+   aprovado por via — hoje 0 vias).
+4. **SPR-G1-10 (baseline retrospectivo) exequível**: primeiro ato é **fixar
+   e registrar o corte histórico ANTES de qualquer exposição visível a
+   clínicos** (SR-2); acesso ao dado histórico segue a trilha AMH.
+5. Trabalho novo criado pelas condicionantes (a mapear no backlog):
+   instrumento do art. 39/controladores; RIPD do índice; evidência do
+   caráter consultivo (UX/traçabilidade); segregação do `ie_perm_sms_email`
+   no lago; emenda ao ADR-043 (AMH) nomeando artigo e finalidade (Q-06).

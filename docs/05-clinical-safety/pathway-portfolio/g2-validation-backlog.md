@@ -92,6 +92,24 @@ baseline). Every other item can be closed late at the cost of delay; that one ca
 **This item is not a research task.** It is a decision, and no amount of analysis substitutes
 for it.
 
+> **Atualização 2026-08-15/16 — disposição PARCIAL de G2-VAL-0001 por GDEC-0009/AGT-3
+> (transcrição de escriba, ciclo 5, sprint SPR-G2-1; pt-BR conforme DEC-G0-10; nada
+> decidido por agente):** a perna "confirmar os cinco papéis para ratificar pesos MCDA"
+> está **disposta** — a ratificação de pesos passou a ser exercível por agentes sob a
+> autorização permanente do titular (GDEC-0009/AGT-3, contra-assinada e ratificada pelo
+> 2º revisor clínico — GDEC-0011 itens 1-2), mediante o painel adversarial AGT-4, cuja
+> definição operacional 0.1.1-draft foi aprovada pelo próprio painel (VIVE, unanimidade
+> — trilha imutável em `docs/15-release-evidence/painel-agt4/trilha/`); pré-requisito
+> P1 do método marcado como disposto (`portfolio-method.md`, bloco de status;
+> `hard-gate-assessment.md` §7). A perna "**nomear dono clínico qualificado**"
+> (hard gate 2, por candidato) **permanece OPEN**: os hard gates §6.2 são inalteráveis
+> (condição 1 da AGT-3) e designações de *revisor* (GDEC-0003; GDEC-0010 — Dr. Marcelo
+> Villaca Lima, aceite formal e verificação de credencial pendentes) não constituem
+> aceite de dono de conteúdo por via. Efeito líquido: G2-VAL-0001 deixa de bloquear a
+> *definição/execução do método* e continua bloqueando a *admissão de candidatos* pela
+> perna do dono clínico. A vigência da definição do painel aguarda ratificação humana
+> (0.1.1 §1.3).
+
 ### B. Inventory completeness — makes the candidate set knowable
 
 | ID | Item | Why blocking | Evidence that closes it | Owner role | Blocked by |
