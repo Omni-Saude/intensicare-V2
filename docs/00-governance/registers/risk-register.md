@@ -510,6 +510,98 @@ provenance:
   validation_status: "VALIDAÇÃO NECESSÁRIA — exige dono humano nomeado antes de qualquer operação com o índice cross-PJ ligado (threat-model.md §12.8 item 15); nenhum gatilho de nomeação existe hoje"
 ```
 
+## RISK-0012 — Conteúdo clínico ACIONÁVEL promovido sem aprovação humana por item (AGT-3, standing authorization) (pt-BR — conteúdo novo, 2026-08-15)
+
+```yaml
+id: RISK-0012
+title: Promoção de vias a modo acionável por agentes, sem assinatura humana por via (GDEC-0009/AGT-3)
+status: OPEN
+statement: >
+  Por decisão do titular (GDEC-0009 AGT-3, tomada CONTRA a recomendação do
+  orquestrador), agentes ficam autorizados em caráter permanente a promover
+  vias clínicas a modo acionável — alertas que interrompem clínicos reais —
+  sem aprovação humana por item. A accountability humana concentra-se no ato
+  único da autorização. O risco: um defeito sistemático que os agentes do
+  painel compartilhem (mesmo ponto cego de treinamento, mesma fonte
+  contaminada, mesma má-interpretação de diretriz) pode atravessar autor,
+  revisor e verificadores e chegar a pacientes sem que nenhum humano tenha
+  olhado aquela via específica. Severidade S5 por construção: dano a
+  paciente com cadeia de aprovação inteiramente não-humana.
+impact: >
+  Alerta clinicamente errado (ou no-fire indevido) em produção com
+  responsabilidade difusa; exposição regulatória (ANVISA/SaMD, CFM) e civil
+  potencialmente indefensável — aprovação de conteúdo clínico por sistema
+  automatizado sem responsável técnico humano por item não tem precedente
+  defensivo claro no Brasil; dano reputacional agravado pela concentração de
+  autoridade (RISK-0007: quem autorizou o mecanismo é quem arbitraria o
+  incidente).
+likelihood: unknown — mitigada pelas 7 condições vinculantes da ata
+  (hard gates §6.2 intactos; painel AGT-4; G3 por via; parecer OS-16 prévio;
+  sombra medida; kill switch com reversão automática; trilha imutável), mas
+  o modo de falha residual (defeito compartilhado entre agentes) não é
+  endereçável por redundância de agentes — apenas por diversidade real de
+  lentes e pela sombra medida.
+gate_relevance: [G2, G6, G8]
+owner: rodaquino-OMNI — por força da própria autorização permanente
+links:
+  evidence: []
+  blockers: [BLK-0014]
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: docs/00-governance/registers/agentificacao-g1-g2-2026-08-15.md
+  commit_sha_or_version: "75838b5 (estado ao decidir)"
+  section_or_lines: "AGT-3, condições 1-7; divergência de recomendação registrada"
+  date_collected: "2026-08-15"
+  collector: orquestrador de entrega — escriba
+  transformation: "risco derivado (INFERENCE) da decisão AGT-3, registrado como condição da própria implementação"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "VALIDAÇÃO NECESSÁRIA — parecer jurídico (OS-16/G6/G8) deve opinar especificamente sobre a defensibilidade da promoção acionável sem humano por item; gatilhos de revisita na ata"
+```
+
+## RISK-0013 — Evidência substituta do G1 e baselines retrospectivos: desenhar para um usuário imaginado (pt-BR — conteúdo novo, 2026-08-15)
+
+```yaml
+id: RISK-0013
+title: G1 sem observação direta (AGT-1) + baselines reconstruídos de dados (AGT-2) — vieses aceitos
+status: OPEN
+statement: >
+  Com GDEC-0009, o G1 passa por evidência substituta (literatura, forense do
+  legado, dados retrospectivos, hipóteses do titular) e os baselines
+  perecíveis viram reconstrução retrospectiva. Vieses estruturais aceitos:
+  (a) literatura descreve UTIs médias, não as unidades-alvo; (b) o legado
+  documenta o que o sistema antigo fazia, não o que os clínicos precisavam;
+  (c) dado retrospectivo não contém interrupções, fadiga, carga cognitiva
+  nem workarounds — exatamente o que a observação capturaria; (d) hipóteses
+  do titular são de um único especialista (viés confirmado como restrição em
+  DEC-G0-05, cujo princípio permanece). Risco líquido: desenhar fluxo e
+  alarmística para um usuário imaginado, descobrindo o desalinhamento só no
+  piloto (G8) — tarde e caro, porém com válvula: o piloto supervisionado é
+  exatamente onde a observação real acontece.
+impact: >
+  Retrabalho de UX/fluxo no piloto; risco de fadiga de alarme mal calibrada
+  na primeira exposição real (interage com HAZ-0016); baselines com vieses
+  declarados enfraquecem o contrafactual do KPI de missão (altas vivas).
+likelihood: medium — é o resultado esperado de substituir observação por
+  fontes indiretas; magnitude desconhecida até o piloto.
+gate_relevance: [G1, G8]
+owner: rodaquino-OMNI — risco formalmente ACEITO como parte da decisão AGT-1
+links:
+  evidence: []
+  blockers: []
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: docs/00-governance/registers/agentificacao-g1-g2-2026-08-15.md
+  commit_sha_or_version: "75838b5 (estado ao decidir)"
+  section_or_lines: "AGT-1 e AGT-2; cláusula original do Gate G1 ('absence explicitly accepted as a blocking risk')"
+  date_collected: "2026-08-15"
+  collector: orquestrador de entrega — escriba
+  transformation: "risco derivado (INFERENCE) das decisões AGT-1/AGT-2; aceitação registrada na própria ata"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "ACEITO pelo titular (GDEC-0009); reavaliar na entrada do piloto (G8), quando a observação real gerar o primeiro contraste"
+```
+
 ## Index
 
 | ID | Title | Status | Gate relevance | Owner |
@@ -525,3 +617,5 @@ provenance:
 | RISK-0009 | Frescor — canal AMH em lote × janela de 1h do NEWS2 | OPEN | G2, G3 | UNASSIGNED |
 | RISK-0010 | Fronteira/grão decididos por omissão se ADR-0001/0003/0005 estagnarem | OPEN | G3, G7 | UNASSIGNED |
 | RISK-0011 | THR-0080 sem barreira preventiva na V2, agravada por concentração de autoridade (R-a7) | OPEN | G0, G3, G6 | UNASSIGNED |
+| RISK-0012 | Promoção de vias a acionável por agentes sem humano por item (GDEC-0009/AGT-3, S5) | OPEN | G2, G6, G8 | rodaquino-OMNI |
+| RISK-0013 | G1 por evidência substituta + baselines retrospectivos — usuário imaginado (ACEITO, GDEC-0009) | OPEN | G1, G8 | rodaquino-OMNI |

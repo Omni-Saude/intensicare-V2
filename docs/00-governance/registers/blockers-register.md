@@ -519,6 +519,15 @@ links: [RISK-0008, BLK-0004]
 profissionais e exposição incidental a dado de paciente — VAL-0041, hoje sem
 titular"). Escrito por escriba de governança; nenhum mérito decidido aqui.
 
+**Reclassificação (2026-08-15, GDEC-0009/AGT-1 — decisão do titular):** o
+campo deixa de ser exigência do Gate G1 (evidência substituta multi-fonte +
+risco aceito, RISK-0013; baselines por reconstrução retrospectiva, AGT-2).
+Este bloqueador é **reclassificado de G1 para pré-piloto (G8)**: a cobertura
+jurídica/ética permanece obrigatória para QUALQUER pesquisa de campo futura
+(que agora é opcional antes do piloto e inevitável nele). O escopo da
+consulta ao conselho jurídico interno (GDEC-0008 item 1) segue incluindo este
+item. Ver `agentificacao-g1-g2-2026-08-15.md`.
+
 **Nota (2026-08-15, GDEC-0008 itens 1 e 3):** o titular decidiu comissionar
 AGORA todo o kit de pesquisa G1 (instrumentos, protocolo, baseline K-10) —
 item 3 — e estendeu o escopo do parecer jurídico já encomendado pela OS-16
@@ -726,7 +735,7 @@ Escrito por escriba de governança; nenhum mérito decidido aqui.
 | BLK-0010 | AMH license/ownership authority unestablished | G0 | AUTH-DATA-PLATFORM + AUTH-AMH-OWNER | RESOLVIDO POR CONCESSÃO ESCRITA |
 | BLK-0011 | Branch protection for `main` not configured | G0 | AUTH-SECURITY + repo admin | EXECUTADO |
 | BLK-0012 | Classe D — ausência de profile `MedicationAdministration` na IG AMH | G2 | AUTH-DATA-PLATFORM | OPEN |
-| BLK-0013 | Cobertura jurídica/ética de pesquisa com participantes humanos não coberta por `DEC-G0-03` | G1 | rodaquino-OMNI | OPEN |
+| BLK-0013 | Cobertura jurídica/ética de pesquisa com participantes humanos não coberta por `DEC-G0-03` | G1 → G8 (GDEC-0009) | rodaquino-OMNI | OPEN — reclassificado pré-piloto |
 | BLK-0014 | OS-16 — pedido de parecer redigido, NÃO ENVIADO; destinatário jurídico não definido | G6, G8 | rodaquino-OMNI | OPEN — parcialmente resolvido (GDEC-0008 item 1) |
 | BLK-0015 | Contrato v1 — dono AMH não nomeado (critério 6 da OS-19 insatisfazível pela minuta) | G3 | rodaquino-OMNI (lado AMH) | OPEN |
 | BLK-0016 | Contrato de ordem clínica sem dono | G2 | AUTH-DATA-PLATFORM / titular | OPEN |

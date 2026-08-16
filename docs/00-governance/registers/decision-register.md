@@ -521,6 +521,66 @@ provenance:
   validation_status: "N/A — decisão do titular; exceção: interpretação de composição O3×ADR-0001 marcada para confirmação"
 ```
 
+## GDEC-0009 — Agentificação dos Gates G1 e G2 (AGT-1..AGT-4)
+
+Transcrição de decisões tomadas **por escrito, em sessão**, pelo titular
+(rodaquino-OMNI), respondendo a quatro questões estruturadas com opções e
+recomendação do orquestrador. O orquestrador é escriba, não decisor. Em
+AGT-3 o titular decidiu **contra** a recomendação — divergência registrada.
+
+```yaml
+id: GDEC-0009
+title: Gates G1 e G2 integralmente executáveis por agentes — evidência substituta, baselines retrospectivos, standing authorization para acionável, painel adversarial N-de-M
+status: DECIDED
+statement: >
+  (AGT-1) G1: observação humana direta deixa de ser exigência; vale dossiê
+  substituto multi-fonte verificado por painel adversarial; ausência de
+  observação = risco bloqueante ACEITO pelo titular; observação real migra
+  para o piloto G8; DEC-G0-05 superseded quanto ao G1. (AGT-2) Baselines
+  G2-VAL-0025/VAL-0035 satisfeitos por baseline retrospectivo de dados
+  (Tasy/Gold), com corte histórico fixado antes de exposição visível a
+  clínicos; variante observacional do g1-kit permanece disponível, não
+  exigida. (AGT-3) G2 100% agente INCLUSIVE promoção a modo acionável, por
+  autorização permanente do titular, sob 7 condições cumulativas vinculantes
+  (hard gates §6.2 inalterados; independência AGT-4; G3 aprovado por via;
+  parecer OS-16/DEC-G0-03 previamente satisfeito; sombra com desempenho
+  medido; kill switch/rollback testados com reversão automática; trilha
+  imutável) — decidida CONTRA a recomendação do orquestrador, que propunha
+  reter um ato humano na promoção. (AGT-4) Independência §4 transposta a
+  agentes: autor ≠ revisor ≠ ≥3 verificadores adversariais com lentes
+  distintas; maioria refuta = artefato morre; composição e vereditos em
+  trilha imutável.
+decided_by: rodaquino-OMNI (titular; autoridade constituída GDEC-0004)
+decided_date: "2026-08-15"
+rationale: >
+  Remover dependência de atos humanos dos gates de descoberta e portfólio,
+  concentrando a accountability humana no ato único da autorização
+  permanente; análise de limites (física do campo, gargalo real = dados/G3,
+  defensibilidade jurídica) apresentada pelo orquestrador antes da decisão.
+supersession_rule: >
+  Ata: docs/00-governance/registers/agentificacao-g1-g2-2026-08-15.md.
+  Gatilhos de revisita do AGT-3: primeiro parecer jurídico (OS-16), primeiro
+  evento adverso em sombra/piloto, ou entrada de segundo revisor clínico
+  humano — qualquer um reabre. DEC-G0-05 superseded apenas quanto ao G1.
+  BLK-0013 reclassificado G1 → pré-piloto (G8). Contra-assinatura do titular
+  recomendada (mesmo padrão da ata AQ-1..6).
+links:
+  requirements: []
+  hazards: [HAZ-0016, HAZ-0043]
+  adrs: []
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: respostas escritas do titular a 4 questões estruturadas em sessão (2026-08-15); ata agentificacao-g1-g2-2026-08-15.md
+  commit_sha_or_version: 75838b5 (estado ao decidir)
+  section_or_lines: "AGT-1: opção A; AGT-2: opção A; AGT-3: opção B (contra recomendação); AGT-4: opção A"
+  date_collected: "2026-08-15"
+  collector: orquestrador de entrega — escriba
+  transformation: "transcrita; condições vinculantes do AGT-3 explicitadas na ata; divergência de recomendação preservada"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisão do titular; contra-assinatura recomendada; reserva jurídica de AGT-3 permanece com AUTH-PRIVACY-LEGAL em G6/G8"
+```
+
 ## Index
 
 | ID | Title | Status | Decided by | Decided date |
@@ -532,6 +592,8 @@ provenance:
 | GDEC-0005 | Adjudicação de identidade e tenancy AMH×IntensiCare — AQ-1 a AQ-6 | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0006 | Política de idioma — conteúdo novo em pt-BR a partir de 2026-08-15 | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0007 | Revisão clínica do ciclo 1 — 98 pontos (97 aceitos; K-8 modificado: vidas_salvas mantido como altas vivas da UTI) | DECIDED | rodaquino-OMNI | 2026-08-15 |
+| GDEC-0008 | Fila de decisão pós-ciclo-2 — OS-16, C-1=O3, G1 comissionado, ADRs aceitos, N-11..14, OS novas, housekeeping, tradução | DECIDED | rodaquino-OMNI | 2026-08-15 |
+| GDEC-0009 | Agentificação dos Gates G1 e G2 (AGT-1..AGT-4; AGT-3 contra recomendação do orquestrador) | DECIDED | rodaquino-OMNI | 2026-08-15 |
 
 ## Notes
 
@@ -553,3 +615,7 @@ provenance:
 - **Nota (2026-08-15, sessão de decisão):** `GDEC-0008` alocado (fila do
   ciclo 2 decidida; GDEC-0001/0002 ratificados por ela). Próximo ID
   disponível: `GDEC-0009`.
+- **Nota (2026-08-15, sessão de agentificação):** `GDEC-0009` alocado
+  (agentificação G1/G2); linha de Index do `GDEC-0008`, ausente na
+  integração anterior, acrescentada nesta passada (housekeeping de escriba).
+  Próximo ID disponível: `GDEC-0010`.
