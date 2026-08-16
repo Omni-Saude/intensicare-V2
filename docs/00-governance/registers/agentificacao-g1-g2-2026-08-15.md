@@ -165,3 +165,15 @@ artefato. Tier econômico jamais participa de conteúdo clínico (§0.5).
 > ata, agora ratificada também por segundo revisor clínico. Gatilhos
 > remanescentes: **primeiro parecer jurídico** (OS-16 — pedido já enviado,
 > GDEC-0011 item 3) e **primeiro evento adverso** em sombra/piloto.
+
+---
+
+> **Nota do escriba (2026-08-15, recepção do parecer):** o gatilho de
+> revisita **"primeiro parecer jurídico"** foi **DISPARADO** — parecer OS-16
+> recebido do Dr. Lucas Alves de Sousa (OAB/GO 45.457), favorável, com
+> complementação de forma pendente (critérios OS-16 iii/iv; ver
+> `../../11-security-privacy-compliance/lgpd-os16/parecer-os16-2026-08-15-recebido.md`).
+> A revisita da AGT-3 está **ABERTA** (segunda revisita, gatilho distinto da
+> anterior). Fail-closed até a revisita e a complementação: **a condição 4
+> permanece NÃO satisfeita** e DEC-G0-03 permanece integral. Gatilho
+> remanescente após esta: primeiro evento adverso em sombra/piloto.
