@@ -227,6 +227,41 @@ sessao_de_decisao_gdec_0008_2026_08_15:
     - "ADR-0006 (fonte de verdade operacional×analítica) — decisão pendente"
     - "Atualização de traceability-policy.md §1.1 com prefixos ratificados (GDEC-0002)"
 
+# --- Atualização 2026-08-16 (ciclos 3-5; pt-BR conforme DEC-G0-10) ---
+ciclos_3_a_5_2026_08_15_16:
+  aviso: >-
+    As seções acima (repository_state, gates_status, next_actions) refletem o
+    fechamento do ciclo 2 e estão DEFASADAS; o estado vivo é o desta seção.
+  branch_atual: cycle-5/execucao-agentificada (a partir de origin/main pós-PR #2)
+  prs: "PR #1 (ciclos 0-2) e PR #2 (ciclo 4: GDEC-0009 + mapa) MERGED em main"
+  mapa_ate_producao: docs/14-devsecops-and-delivery/{mapa-de-projeto-ate-producao.md, mapa-de-projeto-backlog.yaml}  # 57 sprints pós-emenda GDEC-0012
+  decisoes_do_titular_novas: >-
+    GDEC-0009 (agentificação G1/G2, AGT-1..4); GDEC-0010 (2º revisor clínico:
+    Dr. Marcelo Villaca Lima, CRM-SP 112678 — aceite formal/credencial/linha
+    de reporte PENDENTES); GDEC-0011 (contra-assinatura da ata; 1ª revisita
+    AGT-3 aprovada; OS-16 ENVIADA a Dr. Lucas Alves de Sousa OAB/GO 45.457 e
+    parecer RECEBIDO favorável); GDEC-0012 (2ª revisita aprovada; condição 4
+    satisfeita NO PLANO JURÍDICO; condicionantes POR OPERAÇÃO em 5 sprints:
+    SPR-G6-6/G6-7/G4-7/G3-13/G0-4). Próximo GDEC livre: GDEC-0013.
+  ciclo_5_execucao:
+    relatorio: docs/15-release-evidence/cycle-5-execution-report.md  # leitura obrigatória na retomada
+    painel_agt4: >-
+      OPERACIONAL e demonstrado: definição 0.1.1-draft VIVE 4/4 (após MORRE
+      3/4 da 0.1.0); dossiê substituto G1 0.1.1-draft VIVE 4/4 (após dissenso
+      verificado e corrigido); 4 trilhas imutáveis em
+      docs/15-release-evidence/painel-agt4/trilha/ + handoffs integrais.
+      Vigência da definição e MG-G1 aguardam ratificação HUMANA.
+    sprints_fechados: [SPR-G0-1, SPR-G2-1, SPR-G1-9, SPR-G0-3-tranche-2]
+    g2_val_0001: disposto em parte (perna dos papéis por AGT-3; perna do dono clínico OPEN)
+  estado_duro_inalterado: "0 vias acionáveis; 47/47 inelegíveis; Observation não consumível; candidato a integração; safety case M0; NENHUM dado real acessado (condicionantes por operação pendentes)"
+  proximos_executaveis_sem_humano: [SPR-G6-7 RIPD, SPR-G4-7 evidencia-consultiva, SPR-G0-3-tranche-3]
+  fila_do_titular: "relatório do ciclo 5 §6 (ratificações do painel e MG-G1 + SPR-G0-2 residual; lacuna da ata sobre reabertura por evento adverso; residuais de forma OS-16; N-8; ADR-0006; BLK-0015)"
+  sessoes_concorrentes: >-
+    Ciclo 5 rodou em paralelo com a sessão escriba do titular NA MESMA
+    ÁRVORE (anti-padrão 14): gerido com git status/mtimes antes de cada
+    escrita, commits por caminho explícito e descarte de duplicatas.
+    Qualquer sessão futura DEVE repetir esse protocolo.
+
 rules_for_any_resuming_agent:
   - Read docs/00-governance/evidence-notation.md before writing anything; front-matter is CI-enforced
   - Never name an owner, mark DECIDED, accept a risk, or resolve a contradiction — humans do that
