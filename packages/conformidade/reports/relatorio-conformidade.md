@@ -24,7 +24,7 @@ A coluna *cobertura* é independente do veredito: `integral` só quando não há
 
 Este pin é do conjunto de fixtures **do repositório** — coisa distinta do pin do pacote de contrato publicado pela AMH, que CTS-22 exige e que não existe. Ele serve para que uma fixture adulterada seja detectada em vez de mudar o veredito de um cenário em silêncio.
 
-Diretório: `/Users/familia/code/intensicare-V2/docs/08-interoperability/amh-data/contract-v1/fixtures`
+Diretório: `docs/08-interoperability/amh-data/contract-v1/fixtures`
 
 **Estado do pin: CONFERIDO**
 

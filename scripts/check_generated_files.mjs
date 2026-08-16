@@ -58,8 +58,10 @@ function primeirasDiferencas(antes, depois, limite = 6) {
     }
   }
   if (linhas.length === 0) {
-    return "    (nenhuma linha difere — divergência de bytes invisível em texto: " +
-      "fim de linha, BOM ou espaço final)";
+    return (
+      "    (nenhuma linha difere — divergência de bytes invisível em texto: " +
+      "fim de linha, BOM ou espaço final)"
+    );
   }
   return linhas.join("\n");
 }

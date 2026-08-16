@@ -6,9 +6,25 @@
  * NÃO prova, porque um relatório de conformidade lido de trás para frente
  * é exatamente como se produz uma alegação falsa de compatibilidade.
  */
+
 import { CAUSE_LABELS, type CheckResult, type CheckStatus, verdictLabel } from "./harness.js";
 import type { HarnessReport } from "./runner.js";
 import type { SemanticCheckResult } from "./semantic-checks.js";
+
+/**
+ * Converte um caminho absoluto em caminho relativo à raiz do repositório.
+ *
+ * Detecta a raiz pelo segmento conhecido do próprio repositório; se não
+ * encontrar (execução fora da árvore esperada), devolve apenas o trecho a
+ * partir de `docs/`, e nunca o caminho absoluto.
+ */
+function caminhoRelativoAoRepo(caminhoAbsoluto: string): string {
+  const marcadorDocs = caminhoAbsoluto.indexOf("/docs/");
+  if (marcadorDocs >= 0) return caminhoAbsoluto.slice(marcadorDocs + 1);
+  const marcadorPacotes = caminhoAbsoluto.indexOf("/packages/");
+  if (marcadorPacotes >= 0) return caminhoAbsoluto.slice(marcadorPacotes + 1);
+  return "<caminho fora da árvore do repositório>";
+}
 
 const CHECK_LABELS: Readonly<Record<CheckStatus, string>> = Object.freeze({
   passou: "PASSOU",
@@ -117,7 +133,12 @@ export function renderReport(report: HarnessReport): string {
       "fixture adulterada seja detectada em vez de mudar o veredito de um cenário em silêncio.",
   );
   lines.push("");
-  lines.push(`Diretório: \`${fixtures.directory}\``);
+  // Caminho RELATIVO à raiz do repositório, nunca absoluto: um caminho
+  // absoluto embutido num artefato versionado (a) muda conforme a máquina que
+  // gerou — quebrando a verificação por regeneração — e (b) publica a
+  // estrutura de diretórios e o nome de usuário de quem gerou, num arquivo
+  // que vai para a `main`.
+  lines.push(`Diretório: \`${caminhoRelativoAoRepo(fixtures.directory)}\``);
   lines.push("");
   lines.push(`**Estado do pin: ${fixtures.status.toUpperCase()}**`);
   lines.push("");
