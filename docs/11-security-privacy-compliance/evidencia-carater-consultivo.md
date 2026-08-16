@@ -176,9 +176,18 @@ autorizado/conta compartilhada falha fechado), V5 (suprimido permanece visível)
 V6 (reconciliação jamais silenciosa), V8 (cenários simulados com usuários
 representativos).
 
-OBSERVED (repositório em 2026-08-16): esses testes **ainda não estão
-implementados nem executados** — a fatia vertical G7 está em construção sobre
-dados sintéticos. VALIDATION REQUIRED: a passagem dos testes V1–V7 em CI e a
+OBSERVED (repositório em 2026-08-16, integração da fatia G7): os testes
+**formais** V1–V8 do ADR-0009 §9 (TST-DOM-0005) **ainda não estão implementados
+nem executados como evidência formal**. A árvore JÁ contém, porém, testes
+automatizados VERDES que exercitam as mesmas propriedades em nível de fatia
+sintética: concorrência de comando com um vencedor e falha explícita
+(`packages/persistencia/src/outbox-and-audit.test.ts` — conflito de versão não
+altera, não audita, não publica; `apps/api/src/e2e.fatia.test.ts` — If-Match
+divergente ⇒ 412 com estado corrente) e atomicidade de auditoria/outbox na
+mesma transação da transição (mesmos arquivos; rollback reverte fato E evento).
+Esses testes referenciam EC-R1.a–EC-R1.c e o ADR-0009 §9 nos comentários (como
+a seção 6 pede), mas **não substituem** os V1–V8 formais — nada aqui fecha
+TST-DOM-0005. VALIDATION REQUIRED: a passagem dos testes V1–V7 em CI e a
 validação de fatores humanos V8 (condição C3 do ADR-0009, pendente para G4) são
 o que converterá "verificável" em "verificado". Este documento não antecipa esse
 resultado.
@@ -218,10 +227,17 @@ consolidado desses elementos, não a sua fonte.
   "afasta a incidência autônoma do art. 20" é do parecer OS-16 (SOURCE), sob as
   condições e limites que o próprio parecer declara (seções VII e VIII). Este
   documento apenas fornece a evidência condicionante; não emite juízo jurídico.
-- **Documentado ≠ implementado ≠ verificado.** OBSERVED: não há UI implementada
-  (HAZ-0046 registra "o rótulo não existe — não há UI alguma na V2"); os testes
-  V1–V8 do ADR-0009 não foram executados; a validação de fatores humanos (C3) e
-  o vocabulário pt-BR dos estados (C4) seguem pendentes.
+- **Documentado ≠ implementado ≠ verificado.** OBSERVED (atualizado na
+  integração da fatia G7, 2026-08-16): a V2 agora TEM uma UI de fatia sintética
+  (`apps/web` — grade de leitos, detalhe do paciente, reconhecer alerta) com o
+  banner permanente exibindo o rótulo "registro limitado a esta instituição"
+  (EC-R1.d; ver `apps/web/src/components/BannerContexto.tsx` e o teste de
+  renderização correspondente), e testes de concorrência/atomicidade verdes em
+  `packages/persistencia` e `apps/api` (ver §3.3). Isso NÃO fecha HAZ-0046 (a
+  reclassificação da mitigação é do fluxo do hazard log — gatilho G-3 abaixo —
+  e a UI é de fatia sintética, não produto validado); os testes V1–V8 formais
+  do ADR-0009 §9 seguem não executados (TST-DOM-0005); a validação de fatores
+  humanos (C3) e o vocabulário pt-BR dos estados (C4) seguem pendentes.
 - **Nada aqui fecha gate, bloqueador, risco ou hazard.** HAZ-0046 permanece
   OPEN; G4/G6 permanecem nos estados dos seus próprios artefatos
   (`g6-readiness.md`: NOT READY).

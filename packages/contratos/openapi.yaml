@@ -1,0 +1,785 @@
+openapi: 3.1.0
+info:
+  title: IntensiCare V2 — API (fatia SPR-G7-2)
+  version: 0.1.0
+  description: >-
+    Contrato de API contract-first do IntensiCare V2, cobrindo a fatia
+    vertical sintética SPR-G7-2: ingestão de observações, projeção de
+    grade de leitos, explicação de avaliação por paciente e reconhecimento
+    de alerta com concorrência segura.
+
+
+    PREMISSA (reversível, GDEC-0015/0017): este contrato é escrito sob as
+    opções recomendadas do ADR-0011 (projeções server-side reconstruíveis +
+    gateway único de tempo real, aceito em GDEC-0008 — a ativação plena do
+    gateway aguarda alvo de latência G1; ver `x-pendencias` abaixo) e do
+    ADR-0009 (máquina única de `WorkItem`, concorrência otimista, aceito em
+    GDEC-0008). ADR-0012 (versionamento de API, modelo de erro,
+    idempotência, paginação, política de compatibilidade) segue
+    `not-started` — este documento não é aquela decisão; é a leitura desta
+    fatia das convenções já aceitas em ADR-0009/ADR-0011, mais as
+    convenções estruturais do prompt §12.1 (erros tipados, IDs de
+    correlação, autorização por tenant/recurso, chaves de idempotência,
+    concorrência otimista, cursores de paginação/replay).
+
+
+    Toda `pacienteRef`/`tenantId` de exemplo neste documento usa o
+    marcador `SYNTH-` (política de dados sintéticos, GDEC-0014) — nenhum
+    identificador real aparece aqui.
+
+
+    Integração da fatia (INTEGRADOR SPR-G7-2): a avaliação é o avaliador
+    NEWS2 REAL de `@intensicare/kernel-clinico` (RULE-NEWS2 0.2.0), a
+    persistência é `@intensicare/persistencia` (PGlite, RLS por tenant,
+    outbox transacional ADR-0010, auditoria append-only) e os limiares de
+    frescor da projeção seguem ilustrativos (VALIDATION REQUIRED no
+    ADR-0011 §3).
+
+
+    Nenhuma alegação de efetividade clínica, conformidade regulatória ou
+    segurança comprovada é feita por este contrato.
+  contact:
+    name: IntensiCare V2 (engenharia de plataforma)
+x-pendencias:
+  - >-
+    GET /v1/eventos/stream implementa replay de backlog por cursor
+    (ADR-0011 P4) em formato `text/event-stream`, mas encerra a conexão
+    após o catch-up — push contínuo em conexão aberta, autorizado a cada
+    entrega (ADR-0011 P3/P5/P6), NÃO está implementado nesta fatia.
+    Registrado como pendência de integração com o futuro gateway único de
+    tempo real.
+  - >-
+    `StatusAvaliacao.parcial` é RESERVADO a classes futuras de escore
+    (ADR-0026, classes 2+) e é INALCANÇÁVEL para NEWS2 (decisão
+    N-8/GDEC-0007: all-or-not_evaluated é permanente para NEWS2). A API
+    integrada jamais produz `parcial` para NEWS2 — o valor permanece no
+    enum apenas para que a chegada de uma classe 2+ não seja uma quebra de
+    contrato. (Correção da revisão única SPR-G7-2, item 3.)
+  - >-
+    Autenticação: `apps/api` implementa um stub de bearer sintético
+    (formato `SYNTH-TOKEN.<tenantId>.<atorId>`) que carrega `tenant_id` e
+    identidade de ator, conforme premissa do ADR-0015 (`not-started`).
+    Não é um mecanismo de autenticação real — nenhuma verificação
+    criptográfica de token ocorre.
+  - >-
+    Contexto demográfico do gate populacional (ADR-0027) viaja no envelope
+    de ingestão (`contexto`) — PREMISSA reversível desta fatia; demografia
+    persistida por paciente é matéria de fatia futura. Ausência do
+    contexto ⇒ idade desconhecida ⇒ avaliação `indisponivel` (fail-closed,
+    nunca "adulto por omissão").
+servers:
+  - url: http://localhost:3000
+    description: Ambiente de desenvolvimento local (dados 100% sintéticos).
+security:
+  - bearerSyntheticStub: []
+tags:
+  - name: ingestao
+    description: Ingestão de observações clínicas sintéticas.
+  - name: projecoes
+    description: Projeções de leitura reconstruíveis (ADR-0011).
+  - name: pacientes
+    description: Consultas por paciente/encontro.
+  - name: alertas
+    description: Ciclo de vida de item de trabalho/alerta (ADR-0009).
+  - name: eventos
+    description: Fluxo de eventos com cursor de retomada (ver x-pendencias).
+  - name: saude
+    description: Verificação de saúde do serviço.
+paths:
+  /v1/healthz:
+    get:
+      operationId: obterSaude
+      tags: [saude]
+      summary: Verifica a saúde do serviço.
+      security: []
+      responses:
+        "200":
+          description: Serviço saudável.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthzResposta"
+
+  /v1/ingestao/observacoes:
+    post:
+      operationId: ingerirObservacoes
+      tags: [ingestao]
+      summary: >-
+        Ingere um envelope de observações sintéticas para um encontro/leito,
+        persiste os fatos clínicos (envelope de origem + proveniência +
+        outbox na mesma transação), avalia com o kernel NEWS2 real (status
+        sempre explícito) e gera alerta durável quando a avaliação válida
+        atinge condição de exibição de escalonamento.
+      description: >-
+        Entradas inválidas são colocadas em quarentena e retornadas em
+        `quarentena` — nunca descartadas silenciosamente nem promovidas a
+        avaliação. A resposta é idempotente por `Idempotency-Key` COM hash
+        do corpo (draft IETF idempotency-key-header): reenvio da mesma
+        chave com corpo IDÊNTICO retorna a resposta original (cabeçalho
+        `Idempotency-Replayed: true`), sem duplicar alerta nem efeito;
+        reenvio da mesma chave com corpo DIVERGENTE responde 422
+        `application/problem+json` em pt-BR.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestaoObservacoesRequisicao"
+            examples:
+              exemploSintetico:
+                summary: Envelope sintético com um parâmetro ausente (SpO2 fora — fail-closed)
+                value:
+                  encontroId: SYNTH-ENC-0001
+                  leitoId: SYNTH-LEITO-01
+                  pacienteRef: SYNTH-PSR-0001
+                  contexto:
+                    idadeAnos: 62
+                  observacoes:
+                    - parametro: FR
+                      valor: 24
+                      unidade: /min
+                      coletadoEm: "2026-08-16T12:00:00Z"
+                    - parametro: FC
+                      valor: 118
+                      unidade: /min
+                      coletadoEm: "2026-08-16T12:00:00Z"
+                    - parametro: PAS
+                      valor: 98
+                      unidade: mm[Hg]
+                      coletadoEm: "2026-08-16T12:00:00Z"
+                    - parametro: FluxoO2
+                      valor: 0
+                      unidade: L/min
+                      coletadoEm: "2026-08-16T12:00:00Z"
+                    - parametro: NivelConsciencia
+                      codigo: A
+                      coletadoEm: "2026-08-16T12:00:00Z"
+                    - parametro: Temperatura
+                      valor: 37.8
+                      unidade: Cel
+                      coletadoEm: "2026-08-16T12:00:00Z"
+      responses:
+        "201":
+          description: >-
+            Envelope processado (aceito integral ou parcialmente; ver
+            `quarentena`). Cabeçalho `Idempotency-Replayed: false` numa
+            primeira chamada, `true` num reenvio da mesma chave.
+          headers:
+            Idempotency-Replayed:
+              schema:
+                type: boolean
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestaoObservacoesResposta"
+        "400":
+          description: >-
+            Requisição malformada (corpo inválido ou `Idempotency-Key`
+            ausente) — falha fechada antes de qualquer avaliação.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "404":
+          description: >-
+            Encontro inexistente OU pertencente a outro tenant — as duas
+            situações são indistinguíveis na resposta (nunca vaza
+            existência cross-tenant).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "422":
+          description: >-
+            Replay da mesma `Idempotency-Key` com corpo DIVERGENTE do
+            original (hash do corpo não confere) — alinhado ao draft IETF
+            idempotency-key-header; nenhum efeito é executado.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+      security:
+        - bearerSyntheticStub: []
+
+  /v1/projecoes/grade-leitos:
+    get:
+      operationId: obterGradeLeitos
+      tags: [projecoes]
+      summary: >-
+        Projeção de leitura reconstruível: estado por leito (escore, banda,
+        frescor, status de avaliação, alerta ativo) escopada ao tenant do
+        chamador (ADR-0011 P1/P2).
+      responses:
+        "200":
+          description: Grade de leitos do tenant autenticado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GradeLeitosResposta"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+      security:
+        - bearerSyntheticStub: []
+
+  /v1/pacientes/{pacienteRef}/avaliacoes:
+    get:
+      operationId: obterAvaliacoesPaciente
+      tags: [pacientes]
+      summary: >-
+        Histórico de avaliações de um paciente, com explicação por
+        parâmetro (presença, valor, contribuição ilustrativa ao escore).
+      parameters:
+        - name: pacienteRef
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Referência de paciente sintética (`SYNTH-`).
+      responses:
+        "200":
+          description: Avaliações do paciente, mais recente primeiro.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvaliacoesPacienteResposta"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "404":
+          description: >-
+            Paciente inexistente OU pertencente a outro tenant — as duas
+            situações são indistinguíveis na resposta, para nunca vazar
+            existência cross-tenant (ADR-0011 E5/THR-0017).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+      security:
+        - bearerSyntheticStub: []
+
+  /v1/alertas/{id}/reconhecer:
+    post:
+      operationId: reconhecerAlerta
+      tags: [alertas]
+      summary: >-
+        Reconhece (dá ciência de) um item de trabalho/alerta — ADR-0009
+        W1/W3: concorrência otimista obrigatória via `If-Match`; conflito
+        de versão falha explicitamente com o estado corrente, nunca
+        última-escrita-vence silenciosa.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReconhecerAlertaRequisicao"
+      responses:
+        "200":
+          description: Alerta reconhecido; versão incrementada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReconhecerAlertaResposta"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "404":
+          description: Alerta inexistente ou pertencente a outro tenant.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "409":
+          description: >-
+            Versão confere, mas o estado corrente não admite a transição
+            "reconhecer" (ex.: já resolvido/suprimido).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "412":
+          description: >-
+            `If-Match` não confere com a versão corrente do recurso —
+            conflito de concorrência explícito; o corpo carrega o estado
+            corrente para redecisão humana (ADR-0009 W3).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetailsConflitoVersao"
+        "428":
+          description: Cabeçalho `If-Match` obrigatório e ausente.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+      security:
+        - bearerSyntheticStub: []
+
+  /v1/eventos/stream:
+    get:
+      operationId: obterFluxoEventos
+      tags: [eventos]
+      summary: >-
+        Replay de backlog de eventos duráveis do tenant, a partir de um
+        cursor de retomada (ADR-0011 P4). Ver `x-pendencias`: esta fatia
+        entrega catch-up por cursor em `text/event-stream`, não push
+        contínuo em conexão aberta.
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: >-
+            Sequência do último evento já visto pelo cliente; a resposta
+            contém apenas eventos com sequência estritamente maior.
+      responses:
+        "200":
+          description: >-
+            Fluxo `text/event-stream` com os eventos de retomada, cada um
+            com `id:` igual à sua sequência (cursor) e `data:` contendo o
+            JSON serializado de `EventoFluxo`.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+      security:
+        - bearerSyntheticStub: []
+
+components:
+  securitySchemes:
+    bearerSyntheticStub:
+      type: http
+      scheme: bearer
+      bearerFormat: "SYNTH-TOKEN.<tenantId>.<atorId>"
+      description: >-
+        Stub de autenticação sintética (PREMISSA reversível, ADR-0015
+        `not-started`): o token carrega `tenant_id` e identidade de ator em
+        texto, sem verificação criptográfica. Nunca usar formato real de
+        token em nenhum ambiente.
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      description: Chave de idempotência da escrita — reenvio da mesma chave não duplica efeito.
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9]+$"
+      description: Versão do recurso vista pelo chamador (concorrência otimista, ADR-0009 W3).
+  responses:
+    NaoAutenticado:
+      description: Cabeçalho `Authorization` ausente ou token sintético malformado.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+  schemas:
+    ProblemDetails:
+      type: object
+      description: Envelope de erro RFC 9457, textos em pt-BR.
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+    ProblemDetailsConflitoVersao:
+      allOf:
+        - $ref: "#/components/schemas/ProblemDetails"
+        - type: object
+          required: [versaoAtual, estadoAtual]
+          properties:
+            versaoAtual:
+              type: integer
+            estadoAtual:
+              $ref: "#/components/schemas/EstadoItemTrabalho"
+
+    ParametroClinico:
+      type: string
+      enum: [FC, FR, PAS, SpO2, FluxoO2, Temperatura, NivelConsciencia]
+      description: >-
+        Os sete parâmetros pontuados do NEWS2 (RULE-NEWS2 0.2.0) no
+        vocabulário pt-BR do contrato. `FluxoO2` (L/min) deriva o estado
+        ar/oxigênio (spec §2.1 linha 3); `NivelConsciencia` é token ACVPU
+        codificado. Não é o catálogo final (conteúdo versionado de bundle,
+        fora de escopo).
+
+    ObservacaoEntrada:
+      type: object
+      required: [parametro, coletadoEm]
+      description: >-
+        Duas formas: numérica (`valor` + `unidade` — todos os parâmetros
+        exceto NivelConsciencia) ou codificada (`codigo` — NivelConsciencia,
+        token ACVPU A/C/V/P/U). Observação fora dessas formas vai a
+        quarentena — nunca coagida.
+      properties:
+        parametro:
+          $ref: "#/components/schemas/ParametroClinico"
+        valor:
+          type: number
+        unidade:
+          type: string
+          minLength: 1
+        codigo:
+          type: string
+          minLength: 1
+        coletadoEm:
+          type: string
+          format: date-time
+          description: Instante CLÍNICO da coleta (base da atualidade — nunca "agora" por omissão).
+
+    ContextoAvaliacaoPaciente:
+      type: object
+      description: >-
+        Contexto do gate populacional fail-closed (ADR-0027 A27-1; N-2).
+        PREMISSA (reversível, GDEC-0015/0017): viaja no envelope de
+        ingestão nesta fatia. Ausente ⇒ idade desconhecida ⇒ avaliação
+        `indisponivel` — nunca "adulto por omissão".
+      properties:
+        idadeAnos:
+          oneOf: [{ type: number }, { type: "null" }]
+          description: Idade VERIFICADA em anos; omitida/null = desconhecida (fail-closed).
+        gravidezDocumentada:
+          type: boolean
+          description: '`true` somente com gravidez documentada; omitido = não documentada (anotação N-2).'
+
+    ObservacaoEmQuarentena:
+      type: object
+      required: [entrada, motivo]
+      properties:
+        entrada:
+          description: Entrada original, não normalizada (pode ser de qualquer forma).
+        motivo:
+          type: string
+          description: Motivo da rejeição, em pt-BR, sem PHI.
+
+    IngestaoObservacoesRequisicao:
+      type: object
+      required: [encontroId, leitoId, pacienteRef, observacoes]
+      properties:
+        encontroId:
+          type: string
+          minLength: 1
+        leitoId:
+          type: string
+          minLength: 1
+        pacienteRef:
+          type: string
+          minLength: 1
+          description: Referência de paciente sintética (`SYNTH-`).
+        observacoes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObservacaoEntrada"
+        contexto:
+          $ref: "#/components/schemas/ContextoAvaliacaoPaciente"
+
+    StatusAvaliacao:
+      type: string
+      enum: [valido, parcial, indisponivel, desatualizado, invalido]
+      description: >-
+        Espelho pt-BR dos cinco estados da ADR-0008 (kernel NEWS2 real):
+        `valido`↔valid; `parcial`↔partial; `indisponivel`↔not_evaluated;
+        `desatualizado`↔stale; `invalido`↔invalid. `parcial` é RESERVADO a
+        classes futuras de escore (ADR-0026, classes 2+) e é INALCANÇÁVEL
+        para NEWS2 (decisão N-8/GDEC-0007) — a API integrada jamais o
+        produz para NEWS2 (ver x-pendencias). Insumo ausente nunca produz
+        `escore`/`banda`; ausência de escore jamais significa normalidade
+        (HAZ-0005).
+
+    BandaRisco:
+      type: string
+      enum: [normal, atencao, alerta, critico]
+      description: >-
+        Espelho pt-BR dos tiers consultivos do NEWS2 (RCP 2017 Chart 2):
+        normal↔low; atencao↔low_medium (parâmetro vermelho isolado);
+        alerta↔medium; critico↔high. Semântica de EXIBIÇÃO consultiva —
+        nunca auto-escalonamento.
+
+    ContribuicaoParametro:
+      type: object
+      required: [parametro, presente]
+      properties:
+        parametro:
+          $ref: "#/components/schemas/ParametroClinico"
+        presente:
+          type: boolean
+        valor:
+          type: number
+        unidade:
+          type: string
+        codigo:
+          type: string
+        pontos:
+          type: number
+        statusParametro:
+          type: string
+          description: Status do parâmetro no vocabulário do kernel (ex. missing, stale, invalid).
+        motivo:
+          oneOf: [{ type: string }, { type: "null" }]
+        coletadoEm:
+          oneOf: [{ type: string, format: date-time }, { type: "null" }]
+        explicacao:
+          type: string
+
+    ResultadoAvaliacao:
+      type: object
+      required:
+        - status
+        - parametrosAusentes
+        - parametros
+        - escore
+        - banda
+        - avaliadoEm
+        - motivos
+        - anotacoes
+        - explicacao
+        - parametroVermelho
+        - versaoRegra
+      properties:
+        status:
+          $ref: "#/components/schemas/StatusAvaliacao"
+        parametrosAusentes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParametroClinico"
+        parametros:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContribuicaoParametro"
+        escore:
+          type: [number, "null"]
+          description: '`null` sempre que `status != "valido"`.'
+        banda:
+          oneOf:
+            - $ref: "#/components/schemas/BandaRisco"
+            - type: "null"
+        avaliadoEm:
+          type: string
+          format: date-time
+        motivos:
+          type: array
+          items:
+            type: string
+          description: Razões legíveis por máquina (spec §5.2/ADR-0008 N3).
+        anotacoes:
+          type: array
+          items:
+            type: string
+          description: Anotações obrigatórias visíveis (N-2/N-3/N-4/N-6), pt-BR.
+        explicacao:
+          type: string
+          description: Explicação agregada pt-BR (spec §7) — sempre presente.
+        parametroVermelho:
+          type: boolean
+          description: Parâmetro vermelho (3 pontos isolado) entre insumos válidos (INV-B).
+        versaoRegra:
+          type: string
+          description: 'Identificação da regra usada, ex.: RULE-NEWS2@0.2.0.'
+
+    EstadoItemTrabalho:
+      type: string
+      enum:
+        - nao-atribuido
+        - atribuido
+        - reconhecido
+        - escalado
+        - sobreposto
+        - resolvido
+        - suprimido
+        - reaberto
+      description: Estados nucleares do WorkItem (ADR-0009 W1, aceito GDEC-0008).
+
+    ResumoItemTrabalho:
+      type: object
+      required: [id, estado, versao]
+      properties:
+        id:
+          type: string
+        estado:
+          $ref: "#/components/schemas/EstadoItemTrabalho"
+        versao:
+          type: integer
+          minimum: 0
+          description: >-
+            Token de concorrência otimista (ADR-0009 Q2-A). Um WorkItem
+            recém-criado nasce na versão 0 (ADR-0009 W1) — o chamador envia
+            em If-Match exatamente a versão que viu.
+
+    ItemTrabalho:
+      allOf:
+        - $ref: "#/components/schemas/ResumoItemTrabalho"
+        - type: object
+          required:
+            - tenantId
+            - encontroId
+            - leitoId
+            - pacienteRef
+            - escore
+            - banda
+            - motivo
+            - criadoEm
+            - atualizadoEm
+          properties:
+            tenantId:
+              type: string
+            encontroId:
+              type: string
+            leitoId:
+              type: string
+            pacienteRef:
+              type: string
+            escore:
+              type: number
+            banda:
+              $ref: "#/components/schemas/BandaRisco"
+            motivo:
+              type: string
+            criadoEm:
+              type: string
+              format: date-time
+            atualizadoEm:
+              type: string
+              format: date-time
+            reconhecidoPor:
+              type: string
+            reconhecidoEm:
+              type: string
+              format: date-time
+
+    IngestaoObservacoesResposta:
+      type: object
+      required: [encontroId, recebidoEm, aceitas, quarentena, avaliacao, alerta]
+      properties:
+        encontroId:
+          type: string
+        recebidoEm:
+          type: string
+          format: date-time
+        aceitas:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObservacaoEntrada"
+        quarentena:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObservacaoEmQuarentena"
+        avaliacao:
+          $ref: "#/components/schemas/ResultadoAvaliacao"
+        alerta:
+          oneOf:
+            - $ref: "#/components/schemas/ResumoItemTrabalho"
+            - type: "null"
+
+    ReconhecerAlertaRequisicao:
+      type: object
+      properties:
+        comentario:
+          type: string
+
+    ReconhecerAlertaResposta:
+      type: object
+      required: [item]
+      properties:
+        item:
+          $ref: "#/components/schemas/ItemTrabalho"
+
+    Frescor:
+      type: string
+      enum: [atual, envelhecendo, desatualizado]
+      description: >-
+        Estado de frescor do dado exibido (ADR-0011 P6). Limiares
+        concretos são ilustrativos nesta fatia (VALIDATION REQUIRED no
+        ADR-0011 §3).
+
+    EntradaGradeLeitos:
+      type: object
+      required:
+        - leitoId
+        - encontroId
+        - pacienteRef
+        - escore
+        - banda
+        - statusAvaliacao
+        - frescor
+        - atualizadoEm
+        - alerta
+      properties:
+        leitoId:
+          type: string
+        encontroId:
+          oneOf: [{ type: string }, { type: "null" }]
+        pacienteRef:
+          oneOf: [{ type: string }, { type: "null" }]
+        escore:
+          oneOf: [{ type: number }, { type: "null" }]
+        banda:
+          oneOf:
+            - $ref: "#/components/schemas/BandaRisco"
+            - type: "null"
+        statusAvaliacao:
+          oneOf:
+            - $ref: "#/components/schemas/StatusAvaliacao"
+            - type: "null"
+        frescor:
+          $ref: "#/components/schemas/Frescor"
+        atualizadoEm:
+          oneOf: [{ type: string, format: date-time }, { type: "null" }]
+        alerta:
+          oneOf:
+            - $ref: "#/components/schemas/ResumoItemTrabalho"
+            - type: "null"
+
+    GradeLeitosResposta:
+      type: object
+      required: [leitos]
+      properties:
+        leitos:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntradaGradeLeitos"
+
+    AvaliacoesPacienteResposta:
+      type: object
+      required: [pacienteRef, avaliacoes]
+      properties:
+        pacienteRef:
+          type: string
+        avaliacoes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResultadoAvaliacao"
+
+    HealthzResposta:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]

@@ -26,12 +26,24 @@ importers:
 
   apps/api:
     dependencies:
+      '@electric-sql/pglite':
+        specifier: 0.5.5
+        version: 0.5.5
       '@intensicare/contratos':
         specifier: workspace:*
         version: link:../../packages/contratos
       '@intensicare/dominio':
         specifier: workspace:*
         version: link:../../packages/dominio
+      '@intensicare/fixtures-sinteticas':
+        specifier: workspace:*
+        version: link:../../packages/fixtures-sinteticas
+      '@intensicare/kernel-clinico':
+        specifier: workspace:*
+        version: link:../../packages/kernel-clinico
+      '@intensicare/persistencia':
+        specifier: workspace:*
+        version: link:../../packages/persistencia
       fastify:
         specifier: ^5.12.0
         version: 5.12.0
@@ -41,6 +53,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@intensicare/contratos':
+        specifier: workspace:*
+        version: link:../../packages/contratos
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -68,8 +83,22 @@ importers:
       '@intensicare/kernel-clinico':
         specifier: workspace:*
         version: link:../kernel-clinico
+    devDependencies:
+      fast-check:
+        specifier: 4.9.0
+        version: 4.9.0
 
-  packages/fixtures-sinteticas: {}
+  packages/fixtures-sinteticas:
+    dependencies:
+      '@electric-sql/pglite':
+        specifier: 0.5.5
+        version: 0.5.5
+      '@intensicare/dominio':
+        specifier: workspace:*
+        version: link:../dominio
+      '@intensicare/persistencia':
+        specifier: workspace:*
+        version: link:../persistencia
 
   packages/kernel-clinico: {}
 
@@ -78,6 +107,9 @@ importers:
       '@electric-sql/pglite':
         specifier: 0.5.5
         version: 0.5.5
+      '@intensicare/dominio':
+        specifier: workspace:*
+        version: link:../dominio
 
 packages:
 
