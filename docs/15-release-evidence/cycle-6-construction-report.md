@@ -287,6 +287,41 @@ contra leitura causal. As duas sub-decisões abertas são expostas como variante
 explícitas em vez de resolvidas em silêncio. Nenhuma banda aceitável foi
 inventada: `SM-04` e o piso de completude seguem VALIDATION REQUIRED.
 
+## 5.5 Integridade da entrega até a `main`
+
+O CI de plataforma falhou nas primeiras execuções enquanto `pnpm verify`
+passava localmente. As três falhas tiveram a mesma raiz — **política ou
+conteúdo duplicado à mão, divergindo em silêncio** — e estão registradas como
+anti-padrões 14 a 16 no §0.4 do prompt.
+
+| Falha | Causa | Correção |
+|---|---|---|
+| `TS2307` no typecheck | `typecheck` rodava antes de `build`, e os pacotes resolvem tipos por `dist/*.d.ts`. Em máquina que já buildou o erro não aparece; em checkout limpo, sim. **O verde local era acidente** | Ordem corrigida; o workflow deixou de repetir a lista de passos e passou a chamar `pnpm verify` — uma definição, um caminho |
+| Teste estourando limite de tempo | Limites para suítes com PGlite eram reescritos pacote a pacote; um pacote novo bastava para o esquecimento voltar | `vitest.shared.ts` na raiz define a política uma vez, estendida pelos 10 pacotes |
+| Artefato gerado divergente | O relatório de conformidade embutia caminho absoluto da máquina que o gerou (`/Users/<usuário>/...` → `/home/runner/...` no CI) | Caminho relativo à raiz; `readdirSync` ordenado (ext4 devolve ordem arbitrária) |
+
+O terceiro caso tem duas consequências, não uma: além de quebrar a verificação
+por regeneração, caminho absoluto em artefato versionado publica estrutura de
+diretórios e nome de usuário de quem gerou. Foi encontrado **pelo gate de
+arquivo gerado criado neste mesmo ciclo** (§15.1 item H), depois de instrumentá-lo
+para mostrar o diff em vez de dois hashes — dois hashes não dizem nada num
+runner sem acesso interativo.
+
+**Verificação de integridade do que entra na `main`** (OBSERVED): sem conflitos
+(`MERGEABLE`); nenhum arquivo ou conteúdo de segredo/chave privada; nenhum
+artefato gerado (`dist`, `node_modules`) versionado; workflows sem
+`pull_request_target`, com `contents: read` e actions pinadas por SHA de 40
+caracteres; gates de convenções, conteúdo proibido/PHI, metadados de mudança e
+plataforma **todos verdes**.
+
+**Observação de higiene, não corrigida deliberadamente:** há caminhos absolutos
+em `README.md`, `legacy-import-policy.md` e nos registros de evidência e
+premissas. Ali o caminho **é** o registro de proveniência do repositório legado
+e do assessment não rastreado; apagá-lo danificaria a rastreabilidade que o
+registro existe para preservar. São de ciclos anteriores, o repositório é
+privado, e reescrever registro de evidência não é ato de agente — fica como
+observação para o titular.
+
 ## 6. Premissas de construção assumidas
 
 Registradas em `docs/06-architecture/premissas-de-construcao.md` como
