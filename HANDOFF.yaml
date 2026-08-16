@@ -275,6 +275,59 @@ ciclos_3_a_5_2026_08_15_16:
     escrita, commits por caminho explícito e descarte de duplicatas.
     Qualquer sessão futura DEVE repetir esse protocolo.
 
+ciclo_6_construcao_2026_08_16:
+  aviso: >-
+    ESTADO VIVO. As seções anteriores refletem ciclos 0-5. O ciclo 6 é o
+    PRIMEIRO ciclo de construção de software: existe código executável no
+    repositório pela primeira vez.
+  branch_atual: cycle-6/construcao-g7 (a partir de cycle-5/execucao-agentificada @ a6e7c0c)
+  relatorio: docs/15-release-evidence/cycle-6-construction-report.md  # leitura obrigatória na retomada
+  decisao_nova_do_titular: >-
+    GDEC-0017 (2026-08-16): construção integral desbloqueada; autonomia
+    decisória delegada ao orquestrador, com decisões materiais registradas
+    como premissas reversíveis de uma linha. Vinculantes seguem apenas os
+    três de GDEC-0014 (CI de conteúdo proibido/PHI + convenções, PR para
+    main, dados sintéticos como default). Próximo GDEC livre: GDEC-0018.
+  regime_vigente: >-
+    MODO CONSTRUÇÃO (GDEC-0013..0017). Painel AGT-4 e as 7 condições da
+    AGT-3 NÃO são vinculantes em nenhuma fase. Revisão única (revisor
+    distinto do autor) é a prática adotada. Aceite formal de ADR não é
+    pré-condição de implementação.
+  o_que_existe_agora_de_codigo:
+    monorepo: pnpm workspaces — packages/{kernel-clinico,dominio,persistencia,contratos,fixtures-sinteticas} + apps/{api,web}
+    fatia_g7: >-
+      Fatia vertical sintética ponta-a-ponta (SPR-G7-2, commit 87798af):
+      ingestão -> avaliação NEWS2 determinística -> status explícito ->
+      alerta durável + outbox na mesma transação -> projeção de grade de
+      leitos -> reconhecimento com concorrência otimista -> auditoria
+      append-only. Caminhos degradados demonstrados (insumo ausente
+      fail-closed HAZ-0005; tenant errado; If-Match errado; replay).
+    verificacao: "pnpm -r build verde; pnpm -r test -- --run com 315 testes verdes, incl. 93/93 vetores CRV-NEWS2 red/green"
+    dados: "100% sintéticos (SYNTH-); NENHUM dado real acessado"
+  sprints_fechados_ciclo_6: [SPR-G4-1, SPR-G4-7, SPR-G6-7, SPR-G0-3-tranche-3, SPR-G0-3-tranche-4, SPR-G7-1, SPR-G4-3, "SPR-G4-4 (parcial)", SPR-G7-2]
+  saidas_spark_novas: "árvore de outcomes (§5 saída 6), exclusões e capacidades adiadas (saída 15), índice priorizado de famílias (saída 7, substituto honesto do catálogo PRD/USR)"
+  adrs: >-
+    30 ADRs no índice. ADR-0012..ADR-0024 redigidos neste ciclo
+    materializando as direções aceitas em GDEC-0016 (com as 3 modificações
+    do titular: MCP mantido no MVP; frontend dono da linguagem com estado
+    clínico originado no backend; IA/ML governado com conector para agentes
+    clínicos). "accepted" continua não significando "implemented".
+  estado_duro_INALTERADO: >-
+    0 vias acionáveis; 47/47 inelegíveis; Observation AMH não consumível;
+    somente candidato a integração; safety case M0; nenhum dado real
+    acessado. A fatia G7 NÃO altera nenhum destes — usa fixtures sintéticas
+    pinadas e não consome a AMH.
+  marcos_humanos_pendentes: [MG-G1, MG-G3, MG-G4, MG-G5, MG-G6, MG-G7, MG-G8-PILOTO, MG-G8-PROD]
+  fila_do_titular:
+    - "PR de cycle-6/construcao-g7 para main (vinculante GDEC-0014)"
+    - "MG-G7: aceitação da fatia como fundação (revisor independente da regra != autor)"
+    - "Aceite formal, credencial e linha de reporte do 2º revisor clínico (GDEC-0010; BLK-0002/0008)"
+    - "PDF original assinado do parecer OS-16 (SPR-G0-4)"
+    - "BLK-0015: dono AMH do contrato (producer.owner)"
+    - "Ratificação clínica: janela de sobreposição temporal por parâmetro (proposta em packages/kernel-clinico/README.md) e taxonomia de razões de status (reference-vectors.md §1)"
+    - "Ratificação de prefixos documento-locais em traceability-policy.md §1.1 (MD/MG/EPC/SPR/SR/OC/AO)"
+  proximos_executaveis_sem_humano: ["SPR-G5-1 suites de conector", "SPR-G3-10 parcial (harness §7.6 contra fixtures)", "segunda regra clínica na fatia (SOFA/GCS)", "AsyncAPI formal", "SPR-G0-3 tranche 5", "ampliar estados §11 no frontend"]
+
 rules_for_any_resuming_agent:
   - Read docs/00-governance/evidence-notation.md before writing anything; front-matter is CI-enforced
   - Never name an owner, mark DECIDED, accept a risk, or resolve a contradiction — humans do that
