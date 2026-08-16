@@ -57,6 +57,12 @@ nenhuma minuta existe, e nenhuma posição é implicada pela reserva.
 > possibilidade e conector para agentes clínicos no workflow. As minutas
 > formais dos treze são trabalho de implementação (registro de uma linha ao
 > redigir); nada disso bloqueia construção (GDEC-0013/0015).
+>
+> **Registro de materialização (2026-08-16, ciclo 6, GDEC-0017):** as treze
+> minutas (`ADR-0012`–`ADR-0024`) foram redigidas em pt-BR nesta data,
+> materializando as direções aceitas (incl. as três modificações do
+> titular); divergência material entre minuta e direção, se identificada,
+> volta ao titular em uma linha (regra de supersessão de GDEC-0016).
 
 **Política de idioma (SOURCE: DEC-G0-10, 2026-08-15).** Material produzido a partir de
 2026-08-15 é redigido em **pt-BR**. `ADR-0003`, `ADR-0004` e `ADR-0005` estão, portanto,
@@ -94,6 +100,19 @@ Este arquivo é a **fonte única de verdade para o próximo número disponível 
 | [`ADR-0027-age-and-population-gating-enforcement.md`](./ADR-0027-age-and-population-gating-enforcement.md) | Enforcement de gating etário/populacional (fail-closed; VAL-0006/0007) — **pt-BR** (traduzido 2026-08-15, GDEC-0008 item 8, tranche 1) | **accepted** (2026-08-15, GDEC-0007) |
 | [`ADR-0028-sedation-and-neuro-assessment-confounding-policy.md`](./ADR-0028-sedation-and-neuro-assessment-confounding-policy.md) | Confundimento de sedação/avaliação neurológica; gating de GCS NT/avaliabilidade — **pt-BR** (traduzido 2026-08-15, GDEC-0008 item 8, tranche 1) | **accepted** (2026-08-15, GDEC-0007) |
 | [`ADR-0029-pt-br-clinical-terminology-validation-process.md`](./ADR-0029-pt-br-clinical-terminology-validation-process.md) | Processo de validação de terminologia clínica pt-BR (prompt §11) — **pt-BR** | **accepted** (2026-08-15, GDEC-0007) |
+| [`ADR-0012-contrato-api-versionamento-erros-idempotencia.md`](./ADR-0012-contrato-api-versionamento-erros-idempotencia.md) | Versionamento de API, modelo de erro RFC 9457 pt-BR, idempotência, paginação, compatibilidade (§12.1) — **pt-BR** | accepted (direção GDEC-0016; minuta 2026-08-16, ciclo 6) |
+| [`ADR-0013-perfis-fhir-hl7-terminologia-writeback.md`](./ADR-0013-perfis-fhir-hl7-terminologia-writeback.md) | Perfis FHIR R4 restritos/versionados, HL7 v2, terminologia, writeback aprovado (§12.2/§12.3) — **pt-BR** | accepted (direção GDEC-0016; minuta 2026-08-16, ciclo 6) |
+| [`ADR-0014-exposicao-mcp-classes-de-ferramenta-phi.md`](./ADR-0014-exposicao-mcp-classes-de-ferramenta-phi.md) | Exposição MCP no MVP (modificação do titular), classes de ferramenta, confirmação humana, política de PHI (§12.4) — **pt-BR** | accepted (direção GDEC-0016 c/ modificação; minuta 2026-08-16, ciclo 6) |
+| [`ADR-0015-autenticacao-sessao-identidade-m2m.md`](./ADR-0015-autenticacao-sessao-identidade-m2m.md) | Autenticação/sessão OIDC-compatível, identidade máquina-a-máquina (§13) — **pt-BR** | accepted (direção GDEC-0016; minuta 2026-08-16, ciclo 6) |
+| [`ADR-0016-autorizacao-isolamento-de-tenant.md`](./ADR-0016-autorizacao-isolamento-de-tenant.md) | Autorização e enforcement de isolamento de tenant (RLS + escopo obrigatório; §9.1 princípio 2) — **pt-BR** | accepted (direção GDEC-0016; minuta 2026-08-16, ciclo 6) |
+| [`ADR-0017-criptografia-gestao-de-chave-phi.md`](./ADR-0017-criptografia-gestao-de-chave-phi.md) | Criptografia, gestão de chave, tradeoffs de PHI pesquisável (§13; custódia de chave adiada) — **pt-BR** | accepted (direção GDEC-0016; minuta 2026-08-16, ciclo 6) |
+| [`ADR-0018-integridade-auditoria-retencao-exportacao.md`](./ADR-0018-integridade-auditoria-retencao-exportacao.md) | Integridade de auditoria append-only, retenção, legal hold, correção, exportação de evidência (§13) — **pt-BR** | accepted (direção GDEC-0016; minuta 2026-08-16, ciclo 6) |
+| [`ADR-0019-plataforma-implantacao-ambientes-residencia.md`](./ADR-0019-plataforma-implantacao-ambientes-residencia.md) | Plataforma de implantação, ambientes V2, residência de dado (LGPD), fronteiras de rede (§15.2) — **pt-BR** | accepted (direção GDEC-0016; minuta 2026-08-16, ciclo 6) |
+| [`ADR-0020-observabilidade-slos-backup-dr.md`](./ADR-0020-observabilidade-slos-backup-dr.md) | Observabilidade OTel-compatível, SLOs, modos degradados, backup/restore/DR (§15.3) — **pt-BR** | accepted (direção GDEC-0016; minuta 2026-08-16, ciclo 6) |
+| [`ADR-0021-frontend-bff-contrato-gerado.md`](./ADR-0021-frontend-bff-contrato-gerado.md) | Frontend/BFF e contrato gerado; UX/UI de 1ª classe, frontend dono da linguagem, estado clínico do backend (modificação do titular; §11) — **pt-BR** | accepted (direção GDEC-0016 c/ modificação; minuta 2026-08-16, ciclo 6) |
+| [`ADR-0022-build-dependencias-supply-chain.md`](./ADR-0022-build-dependencias-supply-chain.md) | Build, dependências pinadas, assinatura de artefato e supply chain (§15.1; SBOM/assinatura = pendência G8) — **pt-BR** | accepted (direção GDEC-0016; minuta 2026-08-16, ciclo 6) |
+| [`ADR-0023-importacao-legada-migracao.md`](./ADR-0023-importacao-legada-migracao.md) | Política de importação legada e migração (legado = evidência forense, não fonte de verdade) — **pt-BR** | accepted (direção GDEC-0016; minuta 2026-08-16, ciclo 6) |
+| [`ADR-0024-ia-ml-inclusao-governada-agentes-clinicos.md`](./ADR-0024-ia-ml-inclusao-governada-agentes-clinicos.md) | Inclusão governada de IA/ML com conector para agentes clínicos no workflow (modificação do titular; §20: jamais fonte não revisada de verdade clínica) — **pt-BR** | accepted (direção GDEC-0016 c/ modificação; minuta 2026-08-16, ciclo 6) |
 
 ---
 
@@ -215,19 +234,19 @@ Significado das colunas:
 | [ADR-0009](./ADR-0009-maquina-de-estados-alerta-item-de-trabalho.md) | 9 | Máquina de estados de alerta/item de trabalho, concorrência, idempotência, auditoria, timers de escalada | **accepted** (2026-08-15, GDEC-0008) — Q1-A (máquina única de WorkItem) + Q2-A (concorrência otimista) | G4 | 4 | **rodaquino-OMNI** (cláusulas clínicas, GDEC-0003) | `AUTH-CLINSAFETY` + `AUTH-UX` — cláusulas de UX UNASSIGNED, não fechadas por esta aceitação |
 | [ADR-0010](./ADR-0010-backbone-transacao-outbox-eventos-garantias-de-entrega.md) | 10 | Backbone de transação/outbox/evento e garantias de entrega | **accepted** (2026-08-15, GDEC-0008) — opção A (outbox transacional + relay) | G4, G7 | 4 | **rodaquino-OMNI** | `AUTH-PRODUCT` + `AUTH-OPERATIONS` — ambas detidas por rodaquino-OMNI per DEC-G0-01/DEC-G0-06 |
 | [ADR-0011](./ADR-0011-projecoes-de-leitura-e-entrega-tempo-real-autorizada.md) | 11 | Projeções de leitura e entrega em tempo real autorizada | **accepted** (2026-08-15, GDEC-0008) — opção A (projeções server-side + gateway realtime autorizado) | G4 | 4 | **rodaquino-OMNI** | `AUTH-PRODUCT` + `AUTH-SECURITY` — ambas detidas por rodaquino-OMNI per DEC-G0-01/DEC-G0-02 |
-| ADR-0012 | 12 | Versionamento de API, modelo de erro, idempotência, paginação, política de compatibilidade | not-started | G4 | 4 | UNASSIGNED | `AUTH-PRODUCT` |
-| ADR-0013 | 13 | Perfis FHIR R4/SMART, HL7 v2, terminologia, e writeback | not-started | G5 | 5 | UNASSIGNED | `AUTH-DATA-PLATFORM` + `AUTH-CLINSAFETY` |
-| ADR-0014 | 14 | Exposição MCP, classes de ferramenta permitidas, confirmação humana, política de PHI | not-started | G5, G6 | 5 | UNASSIGNED | `AUTH-SECURITY` + `AUTH-PRIVACY-LEGAL` + `AUTH-CLINSAFETY` |
-| ADR-0015 | 15 | Modelo de autenticação/sessão e identidade máquina-a-máquina | not-started | G5, G6 | 5 | UNASSIGNED | `AUTH-SECURITY` |
-| ADR-0016 | 16 | Autorização e enforcement de isolamento de tenant | not-started | G6 | 5 | UNASSIGNED | `AUTH-SECURITY` |
-| ADR-0017 | 17 | Criptografia / gestão de chave e tradeoffs de PHI pesquisável | not-started | G6 | 5 | UNASSIGNED | `AUTH-SECURITY` + `AUTH-PRIVACY-LEGAL` |
-| ADR-0018 | 18 | Integridade de auditoria, retenção, legal hold, correção, exportação de evidência | not-started | G6 | 5 | UNASSIGNED | `AUTH-PRIVACY-LEGAL` + `AUTH-SECURITY` |
-| ADR-0019 | 19 | Plataforma de implantação, ambientes, residência de dado, fronteiras de rede | not-started | G6, G8 | 5 | UNASSIGNED | `AUTH-OPERATIONS` + `AUTH-PRIVACY-LEGAL` |
-| ADR-0020 | 20 | Observabilidade, SLOs, prontidão, modos degradados, backup, restore, DR | not-started | G8 | 5 | UNASSIGNED | `AUTH-OPERATIONS` |
-| ADR-0021 | 21 | Estratégia de frontend/BFF e de contrato gerado | not-started | G4 | 4 | UNASSIGNED | `AUTH-UX` + `AUTH-PRODUCT` |
-| ADR-0022 | 22 | Build, dependência, assinatura de artefato, e estratégia de software-supply-chain | not-started | G7, G8 | 0 (seed) / 6 (completo) | UNASSIGNED | `AUTH-SECURITY` + `AUTH-OPERATIONS` |
-| ADR-0023 | 23 | Política de importação legada e abordagem de migração | not-started | G1, G7 | 1 | UNASSIGNED | `AUTH-PRODUCT` + `AUTH-CLINSAFETY` |
-| ADR-0024 | 24 | Exclusão de IA/ML ou inclusão governada, se aplicável | not-started | G2, G6 | 2 | UNASSIGNED | `AUTH-CLINSAFETY` + `AUTH-SECURITY` + `AUTH-PRIVACY-LEGAL` |
+| [ADR-0012](./ADR-0012-contrato-api-versionamento-erros-idempotencia.md) | 12 | Versionamento de API, modelo de erro, idempotência, paginação, política de compatibilidade | accepted (direção GDEC-0016; minuta redigida 2026-08-16, ciclo 6) | G4 | 4 | rodaquino-OMNI (GDEC-0016) | `AUTH-PRODUCT` |
+| [ADR-0013](./ADR-0013-perfis-fhir-hl7-terminologia-writeback.md) | 13 | Perfis FHIR R4/SMART, HL7 v2, terminologia, e writeback | accepted (direção GDEC-0016; minuta redigida 2026-08-16, ciclo 6) | G5 | 5 | rodaquino-OMNI (GDEC-0016) | `AUTH-DATA-PLATFORM` + `AUTH-CLINSAFETY` |
+| [ADR-0014](./ADR-0014-exposicao-mcp-classes-de-ferramenta-phi.md) | 14 | Exposição MCP, classes de ferramenta permitidas, confirmação humana, política de PHI — **modificação do titular: MANTER MCP no MVP** | accepted (direção GDEC-0016 c/ modificação; minuta redigida 2026-08-16, ciclo 6) | G5, G6 | 5 | rodaquino-OMNI (GDEC-0016) | `AUTH-SECURITY` + `AUTH-PRIVACY-LEGAL` + `AUTH-CLINSAFETY` |
+| [ADR-0015](./ADR-0015-autenticacao-sessao-identidade-m2m.md) | 15 | Modelo de autenticação/sessão e identidade máquina-a-máquina | accepted (direção GDEC-0016; minuta redigida 2026-08-16, ciclo 6) | G5, G6 | 5 | rodaquino-OMNI (GDEC-0016) | `AUTH-SECURITY` |
+| [ADR-0016](./ADR-0016-autorizacao-isolamento-de-tenant.md) | 16 | Autorização e enforcement de isolamento de tenant | accepted (direção GDEC-0016; minuta redigida 2026-08-16, ciclo 6) | G6 | 5 | rodaquino-OMNI (GDEC-0016) | `AUTH-SECURITY` |
+| [ADR-0017](./ADR-0017-criptografia-gestao-de-chave-phi.md) | 17 | Criptografia / gestão de chave e tradeoffs de PHI pesquisável | accepted (direção GDEC-0016; minuta redigida 2026-08-16, ciclo 6; custódia de chave segue cláusula adiada) | G6 | 5 | rodaquino-OMNI (GDEC-0016) | `AUTH-SECURITY` + `AUTH-PRIVACY-LEGAL` |
+| [ADR-0018](./ADR-0018-integridade-auditoria-retencao-exportacao.md) | 18 | Integridade de auditoria, retenção, legal hold, correção, exportação de evidência | accepted (direção GDEC-0016; minuta redigida 2026-08-16, ciclo 6) | G6 | 5 | rodaquino-OMNI (GDEC-0016) | `AUTH-PRIVACY-LEGAL` + `AUTH-SECURITY` |
+| [ADR-0019](./ADR-0019-plataforma-implantacao-ambientes-residencia.md) | 19 | Plataforma de implantação, ambientes, residência de dado, fronteiras de rede | accepted (direção GDEC-0016; minuta redigida 2026-08-16, ciclo 6) | G6, G8 | 5 | rodaquino-OMNI (GDEC-0016) | `AUTH-OPERATIONS` + `AUTH-PRIVACY-LEGAL` |
+| [ADR-0020](./ADR-0020-observabilidade-slos-backup-dr.md) | 20 | Observabilidade, SLOs, prontidão, modos degradados, backup, restore, DR | accepted (direção GDEC-0016; minuta redigida 2026-08-16, ciclo 6) | G8 | 5 | rodaquino-OMNI (GDEC-0016) | `AUTH-OPERATIONS` |
+| [ADR-0021](./ADR-0021-frontend-bff-contrato-gerado.md) | 21 | Estratégia de frontend/BFF e de contrato gerado — **modificação do titular: frontend melhora a comunicação e ajusta termos; UX/UI de 1ª classe; estado clínico originado no backend** | accepted (direção GDEC-0016 c/ modificação; minuta redigida 2026-08-16, ciclo 6) | G4 | 4 | rodaquino-OMNI (GDEC-0016) | `AUTH-UX` + `AUTH-PRODUCT` |
+| [ADR-0022](./ADR-0022-build-dependencias-supply-chain.md) | 22 | Build, dependência, assinatura de artefato, e estratégia de software-supply-chain | accepted (direção GDEC-0016; minuta redigida 2026-08-16, ciclo 6; SBOM/assinatura = pendência p/ G8) | G7, G8 | 0 (seed) / 6 (completo) | rodaquino-OMNI (GDEC-0016) | `AUTH-SECURITY` + `AUTH-OPERATIONS` |
+| [ADR-0023](./ADR-0023-importacao-legada-migracao.md) | 23 | Política de importação legada e abordagem de migração | accepted (direção GDEC-0016; minuta redigida 2026-08-16, ciclo 6) | G1, G7 | 1 | rodaquino-OMNI (GDEC-0016) | `AUTH-PRODUCT` + `AUTH-CLINSAFETY` |
+| [ADR-0024](./ADR-0024-ia-ml-inclusao-governada-agentes-clinicos.md) | 24 | Inclusão governada de IA/ML — **modificação do titular: MANTER IA/ML, com conector para agentes clínicos no workflow** | accepted (direção GDEC-0016 c/ modificação; minuta redigida 2026-08-16, ciclo 6) | G2, G6 | 2 | rodaquino-OMNI (GDEC-0016) | `AUTH-CLINSAFETY` + `AUTH-SECURITY` + `AUTH-PRIVACY-LEGAL` |
 
 **Vinte e quatro é um piso, não um teto.** SOURCE (prompt §10, linha 636): "No mínimo,
 resolva ADRs para". Novas ADRs tomam IDs a partir de ADR-0025 em diante. Tópicos
