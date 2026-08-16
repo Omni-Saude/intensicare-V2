@@ -1,7 +1,7 @@
 import { useReducer } from "react";
-import type { Alerta } from "../domain/clinico.js";
-import type { ClienteApiIntensiCare } from "../api/tipos.js";
 import { gerarChaveIdempotencia } from "../api/idempotencia.js";
+import type { ClienteApiIntensiCare } from "../api/tipos.js";
+import type { Alerta } from "../domain/clinico.js";
 import {
   ESTADO_INICIAL_RECONHECER_ALERTA,
   reduzirReconhecerAlerta,
@@ -14,7 +14,12 @@ interface ReconhecerAlertaProps {
   aoReconhecido: (alertaAtualizado: Alerta) => void;
 }
 
-const ESTADOS_QUE_PERMITEM_RECONHECER = new Set(["nao_atribuido", "atribuido", "escalado", "reaberto"]);
+const ESTADOS_QUE_PERMITEM_RECONHECER = new Set([
+  "nao_atribuido",
+  "atribuido",
+  "escalado",
+  "reaberto",
+]);
 
 /**
  * Ação "Reconhecer alerta" com confirmação explícita em duas etapas.
@@ -47,7 +52,8 @@ export function ReconhecerAlerta({ alerta, cliente, aoReconhecido }: ReconhecerA
 
     dispatch({
       tipo: "falha",
-      mensagem: resposta.problema?.detail ?? "Não foi possível reconhecer o alerta. Tente novamente.",
+      mensagem:
+        resposta.problema?.detail ?? "Não foi possível reconhecer o alerta. Tente novamente.",
     });
   }
 
@@ -66,7 +72,11 @@ export function ReconhecerAlerta({ alerta, cliente, aoReconhecido }: ReconhecerA
         <button type="button" className="botao" onClick={lidarComConfirmar}>
           Confirmar
         </button>
-        <button type="button" className="botao botao--secundario" onClick={() => dispatch({ tipo: "cancelar" })}>
+        <button
+          type="button"
+          className="botao botao--secundario"
+          onClick={() => dispatch({ tipo: "cancelar" })}
+        >
           Cancelar
         </button>
       </div>
@@ -85,7 +95,11 @@ export function ReconhecerAlerta({ alerta, cliente, aoReconhecido }: ReconhecerA
     return (
       <div role="alert">
         <p>{estado.mensagem}</p>
-        <button type="button" className="botao" onClick={() => dispatch({ tipo: "tentar_novamente" })}>
+        <button
+          type="button"
+          className="botao"
+          onClick={() => dispatch({ tipo: "tentar_novamente" })}
+        >
           Tentar novamente
         </button>
       </div>

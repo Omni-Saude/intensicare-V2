@@ -58,9 +58,12 @@ export interface BedRow {
 
 /** Lê todos os leitos VISÍVEIS na transação corrente (sujeito a RLS). */
 export async function listBeds(tx: Transaction): Promise<readonly BedRow[]> {
-  const result = await tx.query<{ id: string; tenant_id: string; care_unit_id: string; code: string }>(
-    `select id, tenant_id, care_unit_id, code from beds order by id`,
-  );
+  const result = await tx.query<{
+    id: string;
+    tenant_id: string;
+    care_unit_id: string;
+    code: string;
+  }>(`select id, tenant_id, care_unit_id, code from beds order by id`);
   return result.rows.map((row) => ({
     id: row.id,
     tenantId: row.tenant_id,

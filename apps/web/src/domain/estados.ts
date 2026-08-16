@@ -77,7 +77,12 @@ export type EstadoConectividade =
  * semântica depois; sem tela dedicada nesta fatia (SPR-G7-2 é
  * bed-grid/detalhe/reconhecer alerta, não autenticação).
  */
-export type EstadoSessao = "ativa" | "expirando" | "expirada" | "recuperada" | "trabalho_nao_salvo_protegido";
+export type EstadoSessao =
+  | "ativa"
+  | "expirando"
+  | "expirada"
+  | "recuperada"
+  | "trabalho_nao_salvo_protegido";
 
 /**
  * Banda de risco clínico — sempre exibida com rótulo textual, nunca só
@@ -94,7 +99,14 @@ export type BandaRisco = "baixo" | "medio" | "alto" | "critico";
  * `neutro` — nunca reaproveita o tom "sem problema" para um estado
  * fail-closed (ADR-0029 P1).
  */
-export type Tom = "neutro" | "positivo" | "informativo" | "atencao" | "alerta" | "critico" | "inconclusivo";
+export type Tom =
+  | "neutro"
+  | "positivo"
+  | "informativo"
+  | "atencao"
+  | "alerta"
+  | "critico"
+  | "inconclusivo";
 
 /** Lança erro em tempo de execução se um switch exaustivo perder um caso. */
 export function casoImpossivel(valor: never, contexto: string): never {

@@ -26,12 +26,7 @@
  *   insumo fora de janela produz `not_evaluated` (`stale_input:*`); um registro
  *   `valid` envelhecido transita para `stale` via `reassessNews2AtReadTime`.
  */
-export type EvaluationStatus =
-  | "valid"
-  | "partial"
-  | "not_evaluated"
-  | "stale"
-  | "invalid";
+export type EvaluationStatus = "valid" | "partial" | "not_evaluated" | "stale" | "invalid";
 
 /** Os sete parâmetros pontuados do NEWS2 (spec §2.1, linhas 1–7). */
 export type News2ParameterId =

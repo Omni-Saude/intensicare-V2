@@ -1,5 +1,5 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildServer } from "./index.js";
 
 describe("apps/api (fundação executável — servidor sobre persistência real)", () => {

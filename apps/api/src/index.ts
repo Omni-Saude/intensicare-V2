@@ -22,14 +22,11 @@
  * Nenhuma alegação de efetividade clínica, conformidade regulatória ou
  * segurança comprovada é feita.
  */
+
+import type { PGlite } from "@electric-sql/pglite";
+import { PROBLEM_JSON_MIME_TYPE, type ProblemDetails } from "@intensicare/contratos";
 import Fastify, { type FastifyInstance } from "fastify";
 import { z } from "zod";
-import type { PGlite } from "@electric-sql/pglite";
-import {
-  IDEMPOTENCY_KEY_HEADER,
-  PROBLEM_JSON_MIME_TYPE,
-  type ProblemDetails,
-} from "@intensicare/contratos";
 import { prepareDatabase } from "./db.js";
 import { instanciaSegura } from "./problema.js";
 import { registrarRotasV1 } from "./routes.js";
@@ -88,10 +85,11 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Fas
   return app;
 }
 
-const isMainModule = process.argv[1] !== undefined && import.meta.url === `file://${process.argv[1]}`;
+const isMainModule =
+  process.argv[1] !== undefined && import.meta.url === `file://${process.argv[1]}`;
 
 if (isMainModule) {
-  const port = Number(process.env["PORT"] ?? 3000);
+  const port = Number(process.env.PORT ?? 3000);
   buildServer()
     .then((app) =>
       app.listen({ port, host: "0.0.0.0" }).catch((error: unknown) => {

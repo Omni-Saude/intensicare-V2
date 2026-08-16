@@ -32,10 +32,7 @@ export function ContribuicaoParametroLinha({ contribuicao }: ContribuicaoParamet
         )}
       </p>
       <p>Pontos: {contribuicao.pontos === null ? <em>não computado</em> : contribuicao.pontos}</p>
-      <p>
-        Horário da leitura de origem:{" "}
-        {contribuicao.horarioFonte ?? <em>nunca recebida</em>}
-      </p>
+      <p>Horário da leitura de origem: {contribuicao.horarioFonte ?? <em>nunca recebida</em>}</p>
       <p>{contribuicao.explicacao}</p>
     </li>
   );

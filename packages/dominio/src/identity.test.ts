@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { presentInstant } from "./time.js";
 import type { Encounter, PatientIdentity } from "./identity.js";
+import { presentInstant } from "./time.js";
 
 describe("identity — PatientIdentity/Encounter (ADR-0005 M2: chave do fato = tenant, PSR, encontro)", () => {
   it("PatientIdentity carrega subjectRef na forma de PSR", () => {

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  SYNTHETIC_MARKER,
   generateSyntheticPsr,
   generateSyntheticTenantId,
   packageVersion,
+  SYNTHETIC_MARKER,
 } from "./index.js";
 
 describe("@intensicare/fixtures-sinteticas (fundação executável)", () => {

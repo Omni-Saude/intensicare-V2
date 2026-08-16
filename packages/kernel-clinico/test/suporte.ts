@@ -112,7 +112,8 @@ export function buildVectorInput(delta: VectorDelta): News2EvaluationInput {
   const absent = new Set<News2ParameterId>(delta.absent ?? []);
   const quarantined = new Set<News2ParameterId>(delta.quarantined ?? []);
   const minutes = (p: News2ParameterId): number => delta.observedMinutesBefore?.[p] ?? 10;
-  const quality = (p: News2ParameterId): SourceDataQuality => (quarantined.has(p) ? "quarantined" : "valid");
+  const quality = (p: News2ParameterId): SourceDataQuality =>
+    quarantined.has(p) ? "quarantined" : "valid";
 
   const observations: ObservationInput[] = [];
 
@@ -130,17 +131,25 @@ export function buildVectorInput(delta: VectorDelta): News2EvaluationInput {
   }
 
   if (!absent.has("o2_status")) {
-    observations.push(codedObs("o2_status", delta.o2 ?? "air", minutes("o2_status"), quality("o2_status")));
+    observations.push(
+      codedObs("o2_status", delta.o2 ?? "air", minutes("o2_status"), quality("o2_status")),
+    );
   }
   if (!absent.has("consciousness")) {
     observations.push(
-      codedObs("consciousness", delta.consciousness ?? "A", minutes("consciousness"), quality("consciousness")),
+      codedObs(
+        "consciousness",
+        delta.consciousness ?? "A",
+        minutes("consciousness"),
+        quality("consciousness"),
+      ),
     );
   }
 
   return {
     evaluationTime: EVAL_TIME,
-    age: delta.age === "unknown" ? { kind: "unknown" } : { kind: "verified", years: delta.age ?? 45 },
+    age:
+      delta.age === "unknown" ? { kind: "unknown" } : { kind: "verified", years: delta.age ?? 45 },
     pregnancy: delta.pregnancy ?? "not_documented",
     observations,
     ...(delta.scale2Order === true

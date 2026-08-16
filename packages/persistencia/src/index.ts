@@ -39,7 +39,7 @@ export async function checkConnection(db: PGlite): Promise<boolean> {
   return result.rows[0]?.one === 1;
 }
 
+export * from "./repositories/clinical-repository.js";
+export * from "./repositories/tenancy-repository.js";
 export * from "./session.js";
 export * from "./temporal.js";
-export * from "./repositories/tenancy-repository.js";
-export * from "./repositories/clinical-repository.js";

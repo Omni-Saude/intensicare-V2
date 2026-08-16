@@ -3,8 +3,8 @@ import { criarClienteHttp } from "./api/clienteHttp.js";
 import { criarClienteMock } from "./api/clienteMock.js";
 import type { ClienteApiIntensiCare } from "./api/tipos.js";
 import { BannerContexto } from "./components/BannerContexto.js";
-import { GradeLeitos } from "./components/GradeLeitos.js";
 import { DetalhePaciente } from "./components/DetalhePaciente.js";
+import { GradeLeitos } from "./components/GradeLeitos.js";
 
 /**
  * Casca de navegação desta fatia (SPR-G7-2): grade de leitos ↔ detalhe

@@ -1,5 +1,5 @@
-import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 // Integração SPR-G7-2: o fluxo dev aponta para a API local — todo caminho
 // `/v1/*` é proxied para `apps/api` (porta 3000; suba com

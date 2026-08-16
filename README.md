@@ -164,6 +164,118 @@ BLOCKED pending repository-admin action.
 Ownership of review paths is defined (as an inactive skeleton — every
 rule is commented out pending named owners) in `.github/CODEOWNERS`.
 
+## Como desenvolver
+
+**OBSERVED (2026-08-16):** esta seção documenta o fluxo de desenvolvimento
+local e a verificação de um comando exigida por
+`INTENSICARE_V2_ORCHESTRATOR_PROMPT.md` §15.1 item B. Todos os comandos
+abaixo foram executados de verdade neste repositório na data acima.
+
+### Pré-requisitos
+
+- **Node.js 22 LTS** (`>=22.0.0 <23.0.0`, per `engines` em `package.json` raiz;
+  PRE-01 de `docs/06-architecture/premissas-de-construcao.md`).
+- **pnpm 9**, ativado via corepack:
+
+  ```bash
+  corepack enable
+  corepack prepare pnpm@9.0.0 --activate
+  ```
+
+### Instalação
+
+```bash
+pnpm install
+```
+
+Instala as dependências de todo o monorepo (workspaces `packages/*` e
+`apps/*`, per `pnpm-workspace.yaml`) a partir do `pnpm-lock.yaml`
+committado. Em CI, o mesmo passo roda com `--frozen-lockfile` (falha se o
+lockfile divergir do manifesto — ADR-0022 S1).
+
+### Verificação em um comando
+
+```bash
+pnpm verify
+```
+
+Agrega, nesta ordem exata, tudo que precisa estar verde antes de abrir um
+PR: `typecheck` → `lint` (Biome) → `check:boundaries` (fronteira de módulo,
+ADR-0002) → `build` → `test` → `check:docs` → `check:forbidden`. Funciona
+do zero logo após `pnpm install`, sem nenhum passo manual adicional. Cada
+etapa também roda isoladamente (`pnpm typecheck`, `pnpm lint`, `pnpm
+check:boundaries`, `pnpm build`, `pnpm test`, `pnpm check:docs`, `pnpm
+check:forbidden`) — útil para iterar em uma etapa sem esperar as demais.
+
+**Nota sobre `packages/persistencia` e o teste `it.fails`.** Essa suíte
+contém um teste deliberadamente marcado `it.fails` (ver
+`packages/persistencia/src/seguranca.test.ts`), que documenta um achado de
+segurança conhecido (ACHADO-01) — ele **precisa** continuar falhando por
+dentro para que o `it.fails` reporte sucesso. **OBSERVED**: rodar `pnpm
+--filter @intensicare/persistencia test -- --run` isoladamente encerra com
+código de saída `0` e o relatório `33 passed | 1 expected fail (34)` — o
+Vitest já trata `it.fails` cujo corpo lança como um PASS, não como falha
+de suíte. `pnpm test` (o agregador `pnpm -r --if-present run test --
+--run` usado por `pnpm verify`) também encerra com código `0` incluindo
+esse pacote — nenhum ajuste na agregação foi necessário. Se esse teste
+algum dia parar de falhar por dentro (ou seja, `it.fails` passar a reportar
+falha porque o achado foi corrigido), o `pnpm verify` vai ficar vermelho
+de propósito — troque `it.fails` por `it` normal só quando o ACHADO-01
+estiver de fato corrigido, nunca antes.
+
+### Formatação e lint (Biome)
+
+Uma única ferramenta — [Biome](https://biomejs.dev/), pinada em versão
+exata (`@biomejs/biome` em `devDependencies` da raiz) — faz formatação e
+lint. Configuração em `biome.jsonc` (formato `.jsonc` para permitir
+comentário ao lado de cada regra desligada e por quê). Foco declarado é
+**correção** (variáveis/imports não usados, imports organizados, promise
+não tratada), não preferência de estilo:
+
+```bash
+pnpm format        # formata em modo escrita
+pnpm format:check  # só verifica, não escreve (usado implicitamente por `pnpm lint`)
+pnpm lint           # biome ci --error-on-warnings — o que `pnpm verify` roda
+pnpm lint:fix       # aplica só fixes SEGUROS (nunca --unsafe)
+```
+
+Três regras de lint estão explicitamente **desligadas** com o motivo
+documentado inline em `biome.jsonc` (`noNonNullAssertion`,
+`nursery/noFloatingPromises`, `a11y/useSemanticElements`) porque a única
+correção que o Biome oferece para cada uma exigiria mudar comportamento em
+tempo de execução, não apenas mecânica — e este projeto nunca altera
+comportamento só para satisfazer o linter. Ver os comentários em
+`biome.jsonc` para o raciocínio completo de cada uma.
+
+### Fronteira de módulo (ADR-0002)
+
+```bash
+pnpm check:boundaries
+```
+
+Executa `scripts/check_module_boundaries.mjs`, que lê os `package.json`
+reais do workspace e falha (`exit 1`) se qualquer pacote declarar uma
+dependência de workspace fora da direção permitida por ADR-0002 (monólito
+modular, Opção A) — por exemplo, `packages/kernel-clinico` não pode
+depender de nada do workspace, e `apps/web` só pode depender de
+`packages/contratos`. Isso materializa como verificação automatizada a
+condição C5 de ADR-0002 §5.1 ("um mecanismo de imposição de fronteira...
+bloqueante de build, não consultivo").
+
+### Rodar um pacote isolado
+
+```bash
+pnpm --filter @intensicare/kernel-clinico test        # ou build / typecheck
+pnpm --filter @intensicare/api dev                     # apps/api em watch mode
+pnpm --filter @intensicare/web dev                      # apps/web via Vite
+```
+
+O nome depois de `--filter` é o campo `name` do `package.json` do
+pacote/app (`@intensicare/<diretório>`). Alternativamente, `cd` até o
+diretório do pacote e rode `pnpm <script>` diretamente — cada
+`package.json` sob `packages/*`/`apps/*` expõe `build`, `test` e
+`typecheck` (e `dev`/`start` onde aplicável).
+
 ## Disclaimer
 
 **This repository, as of 2026-08-14, makes no clinical claim, no

@@ -12,22 +12,23 @@
  * (texto), e pelos componentes presentational testados diretamente com
  * dados injetados via props abaixo.
  */
-import { describe, expect, it } from "vitest";
+
 import { renderToStaticMarkup } from "react-dom/server";
-import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
+import { describe, expect, it } from "vitest";
+import { App } from "../App.js";
 import type { ClienteApiIntensiCare } from "../api/tipos.js";
-import { BannerContexto } from "./BannerContexto.js";
+import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
 import { BadgeTom } from "./BadgeTom.js";
-import { EstadoTela } from "./EstadoTela.js";
+import { BannerContexto } from "./BannerContexto.js";
 import { CartaoLeito } from "./CartaoLeito.js";
 import { ContribuicaoParametroLinha } from "./ContribuicaoParametroLinha.js";
+import { ControleDemonstracao } from "./ControleDemonstracao.js";
+import { DetalhePaciente } from "./DetalhePaciente.js";
+import { EstadoTela } from "./EstadoTela.js";
+import { GradeLeitos } from "./GradeLeitos.js";
 import { PainelAlertas } from "./PainelAlertas.js";
 import { ReconhecerAlerta } from "./ReconhecerAlerta.js";
-import { ControleDemonstracao } from "./ControleDemonstracao.js";
 import { RegiaoAoVivoAlertas } from "./RegiaoAoVivoAlertas.js";
-import { GradeLeitos } from "./GradeLeitos.js";
-import { DetalhePaciente } from "./DetalhePaciente.js";
-import { App } from "../App.js";
 
 /** Cliente-dublê que nunca resolve — usado só para exercitar o estado inicial ("carregando"). */
 const clientePendente: ClienteApiIntensiCare = {
@@ -80,7 +81,8 @@ const itemLeitoCompleto: ItemGradeLeito = {
         pontos: null,
         frescor: "ausente",
         horarioFonte: null,
-        explicacao: "Nível de consciência: sem leitura registrada — insumo ausente, declarado explicitamente.",
+        explicacao:
+          "Nível de consciência: sem leitura registrada — insumo ausente, declarado explicitamente.",
       },
     ],
     insumosAusentes: ["nivel_consciencia"],
@@ -197,7 +199,9 @@ describe("EstadoTela", () => {
 
 describe("CartaoLeito", () => {
   it("leito com avaliação válida mostra NEWS2, banda de risco e frescor", () => {
-    const html = renderToStaticMarkup(<CartaoLeito item={itemLeitoCompleto} aoSelecionar={() => {}} />);
+    const html = renderToStaticMarkup(
+      <CartaoLeito item={itemLeitoCompleto} aoSelecionar={() => {}} />,
+    );
     expect(html).toMatch(/Leito 01/);
     expect(html).toMatch(/Paciente SYNTH-teste/);
     expect(html).toMatch(/NEWS2/);
@@ -206,7 +210,9 @@ describe("CartaoLeito", () => {
   });
 
   it("leito com avaliação não computável (fail-closed) NUNCA mostra número de escore", () => {
-    const html = renderToStaticMarkup(<CartaoLeito item={itemLeitoNaoAvaliado} aoSelecionar={() => {}} />);
+    const html = renderToStaticMarkup(
+      <CartaoLeito item={itemLeitoNaoAvaliado} aoSelecionar={() => {}} />,
+    );
     expect(html).toMatch(/não computável/i);
     expect(html).not.toMatch(/NEWS2/);
   });
@@ -218,7 +224,9 @@ describe("CartaoLeito", () => {
   });
 
   it("é um <button> nativo — focalizável e ativável por teclado sem atributos extras", () => {
-    const html = renderToStaticMarkup(<CartaoLeito item={itemLeitoCompleto} aoSelecionar={() => {}} />);
+    const html = renderToStaticMarkup(
+      <CartaoLeito item={itemLeitoCompleto} aoSelecionar={() => {}} />,
+    );
     expect(html).toMatch(/<button/);
   });
 });
@@ -247,14 +255,22 @@ describe("ContribuicaoParametroLinha", () => {
 describe("ReconhecerAlerta", () => {
   it("alerta pendente mostra o botão 'Reconhecer alerta'", () => {
     const html = renderToStaticMarkup(
-      <ReconhecerAlerta alerta={alertaPendente} cliente={clientePendente} aoReconhecido={() => {}} />,
+      <ReconhecerAlerta
+        alerta={alertaPendente}
+        cliente={clientePendente}
+        aoReconhecido={() => {}}
+      />,
     );
     expect(html).toMatch(/Reconhecer alerta/);
   });
 
   it("alerta já resolvido não mostra ação de reconhecer", () => {
     const html = renderToStaticMarkup(
-      <ReconhecerAlerta alerta={alertaResolvido} cliente={clientePendente} aoReconhecido={() => {}} />,
+      <ReconhecerAlerta
+        alerta={alertaResolvido}
+        cliente={clientePendente}
+        aoReconhecido={() => {}}
+      />,
     );
     expect(html).toBe("");
   });
@@ -263,7 +279,12 @@ describe("ReconhecerAlerta", () => {
 describe("PainelAlertas", () => {
   it("lista vazia declara explicitamente 'Nenhum alerta', nunca omite a seção", () => {
     const html = renderToStaticMarkup(
-      <PainelAlertas alertas={[]} cliente={clientePendente} aoAlertaAtualizado={() => {}} tituloRegiao="Teste" />,
+      <PainelAlertas
+        alertas={[]}
+        cliente={clientePendente}
+        aoAlertaAtualizado={() => {}}
+        tituloRegiao="Teste"
+      />,
     );
     expect(html).toMatch(/Nenhum alerta/);
   });
@@ -298,14 +319,18 @@ describe("RegiaoAoVivoAlertas", () => {
   });
 
   it("exibe a mensagem quando presente", () => {
-    const html = renderToStaticMarkup(<RegiaoAoVivoAlertas mensagem="2 alertas pendentes na grade de leitos." />);
+    const html = renderToStaticMarkup(
+      <RegiaoAoVivoAlertas mensagem="2 alertas pendentes na grade de leitos." />,
+    );
     expect(html).toMatch(/2 alertas pendentes/);
   });
 });
 
 describe("Telas de nível superior — estado inicial (sem jsdom, useEffect não roda)", () => {
   it("GradeLeitos inicia em 'carregando'", () => {
-    const html = renderToStaticMarkup(<GradeLeitos cliente={clientePendente} aoSelecionarLeito={() => {}} />);
+    const html = renderToStaticMarkup(
+      <GradeLeitos cliente={clientePendente} aoSelecionarLeito={() => {}} />,
+    );
     expect(html).toMatch(/Carregando…/);
     expect(html).toMatch(/Grade de leitos/);
   });

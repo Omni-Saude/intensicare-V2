@@ -1,5 +1,5 @@
-import type { Alerta } from "../domain/clinico.js";
 import type { ClienteApiIntensiCare } from "../api/tipos.js";
+import type { Alerta } from "../domain/clinico.js";
 import { textoBandaRisco, textoItemTrabalho } from "../domain/linguagem.js";
 import { BadgeTom } from "./BadgeTom.js";
 import { ReconhecerAlerta } from "./ReconhecerAlerta.js";
@@ -12,7 +12,12 @@ interface PainelAlertasProps {
 }
 
 /** Lista de alertas (item de trabalho) com a ação "Reconhecer alerta". */
-export function PainelAlertas({ alertas, cliente, aoAlertaAtualizado, tituloRegiao }: PainelAlertasProps) {
+export function PainelAlertas({
+  alertas,
+  cliente,
+  aoAlertaAtualizado,
+  tituloRegiao,
+}: PainelAlertasProps) {
   if (alertas.length === 0) {
     return (
       <section aria-label={tituloRegiao}>
@@ -37,10 +42,17 @@ export function PainelAlertas({ alertas, cliente, aoAlertaAtualizado, tituloRegi
             <p>
               <small>Criado em {alerta.criadoEm}</small>
               {alerta.reconhecidoPor && alerta.reconhecidoEm && (
-                <small> · Reconhecido por {alerta.reconhecidoPor} em {alerta.reconhecidoEm}</small>
+                <small>
+                  {" "}
+                  · Reconhecido por {alerta.reconhecidoPor} em {alerta.reconhecidoEm}
+                </small>
               )}
             </p>
-            <ReconhecerAlerta alerta={alerta} cliente={cliente} aoReconhecido={aoAlertaAtualizado} />
+            <ReconhecerAlerta
+              alerta={alerta}
+              cliente={cliente}
+              aoReconhecido={aoAlertaAtualizado}
+            />
           </li>
         ))}
       </ul>

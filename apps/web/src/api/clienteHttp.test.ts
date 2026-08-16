@@ -5,8 +5,9 @@
  * (HAZ-0005) e que os identificadores de estado casam com a linguagem da
  * UI (ADR-0021 F1).
  */
-import { describe, expect, it } from "vitest";
+
 import type { EntradaGradeLeitos, ResultadoAvaliacao } from "@intensicare/contratos";
+import { describe, expect, it } from "vitest";
 import {
   mapearAvaliacao,
   mapearBanda,

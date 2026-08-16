@@ -37,6 +37,9 @@ export interface Bed {
  * nunca diverge de `id` (ADR-0003 opção A) — não é possível, usando esta
  * função, criar uma organização com tenant diferente de si mesma.
  */
-export function createOrganization(input: { readonly id: OrganizationId; readonly name: string }): Organization {
+export function createOrganization(input: {
+  readonly id: OrganizationId;
+  readonly name: string;
+}): Organization {
   return { id: input.id, tenantId: input.id, name: input.name };
 }

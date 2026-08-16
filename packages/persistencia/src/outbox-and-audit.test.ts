@@ -47,10 +47,11 @@ describe("outbox transacional (ADR-0010 opção A) — mesma transação da grav
         );
       });
 
-      const [observations, outbox] = await withTenantTransaction(db, tenant.tenantId, async (tx) => [
-        await listClinicalObservations(tx),
-        await listOutboxEvents(tx),
-      ]);
+      const [observations, outbox] = await withTenantTransaction(
+        db,
+        tenant.tenantId,
+        async (tx) => [await listClinicalObservations(tx), await listOutboxEvents(tx)],
+      );
       expect(observations).toHaveLength(1);
       expect(outbox).toHaveLength(1);
       expect(outbox[0]?.aggregateId).toBe("SYNTH-OBS-ATOMIC-01");
@@ -96,10 +97,11 @@ describe("outbox transacional (ADR-0010 opção A) — mesma transação da grav
         }),
       ).rejects.toThrow(/falha simulada/);
 
-      const [observations, outbox] = await withTenantTransaction(db, tenant.tenantId, async (tx) => [
-        await listClinicalObservations(tx),
-        await listOutboxEvents(tx),
-      ]);
+      const [observations, outbox] = await withTenantTransaction(
+        db,
+        tenant.tenantId,
+        async (tx) => [await listClinicalObservations(tx), await listOutboxEvents(tx)],
+      );
       expect(observations).toHaveLength(0);
       expect(outbox).toHaveLength(0);
     } finally {
@@ -129,7 +131,9 @@ describe("auditoria append-only (ADR-0009 W6 / ADR-0010 B1)", () => {
 
       await expect(
         withTenantTransaction(db, tenant.tenantId, async (tx) => {
-          await tx.query(`update audit_events set command = 'tampered' where id = $1`, ["SYNTH-AUDIT-01"]);
+          await tx.query(`update audit_events set command = 'tampered' where id = $1`, [
+            "SYNTH-AUDIT-01",
+          ]);
         }),
       ).rejects.toThrow(/append-only/i);
     } finally {
@@ -167,7 +171,11 @@ describe("auditoria append-only (ADR-0009 W6 / ADR-0010 B1)", () => {
 });
 
 describe("transição de WorkItem com concorrência otimista (ADR-0009 Q2-A) + auditoria + outbox no mesmo commit", () => {
-  async function seedAlertAndWorkItem(db: Awaited<ReturnType<typeof createTestDatabase>>, tenantId: string, encounterId: string) {
+  async function seedAlertAndWorkItem(
+    db: Awaited<ReturnType<typeof createTestDatabase>>,
+    tenantId: string,
+    encounterId: string,
+  ) {
     await withTenantTransaction(db, tenantId, async (tx) => {
       await insertAlert(tx, {
         id: "SYNTH-ALERT-01",

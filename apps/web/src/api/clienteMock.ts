@@ -14,8 +14,14 @@
  * nunca apresentado como persistência real.
  */
 import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
-import type { ClienteApiIntensiCare, ModoDemonstracao, OpcoesChamada, ProblemaLocal, RespostaApi } from "./tipos.js";
 import { compor, criarDadosSinteticos } from "./fixtures.js";
+import type {
+  ClienteApiIntensiCare,
+  ModoDemonstracao,
+  OpcoesChamada,
+  ProblemaLocal,
+  RespostaApi,
+} from "./tipos.js";
 
 const ATRASO_PADRAO_MS = 150;
 
@@ -110,7 +116,11 @@ export function criarClienteMock(): ClienteApiIntensiCare {
         return {
           estadoCarregamento: "erro",
           dados: null,
-          problema: problemaPadrao(404, "Leito não encontrado", `Nenhum leito com identificador "${leitoId}".`),
+          problema: problemaPadrao(
+            404,
+            "Leito não encontrado",
+            `Nenhum leito com identificador "${leitoId}".`,
+          ),
         };
       }
 
@@ -147,7 +157,11 @@ export function criarClienteMock(): ClienteApiIntensiCare {
         return {
           estadoCarregamento: "erro",
           dados: null,
-          problema: problemaPadrao(404, "Alerta não encontrado", `Nenhum alerta com identificador "${alertaId}".`),
+          problema: problemaPadrao(
+            404,
+            "Alerta não encontrado",
+            `Nenhum alerta com identificador "${alertaId}".`,
+          ),
         };
       }
 
@@ -156,7 +170,11 @@ export function criarClienteMock(): ClienteApiIntensiCare {
         return {
           estadoCarregamento: "erro",
           dados: null,
-          problema: problemaPadrao(404, "Alerta não encontrado", `Nenhum alerta com identificador "${alertaId}".`),
+          problema: problemaPadrao(
+            404,
+            "Alerta não encontrado",
+            `Nenhum alerta com identificador "${alertaId}".`,
+          ),
         };
       }
 

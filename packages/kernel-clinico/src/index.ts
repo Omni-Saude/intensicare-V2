@@ -22,6 +22,17 @@ export const packageVersion = "0.0.0" as const;
 // API da avaliação NEWS2 (RULE-NEWS2 0.2.0)
 // ---------------------------------------------------------------------------
 
+export {
+  ESCALATION_SUPPRESSION_REASON_PT,
+  evaluateNews2,
+  evaluatePopulationGate,
+  MINIMUM_AGE_YEARS,
+  NEWS2_RULE_ID,
+  NEWS2_RULE_VERSION,
+  PREGNANCY_NOT_VERIFIED_ANNOTATION_PT,
+  reassessNews2AtReadTime,
+  roundToChartUnits,
+} from "./news2.js";
 export type {
   AcvpuToken,
   AgeInput,
@@ -45,20 +56,7 @@ export type {
   Spo2Scale,
   Spo2ScaleAssignmentInput,
 } from "./types.js";
-
 export { NEWS2_PARAMETER_ORDER } from "./types.js";
-
-export {
-  ESCALATION_SUPPRESSION_REASON_PT,
-  evaluateNews2,
-  evaluatePopulationGate,
-  MINIMUM_AGE_YEARS,
-  NEWS2_RULE_ID,
-  NEWS2_RULE_VERSION,
-  PREGNANCY_NOT_VERIFIED_ANNOTATION_PT,
-  reassessNews2AtReadTime,
-  roundToChartUnits,
-} from "./news2.js";
 
 // ---------------------------------------------------------------------------
 // Exports legados do esqueleto SPR-G7-1 — mantidos porque @intensicare/dominio

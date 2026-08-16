@@ -18,6 +18,7 @@
  * normalidade: status não-computável NUNCA vira escore/banda (HAZ-0005).
  */
 import type {
+  AvaliacoesPacienteResposta,
   BandaRisco as BandaRiscoContrato,
   ContribuicaoParametro as ContribuicaoContrato,
   EntradaGradeLeitos,
@@ -29,7 +30,6 @@ import type {
   ReconhecerAlertaResposta,
   ResultadoAvaliacao,
   StatusAvaliacao,
-  AvaliacoesPacienteResposta,
 } from "@intensicare/contratos";
 import { IF_MATCH_HEADER } from "@intensicare/contratos";
 import type {
@@ -39,9 +39,19 @@ import type {
   ItemGradeLeito,
   ParametroId,
 } from "../domain/clinico.js";
-import type { BandaRisco, EstadoAvaliacao, EstadoFrescor, EstadoItemTrabalho } from "../domain/estados.js";
+import type {
+  BandaRisco,
+  EstadoAvaliacao,
+  EstadoFrescor,
+  EstadoItemTrabalho,
+} from "../domain/estados.js";
 import { ROTULO_PARAMETRO } from "../domain/news2.js";
-import type { ClienteApiIntensiCare, ModoDemonstracao, OpcoesChamada, RespostaApi } from "./tipos.js";
+import type {
+  ClienteApiIntensiCare,
+  ModoDemonstracao,
+  OpcoesChamada,
+  RespostaApi,
+} from "./tipos.js";
 import { CABECALHO_IDEMPOTENCIA } from "./tipos.js";
 
 /** Token sintético do fluxo dev — tenant do cenário G7 (nunca formato real). */
@@ -246,7 +256,8 @@ function respostaForcada<T>(modo: ModoDemonstracao): RespostaApi<T> {
           type: "about:blank",
           title: "Serviço indisponível",
           status: 503,
-          detail: "Modo de demonstração — indisponibilidade forçada para revisão de UI, não é uma falha real.",
+          detail:
+            "Modo de demonstração — indisponibilidade forçada para revisão de UI, não é uma falha real.",
         },
       };
     case "erro":
@@ -260,7 +271,6 @@ function respostaForcada<T>(modo: ModoDemonstracao): RespostaApi<T> {
           detail: "Modo de demonstração — erro forçado para revisão de UI, não é uma falha real.",
         },
       };
-    case "pronto":
     default:
       return { estadoCarregamento: "pronto", dados: null, problema: null };
   }
@@ -313,7 +323,8 @@ export function criarClienteHttp(baseUrl = ""): ClienteApiIntensiCare {
 
   function falha<T>(resposta: RespostaHttp<unknown>): RespostaApi<T> {
     return {
-      estadoCarregamento: resposta.status === 0 || resposta.status === 503 ? "indisponivel" : "erro",
+      estadoCarregamento:
+        resposta.status === 0 || resposta.status === 503 ? "indisponivel" : "erro",
       dados: null,
       problema: resposta.problema,
     };
@@ -409,7 +420,11 @@ export function criarClienteHttp(baseUrl = ""): ClienteApiIntensiCare {
         },
       );
       if (!resposta.ok || resposta.corpo === null) return falha(resposta);
-      return { estadoCarregamento: "pronto", dados: mapearItemTrabalho(resposta.corpo.item), problema: null };
+      return {
+        estadoCarregamento: "pronto",
+        dados: mapearItemTrabalho(resposta.corpo.item),
+        problema: null,
+      };
     },
   };
 }

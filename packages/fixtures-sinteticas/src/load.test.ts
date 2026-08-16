@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import {
   bootstrapDatabase,
   createInMemoryDatabase,
@@ -8,6 +7,7 @@ import {
   listOutboxEvents,
   withTenantTransaction,
 } from "@intensicare/persistencia";
+import { describe, expect, it } from "vitest";
 import { loadIntoDatabase } from "./load.js";
 
 describe("loadIntoDatabase — cenário G7 semeado com os repositórios reais", () => {
@@ -31,7 +31,9 @@ describe("loadIntoDatabase — cenário G7 semeado com os repositórios reais", 
       // 5 (P001) + 15 (P002, 3 instantes x 5 conceitos) observações do cenário.
       expect(visto.observations).toHaveLength(20);
       // Cada observação gravou exatamente um evento de outbox (ADR-0010 B1).
-      expect(visto.outbox.filter((e) => e.eventType === "clinical_observation_recorded")).toHaveLength(20);
+      expect(
+        visto.outbox.filter((e) => e.eventType === "clinical_observation_recorded"),
+      ).toHaveLength(20);
     } finally {
       await db.close();
     }

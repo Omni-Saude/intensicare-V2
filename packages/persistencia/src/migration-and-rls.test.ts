@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
+import {
+  insertClinicalObservationWithOutbox,
+  listClinicalObservations,
+  listOutboxEvents,
+} from "./repositories/clinical-repository.js";
 import { listBeds, listOrganizations } from "./repositories/tenancy-repository.js";
-import { listClinicalObservations } from "./repositories/clinical-repository.js";
-import { insertClinicalObservationWithOutbox, listOutboxEvents } from "./repositories/clinical-repository.js";
 import { withTenantTransaction } from "./session.js";
 import { createTestDatabase, seedMinimalTenant, syntheticInstant } from "./test-support.js";
 
@@ -62,7 +65,13 @@ describe("RLS por tenant_id (ADR-0003) — isolamento entre tenants sintéticos"
             concept: "SYNTH-CONCEPT-SPO2",
             value: { sourceValue: 96, sourceUnit: "%" },
             quality: "valid",
-            provenance: { sourceSystem: "SYNTH-SOURCE-01", sourceEnvelopeId: "SYNTH-ENV-01", transformation: "none", mappingVersion: "0.0.0", collector: "test" },
+            provenance: {
+              sourceSystem: "SYNTH-SOURCE-01",
+              sourceEnvelopeId: "SYNTH-ENV-01",
+              transformation: "none",
+              mappingVersion: "0.0.0",
+              collector: "test",
+            },
             observedAt: syntheticInstant("2026-08-16T10:05:00.000Z"),
             effectiveAt: syntheticInstant("2026-08-16T10:05:00.000Z"),
             issuedAt: syntheticInstant("2026-08-16T10:05:01.000Z"),
@@ -147,7 +156,13 @@ describe("RLS por tenant_id (ADR-0003) — isolamento entre tenants sintéticos"
             concept: "SYNTH-CONCEPT-FC",
             value: { sourceValue: 88, sourceUnit: "bpm" },
             quality: "valid",
-            provenance: { sourceSystem: "SYNTH-SOURCE-01", sourceEnvelopeId: "SYNTH-ENV-01", transformation: "none", mappingVersion: "0.0.0", collector: "test" },
+            provenance: {
+              sourceSystem: "SYNTH-SOURCE-01",
+              sourceEnvelopeId: "SYNTH-ENV-01",
+              transformation: "none",
+              mappingVersion: "0.0.0",
+              collector: "test",
+            },
             observedAt: syntheticInstant("2026-08-16T10:06:00.000Z"),
             effectiveAt: syntheticInstant("2026-08-16T10:06:00.000Z"),
             issuedAt: syntheticInstant("2026-08-16T10:06:01.000Z"),
@@ -158,10 +173,14 @@ describe("RLS por tenant_id (ADR-0003) — isolamento entre tenants sintéticos"
         );
       });
 
-      const outboxAsB = await withTenantTransaction(db, tenantB.tenantId, (tx) => listOutboxEvents(tx));
+      const outboxAsB = await withTenantTransaction(db, tenantB.tenantId, (tx) =>
+        listOutboxEvents(tx),
+      );
       expect(outboxAsB).toHaveLength(0);
 
-      const outboxAsA = await withTenantTransaction(db, tenantA.tenantId, (tx) => listOutboxEvents(tx));
+      const outboxAsA = await withTenantTransaction(db, tenantA.tenantId, (tx) =>
+        listOutboxEvents(tx),
+      );
       expect(outboxAsA).toHaveLength(1);
     } finally {
       await db.close();

@@ -18,6 +18,6 @@
 
 export const packageVersion = "0.0.0" as const;
 
-export * from "./synthetic-identifiers.js";
-export * from "./scenario.js";
 export * from "./load.js";
+export * from "./scenario.js";
+export * from "./synthetic-identifiers.js";

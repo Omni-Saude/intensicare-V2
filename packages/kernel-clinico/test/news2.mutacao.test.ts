@@ -18,14 +18,14 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  type EvaluationRecord,
   evaluateNews2,
   evaluatePopulationGate,
-  reassessNews2AtReadTime,
-  roundToChartUnits,
-  type EvaluationRecord,
   type News2EvaluationInput,
   type News2ParameterId,
   type ObservationInput,
+  reassessNews2AtReadTime,
+  roundToChartUnits,
   type SedationState,
 } from "../src/index.js";
 
@@ -108,7 +108,10 @@ function replacing(
 ): ObservationInput[] {
   const kept = baselineObservations().filter((o) => o.parameter !== parameter);
   if (replacement === null) return kept;
-  return [...kept, ...(Array.isArray(replacement) ? replacement : [replacement as ObservationInput])];
+  return [
+    ...kept,
+    ...(Array.isArray(replacement) ? replacement : [replacement as ObservationInput]),
+  ];
 }
 
 function contributionOf(record: EvaluationRecord, parameter: News2ParameterId) {
@@ -123,28 +126,36 @@ function contributionOf(record: EvaluationRecord, parameter: News2ParameterId) {
 
 describe("N-7 — arredondamento à resolução de chart (mutantes de fronteira e de sinal)", () => {
   it("fração abaixo do meio-passo arredonda para BAIXO (FR 20,4 ⇒ 20, 0 ponto)", () => {
-    const record = evaluateNews2(evaluationInput({ observations: replacing("rr", quantity("rr", 20.4, "/min")) }));
+    const record = evaluateNews2(
+      evaluationInput({ observations: replacing("rr", quantity("rr", 20.4, "/min")) }),
+    );
     const rr = contributionOf(record, "rr");
     expect(rr.valueUsed).toEqual({ kind: "quantity", value: 20, unit: "/min" });
     expect(rr.score).toBe(0);
   });
 
   it("fração acima do meio-passo arredonda para CIMA (FR 20,6 ⇒ 21, 2 pontos)", () => {
-    const record = evaluateNews2(evaluationInput({ observations: replacing("rr", quantity("rr", 20.6, "/min")) }));
+    const record = evaluateNews2(
+      evaluationInput({ observations: replacing("rr", quantity("rr", 20.6, "/min")) }),
+    );
     const rr = contributionOf(record, "rr");
     expect(rr.valueUsed).toEqual({ kind: "quantity", value: 21, unit: "/min" });
     expect(rr.score).toBe(2);
   });
 
   it("meio-passo exato com bandas de MESMA pontuação resolve para o limite superior (FR 16,5 ⇒ 17)", () => {
-    const record = evaluateNews2(evaluationInput({ observations: replacing("rr", quantity("rr", 16.5, "/min")) }));
+    const record = evaluateNews2(
+      evaluationInput({ observations: replacing("rr", quantity("rr", 16.5, "/min")) }),
+    );
     const rr = contributionOf(record, "rr");
     expect(rr.valueUsed).toEqual({ kind: "quantity", value: 17, unit: "/min" });
     expect(rr.score).toBe(0);
   });
 
   it("meio-passo exato resolve para a banda MAIS ANORMAL, ainda que seja o limite INFERIOR (SpO2 93,5 ⇒ 93, 2 pontos)", () => {
-    const record = evaluateNews2(evaluationInput({ observations: replacing("spo2", quantity("spo2", 93.5, "%")) }));
+    const record = evaluateNews2(
+      evaluationInput({ observations: replacing("spo2", quantity("spo2", 93.5, "%")) }),
+    );
     const spo2 = contributionOf(record, "spo2");
     expect(spo2.valueUsed).toEqual({ kind: "quantity", value: 93, unit: "%" });
     expect(spo2.score).toBe(2);
@@ -153,7 +164,9 @@ describe("N-7 — arredondamento à resolução de chart (mutantes de fronteira 
 
   it("temperatura opera em resolução de 0,1 °C e é EXIBIDA em graus (38,05 ⇒ 38,1 °C, 1 ponto)", () => {
     const record = evaluateNews2(
-      evaluationInput({ observations: replacing("temperature", quantity("temperature", 38.05, "Cel")) }),
+      evaluationInput({
+        observations: replacing("temperature", quantity("temperature", 38.05, "Cel")),
+      }),
     );
     const temperature = contributionOf(record, "temperature");
     expect(temperature.valueUsed).toEqual({ kind: "quantity", value: 38.1, unit: "Cel" });
@@ -182,7 +195,10 @@ describe("spec §3.3 — Escala 2 de SpO2 sob governança de ordem clínica", ()
   it("região ≥93 sem estado de O2 NÃO pontua: SpO2 íntegra com score null e escala não declarada", () => {
     const record = evaluateNews2(
       evaluationInput({
-        observations: [...replacing("o2_status", null).filter((o) => o.parameter !== "spo2"), quantity("spo2", 95, "%")],
+        observations: [
+          ...replacing("o2_status", null).filter((o) => o.parameter !== "spo2"),
+          quantity("spo2", 95, "%"),
+        ],
         spo2ScaleAssignments: scale2Order,
       }),
     );
@@ -218,7 +234,9 @@ describe("spec §3.3 — Escala 2 de SpO2 sob governança de ordem clínica", ()
     const record = evaluateNews2(
       evaluationInput({
         observations: [
-          ...replacing("o2_status", coded("o2_status", "oxygen")).filter((o) => o.parameter !== "spo2"),
+          ...replacing("o2_status", coded("o2_status", "oxygen")).filter(
+            (o) => o.parameter !== "spo2",
+          ),
           quantity("spo2", 93.5, "%"),
         ],
         spo2ScaleAssignments: scale2Order,
@@ -233,7 +251,9 @@ describe("spec §3.3 — Escala 2 de SpO2 sob governança de ordem clínica", ()
     const record = evaluateNews2(
       evaluationInput({
         observations: [
-          ...replacing("o2_status", coded("o2_status", "oxygen")).filter((o) => o.parameter !== "spo2"),
+          ...replacing("o2_status", coded("o2_status", "oxygen")).filter(
+            (o) => o.parameter !== "spo2",
+          ),
           quantity("spo2", 95, "%"),
         ],
         spo2ScaleAssignments: scale2Order,
@@ -265,7 +285,9 @@ describe("spec §3.3 — Escala 2 de SpO2 sob governança de ordem clínica", ()
       const record = evaluateNews2(
         evaluationInput({
           observations: [
-            ...replacing("o2_status", coded("o2_status", "oxygen")).filter((o) => o.parameter !== "spo2"),
+            ...replacing("o2_status", coded("o2_status", "oxygen")).filter(
+              (o) => o.parameter !== "spo2",
+            ),
             quantity("spo2", value, "%"),
           ],
           spo2ScaleAssignments: scale2Order,
@@ -358,7 +380,10 @@ describe("N-10 — duplicatas conflitantes, tolerância de dispositivo e pior va
   it("conflito além da tolerância é detectado mesmo com os valores entregues em ordem DECRESCENTE", () => {
     const record = evaluateNews2(
       evaluationInput({
-        observations: replacing("pulse", [quantity("pulse", 100, "/min"), quantity("pulse", 60, "/min")]),
+        observations: replacing("pulse", [
+          quantity("pulse", 100, "/min"),
+          quantity("pulse", 60, "/min"),
+        ]),
       }),
     );
     expect(record.status).toBe("invalid");
@@ -370,13 +395,20 @@ describe("N-10 — duplicatas conflitantes, tolerância de dispositivo e pior va
   it("dispersão EXATAMENTE igual à tolerância ainda está DENTRO dela (fronteira inclusiva)", () => {
     const record = evaluateNews2(
       evaluationInput({
-        observations: replacing("pulse", [quantity("pulse", 88, "/min"), quantity("pulse", 93, "/min")]),
+        observations: replacing("pulse", [
+          quantity("pulse", 88, "/min"),
+          quantity("pulse", 93, "/min"),
+        ]),
       }),
     );
     expect(record.status).toBe("valid");
     const pulse = contributionOf(record, "pulse");
     expect(pulse.score).toBe(1);
-    expect(pulse.conflictResolution).toEqual({ candidates: [88, 93], chosenValue: 93, toleranceApplied: 5 });
+    expect(pulse.conflictResolution).toEqual({
+      candidates: [88, 93],
+      chosenValue: 93,
+      toleranceApplied: 5,
+    });
   });
 
   it("o desempate do pior valor usa a resolução REAL do parâmetro (T em 0,1 °C, não em graus inteiros)", () => {
@@ -397,7 +429,10 @@ describe("N-10 — duplicatas conflitantes, tolerância de dispositivo e pior va
   it("empate de pontuação entre candidatos resolve pelo MENOR valor, com meio-passo avaliado por banda", () => {
     const record = evaluateNews2(
       evaluationInput({
-        observations: replacing("pulse", [quantity("pulse", 90.5, "/min"), quantity("pulse", 91, "/min")]),
+        observations: replacing("pulse", [
+          quantity("pulse", 90.5, "/min"),
+          quantity("pulse", 91, "/min"),
+        ]),
       }),
     );
     const pulse = contributionOf(record, "pulse");
@@ -410,11 +445,15 @@ describe("N-10 — duplicatas conflitantes, tolerância de dispositivo e pior va
     const record = evaluateNews2(
       evaluationInput({
         observations: [
-          ...replacing("o2_status", coded("o2_status", "oxygen")).filter((o) => o.parameter !== "spo2"),
+          ...replacing("o2_status", coded("o2_status", "oxygen")).filter(
+            (o) => o.parameter !== "spo2",
+          ),
           quantity("spo2", 95, "%"),
           quantity("spo2", 97, "%"),
         ],
-        spo2ScaleAssignments: [{ scale: "scale2", orderedBy: "SYNTH-medico-01", orderedAt: before(120) }],
+        spo2ScaleAssignments: [
+          { scale: "scale2", orderedBy: "SYNTH-medico-01", orderedAt: before(120) },
+        ],
       }),
     );
     const spo2 = contributionOf(record, "spo2");
@@ -430,7 +469,9 @@ describe("N-10 — duplicatas conflitantes, tolerância de dispositivo e pior va
           quantity("spo2", 95, "%"),
           quantity("spo2", 97, "%"),
         ],
-        spo2ScaleAssignments: [{ scale: "scale2", orderedBy: "SYNTH-medico-01", orderedAt: before(120) }],
+        spo2ScaleAssignments: [
+          { scale: "scale2", orderedBy: "SYNTH-medico-01", orderedAt: before(120) },
+        ],
       }),
     );
     const spo2 = contributionOf(record, "spo2");
@@ -458,7 +499,10 @@ describe("N-10 — duplicatas conflitantes, tolerância de dispositivo e pior va
   it("estado de O2 simultâneo contraditório é conflito real (nunca se escolhe 'ar' às cegas)", () => {
     const record = evaluateNews2(
       evaluationInput({
-        observations: replacing("o2_status", [coded("o2_status", "oxygen"), coded("o2_status", "air")]),
+        observations: replacing("o2_status", [
+          coded("o2_status", "oxygen"),
+          coded("o2_status", "air"),
+        ]),
       }),
     );
     expect(record.status).toBe("invalid");
@@ -475,7 +519,9 @@ describe("N-10 — duplicatas conflitantes, tolerância de dispositivo e pior va
 describe("spec §5.2 — integridade de insumo, sempre fail-closed e sempre declarada", () => {
   it("consciência entregue como quantidade é inmapeável (sem mapeamento GCS→ACVPU em 0.2.0)", () => {
     const record = evaluateNews2(
-      evaluationInput({ observations: replacing("consciousness", quantity("consciousness", 15, "{score}")) }),
+      evaluationInput({
+        observations: replacing("consciousness", quantity("consciousness", 15, "{score}")),
+      }),
     );
     expect(record.status).toBe("invalid");
     const consciousness = contributionOf(record, "consciousness");
@@ -487,7 +533,9 @@ describe("spec §5.2 — integridade de insumo, sempre fail-closed e sempre decl
 
   it("token ACVPU fora do conjunto é inválido — NUNCA 0 e NUNCA 3 (defeitos legados D-7/D-8)", () => {
     const record = evaluateNews2(
-      evaluationInput({ observations: replacing("consciousness", coded("consciousness", "a", 10, "nao_sedado")) }),
+      evaluationInput({
+        observations: replacing("consciousness", coded("consciousness", "a", 10, "nao_sedado")),
+      }),
     );
     expect(record.status).toBe("invalid");
     const consciousness = contributionOf(record, "consciousness");
@@ -550,7 +598,9 @@ describe("spec §5.2 — integridade de insumo, sempre fail-closed e sempre decl
   });
 
   it("parâmetro numérico entregue como código é inmapeável", () => {
-    const record = evaluateNews2(evaluationInput({ observations: replacing("rr", coded("rr", "normal")) }));
+    const record = evaluateNews2(
+      evaluationInput({ observations: replacing("rr", coded("rr", "normal")) }),
+    );
     expect(record.status).toBe("invalid");
     const rr = contributionOf(record, "rr");
     expect(rr.reason).toBe("unmappable_code:rr");
@@ -560,7 +610,9 @@ describe("spec §5.2 — integridade de insumo, sempre fail-closed e sempre decl
   });
 
   it("unidade fora da UCUM normativa é inválida — insumo nunca é descartado silenciosamente", () => {
-    const record = evaluateNews2(evaluationInput({ observations: replacing("rr", quantity("rr", 16, "irpm")) }));
+    const record = evaluateNews2(
+      evaluationInput({ observations: replacing("rr", quantity("rr", 16, "irpm")) }),
+    );
     expect(contributionOf(record, "rr").explanation).toBe(
       'frequência respiratória (FR): unidade "irpm" inmapeável (UCUM normativa: "/min"); insumo nunca é descartado silenciosamente.',
     );
@@ -568,18 +620,24 @@ describe("spec §5.2 — integridade de insumo, sempre fail-closed e sempre decl
 
   it("valor não finito é inválido — NaN não escapa pela checagem de faixa", () => {
     for (const valor of [Number.NaN, Number.POSITIVE_INFINITY]) {
-      const record = evaluateNews2(evaluationInput({ observations: replacing("rr", quantity("rr", valor, "/min")) }));
+      const record = evaluateNews2(
+        evaluationInput({ observations: replacing("rr", quantity("rr", valor, "/min")) }),
+      );
       expect(record.status, `FR = ${valor}`).toBe("invalid");
       expect(contributionOf(record, "rr").reason).toBe("implausible_value:rr");
     }
     const comNaN = evaluateNews2(
       evaluationInput({ observations: replacing("rr", quantity("rr", Number.NaN, "/min")) }),
     );
-    expect(contributionOf(comNaN, "rr").explanation).toBe("frequência respiratória (FR): valor não finito.");
+    expect(contributionOf(comNaN, "rr").explanation).toBe(
+      "frequência respiratória (FR): valor não finito.",
+    );
   });
 
   it("valor fora da faixa plausível é inválido, com a faixa citada no texto (N-9)", () => {
-    const record = evaluateNews2(evaluationInput({ observations: replacing("rr", quantity("rr", 200, "/min")) }));
+    const record = evaluateNews2(
+      evaluationInput({ observations: replacing("rr", quantity("rr", 200, "/min")) }),
+    );
     expect(contributionOf(record, "rr").explanation).toBe(
       "frequência respiratória (FR): valor 200 fora da faixa plausível 0–80 — fail-closed em implausível (N-9).",
     );
@@ -587,7 +645,9 @@ describe("spec §5.2 — integridade de insumo, sempre fail-closed e sempre decl
 
   it("os EXTREMOS da faixa plausível são aceitos (fronteira inclusiva; FR 0 e 80 pontuam 3)", () => {
     for (const valor of [0, 80]) {
-      const record = evaluateNews2(evaluationInput({ observations: replacing("rr", quantity("rr", valor, "/min")) }));
+      const record = evaluateNews2(
+        evaluationInput({ observations: replacing("rr", quantity("rr", valor, "/min")) }),
+      );
       expect(record.status, `FR = ${valor}`).toBe("valid");
       expect(contributionOf(record, "rr").score).toBe(3);
     }
@@ -646,13 +706,17 @@ describe("spec §5.2 — integridade de insumo, sempre fail-closed e sempre decl
 
 describe("spec §2.1 — janelas de atualidade e horizontes de expiração (fronteiras)", () => {
   it("insumo com idade EXATAMENTE igual à janela permanece dentro dela (borda inclusiva)", () => {
-    const record = evaluateNews2(evaluationInput({ observations: replacing("rr", quantity("rr", 16, "/min", 60)) }));
+    const record = evaluateNews2(
+      evaluationInput({ observations: replacing("rr", quantity("rr", 16, "/min", 60)) }),
+    );
     expect(record.status).toBe("valid");
     expect(contributionOf(record, "rr").ageMinutes).toBe(60);
   });
 
   it("idade EXATAMENTE igual ao horizonte de expiração ainda é `stale`, nunca `expired`", () => {
-    const record = evaluateNews2(evaluationInput({ observations: replacing("rr", quantity("rr", 16, "/min", 480)) }));
+    const record = evaluateNews2(
+      evaluationInput({ observations: replacing("rr", quantity("rr", 16, "/min", 480)) }),
+    );
     expect(record.status).toBe("not_evaluated");
     expect(record.reasons).toEqual(["stale_input:rr"]);
     expect(record.staleInputs).toEqual(["rr"]);
@@ -663,7 +727,9 @@ describe("spec §2.1 — janelas de atualidade e horizontes de expiração (fron
   });
 
   it("um minuto além do horizonte é `expired`, com o texto de não-conclusão", () => {
-    const record = evaluateNews2(evaluationInput({ observations: replacing("rr", quantity("rr", 16, "/min", 481)) }));
+    const record = evaluateNews2(
+      evaluationInput({ observations: replacing("rr", quantity("rr", 16, "/min", 481)) }),
+    );
     expect(record.expiredInputs).toEqual(["rr"]);
     expect(contributionOf(record, "rr").explanation).toBe(
       "frequência respiratória (FR) além do horizonte de expiração (481 min > 480 min) — conclusão arbitrariamente velha não é conclusão degradada; é não-conclusão.",
@@ -672,7 +738,9 @@ describe("spec §2.1 — janelas de atualidade e horizontes de expiração (fron
 
   it("parâmetro CODIFICADO também envelhece: consciência fora da janela de 4 h é `stale` e mantém o tempo clínico", () => {
     const record = evaluateNews2(
-      evaluationInput({ observations: replacing("consciousness", coded("consciousness", "A", 300, "nao_sedado")) }),
+      evaluationInput({
+        observations: replacing("consciousness", coded("consciousness", "A", 300, "nao_sedado")),
+      }),
     );
     const consciousness = contributionOf(record, "consciousness");
     expect(consciousness.status).toBe("stale");
@@ -690,7 +758,10 @@ describe("spec §2.1 — janelas de atualidade e horizontes de expiração (fron
 describe("ADR-0027 — gate populacional fail-closed", () => {
   it("idade desconhecida: registro não pontuável íntegro, com texto e anotações exatos", () => {
     const record = evaluateNews2(
-      evaluationInput({ age: { kind: "unknown" }, lastValidEvaluationTime: "2026-08-16T10:00:00.000Z" }),
+      evaluationInput({
+        age: { kind: "unknown" },
+        lastValidEvaluationTime: "2026-08-16T10:00:00.000Z",
+      }),
     );
     expect(record.status).toBe("not_evaluated");
     expect(record.reasons).toEqual(["unknown_age"]);
@@ -754,7 +825,10 @@ describe("ADR-0027 — gate populacional fail-closed", () => {
 
   it("instante de avaliação inutilizável curto-circuita ANTES do gate, sem inventar população", () => {
     const record = evaluateNews2(
-      evaluationInput({ evaluationTime: "não-é-uma-data", lastValidEvaluationTime: "2026-08-16T10:00:00.000Z" }),
+      evaluationInput({
+        evaluationTime: "não-é-uma-data",
+        lastValidEvaluationTime: "2026-08-16T10:00:00.000Z",
+      }),
     );
     expect(record.status).toBe("not_evaluated");
     expect(record.reasons).toEqual(["unspecified_condition"]);
@@ -772,7 +846,9 @@ describe("ADR-0027 — gate populacional fail-closed", () => {
     expect(record.escalationSuppressionReason).toBe(
       "escalonamento suprimido — ordem de limitação terapêutica documentada",
     );
-    expect(record.annotations).toContain("escalonamento suprimido — ordem de limitação terapêutica documentada");
+    expect(record.annotations).toContain(
+      "escalonamento suprimido — ordem de limitação terapêutica documentada",
+    );
   });
 
   it("evaluatePopulationGate é total: as quatro saídas possíveis são explícitas", () => {
@@ -801,20 +877,29 @@ describe("ADR-0027 — gate populacional fail-closed", () => {
 
 describe("GDEC-0007 — anotações obrigatórias, sempre visíveis quando aplicáveis", () => {
   it.each([
-    ["sedado", "sedado — interpretar consciência como confundida, nunca como válida sem qualificação"],
+    [
+      "sedado",
+      "sedado — interpretar consciência como confundida, nunca como válida sem qualificação",
+    ],
     ["nao_sedado", "não sedado"],
   ] as const)("estado de sedação '%s' é anotado com o texto exato (N-4)", (estado, texto) => {
     const record = evaluateNews2(
-      evaluationInput({ observations: replacing("consciousness", coded("consciousness", "A", 10, estado)) }),
+      evaluationInput({
+        observations: replacing("consciousness", coded("consciousness", "A", 10, estado)),
+      }),
     );
-    expect(record.annotations).toContain(`estado de sedação do insumo de consciência: ${texto} (N-4)`);
+    expect(record.annotations).toContain(
+      `estado de sedação do insumo de consciência: ${texto} (N-4)`,
+    );
   });
 
   it("estado de sedação ausente é anotado como 'não informado' — nunca lido como válido sem qualificação", () => {
     const record = evaluateNews2(
       evaluationInput({ observations: replacing("consciousness", coded("consciousness", "A")) }),
     );
-    expect(record.annotations).toContain("estado de sedação do insumo de consciência: não informado (N-4)");
+    expect(record.annotations).toContain(
+      "estado de sedação do insumo de consciência: não informado (N-4)",
+    );
   });
 
   it("sem ordem de limitação terapêutica, NADA é suprimido e nenhuma razão é inventada", () => {
@@ -836,7 +921,9 @@ describe("GDEC-0007 — anotações obrigatórias, sempre visíveis quando aplic
     expect(record.escalationSuppressionReason).toBe(
       "escalonamento suprimido — ordem de limitação terapêutica documentada",
     );
-    expect(record.annotations).toContain("escalonamento suprimido — ordem de limitação terapêutica documentada");
+    expect(record.annotations).toContain(
+      "escalonamento suprimido — ordem de limitação terapêutica documentada",
+    );
   });
 });
 
@@ -868,13 +955,17 @@ describe("spec §7 — texto de explicação agregada em pt-BR", () => {
 
     // Parâmetro vermelho isolado com total < 5 ⇒ baixo-médio (INV-B).
     const baixoMedio = evaluateNews2(
-      evaluationInput({ observations: replacing("consciousness", coded("consciousness", "V", 10, "nao_sedado")) }),
+      evaluationInput({
+        observations: replacing("consciousness", coded("consciousness", "V", 10, "nao_sedado")),
+      }),
     );
     expect(baixoMedio.redParameter).toBe(true);
     expect(baixoMedio.riskTier).toBe("low_medium");
     expect(baixoMedio.fires).toBe(true);
     expect(
-      baixoMedio.explanation.startsWith("NEWS2 total 3 — risco baixo-médio (parâmetro vermelho isolado)."),
+      baixoMedio.explanation.startsWith(
+        "NEWS2 total 3 — risco baixo-médio (parâmetro vermelho isolado).",
+      ),
     ).toBe(true);
 
     // Total 5 sem nenhum parâmetro vermelho ⇒ médio.
@@ -946,7 +1037,9 @@ describe("spec §7 — texto de explicação agregada em pt-BR", () => {
 
   it("sem última avaliação válida conhecida, o texto diz 'nenhuma' — nunca omite a linha", () => {
     const record = evaluateNews2(evaluationInput({ observations: replacing("rr", null) }));
-    expect(record.explanation).toContain("Última avaliação válida: nenhuma. Regra RULE-NEWS2 v0.2.0.");
+    expect(record.explanation).toContain(
+      "Última avaliação válida: nenhuma. Regra RULE-NEWS2 v0.2.0.",
+    );
   });
 });
 
@@ -964,16 +1057,21 @@ describe("spec §5.1 — contribuição por parâmetro sempre auditável", () =>
     expect(consciousness.explanation).toBe("nível de consciência (ACVPU): alerta (A) → 0 ponto.");
   });
 
-  it.each(["C", "V", "P", "U"] as const)("token CVPU '%s' pontua 3 com o texto de banda vermelha", (token) => {
-    const record = evaluateNews2(
-      evaluationInput({ observations: replacing("consciousness", coded("consciousness", token, 10, "nao_sedado")) }),
-    );
-    const consciousness = contributionOf(record, "consciousness");
-    expect(consciousness.score).toBe(3);
-    expect(consciousness.explanation).toBe(
-      `nível de consciência (ACVPU): token ${token} → 3 pontos (banda vermelha CVPU; nova confusão pontua 3 — RCP Recs 29–30).`,
-    );
-  });
+  it.each(["C", "V", "P", "U"] as const)(
+    "token CVPU '%s' pontua 3 com o texto de banda vermelha",
+    (token) => {
+      const record = evaluateNews2(
+        evaluationInput({
+          observations: replacing("consciousness", coded("consciousness", token, 10, "nao_sedado")),
+        }),
+      );
+      const consciousness = contributionOf(record, "consciousness");
+      expect(consciousness.score).toBe(3);
+      expect(consciousness.explanation).toBe(
+        `nível de consciência (ACVPU): token ${token} → 3 pontos (banda vermelha CVPU; nova confusão pontua 3 — RCP Recs 29–30).`,
+      );
+    },
+  );
 
   it("ar ambiente documentado: valor codificado, tempo clínico e texto de não-coerção", () => {
     const record = evaluateNews2(evaluationInput());
@@ -1104,32 +1202,34 @@ describe("spec §2.1 — cada linha das tabelas de janela e de faixa plausível 
     ["temperature", 240],
   ];
 
-  it.each(janelas)("um minuto além da janela de %s torna o insumo `stale` e a avaliação não-conclusiva", (
-    parameter,
-    windowMinutes,
-  ) => {
-    const idade = windowMinutes + 1;
-    const observacao =
-      parameter === "o2_status"
-        ? coded("o2_status", "air", idade)
-        : parameter === "consciousness"
-          ? coded("consciousness", "A", idade, "nao_sedado")
-          : quantity(
-              parameter,
-              { rr: 16, spo2: 97, sbp: 120, pulse: 70, temperature: 37.0 }[
-                parameter as "rr" | "spo2" | "sbp" | "pulse" | "temperature"
-              ],
-              { rr: "/min", spo2: "%", sbp: "mm[Hg]", pulse: "/min", temperature: "Cel" }[
-                parameter as "rr" | "spo2" | "sbp" | "pulse" | "temperature"
-              ],
-              idade,
-            );
-    const record = evaluateNews2(evaluationInput({ observations: replacing(parameter, observacao) }));
-    expect(record.status).toBe("not_evaluated");
-    expect(record.staleInputs).toEqual([parameter]);
-    expect(record.reasons).toEqual([`stale_input:${parameter}`]);
-    expect(contributionOf(record, parameter).ageMinutes).toBe(idade);
-  });
+  it.each(janelas)(
+    "um minuto além da janela de %s torna o insumo `stale` e a avaliação não-conclusiva",
+    (parameter, windowMinutes) => {
+      const idade = windowMinutes + 1;
+      const observacao =
+        parameter === "o2_status"
+          ? coded("o2_status", "air", idade)
+          : parameter === "consciousness"
+            ? coded("consciousness", "A", idade, "nao_sedado")
+            : quantity(
+                parameter,
+                { rr: 16, spo2: 97, sbp: 120, pulse: 70, temperature: 37.0 }[
+                  parameter as "rr" | "spo2" | "sbp" | "pulse" | "temperature"
+                ],
+                { rr: "/min", spo2: "%", sbp: "mm[Hg]", pulse: "/min", temperature: "Cel" }[
+                  parameter as "rr" | "spo2" | "sbp" | "pulse" | "temperature"
+                ],
+                idade,
+              );
+      const record = evaluateNews2(
+        evaluationInput({ observations: replacing(parameter, observacao) }),
+      );
+      expect(record.status).toBe("not_evaluated");
+      expect(record.staleInputs).toEqual([parameter]);
+      expect(record.reasons).toEqual([`stale_input:${parameter}`]);
+      expect(contributionOf(record, parameter).ageMinutes).toBe(idade);
+    },
+  );
 
   const faixas: readonly (readonly [News2ParameterId, string, number, number])[] = [
     ["rr", "/min", -1, 81],
@@ -1194,7 +1294,9 @@ describe("fechamento de vãos residuais da análise de mutação", () => {
     const record = evaluateNews2(
       evaluationInput({
         observations: [
-          ...replacing("o2_status", coded("o2_status", "oxygen")).filter((o) => o.parameter !== "spo2"),
+          ...replacing("o2_status", coded("o2_status", "oxygen")).filter(
+            (o) => o.parameter !== "spo2",
+          ),
           quantity("spo2", 95, "%"),
           quantity("spo2", 97, "%"),
         ],
@@ -1214,7 +1316,9 @@ describe("fechamento de vãos residuais da análise de mutação", () => {
           quantity("spo2", 92, "%"),
           quantity("spo2", 94, "%"),
         ],
-        spo2ScaleAssignments: [{ scale: "scale2", orderedBy: "SYNTH-medico-01", orderedAt: before(120) }],
+        spo2ScaleAssignments: [
+          { scale: "scale2", orderedBy: "SYNTH-medico-01", orderedAt: before(120) },
+        ],
       }),
     );
     const spo2 = contributionOf(record, "spo2");
@@ -1229,7 +1333,9 @@ describe("fechamento de vãos residuais da análise de mutação", () => {
           ...replacing("o2_status", null).filter((o) => o.parameter !== "spo2"),
           quantity("spo2", 92.5, "%"),
         ],
-        spo2ScaleAssignments: [{ scale: "scale2", orderedBy: "SYNTH-medico-01", orderedAt: before(120) }],
+        spo2ScaleAssignments: [
+          { scale: "scale2", orderedBy: "SYNTH-medico-01", orderedAt: before(120) },
+        ],
       }),
     );
     const spo2 = contributionOf(record, "spo2");
@@ -1241,10 +1347,14 @@ describe("fechamento de vãos residuais da análise de mutação", () => {
     const record = evaluateNews2(
       evaluationInput({
         observations: [
-          ...replacing("o2_status", coded("o2_status", "oxygen")).filter((o) => o.parameter !== "spo2"),
+          ...replacing("o2_status", coded("o2_status", "oxygen")).filter(
+            (o) => o.parameter !== "spo2",
+          ),
           quantity("spo2", 83.5, "%"),
         ],
-        spo2ScaleAssignments: [{ scale: "scale2", orderedBy: "SYNTH-medico-01", orderedAt: before(120) }],
+        spo2ScaleAssignments: [
+          { scale: "scale2", orderedBy: "SYNTH-medico-01", orderedAt: before(120) },
+        ],
       }),
     );
     const spo2 = contributionOf(record, "spo2");
@@ -1264,7 +1374,9 @@ describe("fechamento de vãos residuais da análise de mutação", () => {
   });
 
   it("registro inválido sem histórico conhecido também declara 'nenhuma' última avaliação válida", () => {
-    const record = evaluateNews2(evaluationInput({ observations: replacing("rr", quantity("rr", 200, "/min")) }));
+    const record = evaluateNews2(
+      evaluationInput({ observations: replacing("rr", quantity("rr", 200, "/min")) }),
+    );
     expect(record.explanation).toBe(
       "NEWS2 inválido — falha de integridade de dado detectada (implausible_value:rr). " +
         "Não existe pontuação para este paciente neste momento; a ausência de pontuação não significa normalidade. " +

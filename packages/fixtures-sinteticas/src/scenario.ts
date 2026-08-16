@@ -21,7 +21,11 @@
  * o modelo de domínio — a tradução para os tipos de `@intensicare/dominio`
  * (com `TemporalValue` explícito) acontece exclusivamente em `load.ts`.
  */
-import { SYNTHETIC_MARKER, generateSyntheticPsr, generateSyntheticTenantId } from "./synthetic-identifiers.js";
+import {
+  generateSyntheticPsr,
+  generateSyntheticTenantId,
+  SYNTHETIC_MARKER,
+} from "./synthetic-identifiers.js";
 
 export interface SyntheticOrganization {
   readonly id: string;
@@ -115,7 +119,10 @@ export function buildG7SyntheticScenario(): SyntheticG7Scenario {
   const organizationId = generateSyntheticTenantId(TENANT_SUFFIX);
   const careUnitId = `${organizationId}-UTI-01`;
 
-  const organization: SyntheticOrganization = { id: organizationId, name: "Organização Sintética G7" };
+  const organization: SyntheticOrganization = {
+    id: organizationId,
+    name: "Organização Sintética G7",
+  };
   const careUnit: SyntheticCareUnit = { id: careUnitId, organizationId, name: "UTI Sintética G7" };
 
   const beds: SyntheticBed[] = [1, 2, 3, 4].map((n) => ({
@@ -175,11 +182,46 @@ export function buildG7SyntheticScenario(): SyntheticG7Scenario {
   // SYNTH-P001 — estável, um único ponto dentro de faixa fisiológica normal
   // (exemplo didático; nenhuma alegação clínica).
   const p001Vitals: readonly SyntheticVitalSignObservation[] = [
-    observation(encounterP001.id, patientP001.subjectRef, SYNTHETIC_CONCEPTS.respiratoryRate, 16, "rpm", "2026-08-16T10:00:00.000Z"),
-    observation(encounterP001.id, patientP001.subjectRef, SYNTHETIC_CONCEPTS.oxygenSaturation, 98, "%", "2026-08-16T10:00:00.000Z"),
-    observation(encounterP001.id, patientP001.subjectRef, SYNTHETIC_CONCEPTS.heartRate, 78, "bpm", "2026-08-16T10:00:00.000Z"),
-    observation(encounterP001.id, patientP001.subjectRef, SYNTHETIC_CONCEPTS.systolicBloodPressure, 118, "mmHg", "2026-08-16T10:00:00.000Z"),
-    observation(encounterP001.id, patientP001.subjectRef, SYNTHETIC_CONCEPTS.temperature, 36.8, "Cel", "2026-08-16T10:00:00.000Z"),
+    observation(
+      encounterP001.id,
+      patientP001.subjectRef,
+      SYNTHETIC_CONCEPTS.respiratoryRate,
+      16,
+      "rpm",
+      "2026-08-16T10:00:00.000Z",
+    ),
+    observation(
+      encounterP001.id,
+      patientP001.subjectRef,
+      SYNTHETIC_CONCEPTS.oxygenSaturation,
+      98,
+      "%",
+      "2026-08-16T10:00:00.000Z",
+    ),
+    observation(
+      encounterP001.id,
+      patientP001.subjectRef,
+      SYNTHETIC_CONCEPTS.heartRate,
+      78,
+      "bpm",
+      "2026-08-16T10:00:00.000Z",
+    ),
+    observation(
+      encounterP001.id,
+      patientP001.subjectRef,
+      SYNTHETIC_CONCEPTS.systolicBloodPressure,
+      118,
+      "mmHg",
+      "2026-08-16T10:00:00.000Z",
+    ),
+    observation(
+      encounterP001.id,
+      patientP001.subjectRef,
+      SYNTHETIC_CONCEPTS.temperature,
+      36.8,
+      "Cel",
+      "2026-08-16T10:00:00.000Z",
+    ),
   ];
 
   // SYNTH-P002 — três instantes em deterioração progressiva (exemplo
@@ -191,23 +233,128 @@ export function buildG7SyntheticScenario(): SyntheticG7Scenario {
   const p002T2 = "2026-08-16T11:00:00.000Z";
   const p002Vitals: readonly SyntheticVitalSignObservation[] = [
     // T0 — levemente alterado.
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.respiratoryRate, 20, "rpm", p002T0),
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.oxygenSaturation, 95, "%", p002T0),
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.heartRate, 92, "bpm", p002T0),
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.systolicBloodPressure, 112, "mmHg", p002T0),
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.temperature, 37.0, "Cel", p002T0),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.respiratoryRate,
+      20,
+      "rpm",
+      p002T0,
+    ),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.oxygenSaturation,
+      95,
+      "%",
+      p002T0,
+    ),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.heartRate,
+      92,
+      "bpm",
+      p002T0,
+    ),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.systolicBloodPressure,
+      112,
+      "mmHg",
+      p002T0,
+    ),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.temperature,
+      37.0,
+      "Cel",
+      p002T0,
+    ),
     // T1 — piorando.
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.respiratoryRate, 24, "rpm", p002T1),
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.oxygenSaturation, 91, "%", p002T1),
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.heartRate, 108, "bpm", p002T1),
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.systolicBloodPressure, 100, "mmHg", p002T1),
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.temperature, 37.8, "Cel", p002T1),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.respiratoryRate,
+      24,
+      "rpm",
+      p002T1,
+    ),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.oxygenSaturation,
+      91,
+      "%",
+      p002T1,
+    ),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.heartRate,
+      108,
+      "bpm",
+      p002T1,
+    ),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.systolicBloodPressure,
+      100,
+      "mmHg",
+      p002T1,
+    ),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.temperature,
+      37.8,
+      "Cel",
+      p002T1,
+    ),
     // T2 — cruza a faixa de alto risco nos parâmetros abaixo (didático).
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.respiratoryRate, 26, "rpm", p002T2),
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.oxygenSaturation, 89, "%", p002T2),
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.heartRate, 122, "bpm", p002T2),
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.systolicBloodPressure, 92, "mmHg", p002T2),
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.temperature, 38.3, "Cel", p002T2),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.respiratoryRate,
+      26,
+      "rpm",
+      p002T2,
+    ),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.oxygenSaturation,
+      89,
+      "%",
+      p002T2,
+    ),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.heartRate,
+      122,
+      "bpm",
+      p002T2,
+    ),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.systolicBloodPressure,
+      92,
+      "mmHg",
+      p002T2,
+    ),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.temperature,
+      38.3,
+      "Cel",
+      p002T2,
+    ),
   ];
 
   // T3 — caso de insumo ausente: SpO2 não chega da fonte, mas os demais
@@ -216,10 +363,38 @@ export function buildG7SyntheticScenario(): SyntheticG7Scenario {
   // um escore com um valor inventado.
   const p002T3 = "2026-08-16T11:30:00.000Z";
   const otherObservationsAtT3: readonly SyntheticVitalSignObservation[] = [
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.respiratoryRate, 27, "rpm", p002T3),
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.heartRate, 128, "bpm", p002T3),
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.systolicBloodPressure, 90, "mmHg", p002T3),
-    observation(encounterP002.id, patientP002.subjectRef, SYNTHETIC_CONCEPTS.temperature, 38.5, "Cel", p002T3),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.respiratoryRate,
+      27,
+      "rpm",
+      p002T3,
+    ),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.heartRate,
+      128,
+      "bpm",
+      p002T3,
+    ),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.systolicBloodPressure,
+      90,
+      "mmHg",
+      p002T3,
+    ),
+    observation(
+      encounterP002.id,
+      patientP002.subjectRef,
+      SYNTHETIC_CONCEPTS.temperature,
+      38.5,
+      "Cel",
+      p002T3,
+    ),
   ];
 
   const missingInputCase: SyntheticMissingInputCase = {

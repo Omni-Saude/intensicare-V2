@@ -35,12 +35,11 @@ import {
   type ConflictResolutionRecord,
   type EvaluationRecord,
   type EvaluationStatus,
+  NEWS2_PARAMETER_ORDER,
   type News2EvaluationInput,
   type News2ParameterId,
-  NEWS2_PARAMETER_ORDER,
   type O2StatusCode,
   type ObservationInput,
-  type ObservationValue,
   type ParameterContribution,
   type ParameterStatus,
   type PopulationGateResult,
@@ -317,7 +316,13 @@ function runParameterPipeline(
   for (const obs of usable) {
     const integrity = checkIntegrity(parameter, obs);
     if (integrity !== null) {
-      return { failure: integrity, resolved: null, codeToken: null, observationUsed: null, ageMinutes: null };
+      return {
+        failure: integrity,
+        resolved: null,
+        codeToken: null,
+        observationUsed: null,
+        ageMinutes: null,
+      };
     }
   }
 
@@ -363,7 +368,13 @@ function runParameterPipeline(
       };
     }
     if (freshnessFailure !== null) {
-      return { failure: freshnessFailure, resolved: null, codeToken: null, observationUsed: first, ageMinutes };
+      return {
+        failure: freshnessFailure,
+        resolved: null,
+        codeToken: null,
+        observationUsed: first,
+        ageMinutes,
+      };
     }
     return {
       failure: null,
@@ -375,14 +386,17 @@ function runParameterPipeline(
   }
 
   // Parâmetros numéricos: deduplicação exata + tolerância de dispositivo (N-10).
-  const values = latestGroup.map((o) => (o.value as { kind: "quantity"; value: number; unit: string }).value);
+  const values = latestGroup.map(
+    (o) => (o.value as { kind: "quantity"; value: number; unit: string }).value,
+  );
   const distinctValues = [...new Set(values)].sort((a, b) => a - b);
   let conflictResolution: ConflictResolutionRecord | null = null;
   let chosenValue = distinctValues[0] as number;
 
   if (distinctValues.length > 1) {
     const tolerance = CONFLICT_TOLERANCE[parameter] ?? 0;
-    const spread = (distinctValues[distinctValues.length - 1] as number) - (distinctValues[0] as number);
+    const spread =
+      (distinctValues[distinctValues.length - 1] as number) - (distinctValues[0] as number);
     if (spread > tolerance + EPS) {
       return {
         failure: failure(
@@ -406,7 +420,13 @@ function runParameterPipeline(
   }
 
   if (freshnessFailure !== null) {
-    return { failure: freshnessFailure, resolved: null, codeToken: null, observationUsed: first, ageMinutes };
+    return {
+      failure: freshnessFailure,
+      resolved: null,
+      codeToken: null,
+      observationUsed: first,
+      ageMinutes,
+    };
   }
 
   return {
@@ -424,7 +444,10 @@ function runParameterPipeline(
 }
 
 /** Verificação de integridade de uma observação individual (INV-C; spec §5.2). */
-function checkIntegrity(parameter: News2ParameterId, obs: ObservationInput): ParameterFailure | null {
+function checkIntegrity(
+  parameter: News2ParameterId,
+  obs: ObservationInput,
+): ParameterFailure | null {
   const label = PARAMETER_LABEL_PT[parameter];
 
   if (parameter === "consciousness") {
@@ -491,14 +514,13 @@ function checkIntegrity(parameter: News2ParameterId, obs: ObservationInput): Par
     );
   }
   if (!Number.isFinite(obs.value.value)) {
-    return failure(
-      "invalid",
-      `implausible_value:${parameter}`,
-      `${label}: valor não finito.`,
-    );
+    return failure("invalid", `implausible_value:${parameter}`, `${label}: valor não finito.`);
   }
   const range = PLAUSIBLE_RANGE[parameter];
-  if (range !== undefined && (obs.value.value < range.min - EPS || obs.value.value > range.max + EPS)) {
+  if (
+    range !== undefined &&
+    (obs.value.value < range.min - EPS || obs.value.value > range.max + EPS)
+  ) {
     return failure(
       "invalid",
       `implausible_value:${parameter}`,
@@ -598,10 +620,17 @@ function bandScoreForChartUnit(parameter: News2ParameterId, chartUnit: number): 
 export function evaluateNews2(input: News2EvaluationInput): EvaluationRecord {
   const evaluationTimeMs = parseIsoTime(input.evaluationTime);
   if (evaluationTimeMs === null) {
-    return buildNonScoringRecord(input, "not_evaluated", ["unspecified_condition"], {
-      passed: false,
-      reason: null,
-    }, [], "instante de avaliação inválido ou ausente");
+    return buildNonScoringRecord(
+      input,
+      "not_evaluated",
+      ["unspecified_condition"],
+      {
+        passed: false,
+        reason: null,
+      },
+      [],
+      "instante de avaliação inválido ou ausente",
+    );
   }
 
   // ---- Gate populacional PRIMEIRO (ADR-0027 Opção A: antes de qualquer lógica de regra).
@@ -624,7 +653,10 @@ export function evaluateNews2(input: News2EvaluationInput): EvaluationRecord {
   const spo2Scale: Spo2Scale = scaleConflict
     ? "scale1" // valor não usado quando em conflito (SpO2 fica inválida); mantido para tipagem
     : (distinctScales[0] ?? "scale1");
-  const scale2Order = !scaleConflict && spo2Scale === "scale2" ? activeAssignments.find((a) => a.scale === "scale2") ?? null : null;
+  const scale2Order =
+    !scaleConflict && spo2Scale === "scale2"
+      ? (activeAssignments.find((a) => a.scale === "scale2") ?? null)
+      : null;
 
   // ---- Pipeline por parâmetro, ordem canônica; o2_status ANTES de spo2 porque a
   // métrica de anormalidade da SpO2 (desempate de tolerância N-10) depende da
@@ -637,7 +669,9 @@ export function evaluateNews2(input: News2EvaluationInput): EvaluationRecord {
 
   const o2Result = pipeline.get("o2_status") as ParameterPipelineResult;
   const o2Code: O2StatusCode | null =
-    o2Result.failure === null && o2Result.codeToken !== null ? (o2Result.codeToken as O2StatusCode) : null;
+    o2Result.failure === null && o2Result.codeToken !== null
+      ? (o2Result.codeToken as O2StatusCode)
+      : null;
 
   const spo2ScoreForMetric = (chartUnit: number): number => {
     if (!scaleConflict && spo2Scale === "scale2") {
@@ -648,7 +682,10 @@ export function evaluateNews2(input: News2EvaluationInput): EvaluationRecord {
   };
   const spo2WorstMetric = (raw: number): number =>
     spo2ScoreForMetric(roundToChartUnits(raw, 1, spo2ScoreForMetric));
-  pipeline.set("spo2", runParameterPipeline("spo2", input.observations, evaluationTimeMs, spo2WorstMetric));
+  pipeline.set(
+    "spo2",
+    runParameterPipeline("spo2", input.observations, evaluationTimeMs, spo2WorstMetric),
+  );
 
   // ---- Contribuições por parâmetro.
   const contributions: ParameterContribution[] = [];
@@ -702,13 +739,7 @@ export function evaluateNews2(input: News2EvaluationInput): EvaluationRecord {
     } else {
       totalScore = (scores as number[]).reduce((a, b) => a + b, 0);
       riskTier =
-        totalScore >= 7
-          ? "high"
-          : totalScore >= 5
-            ? "medium"
-            : redParameter
-              ? "low_medium"
-              : "low";
+        totalScore >= 7 ? "high" : totalScore >= 5 ? "medium" : redParameter ? "low_medium" : "low";
     }
   }
 
@@ -719,7 +750,8 @@ export function evaluateNews2(input: News2EvaluationInput): EvaluationRecord {
   if (input.pregnancy === "not_documented") {
     annotations.push(PREGNANCY_NOT_VERIFIED_ANNOTATION_PT);
   }
-  const consciousnessObs = (pipeline.get("consciousness") as ParameterPipelineResult).observationUsed;
+  const consciousnessObs = (pipeline.get("consciousness") as ParameterPipelineResult)
+    .observationUsed;
   if (consciousnessObs !== null) {
     const sedation = consciousnessObs.sedationState ?? "nao_informado";
     const sedationLabel =
@@ -747,7 +779,9 @@ export function evaluateNews2(input: News2EvaluationInput): EvaluationRecord {
     annotations.push(ESCALATION_SUPPRESSION_REASON_PT);
   }
 
-  const spo2Contribution = contributions.find((c) => c.parameter === "spo2") as ParameterContribution;
+  const spo2Contribution = contributions.find(
+    (c) => c.parameter === "spo2",
+  ) as ParameterContribution;
   const spo2ScaleUsed: Spo2Scale | null =
     spo2Contribution.status === "valid" && spo2Contribution.score !== null ? spo2Scale : null;
 
@@ -788,7 +822,10 @@ export function evaluateNews2(input: News2EvaluationInput): EvaluationRecord {
 }
 
 /** Gate populacional fail-closed (spec §1.2; ADR-0027 A27-1/A27-2). */
-export function evaluatePopulationGate(age: AgeInput, pregnancy: "documented" | "not_documented"): PopulationGateResult {
+export function evaluatePopulationGate(
+  age: AgeInput,
+  pregnancy: "documented" | "not_documented",
+): PopulationGateResult {
   if (age.kind === "unknown" || !Number.isFinite((age as { years?: number }).years ?? Number.NaN)) {
     return { passed: false, reason: "unknown_age" };
   }
@@ -900,7 +937,8 @@ function buildContribution(
       return scoreSpo2Scale1(chartUnit);
     };
     const chartValue = roundToChartUnits(resolved.rawValue, resolution, scoreOf);
-    const score = spo2Scale === "scale2" ? scoreSpo2Scale2(chartValue, o2Code) : scoreSpo2Scale1(chartValue);
+    const score =
+      spo2Scale === "scale2" ? scoreSpo2Scale2(chartValue, o2Code) : scoreSpo2Scale1(chartValue);
     if (score === null) {
       // Escala 2, região >= 93, estado de O2 indeterminável: a SpO2 em si é
       // íntegra; a avaliação agregada já falha por o2_status (insumo obrigatório).
@@ -1058,13 +1096,20 @@ function buildNonScoringRecord(
  * leitura, nunca congelado na escrita. Função pura: o instante de leitura é
  * parâmetro.
  */
-export function reassessNews2AtReadTime(record: EvaluationRecord, readTime: string): ReadTimeReassessment {
+export function reassessNews2AtReadTime(
+  record: EvaluationRecord,
+  readTime: string,
+): ReadTimeReassessment {
   if (record.status !== "valid") {
     return { status: record.status, reasons: [...record.reasons], oldestInputAgeMinutes: null };
   }
   const readMs = parseIsoTime(readTime);
   if (readMs === null) {
-    return { status: "not_evaluated", reasons: ["unspecified_condition"], oldestInputAgeMinutes: null };
+    return {
+      status: "not_evaluated",
+      reasons: ["unspecified_condition"],
+      oldestInputAgeMinutes: null,
+    };
   }
   const expiredReasons: string[] = [];
   const staleReasons: string[] = [];

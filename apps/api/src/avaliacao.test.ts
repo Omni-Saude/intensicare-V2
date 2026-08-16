@@ -4,9 +4,10 @@
  * revisão única SPR-G7-2: a API integrada JAMAIS produz `parcial` para
  * NEWS2 (N-8/GDEC-0007; `parcial` reservado às classes 2+ do ADR-0026).
  */
-import { describe, expect, it } from "vitest";
+
 import { SYNTHETIC_CONCEPTS } from "@intensicare/fixtures-sinteticas";
 import type { ClinicalObservationRow } from "@intensicare/persistencia";
+import { describe, expect, it } from "vitest";
 import {
   canonicalUnitFor,
   evaluateEncounter,

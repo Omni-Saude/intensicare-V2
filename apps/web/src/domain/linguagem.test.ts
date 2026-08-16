@@ -1,4 +1,12 @@
 import { describe, expect, it } from "vitest";
+import type {
+  BandaRisco,
+  EstadoAvaliacao,
+  EstadoCarregamento,
+  EstadoConectividade,
+  EstadoFrescor,
+  EstadoItemTrabalho,
+} from "./estados.js";
 import {
   glifoTom,
   textoAvaliacao,
@@ -8,14 +16,6 @@ import {
   textoFrescor,
   textoItemTrabalho,
 } from "./linguagem.js";
-import type {
-  BandaRisco,
-  EstadoAvaliacao,
-  EstadoCarregamento,
-  EstadoConectividade,
-  EstadoFrescor,
-  EstadoItemTrabalho,
-} from "./estados.js";
 
 const TODOS_CARREGAMENTO: EstadoCarregamento[] = [
   "carregando",
@@ -39,7 +39,13 @@ const TODOS_FRESCOR: EstadoFrescor[] = [
   "corrigido",
   "substituido",
 ];
-const TODOS_AVALIACAO: EstadoAvaliacao[] = ["valida", "parcial", "nao_avaliada", "desatualizada", "invalida"];
+const TODOS_AVALIACAO: EstadoAvaliacao[] = [
+  "valida",
+  "parcial",
+  "nao_avaliada",
+  "desatualizada",
+  "invalida",
+];
 const TODOS_ITEM_TRABALHO: EstadoItemTrabalho[] = [
   "nao_atribuido",
   "atribuido",
@@ -132,7 +138,9 @@ describe("módulo de linguagem — cobertura total (ADR-0021 F1/F4)", () => {
   });
 
   it("P6 (ADR-0029): 'suprimido' é redigido como ato explícito e auditável, não como ausência", () => {
-    expect(textoItemTrabalho("suprimido").texto.toLowerCase()).toMatch(/explícit|auditáve|registrad/);
+    expect(textoItemTrabalho("suprimido").texto.toLowerCase()).toMatch(
+      /explícit|auditáve|registrad/,
+    );
   });
 
   it("P7 (ADR-0029): 'parcial' nunca é redigido como 'quase completo'", () => {

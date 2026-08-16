@@ -1,5 +1,5 @@
-import { glifoTom } from "../domain/linguagem.js";
 import type { Tom } from "../domain/estados.js";
+import { glifoTom } from "../domain/linguagem.js";
 
 interface BadgeTomProps {
   texto: string;

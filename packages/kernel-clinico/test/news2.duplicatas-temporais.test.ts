@@ -16,9 +16,9 @@
  * Dados 100% sintéticos. Nenhuma alegação de efetividade clínica.
  */
 import { describe, expect, it } from "vitest";
+import type { ObservationInput } from "../src/index.js";
 import { evaluateNews2 } from "../src/index.js";
 import { buildVectorInput, EVAL_TIME } from "./suporte.js";
-import type { ObservationInput } from "../src/index.js";
 
 const EVAL_TIME_MS = Date.parse(EVAL_TIME);
 

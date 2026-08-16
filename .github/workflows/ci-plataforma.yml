@@ -1,17 +1,40 @@
-# ci-plataforma.yml — gate de build/teste do monorepo pnpm (SPR-G7-1).
+# ci-plataforma.yml — gate de qualidade/build/teste do monorepo pnpm
+# (SPR-G7-1; §15.1 itens A/B/D deste ciclo de construção).
 #
-# Escopo: instala as dependências do workspace (lockfile congelado),
-# compila todos os pacotes/apps (`pnpm -r build`) e roda os testes
-# (`pnpm -r test -- --run`). Complementa — não substitui — `docs-gates.yml`,
-# que continua sendo o único gate de convenções de documentação e conteúdo
-# proibido/PHI.
+# Escopo: instala as dependências do workspace (lockfile congelado) e, na
+# mesma ordem que `pnpm verify` na raiz do repositório, roda: verificação
+# de tipos (`pnpm -r typecheck`), lint/formatação (Biome, `pnpm lint`),
+# fronteira de módulo (`pnpm check:boundaries`, materializa ADR-0002 §5.1
+# condição C5), build (`pnpm -r build`) e testes (`pnpm -r test -- --run`).
+# Complementa — não substitui — `docs-gates.yml` (convenções de
+# documentação + conteúdo proibido/PHI) nem `metadados-gates.yml`
+# (metadados de rastreabilidade de PR); nenhum dos três altera os outros
+# dois.
+#
+# Teste de clean-install da migração SQL (`packages/persistencia`):
+# CONFIRMADO que já roda aqui, dentro do passo "Testes de todos os
+# pacotes/apps do workspace" — `packages/persistencia/src/test-support.ts`
+# (`createTestDatabase()`) cria um PGlite novo e chama `runMigrations()`
+# (aplica `src/migrations/0001_init.sql` e `0002_g7_integration.sql` do
+# zero) a cada `describe`/`it` que precisa de banco; o describe
+# "migração SQL pura (0001_init.sql)" de
+# `packages/persistencia/src/migration-and-rls.test.ts` é a asserção mais
+# direta disso (usuário/role pós-migração, tabelas clínicas esperadas
+# presentes). Não há passo de CI separado para isso porque o pacote já o
+# exercita em toda execução de teste — duplicar seria redundante, não mais
+# seguro.
 #
 # PREMISSA (reversível, GDEC-0015/0017): Node.js 22 LTS + pnpm 9 (ver
 # docs/06-architecture/premissas-de-construcao.md PRE-01).
 #
-# Ambos os jobs abaixo são BLOQUEANTES — nenhum usa `continue-on-error` nem
-# `if: always()` para engolir falha, na mesma linha de `docs-gates.yml`
-# (INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §3 regra 13).
+# O job abaixo é inteiramente BLOQUEANTE — nenhum passo usa
+# `continue-on-error` nem `if: always()` para engolir falha, na mesma
+# linha de `docs-gates.yml`/`metadados-gates.yml`
+# (INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §3 regra 13; anti-padrão 11 do
+# mesmo prompt: nenhum gate de qualidade fica "advisory"). Typecheck, lint
+# e fronteira de módulo são passos dedicados, não dobrados dentro de
+# `build`, exatamente para que uma falha de qualquer um deles apareça
+# nomeada no resumo do workflow, não escondida atrás de "build failed".
 #
 # O lockfile (`pnpm-lock.yaml`) é responsabilidade de commit do
 # orquestrador, não desta tarefa (ver instrução da fatia SPR-G7-1); até que
@@ -62,6 +85,12 @@ jobs:
           corepack prepare pnpm@9.0.0 --activate
       - name: Instalar dependências (lockfile congelado)
         run: pnpm install --frozen-lockfile
+      - name: Verificação de tipos (typecheck) de todos os pacotes/apps
+        run: pnpm typecheck
+      - name: Lint e formatação (Biome — biome.jsonc)
+        run: pnpm lint
+      - name: Fronteira de módulo (ADR-0002 §5.1 C5)
+        run: pnpm check:boundaries
       - name: Build de todos os pacotes/apps do workspace
         run: pnpm -r build
       - name: Testes de todos os pacotes/apps do workspace

@@ -21,22 +21,22 @@
  */
 import type {
   BandaRisco,
-  ContribuicaoParametro,
   ContextoAvaliacaoPaciente,
+  ContribuicaoParametro,
   ParametroClinico,
   ResultadoAvaliacao,
   StatusAvaliacao,
 } from "@intensicare/contratos";
+import { SYNTHETIC_CONCEPTS } from "@intensicare/fixtures-sinteticas";
 import {
-  evaluateNews2,
   type EvaluationRecord,
   type EvaluationStatus,
+  evaluateNews2,
   type News2ParameterId,
   type ObservationInput,
   type RiskTier,
   type SourceDataQuality,
 } from "@intensicare/kernel-clinico";
-import { SYNTHETIC_CONCEPTS } from "@intensicare/fixtures-sinteticas";
 import type { ClinicalObservationRow } from "@intensicare/persistencia";
 
 // ---------------------------------------------------------------------------
@@ -106,9 +106,12 @@ const UNIT_ALIASES: Readonly<Partial<Record<News2ParameterId, readonly string[]>
  * `undefined` quando a unidade não tem alias conhecido (segue verbatim ao
  * kernel, que falha alto com `unmappable_unit`; jamais descartada).
  */
-export function canonicalUnitFor(parameter: News2ParameterId, sourceUnit: string): string | undefined {
+export function canonicalUnitFor(
+  parameter: News2ParameterId,
+  sourceUnit: string,
+): string | undefined {
   const aliases = UNIT_ALIASES[parameter];
-  if (aliases !== undefined && aliases.includes(sourceUnit)) {
+  if (aliases?.includes(sourceUnit)) {
     return KERNEL_UCUM_UNIT[parameter];
   }
   return undefined;
@@ -147,7 +150,9 @@ export function toKernelObservation(row: ClinicalObservationRow): ObservationInp
   const value = row.canonicalValue ?? row.sourceValue;
   const unit =
     row.canonicalUnit ??
-    (row.sourceUnit !== null ? canonicalUnitFor(parameter, row.sourceUnit) ?? row.sourceUnit : "");
+    (row.sourceUnit !== null
+      ? (canonicalUnitFor(parameter, row.sourceUnit) ?? row.sourceUnit)
+      : "");
   return {
     parameter,
     value: { kind: "quantity", value: value ?? Number.NaN, unit },
@@ -219,7 +224,9 @@ export function toResultadoAvaliacao(record: EvaluationRecord): ResultadoAvaliac
   const parametros: ContribuicaoParametro[] = record.parameters.map((c) => ({
     parametro: KERNEL_TO_PARAM[c.parameter],
     presente: c.valueUsed !== null,
-    ...(c.valueUsed?.kind === "quantity" ? { valor: c.valueUsed.value, unidade: c.valueUsed.unit } : {}),
+    ...(c.valueUsed?.kind === "quantity"
+      ? { valor: c.valueUsed.value, unidade: c.valueUsed.unit }
+      : {}),
     ...(c.valueUsed?.kind === "code" ? { codigo: c.valueUsed.code } : {}),
     ...(c.score !== null ? { pontos: c.score } : {}),
     statusParametro: c.status,

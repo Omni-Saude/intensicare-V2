@@ -2,9 +2,9 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { absentInstant } from "./time.js";
 import {
-  WORK_ITEM_STATES,
   applyWorkItemCommand,
   isLegalWorkItemTransition,
+  WORK_ITEM_STATES,
   type WorkItem,
   type WorkItemCommand,
 } from "./work-item.js";
@@ -20,7 +20,9 @@ function baseWorkItem(overrides: Partial<WorkItem> = {}): WorkItem {
   };
 }
 
-function command(overrides: Partial<WorkItemCommand> & Pick<WorkItemCommand, "kind" | "expectedVersion">): WorkItemCommand {
+function command(
+  overrides: Partial<WorkItemCommand> & Pick<WorkItemCommand, "kind" | "expectedVersion">,
+): WorkItemCommand {
   return {
     idempotencyKey: "SYNTH-CMD-01",
     actorId: "SYNTH-CLINICIAN-01",
@@ -113,7 +115,15 @@ describe("work-item — máquina de estados (ADR-0009 Q1-A/Q2-A, minuta W1-W12)"
 
   it("nenhum estado fora dos oito nucleares do §11 é alcançável pelo grafo de transições", () => {
     for (const state of WORK_ITEM_STATES) {
-      for (const command_ of ["assign", "acknowledge", "escalate", "override", "resolve", "suppress", "reopen"] as const) {
+      for (const command_ of [
+        "assign",
+        "acknowledge",
+        "escalate",
+        "override",
+        "resolve",
+        "suppress",
+        "reopen",
+      ] as const) {
         const item = baseWorkItem({ state, version: 0 });
         const result = applyWorkItemCommand(item, command({ kind: command_, expectedVersion: 0 }));
         if (result.outcome === "applied") {
@@ -128,7 +138,15 @@ describe("work-item — máquina de estados (ADR-0009 Q1-A/Q2-A, minuta W1-W12)"
       fc.property(
         fc.constantFrom(...WORK_ITEM_STATES),
         fc.nat({ max: 50 }),
-        fc.constantFrom("assign", "acknowledge", "escalate", "override", "resolve", "suppress", "reopen"),
+        fc.constantFrom(
+          "assign",
+          "acknowledge",
+          "escalate",
+          "override",
+          "resolve",
+          "suppress",
+          "reopen",
+        ),
         (state, version, kind) => {
           const item = baseWorkItem({ state, version });
           const result = applyWorkItemCommand(

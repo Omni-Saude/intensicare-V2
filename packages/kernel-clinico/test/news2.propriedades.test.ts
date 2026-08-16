@@ -14,8 +14,8 @@
  * - total = soma das contribuições; tier consistente com (total, vermelho).
  */
 
-import { describe, expect, it } from "vitest";
 import * as fc from "fast-check";
+import { describe, expect, it } from "vitest";
 import {
   evaluateNews2,
   NEWS2_PARAMETER_ORDER,
@@ -78,7 +78,10 @@ const arbAnyDelta: fc.Arbitrary<VectorDelta> = fc.record(
         spo2: fc.oneof(fc.integer({ min: 0, max: 160 }), fc.constant(97)),
         sbp: fc.oneof(fc.integer({ min: 0, max: 400 }), fc.constant(120)),
         pulse: fc.oneof(fc.integer({ min: 0, max: 400 }), fc.constant(70)),
-        temperature: fc.oneof(fc.integer({ min: 200, max: 500 }).map((d) => d / 10), fc.constant(37.0)),
+        temperature: fc.oneof(
+          fc.integer({ min: 200, max: 500 }).map((d) => d / 10),
+          fc.constant(37.0),
+        ),
       },
       { requiredKeys: [] },
     ),
@@ -114,35 +117,35 @@ describe("NEWS2 — propriedades (fast-check)", () => {
 
   it("invariância a permutação da ordem das observações", () => {
     fc.assert(
-      fc.property(arbAnyDelta, fc.array(fc.nat(), { minLength: 7, maxLength: 7 }), (delta, seeds) => {
-        const input = buildVectorInput(delta);
-        // Permutação determinística derivada dos seeds gerados.
-        const shuffled = [...input.observations]
-          .map((obs, i) => ({ obs, key: (seeds[i % seeds.length] ?? 0) * 31 + i * 17 }))
-          .sort((a, b) => (a.key % 7) - (b.key % 7) || a.key - b.key)
-          .map((x) => x.obs);
-        const a = evaluateNews2(input);
-        const b = evaluateNews2({ ...input, observations: shuffled });
-        expect(JSON.stringify(a)).toBe(JSON.stringify(b));
-      }),
+      fc.property(
+        arbAnyDelta,
+        fc.array(fc.nat(), { minLength: 7, maxLength: 7 }),
+        (delta, seeds) => {
+          const input = buildVectorInput(delta);
+          // Permutação determinística derivada dos seeds gerados.
+          const shuffled = [...input.observations]
+            .map((obs, i) => ({ obs, key: (seeds[i % seeds.length] ?? 0) * 31 + i * 17 }))
+            .sort((a, b) => (a.key % 7) - (b.key % 7) || a.key - b.key)
+            .map((x) => x.obs);
+          const a = evaluateNews2(input);
+          const b = evaluateNews2({ ...input, observations: shuffled });
+          expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+        },
+      ),
     );
   });
 
   it("sonda de insumo ausente (SAF-0002/HAZ-0005): remover qualquer insumo obrigatório NUNCA deixa `valid` nem produz total", () => {
     fc.assert(
-      fc.property(
-        arbCompleteDelta,
-        fc.constantFrom(...NEWS2_PARAMETER_ORDER),
-        (delta, removed) => {
-          const input = buildVectorInput({ ...delta, absent: [removed] });
-          const record = evaluateNews2(input);
-          expect(record.status).not.toBe("valid");
-          expect(record.totalScore).toBeNull();
-          expect(record.riskTier).toBeNull();
-          expect(record.reasons).toContain(`missing_required_input:${removed}`);
-          expect(record.missingInputs).toContain(removed);
-        },
-      ),
+      fc.property(arbCompleteDelta, fc.constantFrom(...NEWS2_PARAMETER_ORDER), (delta, removed) => {
+        const input = buildVectorInput({ ...delta, absent: [removed] });
+        const record = evaluateNews2(input);
+        expect(record.status).not.toBe("valid");
+        expect(record.totalScore).toBeNull();
+        expect(record.riskTier).toBeNull();
+        expect(record.reasons).toContain(`missing_required_input:${removed}`);
+        expect(record.missingInputs).toContain(removed);
+      }),
     );
   });
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { presentInstant } from "./time.js";
 import type { ClinicalObservation } from "./clinical-observation.js";
+import { presentInstant } from "./time.js";
 
 describe("clinical-observation — fato canônico imutável (ADR-0005 M1/M8)", () => {
   it("uma correção referencia o fato superado via correctionOf — nunca sobrescreve", () => {

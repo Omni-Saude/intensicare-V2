@@ -46,7 +46,9 @@ export function CartaoLeito({ item, aoSelecionar }: CartaoLeitoProps) {
                 {avaliacao.estadoAvaliacao === "desatualizada" && (
                   <BadgeTom {...textoAvaliacao("desatualizada")} />
                 )}
-                {avaliacao.estadoAvaliacao === "parcial" && <BadgeTom {...textoAvaliacao("parcial")} />}
+                {avaliacao.estadoAvaliacao === "parcial" && (
+                  <BadgeTom {...textoAvaliacao("parcial")} />
+                )}
               </div>
             </>
           )}

@@ -11,26 +11,26 @@
  * do stub de autenticação (`auth.ts`) e a RLS por tenant faz o escopo de
  * TODA consulta/escrita (regra dura §3-6 do prompt; ADR-0011 P2).
  */
-import type { FastifyInstance, FastifyReply } from "fastify";
-import { z } from "zod";
+
 import type { PGlite } from "@electric-sql/pglite";
 import {
-  IDEMPOTENCY_KEY_HEADER,
-  IDEMPOTENCY_REPLAYED_HEADER,
-  IF_MATCH_HEADER,
-  PROBLEM_JSON_MIME_TYPE,
   type AvaliacoesPacienteResposta,
   type GradeLeitosResposta,
   type HealthzResposta,
+  IDEMPOTENCY_KEY_HEADER,
+  IDEMPOTENCY_REPLAYED_HEADER,
+  IF_MATCH_HEADER,
   type ObservacaoEmQuarentena,
   type ObservacaoEntrada,
+  PROBLEM_JSON_MIME_TYPE,
   type ProblemDetails,
   type ProblemDetailsConflitoVersao,
   type ReconhecerAlertaResposta,
 } from "@intensicare/contratos";
 import { checkConnection } from "@intensicare/persistencia";
+import type { FastifyInstance, FastifyReply } from "fastify";
+import { z } from "zod";
 import { autenticar } from "./auth.js";
-import { instanciaSegura } from "./problema.js";
 import {
   acknowledgeAlert,
   getPatientEvaluations,
@@ -39,6 +39,7 @@ import {
   projectBedGrid,
   replayEvents,
 } from "./db.js";
+import { instanciaSegura } from "./problema.js";
 import {
   idempotencyKeyHeaderSchema,
   ifMatchHeaderSchema,
@@ -90,7 +91,8 @@ export function registrarRotasV1(app: FastifyInstance, db: PGlite): void {
         reply,
         400,
         "Cabeçalho de idempotência ausente ou inválido",
-        idempKeyParsed.error.issues[0]?.message ?? `O cabeçalho ${IDEMPOTENCY_KEY_HEADER} é obrigatório.`,
+        idempKeyParsed.error.issues[0]?.message ??
+          `O cabeçalho ${IDEMPOTENCY_KEY_HEADER} é obrigatório.`,
         instanciaSegura(request),
       );
     }
@@ -157,7 +159,13 @@ export function registrarRotasV1(app: FastifyInstance, db: PGlite): void {
           instanciaSegura(request),
         );
       case "mismatch":
-        return enviarProblema(reply, 422, "Envelope incoerente com o encontro", resultado.detail, instanciaSegura(request));
+        return enviarProblema(
+          reply,
+          422,
+          "Envelope incoerente com o encontro",
+          resultado.detail,
+          instanciaSegura(request),
+        );
       case "created":
         reply.header(IDEMPOTENCY_REPLAYED_HEADER, "false");
         return reply.code(201).send(resultado.body);
@@ -226,7 +234,8 @@ export function registrarRotasV1(app: FastifyInstance, db: PGlite): void {
         reply,
         400,
         "Cabeçalho If-Match inválido",
-        ifMatchParsed.error.issues[0]?.message ?? `O cabeçalho ${IF_MATCH_HEADER} deve ser numérico.`,
+        ifMatchParsed.error.issues[0]?.message ??
+          `O cabeçalho ${IF_MATCH_HEADER} deve ser numérico.`,
         instanciaSegura(request),
       );
     }
@@ -251,7 +260,13 @@ export function registrarRotasV1(app: FastifyInstance, db: PGlite): void {
     });
 
     if (resultado.kind === "not-found") {
-      return enviarProblema(reply, 404, "Alerta não encontrado", "Nenhum alerta com este id neste tenant.", instanciaSegura(request));
+      return enviarProblema(
+        reply,
+        404,
+        "Alerta não encontrado",
+        "Nenhum alerta com este id neste tenant.",
+        instanciaSegura(request),
+      );
     }
 
     if (resultado.kind === "version-conflict") {
@@ -305,11 +320,16 @@ export function registrarRotasV1(app: FastifyInstance, db: PGlite): void {
     // isto é replay de backlog por cursor, não push contínuo em conexão
     // aberta — a conexão é encerrada logo após o catch-up.
     const corpo = eventos
-      .map((evento) => `id: ${String(evento.sequencia)}\nevent: ${evento.tipo}\ndata: ${JSON.stringify(evento)}\n\n`)
+      .map(
+        (evento) =>
+          `id: ${String(evento.sequencia)}\nevent: ${evento.tipo}\ndata: ${JSON.stringify(evento)}\n\n`,
+      )
       .join("");
 
     reply.header("content-type", "text/event-stream");
     reply.header("cache-control", "no-cache");
-    return reply.code(200).send(corpo || `: sem eventos novos desde o cursor ${String(cursor)}\n\n`);
+    return reply
+      .code(200)
+      .send(corpo || `: sem eventos novos desde o cursor ${String(cursor)}\n\n`);
   });
 }

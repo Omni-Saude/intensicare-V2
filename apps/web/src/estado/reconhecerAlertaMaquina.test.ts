@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   ESTADO_INICIAL_RECONHECER_ALERTA,
-  reduzirReconhecerAlerta,
   type EstadoReconhecerAlerta,
+  reduzirReconhecerAlerta,
 } from "./reconhecerAlertaMaquina.js";
 
 describe("reduzirReconhecerAlerta (máquina pura — ADR-0021 F5)", () => {
@@ -18,7 +18,10 @@ describe("reduzirReconhecerAlerta (máquina pura — ADR-0021 F5)", () => {
     estado = reduzirReconhecerAlerta(estado, { tipo: "confirmar" });
     expect(estado).toEqual({ fase: "enviando" });
 
-    estado = reduzirReconhecerAlerta(estado, { tipo: "sucesso", reconhecidoEm: "2026-08-16T12:00:00Z" });
+    estado = reduzirReconhecerAlerta(estado, {
+      tipo: "sucesso",
+      reconhecidoEm: "2026-08-16T12:00:00Z",
+    });
     expect(estado).toEqual({ fase: "sucesso", reconhecidoEm: "2026-08-16T12:00:00Z" });
   });
 
@@ -29,13 +32,18 @@ describe("reduzirReconhecerAlerta (máquina pura — ADR-0021 F5)", () => {
 
   it("enviando -> falha nunca avança silenciosamente para sucesso (F5: falha sempre visível)", () => {
     const enviando: EstadoReconhecerAlerta = { fase: "enviando" };
-    const resultado = reduzirReconhecerAlerta(enviando, { tipo: "falha", mensagem: "Erro sintético de teste." });
+    const resultado = reduzirReconhecerAlerta(enviando, {
+      tipo: "falha",
+      mensagem: "Erro sintético de teste.",
+    });
     expect(resultado).toEqual({ fase: "falha", mensagem: "Erro sintético de teste." });
   });
 
   it("falha -> tentar_novamente volta a confirmando, nunca direto a sucesso", () => {
     const falha: EstadoReconhecerAlerta = { fase: "falha", mensagem: "x" };
-    expect(reduzirReconhecerAlerta(falha, { tipo: "tentar_novamente" })).toEqual({ fase: "confirmando" });
+    expect(reduzirReconhecerAlerta(falha, { tipo: "tentar_novamente" })).toEqual({
+      fase: "confirmando",
+    });
   });
 
   it("uma ação 'sucesso' fora de 'enviando' é ignorada — nunca otimismo sem confirmação em trânsito", () => {

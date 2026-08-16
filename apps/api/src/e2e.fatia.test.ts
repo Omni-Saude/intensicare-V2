@@ -17,12 +17,11 @@
  * (trilha de revisão humana; ADR-0009 §9 V1/V2/V3) em nível de fatia —
  * NÃO são os V1–V8 formais (TST-DOM-0005), que permanecem pendentes.
  */
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { FastifyInstance } from "fastify";
+
 import type { PGlite } from "@electric-sql/pglite";
 import {
-  IDEMPOTENCY_REPLAYED_HEADER,
   type GradeLeitosResposta,
+  IDEMPOTENCY_REPLAYED_HEADER,
   type IngestaoObservacoesResposta,
   type ProblemDetailsConflitoVersao,
   type ReconhecerAlertaResposta,
@@ -42,8 +41,10 @@ import {
   listOutboxEvents,
   withTenantTransaction,
 } from "@intensicare/persistencia";
-import { buildServer } from "./index.js";
+import type { FastifyInstance } from "fastify";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { gerarTokenSintetico } from "./auth.js";
+import { buildServer } from "./index.js";
 
 const scenario = buildG7SyntheticScenario();
 const TENANT = scenario.organization.id;
@@ -67,7 +68,9 @@ const FIXTURE_MAX_MS = Date.parse("2026-08-16T11:30:00.000Z");
 let clinicalTimeCounter = 0;
 function tempoClinicoFresco(): string {
   clinicalTimeCounter += 1;
-  return new Date(Math.max(Date.now(), FIXTURE_MAX_MS) + clinicalTimeCounter * 60_000).toISOString();
+  return new Date(
+    Math.max(Date.now(), FIXTURE_MAX_MS) + clinicalTimeCounter * 60_000,
+  ).toISOString();
 }
 
 function serieCompleta(t: string) {
@@ -147,7 +150,11 @@ describe("E2E da fatia G7 — feliz e degradados sobre a fiação real", () => {
     });
 
     it("a projeção de grade de leitos mostra o leito em alerta", async () => {
-      const resposta = await app.inject({ method: "GET", url: "/v1/projecoes/grade-leitos", headers: AUTH });
+      const resposta = await app.inject({
+        method: "GET",
+        url: "/v1/projecoes/grade-leitos",
+        headers: AUTH,
+      });
       expect(resposta.statusCode).toBe(200);
       const grade = resposta.json() as GradeLeitosResposta;
       const leito = grade.leitos.find((l) => l.leitoId === ENC_P002.bedId);
@@ -183,12 +190,16 @@ describe("E2E da fatia G7 — feliz e degradados sobre a fiação real", () => {
 
       // Duas transições auditadas (atribuição implícita + reconhecimento),
       // ambas com o MESMO ator humano identificado (ADR-0009 W4/W6).
-      const atribuicao = auditoria.find((a) => a.command === "assign" && a.aggregateId === alertaId);
+      const atribuicao = auditoria.find(
+        (a) => a.command === "assign" && a.aggregateId === alertaId,
+      );
       expect(atribuicao?.actorId).toBe(ATOR);
       expect(atribuicao?.previousState).toBe("nao_atribuido");
       expect(atribuicao?.newState).toBe("atribuido");
 
-      const transicao = auditoria.find((a) => a.command === "acknowledge" && a.newState === "reconhecido");
+      const transicao = auditoria.find(
+        (a) => a.command === "acknowledge" && a.newState === "reconhecido",
+      );
       expect(transicao).toBeDefined();
       expect(transicao?.actorId).toBe(ATOR);
       expect(transicao?.previousState).toBe("atribuido");
@@ -228,7 +239,11 @@ describe("E2E da fatia G7 — feliz e degradados sobre a fiação real", () => {
     });
 
     it("a projeção mostra o leito com status explícito não-computável (nunca 'normal')", async () => {
-      const resposta = await app.inject({ method: "GET", url: "/v1/projecoes/grade-leitos", headers: AUTH });
+      const resposta = await app.inject({
+        method: "GET",
+        url: "/v1/projecoes/grade-leitos",
+        headers: AUTH,
+      });
       const grade = resposta.json() as GradeLeitosResposta;
       const leito = grade.leitos.find((l) => l.leitoId === LEITO_P003);
       expect(leito?.statusAvaliacao).toBe("indisponivel");
@@ -239,7 +254,11 @@ describe("E2E da fatia G7 — feliz e degradados sobre a fiação real", () => {
 
   describe("degradado: tenant errado => sem vazamento", () => {
     it("grade vazia, avaliações 404 e reconhecer 404 para outro tenant", async () => {
-      const grade = await app.inject({ method: "GET", url: "/v1/projecoes/grade-leitos", headers: AUTH_OUTRO_TENANT });
+      const grade = await app.inject({
+        method: "GET",
+        url: "/v1/projecoes/grade-leitos",
+        headers: AUTH_OUTRO_TENANT,
+      });
       expect((grade.json() as GradeLeitosResposta).leitos).toHaveLength(0);
 
       const avaliacoes = await app.inject({
@@ -249,7 +268,11 @@ describe("E2E da fatia G7 — feliz e degradados sobre a fiação real", () => {
       });
       expect(avaliacoes.statusCode).toBe(404);
 
-      const eventos = await app.inject({ method: "GET", url: "/v1/eventos/stream?cursor=0", headers: AUTH_OUTRO_TENANT });
+      const eventos = await app.inject({
+        method: "GET",
+        url: "/v1/eventos/stream?cursor=0",
+        headers: AUTH_OUTRO_TENANT,
+      });
       expect(eventos.body).not.toContain("event:");
     });
   });

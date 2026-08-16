@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import type { FastifyRequest } from "fastify";
+import { describe, expect, it } from "vitest";
 import { autenticar, gerarTokenSintetico } from "./auth.js";
 
 function requisicaoComAuthorization(valor: string | undefined): FastifyRequest {
@@ -16,7 +16,9 @@ describe("auth (stub bearer sintético — INTEGRAÇÃO PENDENTE ADR-0015)", () 
   });
 
   it("aceita um token bem formado e extrai tenantId/atorId", () => {
-    const resultado = autenticar(requisicaoComAuthorization("Bearer SYNTH-TOKEN.SYNTH-TENANT-A.SYNTH-USER-01"));
+    const resultado = autenticar(
+      requisicaoComAuthorization("Bearer SYNTH-TOKEN.SYNTH-TENANT-A.SYNTH-USER-01"),
+    );
     expect(resultado.ok).toBe(true);
     if (resultado.ok) {
       expect(resultado.contexto.tenantId).toBe("SYNTH-TENANT-A");

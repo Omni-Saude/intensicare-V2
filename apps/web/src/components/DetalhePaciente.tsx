@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
 import type { ClienteApiIntensiCare } from "../api/tipos.js";
+import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
 import type { EstadoCarregamento } from "../domain/estados.js";
-import { ROTULO_PARAMETRO } from "../domain/news2.js";
 import { textoAvaliacao, textoBandaRisco } from "../domain/linguagem.js";
+import { ROTULO_PARAMETRO } from "../domain/news2.js";
 import { BadgeTom } from "./BadgeTom.js";
-import { EstadoTela } from "./EstadoTela.js";
 import { ContribuicaoParametroLinha } from "./ContribuicaoParametroLinha.js";
+import { EstadoTela } from "./EstadoTela.js";
 import { PainelAlertas } from "./PainelAlertas.js";
 
 interface DetalhePacienteProps {
@@ -45,7 +45,9 @@ export function DetalhePaciente({ leitoId, cliente, aoVoltar }: DetalhePacienteP
       if (!atual) return atual;
       return {
         ...atual,
-        alertas: atual.alertas.map((a) => (a.alertaId === alertaAtualizado.alertaId ? alertaAtualizado : a)),
+        alertas: atual.alertas.map((a) =>
+          a.alertaId === alertaAtualizado.alertaId ? alertaAtualizado : a,
+        ),
       };
     });
   }
@@ -68,9 +70,10 @@ export function DetalhePaciente({ leitoId, cliente, aoVoltar }: DetalhePacienteP
               <>
                 <div className="cartao-leito__linha">
                   <BadgeTom {...textoAvaliacao(item.avaliacao.estadoAvaliacao)} />
-                  {item.avaliacao.bandaRisco !== null && !ESTADOS_FAIL_CLOSED.has(item.avaliacao.estadoAvaliacao) && (
-                    <BadgeTom {...textoBandaRisco(item.avaliacao.bandaRisco)} />
-                  )}
+                  {item.avaliacao.bandaRisco !== null &&
+                    !ESTADOS_FAIL_CLOSED.has(item.avaliacao.estadoAvaliacao) && (
+                      <BadgeTom {...textoBandaRisco(item.avaliacao.bandaRisco)} />
+                    )}
                 </div>
 
                 {ESTADOS_FAIL_CLOSED.has(item.avaliacao.estadoAvaliacao) ? (
@@ -105,7 +108,10 @@ export function DetalhePaciente({ leitoId, cliente, aoVoltar }: DetalhePacienteP
                 <h3>Contribuição por parâmetro</h3>
                 <ul>
                   {item.avaliacao.contribuicoes.map((contribuicao) => (
-                    <ContribuicaoParametroLinha key={contribuicao.parametro} contribuicao={contribuicao} />
+                    <ContribuicaoParametroLinha
+                      key={contribuicao.parametro}
+                      contribuicao={contribuicao}
+                    />
                   ))}
                 </ul>
               </>

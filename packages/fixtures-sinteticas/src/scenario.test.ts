@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { buildG7SyntheticScenario, SYNTHETIC_CONCEPTS } from "./scenario.js";
 import { SYNTHETIC_MARKER } from "./synthetic-identifiers.js";
-import { SYNTHETIC_CONCEPTS, buildG7SyntheticScenario } from "./scenario.js";
 
 const REAL_PSR_PATTERN =
   /^amh:psr:v1:(?!SYNTH-)[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
@@ -96,7 +96,10 @@ describe("buildG7SyntheticScenario — cenário SYNTH completo da fatia G7", () 
 
     // O instante do caso ausente é estritamente posterior ao último instante da série normal.
     const p002Vitals = scenario.vitalSigns.filter((v) => v.subjectRef === p002.subjectRef);
-    const lastRegularInstant = p002Vitals.map((v) => v.observedAtUtc).sort().at(-1);
+    const lastRegularInstant = p002Vitals
+      .map((v) => v.observedAtUtc)
+      .sort()
+      .at(-1);
     expect(lastRegularInstant).toBeDefined();
     expect(scenario.missingInputCase.observedAtUtc > (lastRegularInstant ?? "")).toBe(true);
   });

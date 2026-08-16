@@ -1,0 +1,147 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.8/schema.json",
+  // Biome — ferramenta única de formatação + lint do monorepo (§15.1 item A).
+  // Filosofia desta configuração: focar em CORREÇÃO (variáveis/imports não
+  // usados, imports organizados, promise não tratada), não em "guerra de
+  // estilo". Regras de estilo puro (nomeação, preferências sintáticas sem
+  // ganho de correção) ficam de fora deliberadamente.
+  //
+  // Uso arquivo `.jsonc` (em vez de `biome.json`) só para poder deixar,
+  // ao lado de cada decisão, o comentário que explica por quê — na mesma
+  // disciplina de comentário extenso já usada em `.github/workflows/*.yml`
+  // deste repositório. Biome reconhece `biome.jsonc` automaticamente.
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": true,
+    // Exclusões explícitas (além do que `.gitignore` já cobre via
+    // `vcs.useIgnoreFile`, incluindo o `.gitignore` aninhado de
+    // `packages/kernel-clinico` que ignora `.stryker-tmp/` e `reports/`):
+    // listadas aqui também, sem depender de o leitor conhecer os
+    // `.gitignore` aninhados.
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/.stryker-tmp",
+      "!**/reports",
+      "!**/coverage",
+      "!**/.pglite",
+      "!**/pnpm-lock.yaml"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all"
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        // Import organizado é bloqueante (item explícito da tarefa) — ordem
+        // alfabética/por grupo mecânica, sem julgamento humano necessário.
+        "organizeImports": "on"
+      }
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "domains": {
+      // Domínio "types" habilita regras que dependem de inferência de tipo
+      // leve (não um typecheck completo) — usado aqui só para
+      // `noFloatingPromises` (ver abaixo, que acaba desligada).
+      "types": "recommended"
+    },
+    "rules": {
+      "preset": "recommended",
+
+      // --- Foco explícito da tarefa: correção, não estilo. ---
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
+        "noUnusedFunctionParameters": "error"
+      },
+      "style": {
+        "useImportType": "error",
+        "useExportType": "error",
+
+        // PENDÊNCIA (não desativar sem revisar antes): `noNonNullAssertion`
+        // (regra de ESTILO, não correção) dispara 21 vezes neste
+        // repositório — todas em código de teste (`*.test.ts`) ou em
+        // `packages/fixtures-sinteticas/src/scenario.ts`, indexando
+        // arrays de fixture sintética sob `noUncheckedIndexedAccess: true`
+        // (tsconfig.base.json), onde o autor do teste SABE que o índice
+        // existe. A única correção que o Biome oferece é
+        // "unsafe fix: troque `!` por `?.`" — e essa troca MUDA
+        // COMPORTAMENTO: `arr[i]!.campo` lança/tipa-erra se o elemento não
+        // existir; `arr[i]?.campo` silenciosamente vira `undefined` e
+        // deixa o teste seguir com um valor errado em vez de falhar alto.
+        // Trocar isso para satisfazer o linter enfraqueceria exatamente o
+        // tipo de asserção que os testes de segurança clínica dependem.
+        // Regra DESLIGADA por essa razão (nunca alterar comportamento para
+        // satisfazer o linter — instrução direta desta tarefa). Revisitar
+        // se/quando um padrão de fixture-builder tipado eliminar a
+        // necessidade da asserção.
+        "noNonNullAssertion": "off"
+      },
+      "nursery": {
+        // PENDÊNCIA (registrar, não corrigir agora): `noFloatingPromises`
+        // (nursery — regra experimental) dispara 12 vezes:
+        //   - 10 são FALSO-POSITIVO: `fc.assert(fc.property(...))` do
+        //     fast-check em `packages/kernel-clinico/test/news2.propriedades.test.ts`
+        //     é síncrono (não devolve Promise); a inferência de tipo leve
+        //     do Biome (sem checker completo) não resolve o tipo de
+        //     retorno de uma dependência externa corretamente aqui.
+        //   - 2 são um achado REAL: `apps/web/src/components/DetalhePaciente.tsx`
+        //     e `GradeLeitos.tsx` chamam `cliente.obterAvaliacaoPaciente(...)
+        //     .then(...)` dentro de `useEffect` sem `.catch` — uma rejeição
+        //     de rede hoje fica silenciosa e a tela trava em "carregando".
+        //     Corrigir isso de verdade exige decidir qual NOVO estado de
+        //     UI representar o erro (PRE-07 do
+        //     `docs/06-architecture/premissas-de-construcao.md`: cobertura
+        //     completa dos nove eixos de estado ainda é fatia futura) —
+        //     é mudança de comportamento/produto, não um fix mecânico.
+        //     Aplicar apenas `void` silenciaria o linter sem resolver o
+        //     gap real, o que seria pior (falso-verde, THR-0055).
+        // Regra DESLIGADA aqui; o gap real fica registrado neste
+        // comentário e deve ser tratado como item de backlog de
+        // `apps/web` (estado de erro em carregamento assíncrono), não
+        // como pendência de lint.
+        "noFloatingPromises": "off"
+      },
+      "a11y": {
+        // PENDÊNCIA: `useSemanticElements` dispara 2 vezes pedindo a troca
+        // de `<div role="group">` por `<fieldset>` em
+        // `ControleDemonstracao.tsx` e `ReconhecerAlerta.tsx`. `<fieldset>`
+        // tem estilo padrão de navegador (borda/padding) e semântica
+        // própria (desabilita filhos quando o `<form>` pai é desabilitado)
+        // diferente de uma `<div>` — trocar o elemento sem também revisar
+        // CSS/comportamento seria uma mudança de comportamento visual, não
+        // um fix mecânico. Regra DESLIGADA; revisitar junto de ADR-0021
+        // (estratégia de frontend, `not-started`) e da cobertura WCAG 2.2
+        // AA completa citada em PRE-07.
+        "useSemanticElements": "off"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.md"],
+      "formatter": {
+        "enabled": false
+      }
+    }
+  ]
+}

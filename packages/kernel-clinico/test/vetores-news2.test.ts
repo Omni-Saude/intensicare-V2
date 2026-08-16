@@ -45,16 +45,23 @@ describe("RULE-NEWS2 0.2.0 — vetores de referência clínica (CRV-NEWS2-0101..
       if (record.status !== "valid") {
         expect(record.totalScore).toBeNull();
         expect(record.riskTier).toBeNull();
-        expect(record.reasons.length, "não-válido exige ao menos uma razão (ADR-0008 N3)").toBeGreaterThan(0);
+        expect(
+          record.reasons.length,
+          "não-válido exige ao menos uma razão (ADR-0008 N3)",
+        ).toBeGreaterThan(0);
       }
 
       // Contribuições por parâmetro esperadas.
       if (vetor.expected.paramScores !== undefined) {
         for (const [param, score] of Object.entries(vetor.expected.paramScores)) {
-          const contribution = record.parameters.find((c) => c.parameter === (param as News2ParameterId));
+          const contribution = record.parameters.find(
+            (c) => c.parameter === (param as News2ParameterId),
+          );
           expect(contribution, `contribuição de ${param}`).toBeDefined();
           expect(contribution?.score, `pontuação de ${param}`).toBe(score);
-          expect(contribution?.explanation.length, `explicação pt-BR de ${param}`).toBeGreaterThan(0);
+          expect(contribution?.explanation.length, `explicação pt-BR de ${param}`).toBeGreaterThan(
+            0,
+          );
         }
       }
 

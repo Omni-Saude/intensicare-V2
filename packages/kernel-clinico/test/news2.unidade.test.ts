@@ -10,8 +10,8 @@ import { describe, expect, it } from "vitest";
 import {
   ESCALATION_SUPPRESSION_REASON_PT,
   evaluateNews2,
-  reassessNews2AtReadTime,
   type News2EvaluationInput,
+  reassessNews2AtReadTime,
 } from "../src/index.js";
 import { buildVectorInput, EVAL_TIME } from "./suporte.js";
 
@@ -74,7 +74,12 @@ describe("NEWS2 — governança da Escala 2 (spec §3.2)", () => {
     const input: News2EvaluationInput = {
       ...base,
       spo2ScaleAssignments: [
-        { scale: "scale1", orderedBy: "SYNTH-medico-02", orderedAt: "2026-08-14T10:00:00.000Z", revoked: true },
+        {
+          scale: "scale1",
+          orderedBy: "SYNTH-medico-02",
+          orderedAt: "2026-08-14T10:00:00.000Z",
+          revoked: true,
+        },
         { scale: "scale2", orderedBy: "SYNTH-medico-01", orderedAt: "2026-08-15T10:00:00.000Z" },
       ],
     };
@@ -96,7 +101,9 @@ describe("NEWS2 — governança da Escala 2 (spec §3.2)", () => {
     };
     const record = evaluateNews2(input);
     expect(record.status).toBe("valid"); // a ordem NÃO expira sozinha
-    expect(record.annotations.some((a) => a.includes("reconfirmação da ordem de Escala 2"))).toBe(true);
+    expect(record.annotations.some((a) => a.includes("reconfirmação da ordem de Escala 2"))).toBe(
+      true,
+    );
   });
 });
 

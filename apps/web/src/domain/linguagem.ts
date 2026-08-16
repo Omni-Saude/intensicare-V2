@@ -22,8 +22,8 @@
  * este é texto provisório de fatia sintética, sujeito a revisão.
  */
 import {
-  casoImpossivel,
   type BandaRisco,
+  casoImpossivel,
   type EstadoAvaliacao,
   type EstadoCarregamento,
   type EstadoConectividade,
@@ -54,7 +54,10 @@ export function textoCarregamento(estado: EstadoCarregamento): TextoComTom {
       return { texto: "Tentando novamente…", tom: "atencao" };
     case "parcial":
       // P7 (ADR-0029): "parcial" nunca é redigido como "quase completo".
-      return { texto: "Carregado parcialmente — alguns itens podem estar ausentes.", tom: "atencao" };
+      return {
+        texto: "Carregado parcialmente — alguns itens podem estar ausentes.",
+        tom: "atencao",
+      };
     case "pronto":
       return { texto: "Carregado.", tom: "neutro" };
     case "erro":
@@ -69,7 +72,10 @@ export function textoFrescor(estado: EstadoFrescor): TextoComTom {
     case "atual":
       return { texto: "Dado atual.", tom: "positivo" };
     case "envelhecendo":
-      return { texto: "Dado envelhecendo — aproximando-se do limite de frescor esperado.", tom: "atencao" };
+      return {
+        texto: "Dado envelhecendo — aproximando-se do limite de frescor esperado.",
+        tom: "atencao",
+      };
     case "desatualizado":
       // P8 (ADR-0029): "desatualizado" (stale) é distinto de "ausente" (missing).
       return {
@@ -86,7 +92,10 @@ export function textoFrescor(estado: EstadoFrescor): TextoComTom {
     case "conflitante":
       return { texto: "Dado conflitante — mais de uma origem diverge.", tom: "atencao" };
     case "corrigido":
-      return { texto: "Dado corrigido — um valor anterior foi substituído por correção registrada.", tom: "informativo" };
+      return {
+        texto: "Dado corrigido — um valor anterior foi substituído por correção registrada.",
+        tom: "informativo",
+      };
     case "substituido":
       return { texto: "Dado substituído por uma leitura mais recente.", tom: "informativo" };
     default:
@@ -99,17 +108,27 @@ export function textoAvaliacao(estado: EstadoAvaliacao): TextoComTom {
     case "valida":
       return { texto: "Avaliação válida.", tom: "positivo" };
     case "parcial":
-      return { texto: "Avaliação parcial — calculada com insumos incompletos, declarados abaixo.", tom: "atencao" };
+      return {
+        texto: "Avaliação parcial — calculada com insumos incompletos, declarados abaixo.",
+        tom: "atencao",
+      };
     case "nao_avaliada":
       // P1 (ADR-0029/HAZ-0005): NUNCA redigir com vocabulário tranquilizador.
       return {
-        texto: "Avaliação não computável — dados insuficientes para calcular com segurança (modo fail-closed).",
+        texto:
+          "Avaliação não computável — dados insuficientes para calcular com segurança (modo fail-closed).",
         tom: "inconclusivo",
       };
     case "desatualizada":
-      return { texto: "Avaliação desatualizada — recalcule antes de decidir com base nela.", tom: "atencao" };
+      return {
+        texto: "Avaliação desatualizada — recalcule antes de decidir com base nela.",
+        tom: "atencao",
+      };
     case "invalida":
-      return { texto: "Avaliação inválida — não deve ser usada para decisão clínica.", tom: "inconclusivo" };
+      return {
+        texto: "Avaliação inválida — não deve ser usada para decisão clínica.",
+        tom: "inconclusivo",
+      };
     default:
       return casoImpossivel(estado, "textoAvaliacao");
   }
@@ -127,12 +146,18 @@ export function textoItemTrabalho(estado: EstadoItemTrabalho): TextoComTom {
     case "escalado":
       return { texto: "Escalado.", tom: "alerta" };
     case "sobreposto":
-      return { texto: "Sobreposto manualmente — decisão registrada por um profissional.", tom: "atencao" };
+      return {
+        texto: "Sobreposto manualmente — decisão registrada por um profissional.",
+        tom: "atencao",
+      };
     case "resolvido":
       return { texto: "Resolvido — encerrado.", tom: "positivo" };
     case "suprimido":
       // P6 (ADR-0029): supressão é sempre ato explícito e auditável, nunca ausência silenciosa.
-      return { texto: "Suprimido — ocultação explícita e auditável, registrada por um profissional.", tom: "atencao" };
+      return {
+        texto: "Suprimido — ocultação explícita e auditável, registrada por um profissional.",
+        tom: "atencao",
+      };
     case "reaberto":
       return { texto: "Reaberto.", tom: "alerta" };
     default:
@@ -146,7 +171,8 @@ export function textoConectividade(estado: EstadoConectividade): TextoComTom {
       return { texto: "Conectado.", tom: "positivo" };
     case "degradado":
       return {
-        texto: "Modo degradado — algumas funcionalidades limitadas; dados podem não estar atualizados.",
+        texto:
+          "Modo degradado — algumas funcionalidades limitadas; dados podem não estar atualizados.",
         tom: "atencao",
       };
     case "offline":

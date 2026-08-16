@@ -41,11 +41,13 @@ import {
   type TemporalValue,
   type WorkItemState,
 } from "@intensicare/dominio";
-import { reassessNews2AtReadTime, type EvaluationRecord } from "@intensicare/kernel-clinico";
 import { loadIntoDatabase } from "@intensicare/fixtures-sinteticas";
+import { type EvaluationRecord, reassessNews2AtReadTime } from "@intensicare/kernel-clinico";
 import {
+  type ActiveEncounterRow,
   bootstrapDatabase,
   createInMemoryDatabase,
+  getIdempotencyRecord,
   getWorkItem,
   insertAlert,
   insertAuditEvent,
@@ -55,7 +57,6 @@ import {
   insertOutboxEvent,
   insertSourceEnvelope,
   insertWorkItem,
-  getIdempotencyRecord,
   listActiveEncounters,
   listBeds,
   listClinicalObservationsForEncounter,
@@ -64,14 +65,13 @@ import {
   listOutboxEvents,
   listWorkItemsWithAlerts,
   transitionWorkItem,
-  withTenantTransaction,
-  type ActiveEncounterRow,
   type WorkItemWithAlertRow,
+  withTenantTransaction,
 } from "@intensicare/persistencia";
 import {
-  PARAM_TO_CONCEPT,
   canonicalUnitFor,
   evaluateEncounter,
+  PARAM_TO_CONCEPT,
   PARAM_TO_KERNEL,
   requerAlerta,
   toResultadoAvaliacao,
@@ -114,7 +114,9 @@ export function clinicalInstantFromIso(iso: string): TemporalValue {
 
 /** Hash SHA-256 (hex) do corpo canônico — base do replay idempotente com detecção de divergência. */
 export function hashRequestBody(body: unknown): string {
-  return createHash("sha256").update(JSON.stringify(body) ?? "null").digest("hex");
+  return createHash("sha256")
+    .update(JSON.stringify(body) ?? "null")
+    .digest("hex");
 }
 
 function hyphenState(state: string): EstadoItemTrabalho {
@@ -204,7 +206,11 @@ export async function ingestObservations(db: PGlite, args: IngestArgs): Promise<
         });
         return { kind: "key-conflict" } as const;
       }
-      return { kind: "replayed", statusCode: existing.statusCode, body: existing.responseBody } as const;
+      return {
+        kind: "replayed",
+        statusCode: existing.statusCode,
+        body: existing.responseBody,
+      } as const;
     }
 
     // Encontro provisionado? (404 indistinguível entre inexistente e cross-tenant.)
@@ -223,7 +229,10 @@ export async function ingestObservations(db: PGlite, args: IngestArgs): Promise<
       return { kind: "encounter-not-found" } as const;
     }
     if (encounter.subjectRef !== args.pacienteRef) {
-      return { kind: "mismatch", detail: "pacienteRef não corresponde ao paciente do encontro." } as const;
+      return {
+        kind: "mismatch",
+        detail: "pacienteRef não corresponde ao paciente do encontro.",
+      } as const;
     }
     if (encounter.bedId !== args.leitoId) {
       return { kind: "mismatch", detail: "leitoId não corresponde ao leito do encontro." } as const;
@@ -245,7 +254,8 @@ export async function ingestObservations(db: PGlite, args: IngestArgs): Promise<
     // Fatos clínicos canônicos + outbox por observação (mesma transação).
     for (const obs of args.aceitas) {
       const kernelParam = PARAM_TO_KERNEL[obs.parametro];
-      const ucum = obs.unidade !== undefined ? canonicalUnitFor(kernelParam, obs.unidade) : undefined;
+      const ucum =
+        obs.unidade !== undefined ? canonicalUnitFor(kernelParam, obs.unidade) : undefined;
       const clinicalTime = clinicalInstantFromIso(obs.coletadoEm);
       await insertClinicalObservationWithOutbox(
         tx,
@@ -269,7 +279,9 @@ export async function ingestObservations(db: PGlite, args: IngestArgs): Promise<
             sourceSystem: "SYNTH-api-ingest",
             sourceEnvelopeId: envelopeId,
             transformation:
-              ucum !== undefined && ucum !== obs.unidade ? `unit-alias:${obs.unidade ?? ""}->${ucum}` : "none",
+              ucum !== undefined && ucum !== obs.unidade
+                ? `unit-alias:${obs.unidade ?? ""}->${ucum}`
+                : "none",
             mappingVersion: "SYNTH-map-0",
             collector: "apps/api",
           },

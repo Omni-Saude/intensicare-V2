@@ -17,8 +17,9 @@
  * // INTEGRAÇÃO PENDENTE (fatia): substituir por verificação real de
  * // sessão/identidade quando ADR-0015 for redigido/aceito.
  */
-import type { FastifyRequest } from "fastify";
+
 import type { ProblemDetails } from "@intensicare/contratos";
+import type { FastifyRequest } from "fastify";
 import { instanciaSegura } from "./problema.js";
 
 export interface ContextoAutenticado {
@@ -46,10 +47,10 @@ export type ResultadoAutenticacao =
  * do chamador sem verificação centralizada nesta função.
  */
 export function autenticar(request: FastifyRequest): ResultadoAutenticacao {
-  const cabecalho = request.headers["authorization"];
+  const cabecalho = request.headers.authorization;
   const valor = Array.isArray(cabecalho) ? cabecalho[0] : cabecalho;
 
-  if (!valor || !valor.startsWith("Bearer ")) {
+  if (!valor?.startsWith("Bearer ")) {
     return {
       ok: false,
       problema: {

@@ -14,11 +14,7 @@
  * borda de ingestão/avaliação (apps/api), nunca deste pacote de dados.
  */
 import type { PGlite } from "@electric-sql/pglite";
-import {
-  absentInstant,
-  presentInstant,
-  type TemporalValue,
-} from "@intensicare/dominio";
+import { absentInstant, presentInstant, type TemporalValue } from "@intensicare/dominio";
 import {
   insertBed,
   insertCareUnit,

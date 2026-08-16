@@ -14,10 +14,9 @@
 export function BannerContexto() {
   return (
     <div className="banner-contexto" role="note" aria-label="Aviso de contexto do sistema">
-      <strong>CONSULTIVO</strong> — dados 100% sintéticos (SYNTH); não é produção. A
-      decisão clínica permanece sempre com o profissional.{" "}
-      <strong>Registro limitado a esta instituição</strong> — o que está fora do
-      registro desta instituição não aparece nesta tela.
+      <strong>CONSULTIVO</strong> — dados 100% sintéticos (SYNTH); não é produção. A decisão clínica
+      permanece sempre com o profissional. <strong>Registro limitado a esta instituição</strong> — o
+      que está fora do registro desta instituição não aparece nesta tela.
     </div>
   );
 }

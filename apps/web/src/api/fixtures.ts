@@ -19,10 +19,14 @@
  * efetividade clínica é feita pelos valores escolhidos — são
  * ilustrativos, escolhidos para exercitar os estados de UI exigidos.
  */
-import type { AvaliacaoPaciente, ContribuicaoParametro, Alerta, ItemGradeLeito, ParametroId } from "../domain/clinico.js";
+import type {
+  Alerta,
+  AvaliacaoPaciente,
+  ContribuicaoParametro,
+  ItemGradeLeito,
+  ParametroId,
+} from "../domain/clinico.js";
 import {
-  ROTULO_PARAMETRO,
-  VERSAO_REGRA_NEWS2_ILUSTRATIVA,
   calcularBandaRisco,
   pontuarFrequenciaCardiaca,
   pontuarFrequenciaRespiratoria,
@@ -31,7 +35,9 @@ import {
   pontuarSaturacaoOxigenio,
   pontuarTemperatura,
   pontuarUsoOxigenioSuplementar,
+  ROTULO_PARAMETRO,
   somarPontos,
+  VERSAO_REGRA_NEWS2_ILUSTRATIVA,
 } from "../domain/news2.js";
 
 /** Marcador obrigatório de qualquer identificador sintético (ver aviso acima). */
@@ -51,7 +57,11 @@ interface LeituraSintetica {
 
 const AGORA_SINTETICO = "2026-08-16T12:00:00Z";
 
-function explicacaoParametro(parametro: ParametroId, valor: number | boolean, pontos: number): string {
+function explicacaoParametro(
+  parametro: ParametroId,
+  valor: number | boolean,
+  pontos: number,
+): string {
   const rotulo = ROTULO_PARAMETRO[parametro];
   switch (parametro) {
     case "frequencia_respiratoria":
@@ -119,7 +129,8 @@ function montarAvaliacao(
     return {
       parametro: leitura.parametro,
       rotulo: ROTULO_PARAMETRO[leitura.parametro],
-      valorObservado: typeof leitura.valor === "boolean" ? (leitura.valor ? "sim" : "não") : leitura.valor,
+      valorObservado:
+        typeof leitura.valor === "boolean" ? (leitura.valor ? "sim" : "não") : leitura.valor,
       unidade: UNIDADES[leitura.parametro],
       pontos,
       frescor: leitura.frescor,
@@ -191,13 +202,48 @@ function leitosSinteticosSemAlertas(): Array<Omit<ItemGradeLeito, "alertas">> {
       pacienteApelido: "Paciente SYNTH-A1",
       avaliacao: montarAvaliacao(
         [
-          { parametro: "frequencia_respiratoria", valor: 16, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "saturacao_oxigenio", valor: 98, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "uso_oxigenio_suplementar", valor: false, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "temperatura", valor: 36.8, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "pressao_arterial_sistolica", valor: 118, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "frequencia_cardiaca", valor: 78, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "nivel_consciencia", valor: true, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
+          {
+            parametro: "frequencia_respiratoria",
+            valor: 16,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "saturacao_oxigenio",
+            valor: 98,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "uso_oxigenio_suplementar",
+            valor: false,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "temperatura",
+            valor: 36.8,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "pressao_arterial_sistolica",
+            valor: 118,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "frequencia_cardiaca",
+            valor: 78,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "nivel_consciencia",
+            valor: true,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
         ],
         [],
         AGORA_SINTETICO,
@@ -209,13 +255,48 @@ function leitosSinteticosSemAlertas(): Array<Omit<ItemGradeLeito, "alertas">> {
       pacienteApelido: "Paciente SYNTH-B2",
       avaliacao: montarAvaliacao(
         [
-          { parametro: "frequencia_respiratoria", valor: 24, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "saturacao_oxigenio", valor: 93, horarioFonte: "2026-08-16T11:40:00Z", frescor: "envelhecendo" },
-          { parametro: "uso_oxigenio_suplementar", valor: true, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "temperatura", valor: 38.6, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "pressao_arterial_sistolica", valor: 95, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "frequencia_cardiaca", valor: 118, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "nivel_consciencia", valor: true, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
+          {
+            parametro: "frequencia_respiratoria",
+            valor: 24,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "saturacao_oxigenio",
+            valor: 93,
+            horarioFonte: "2026-08-16T11:40:00Z",
+            frescor: "envelhecendo",
+          },
+          {
+            parametro: "uso_oxigenio_suplementar",
+            valor: true,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "temperatura",
+            valor: 38.6,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "pressao_arterial_sistolica",
+            valor: 95,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "frequencia_cardiaca",
+            valor: 118,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "nivel_consciencia",
+            valor: true,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
         ],
         [],
         AGORA_SINTETICO,
@@ -227,12 +308,42 @@ function leitosSinteticosSemAlertas(): Array<Omit<ItemGradeLeito, "alertas">> {
       pacienteApelido: "Paciente SYNTH-C3",
       avaliacao: montarAvaliacao(
         [
-          { parametro: "frequencia_respiratoria", valor: 22, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "saturacao_oxigenio", valor: 94, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "uso_oxigenio_suplementar", valor: true, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "temperatura", valor: 37.2, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "pressao_arterial_sistolica", valor: 108, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "frequencia_cardiaca", valor: 92, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
+          {
+            parametro: "frequencia_respiratoria",
+            valor: 22,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "saturacao_oxigenio",
+            valor: 94,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "uso_oxigenio_suplementar",
+            valor: true,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "temperatura",
+            valor: 37.2,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "pressao_arterial_sistolica",
+            valor: 108,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "frequencia_cardiaca",
+            valor: 92,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
         ],
         ["nivel_consciencia"],
         AGORA_SINTETICO,
@@ -244,11 +355,36 @@ function leitosSinteticosSemAlertas(): Array<Omit<ItemGradeLeito, "alertas">> {
       pacienteApelido: "Paciente SYNTH-D4",
       avaliacao: montarAvaliacao(
         [
-          { parametro: "frequencia_respiratoria", valor: 18, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "temperatura", valor: 37.0, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "pressao_arterial_sistolica", valor: 112, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "frequencia_cardiaca", valor: 84, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
-          { parametro: "nivel_consciencia", valor: true, horarioFonte: AGORA_SINTETICO, frescor: "atual" },
+          {
+            parametro: "frequencia_respiratoria",
+            valor: 18,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "temperatura",
+            valor: 37.0,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "pressao_arterial_sistolica",
+            valor: 112,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "frequencia_cardiaca",
+            valor: 84,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
+          {
+            parametro: "nivel_consciencia",
+            valor: true,
+            horarioFonte: AGORA_SINTETICO,
+            frescor: "atual",
+          },
         ],
         // Dois insumos ausentes -> fail-closed (nao_avaliada), nunca "sem risco".
         ["saturacao_oxigenio", "uso_oxigenio_suplementar"],
@@ -262,13 +398,48 @@ function leitosSinteticosSemAlertas(): Array<Omit<ItemGradeLeito, "alertas">> {
       avaliacao: {
         ...montarAvaliacao(
           [
-            { parametro: "frequencia_respiratoria", valor: 28, horarioFonte: "2026-08-16T08:00:00Z", frescor: "desatualizado" },
-            { parametro: "saturacao_oxigenio", valor: 89, horarioFonte: "2026-08-16T08:00:00Z", frescor: "desatualizado" },
-            { parametro: "uso_oxigenio_suplementar", valor: true, horarioFonte: "2026-08-16T08:00:00Z", frescor: "desatualizado" },
-            { parametro: "temperatura", valor: 39.4, horarioFonte: "2026-08-16T08:00:00Z", frescor: "desatualizado" },
-            { parametro: "pressao_arterial_sistolica", valor: 84, horarioFonte: "2026-08-16T08:00:00Z", frescor: "desatualizado" },
-            { parametro: "frequencia_cardiaca", valor: 138, horarioFonte: "2026-08-16T08:00:00Z", frescor: "desatualizado" },
-            { parametro: "nivel_consciencia", valor: false, horarioFonte: "2026-08-16T08:00:00Z", frescor: "desatualizado" },
+            {
+              parametro: "frequencia_respiratoria",
+              valor: 28,
+              horarioFonte: "2026-08-16T08:00:00Z",
+              frescor: "desatualizado",
+            },
+            {
+              parametro: "saturacao_oxigenio",
+              valor: 89,
+              horarioFonte: "2026-08-16T08:00:00Z",
+              frescor: "desatualizado",
+            },
+            {
+              parametro: "uso_oxigenio_suplementar",
+              valor: true,
+              horarioFonte: "2026-08-16T08:00:00Z",
+              frescor: "desatualizado",
+            },
+            {
+              parametro: "temperatura",
+              valor: 39.4,
+              horarioFonte: "2026-08-16T08:00:00Z",
+              frescor: "desatualizado",
+            },
+            {
+              parametro: "pressao_arterial_sistolica",
+              valor: 84,
+              horarioFonte: "2026-08-16T08:00:00Z",
+              frescor: "desatualizado",
+            },
+            {
+              parametro: "frequencia_cardiaca",
+              valor: 138,
+              horarioFonte: "2026-08-16T08:00:00Z",
+              frescor: "desatualizado",
+            },
+            {
+              parametro: "nivel_consciencia",
+              valor: false,
+              horarioFonte: "2026-08-16T08:00:00Z",
+              frescor: "desatualizado",
+            },
           ],
           [],
           "2026-08-16T08:00:00Z",
@@ -329,6 +500,12 @@ export function criarDadosSinteticos(): {
 }
 
 /** Compõe um leito completo (com seus alertas) a partir da base + da lista de alertas atual. */
-export function compor(leitoBase: Omit<ItemGradeLeito, "alertas">, alertas: Alerta[]): ItemGradeLeito {
-  return { ...leitoBase, alertas: alertas.filter((alerta) => alerta.leitoId === leitoBase.leitoId) };
+export function compor(
+  leitoBase: Omit<ItemGradeLeito, "alertas">,
+  alertas: Alerta[],
+): ItemGradeLeito {
+  return {
+    ...leitoBase,
+    alertas: alertas.filter((alerta) => alerta.leitoId === leitoBase.leitoId),
+  };
 }

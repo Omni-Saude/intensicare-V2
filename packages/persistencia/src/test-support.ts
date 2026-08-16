@@ -13,9 +13,13 @@
  * deste — a dependência inversa criaria ciclo de workspace).
  */
 import { PGlite } from "@electric-sql/pglite";
-import { bootstrapDatabase, withTenantTransaction } from "./session.js";
-import { insertBed, insertCareUnit, insertOrganization } from "./repositories/tenancy-repository.js";
 import { insertEncounter, insertPatientIdentity } from "./repositories/clinical-repository.js";
+import {
+  insertBed,
+  insertCareUnit,
+  insertOrganization,
+} from "./repositories/tenancy-repository.js";
+import { bootstrapDatabase, withTenantTransaction } from "./session.js";
 import type { TemporalValueInput } from "./temporal.js";
 
 export function syntheticInstant(utc: string): TemporalValueInput {
@@ -46,7 +50,11 @@ export async function seedMinimalTenant(db: PGlite, tenantId: string): Promise<S
   const encounterId = `${tenantId}-ENC-01`;
 
   await withTenantTransaction(db, tenantId, async (tx) => {
-    await insertOrganization(tx, { id: organizationId, tenantId, name: `Organização Sintética ${tenantId}` });
+    await insertOrganization(tx, {
+      id: organizationId,
+      tenantId,
+      name: `Organização Sintética ${tenantId}`,
+    });
     await insertCareUnit(tx, { id: careUnitId, tenantId, organizationId, name: "UTI Sintética" });
     await insertBed(tx, { id: bedId, tenantId, careUnitId, code: "01" });
     await insertPatientIdentity(tx, {

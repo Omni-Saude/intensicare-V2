@@ -44,7 +44,9 @@ export function reduzirReconhecerAlerta(
     case "confirmar":
       return estado.fase === "confirmando" ? { fase: "enviando" } : estado;
     case "sucesso":
-      return estado.fase === "enviando" ? { fase: "sucesso", reconhecidoEm: acao.reconhecidoEm } : estado;
+      return estado.fase === "enviando"
+        ? { fase: "sucesso", reconhecidoEm: acao.reconhecidoEm }
+        : estado;
     case "falha":
       return estado.fase === "enviando" ? { fase: "falha", mensagem: acao.mensagem } : estado;
     case "tentar_novamente":

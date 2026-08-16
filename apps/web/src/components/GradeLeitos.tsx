@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
 import type { ClienteApiIntensiCare, ModoDemonstracao } from "../api/tipos.js";
+import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
 import type { EstadoCarregamento } from "../domain/estados.js";
-import { EstadoTela } from "./EstadoTela.js";
 import { CartaoLeito } from "./CartaoLeito.js";
 import { ControleDemonstracao } from "./ControleDemonstracao.js";
-import { RegiaoAoVivoAlertas } from "./RegiaoAoVivoAlertas.js";
+import { EstadoTela } from "./EstadoTela.js";
 import { PainelAlertas } from "./PainelAlertas.js";
+import { RegiaoAoVivoAlertas } from "./RegiaoAoVivoAlertas.js";
 
 interface GradeLeitosProps {
   cliente: ClienteApiIntensiCare;
@@ -16,7 +16,9 @@ interface GradeLeitosProps {
 const ESTADOS_ALERTA_PENDENTE = new Set(["nao_atribuido", "atribuido", "escalado", "reaberto"]);
 
 function alertasPendentes(itens: ItemGradeLeito[]): Alerta[] {
-  return itens.flatMap((item) => item.alertas).filter((alerta) => ESTADOS_ALERTA_PENDENTE.has(alerta.estado));
+  return itens
+    .flatMap((item) => item.alertas)
+    .filter((alerta) => ESTADOS_ALERTA_PENDENTE.has(alerta.estado));
 }
 
 /** Grade de leitos da UTI — tela inicial desta fatia. */
@@ -39,21 +41,23 @@ export function GradeLeitos({ cliente, aoSelecionarLeito }: GradeLeitosProps) {
     }
 
     setEstadoTela("carregando");
-    cliente.listarGradeLeitos(modoDemo ? { forcarResultado: modoDemo } : undefined).then((resposta) => {
-      if (cancelado) return;
-      setEstadoTela(resposta.estadoCarregamento);
-      setItens(resposta.dados);
-      if (resposta.estadoCarregamento === "pronto" && resposta.dados) {
-        const pendentes = alertasPendentes(resposta.dados);
-        if (pendentes.length > 0) {
-          setMensagemAoVivo(
-            `${pendentes.length} alerta${pendentes.length === 1 ? "" : "s"} pendente${
-              pendentes.length === 1 ? "" : "s"
-            } na grade de leitos.`,
-          );
+    cliente
+      .listarGradeLeitos(modoDemo ? { forcarResultado: modoDemo } : undefined)
+      .then((resposta) => {
+        if (cancelado) return;
+        setEstadoTela(resposta.estadoCarregamento);
+        setItens(resposta.dados);
+        if (resposta.estadoCarregamento === "pronto" && resposta.dados) {
+          const pendentes = alertasPendentes(resposta.dados);
+          if (pendentes.length > 0) {
+            setMensagemAoVivo(
+              `${pendentes.length} alerta${pendentes.length === 1 ? "" : "s"} pendente${
+                pendentes.length === 1 ? "" : "s"
+              } na grade de leitos.`,
+            );
+          }
         }
-      }
-    });
+      });
 
     return () => {
       cancelado = true;
@@ -67,7 +71,9 @@ export function GradeLeitos({ cliente, aoSelecionarLeito }: GradeLeitosProps) {
         item.leitoId === alertaAtualizado.leitoId
           ? {
               ...item,
-              alertas: item.alertas.map((a) => (a.alertaId === alertaAtualizado.alertaId ? alertaAtualizado : a)),
+              alertas: item.alertas.map((a) =>
+                a.alertaId === alertaAtualizado.alertaId ? alertaAtualizado : a,
+              ),
             }
           : item,
       );

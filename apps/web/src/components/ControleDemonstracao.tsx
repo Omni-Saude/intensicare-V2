@@ -26,10 +26,14 @@ export function ControleDemonstracao({ valor, aoMudar }: ControleDemonstracaoPro
     <details className="controle-demonstracao">
       <summary>Modo de demonstração (apenas front-end sintético)</summary>
       <p>
-        Força o estado de carregamento da grade de leitos, para fins de revisão desta
-        fatia — não representa uma falha real de rede ou de servidor.
+        Força o estado de carregamento da grade de leitos, para fins de revisão desta fatia — não
+        representa uma falha real de rede ou de servidor.
       </p>
-      <div className="controle-demonstracao__opcoes" role="group" aria-label="Forçar estado de tela">
+      <div
+        className="controle-demonstracao__opcoes"
+        role="group"
+        aria-label="Forçar estado de tela"
+      >
         <button
           type="button"
           className={valor === null ? "botao" : "botao botao--secundario"}

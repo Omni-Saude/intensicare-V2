@@ -150,7 +150,11 @@ const COMMAND_TARGET_STATE: Readonly<Record<WorkItemCommandKind, WorkItemState>>
 export type WorkItemTransitionResult =
   | { readonly outcome: "applied"; readonly next: WorkItem }
   | { readonly outcome: "version_conflict"; readonly current: WorkItem }
-  | { readonly outcome: "illegal_transition"; readonly from: WorkItemState; readonly to: WorkItemState };
+  | {
+      readonly outcome: "illegal_transition";
+      readonly from: WorkItemState;
+      readonly to: WorkItemState;
+    };
 
 /**
  * Aplica um comando de transição de forma pura (sem I/O). A checagem de

@@ -30,12 +30,14 @@ import type {
 
 // --- pacientes e encontros -------------------------------------------------
 
-export async function insertPatientIdentity(tx: Transaction, input: PatientIdentity): Promise<void> {
-  await tx.query(`insert into patient_identities (id, tenant_id, subject_ref) values ($1, $2, $3)`, [
-    input.id,
-    input.tenantId,
-    input.subjectRef,
-  ]);
+export async function insertPatientIdentity(
+  tx: Transaction,
+  input: PatientIdentity,
+): Promise<void> {
+  await tx.query(
+    `insert into patient_identities (id, tenant_id, subject_ref) values ($1, $2, $3)`,
+    [input.id, input.tenantId, input.subjectRef],
+  );
 }
 
 export async function insertEncounter(tx: Transaction, input: Encounter): Promise<void> {
@@ -61,7 +63,9 @@ export interface ActiveEncounterRow {
 }
 
 /** Encontros SEM alta (em andamento) do tenant corrente, com o PSR do paciente. */
-export async function listActiveEncounters(tx: Transaction): Promise<readonly ActiveEncounterRow[]> {
+export async function listActiveEncounters(
+  tx: Transaction,
+): Promise<readonly ActiveEncounterRow[]> {
   const result = await tx.query<{
     id: string;
     patient_id: string;
@@ -103,7 +107,14 @@ export async function insertOutboxEvent(tx: Transaction, input: OutboxEventInput
   await tx.query(
     `insert into outbox_events (tenant_id, ordering_scope, event_type, aggregate_type, aggregate_id, payload)
      values ($1, $2, $3, $4, $5, $6)`,
-    [input.tenantId, input.orderingScope, input.eventType, input.aggregateType, input.aggregateId, input.payload],
+    [
+      input.tenantId,
+      input.orderingScope,
+      input.eventType,
+      input.aggregateType,
+      input.aggregateId,
+      input.payload,
+    ],
   );
 }
 
@@ -119,7 +130,10 @@ export interface OutboxEventRow {
 }
 
 /** Lê os eventos de outbox VISÍVEIS na transação corrente (sujeito a RLS), na ordem de inserção (B3). */
-export async function listOutboxEvents(tx: Transaction, afterId = 0): Promise<readonly OutboxEventRow[]> {
+export async function listOutboxEvents(
+  tx: Transaction,
+  afterId = 0,
+): Promise<readonly OutboxEventRow[]> {
   const result = await tx.query<{
     id: number;
     tenant_id: string;
@@ -301,7 +315,9 @@ function mapObservationRow(row: RawObservationRow): ClinicalObservationRow {
 }
 
 /** Lê as observações VISÍVEIS na transação corrente (sujeito a RLS). */
-export async function listClinicalObservations(tx: Transaction): Promise<readonly ClinicalObservationRow[]> {
+export async function listClinicalObservations(
+  tx: Transaction,
+): Promise<readonly ClinicalObservationRow[]> {
   const result = await tx.query<RawObservationRow>(
     `select ${OBSERVATION_ROW_COLUMNS} from clinical_observations order by id`,
   );
@@ -340,7 +356,10 @@ export interface EvaluationRecordInput {
   readonly kernelRecord: Record<string, unknown>;
 }
 
-export async function insertEvaluationRecord(tx: Transaction, input: EvaluationRecordInput): Promise<void> {
+export async function insertEvaluationRecord(
+  tx: Transaction,
+  input: EvaluationRecordInput,
+): Promise<void> {
   await tx.query(
     `insert into evaluation_records
        (id, tenant_id, encounter_id, subject_ref, status, total_score, risk_tier,
@@ -450,7 +469,10 @@ export interface IdempotencyRecordInput {
   readonly responseBody: Record<string, unknown>;
 }
 
-export async function insertIdempotencyRecord(tx: Transaction, input: IdempotencyRecordInput): Promise<void> {
+export async function insertIdempotencyRecord(
+  tx: Transaction,
+  input: IdempotencyRecordInput,
+): Promise<void> {
   await tx.query(
     `insert into idempotency_records (tenant_id, idempotency_key, request_hash, status_code, response_body)
      values ($1, $2, $3, $4, $5)`,
@@ -542,7 +564,9 @@ export async function getWorkItem(tx: Transaction, id: string): Promise<WorkItem
     state: string;
     version: number;
     assignee_id: string | null;
-  }>(`select id, tenant_id, alert_id, state, version, assignee_id from work_items where id = $1`, [id]);
+  }>(`select id, tenant_id, alert_id, state, version, assignee_id from work_items where id = $1`, [
+    id,
+  ]);
   const row = result.rows[0];
   if (row === undefined) return undefined;
   return {
@@ -565,7 +589,9 @@ export interface WorkItemWithAlertRow extends WorkItemRow {
 }
 
 /** Itens de trabalho do tenant, com o alerta de origem, mais recente primeiro. */
-export async function listWorkItemsWithAlerts(tx: Transaction): Promise<readonly WorkItemWithAlertRow[]> {
+export async function listWorkItemsWithAlerts(
+  tx: Transaction,
+): Promise<readonly WorkItemWithAlertRow[]> {
   const result = await tx.query<{
     id: string;
     tenant_id: string;

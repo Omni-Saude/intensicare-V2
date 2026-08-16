@@ -96,7 +96,11 @@ describe("clienteMock — reconhecerAlerta", () => {
 
   it("retorna 'erro' para um alerta inexistente", async () => {
     const cliente = criarClienteMock();
-    const resposta = await cliente.reconhecerAlerta("SYNTH-ALERTA-INEXISTENTE", "SYNTH-idem-x", SEM_ATRASO);
+    const resposta = await cliente.reconhecerAlerta(
+      "SYNTH-ALERTA-INEXISTENTE",
+      "SYNTH-idem-x",
+      SEM_ATRASO,
+    );
     expect(resposta.estadoCarregamento).toBe("erro");
   });
 });

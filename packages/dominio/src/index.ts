@@ -9,16 +9,15 @@
  * efetividade clínica ou de conformidade regulatória é feita por este
  * pacote.
  */
-import { normalizeEvaluationState, type EvaluationState } from "@intensicare/kernel-clinico";
+import { type EvaluationState, normalizeEvaluationState } from "@intensicare/kernel-clinico";
 
 export const packageVersion = "0.0.0" as const;
 
-export type { EvaluationState };
-export { normalizeEvaluationState };
-
+export * from "./audit-event.js";
+export * from "./clinical-observation.js";
+export * from "./identity.js";
 export * from "./tenancy.js";
 export * from "./time.js";
-export * from "./identity.js";
-export * from "./clinical-observation.js";
 export * from "./work-item.js";
-export * from "./audit-event.js";
+export type { EvaluationState };
+export { normalizeEvaluationState };

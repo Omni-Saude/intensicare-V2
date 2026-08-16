@@ -9,8 +9,8 @@
  * ALIAS do tipo do contrato, para não quebrar consumidores existentes.
  */
 import { IDEMPOTENCY_KEY_HEADER, type ProblemDetails } from "@intensicare/contratos";
-import type { EstadoCarregamento } from "../domain/estados.js";
 import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
+import type { EstadoCarregamento } from "../domain/estados.js";
 
 /** Nome do cabeçalho de idempotência — re-export do contrato real. */
 export const CABECALHO_IDEMPOTENCIA = IDEMPOTENCY_KEY_HEADER;
@@ -51,7 +51,10 @@ export interface OpcoesChamada {
 /** Porta do cliente de API consumida pelas telas desta fatia. */
 export interface ClienteApiIntensiCare {
   listarGradeLeitos(opcoes?: OpcoesChamada): Promise<RespostaApi<ItemGradeLeito[]>>;
-  obterAvaliacaoPaciente(leitoId: string, opcoes?: OpcoesChamada): Promise<RespostaApi<ItemGradeLeito>>;
+  obterAvaliacaoPaciente(
+    leitoId: string,
+    opcoes?: OpcoesChamada,
+  ): Promise<RespostaApi<ItemGradeLeito>>;
   reconhecerAlerta(
     alertaId: string,
     chaveIdempotencia: string,

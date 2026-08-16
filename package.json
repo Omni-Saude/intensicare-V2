@@ -13,10 +13,17 @@
     "build": "pnpm -r --if-present run build",
     "test": "pnpm -r --if-present run test -- --run",
     "typecheck": "pnpm -r --if-present run typecheck",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome ci --error-on-warnings .",
+    "lint:fix": "biome check --write .",
+    "check:boundaries": "node scripts/check_module_boundaries.mjs",
     "check:docs": "python3 scripts/check_doc_conventions.py",
-    "check:forbidden": "python3 scripts/check_forbidden_content.py"
+    "check:forbidden": "python3 scripts/check_forbidden_content.py",
+    "verify": "pnpm typecheck && pnpm lint && pnpm check:boundaries && pnpm build && pnpm test && pnpm check:docs && pnpm check:forbidden"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.8",
     "@types/node": "22.20.1",
     "fast-check": "4.9.0",
     "tsx": "4.23.12",

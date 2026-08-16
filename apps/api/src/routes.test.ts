@@ -5,18 +5,19 @@
  * (`@intensicare/fixtures-sinteticas`): todo id de encontro/leito/paciente
  * usado aqui vem do cenário, nunca é inventado.
  */
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { FastifyInstance } from "fastify";
+
 import {
-  IDEMPOTENCY_REPLAYED_HEADER,
   type AvaliacoesPacienteResposta,
   type GradeLeitosResposta,
+  IDEMPOTENCY_REPLAYED_HEADER,
   type IngestaoObservacoesResposta,
   type ProblemDetailsConflitoVersao,
 } from "@intensicare/contratos";
 import { buildG7SyntheticScenario } from "@intensicare/fixtures-sinteticas";
-import { buildServer } from "./index.js";
+import type { FastifyInstance } from "fastify";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { gerarTokenSintetico } from "./auth.js";
+import { buildServer } from "./index.js";
 
 const scenario = buildG7SyntheticScenario();
 const TENANT = scenario.organization.id; // SYNTH-TENANT-G7
@@ -26,7 +27,9 @@ const P002 = scenario.patients[1]!;
 const ENC_P002 = scenario.encounters[1]!;
 
 const AUTH_A = { authorization: `Bearer ${gerarTokenSintetico(TENANT, "SYNTH-USER-A1")}` };
-const AUTH_B = { authorization: `Bearer ${gerarTokenSintetico("SYNTH-TENANT-B", "SYNTH-USER-B1")}` };
+const AUTH_B = {
+  authorization: `Bearer ${gerarTokenSintetico("SYNTH-TENANT-B", "SYNTH-USER-B1")}`,
+};
 
 // Tempo clínico SEMPRE posterior ao último instante das fixtures (11:30Z) e
 // monotônico entre envelopes — evita conflito de duplicata entre testes e
@@ -36,7 +39,9 @@ const FIXTURE_MAX_MS = Date.parse("2026-08-16T11:30:00.000Z");
 let clinicalTimeCounter = 0;
 function tempoClinicoFresco(): string {
   clinicalTimeCounter += 1;
-  return new Date(Math.max(Date.now(), FIXTURE_MAX_MS) + clinicalTimeCounter * 60_000).toISOString();
+  return new Date(
+    Math.max(Date.now(), FIXTURE_MAX_MS) + clinicalTimeCounter * 60_000,
+  ).toISOString();
 }
 
 /** Envelope completo (sete parâmetros) com valores de deterioração — NEWS2 real = 11 (banda critico). */
@@ -107,7 +112,11 @@ describe("rotas /v1 (fatia SPR-G7-2 — integração real: PGlite + kernel NEWS2
     });
 
     it("a projeção de grade de leitos (lida do banco) reflete escore, banda e alerta ativo", async () => {
-      const resposta = await app.inject({ method: "GET", url: "/v1/projecoes/grade-leitos", headers: AUTH_A });
+      const resposta = await app.inject({
+        method: "GET",
+        url: "/v1/projecoes/grade-leitos",
+        headers: AUTH_A,
+      });
       expect(resposta.statusCode).toBe(200);
       const grade = resposta.json() as GradeLeitosResposta;
       // As fixtures têm 4 leitos; todos aparecem (ocupados e vagos).
@@ -128,7 +137,9 @@ describe("rotas /v1 (fatia SPR-G7-2 — integração real: PGlite + kernel NEWS2
         payload: { comentario: "ciência registrada em teste" },
       });
       expect(resposta.statusCode).toBe(200);
-      const corpo = resposta.json() as { item: { estado: string; versao: number; reconhecidoPor: string } };
+      const corpo = resposta.json() as {
+        item: { estado: string; versao: number; reconhecidoPor: string };
+      };
       expect(corpo.item.estado).toBe("reconhecido");
       // v2: atribuição implícita ao ator (assign, v1) + reconhecimento (v2) —
       // o grafo do ADR-0009 W1 não admite nao_atribuido→reconhecido direto.
@@ -191,7 +202,7 @@ describe("rotas /v1 (fatia SPR-G7-2 — integração real: PGlite + kernel NEWS2
         parametro: "FC",
         valor: 122,
         unidade: "batimentos",
-        coletadoEm: (envelope.observacoes as Array<Record<string, unknown>>)[4]?.["coletadoEm"],
+        coletadoEm: (envelope.observacoes as Array<Record<string, unknown>>)[4]?.coletadoEm,
       };
       const resposta = await app.inject({
         method: "POST",
@@ -241,7 +252,11 @@ describe("rotas /v1 (fatia SPR-G7-2 — integração real: PGlite + kernel NEWS2
 
   describe("degradado: tenant errado => nunca vaza existência cross-tenant", () => {
     it("grade de leitos do tenant B não contém NENHUM leito do tenant G7", async () => {
-      const resposta = await app.inject({ method: "GET", url: "/v1/projecoes/grade-leitos", headers: AUTH_B });
+      const resposta = await app.inject({
+        method: "GET",
+        url: "/v1/projecoes/grade-leitos",
+        headers: AUTH_B,
+      });
       expect(resposta.statusCode).toBe(200);
       const grade = resposta.json() as GradeLeitosResposta;
       expect(grade.leitos).toHaveLength(0);
@@ -257,7 +272,11 @@ describe("rotas /v1 (fatia SPR-G7-2 — integração real: PGlite + kernel NEWS2
     });
 
     it("eventos do tenant G7 não aparecem no fluxo do tenant B", async () => {
-      const resposta = await app.inject({ method: "GET", url: "/v1/eventos/stream?cursor=0", headers: AUTH_B });
+      const resposta = await app.inject({
+        method: "GET",
+        url: "/v1/eventos/stream?cursor=0",
+        headers: AUTH_B,
+      });
       expect(resposta.statusCode).toBe(200);
       expect(resposta.body).not.toContain("event:");
     });
@@ -296,7 +315,11 @@ describe("rotas /v1 (fatia SPR-G7-2 — integração real: PGlite + kernel NEWS2
     });
 
     it("replay com corpo DIVERGENTE => 422 problem+json pt-BR, nenhum efeito executado", async () => {
-      const divergente = { ...payloadOriginal, pacienteRef: P002.subjectRef, contexto: { idadeAnos: 45 } };
+      const divergente = {
+        ...payloadOriginal,
+        pacienteRef: P002.subjectRef,
+        contexto: { idadeAnos: 45 },
+      };
       const resposta = await app.inject({
         method: "POST",
         url: "/v1/ingestao/observacoes",
@@ -377,7 +400,11 @@ describe("rotas /v1 (fatia SPR-G7-2 — integração real: PGlite + kernel NEWS2
 
   describe("GET /v1/eventos/stream — replay do OUTBOX real por cursor", () => {
     it("retorna os eventos do outbox (ingestão, avaliação, alerta) em text/event-stream", async () => {
-      const resposta = await app.inject({ method: "GET", url: "/v1/eventos/stream?cursor=0", headers: AUTH_A });
+      const resposta = await app.inject({
+        method: "GET",
+        url: "/v1/eventos/stream?cursor=0",
+        headers: AUTH_A,
+      });
       expect(resposta.statusCode).toBe(200);
       expect(resposta.headers["content-type"]).toContain("text/event-stream");
       expect(resposta.body).toContain("event: observacao-clinica-registrada");
