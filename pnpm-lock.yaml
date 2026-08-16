@@ -79,6 +79,18 @@ importers:
         specifier: 8.2.1
         version: 8.2.1(@types/node@22.20.1)(esbuild@0.28.2)(tsx@4.23.12)
 
+  packages/conformidade:
+    dependencies:
+      '@intensicare/contratos':
+        specifier: workspace:*
+        version: link:../contratos
+      '@intensicare/dominio':
+        specifier: workspace:*
+        version: link:../dominio
+      '@intensicare/fixtures-sinteticas':
+        specifier: workspace:*
+        version: link:../fixtures-sinteticas
+
   packages/contratos: {}
 
   packages/dominio:
@@ -105,6 +117,12 @@ importers:
 
   packages/kernel-clinico: {}
 
+  packages/observabilidade:
+    dependencies:
+      '@intensicare/dominio':
+        specifier: workspace:*
+        version: link:../dominio
+
   packages/persistencia:
     dependencies:
       '@electric-sql/pglite':
@@ -113,6 +131,24 @@ importers:
       '@intensicare/dominio':
         specifier: workspace:*
         version: link:../dominio
+
+  packages/rule-bundle:
+    dependencies:
+      '@intensicare/dominio':
+        specifier: workspace:*
+        version: link:../dominio
+      '@intensicare/kernel-clinico':
+        specifier: workspace:*
+        version: link:../kernel-clinico
+
+  packages/vigilancia:
+    dependencies:
+      '@intensicare/dominio':
+        specifier: workspace:*
+        version: link:../dominio
+      '@intensicare/persistencia':
+        specifier: workspace:*
+        version: link:../persistencia
 
 packages:
 

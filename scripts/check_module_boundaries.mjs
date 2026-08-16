@@ -60,7 +60,28 @@ const ALLOWED_WORKSPACE_DEPENDENCIES = {
   dominio: new Set(["kernel-clinico"]),
   persistencia: new Set(["dominio", "kernel-clinico"]),
   "fixtures-sinteticas": new Set(["dominio", "persistencia", "kernel-clinico"]),
-  api: new Set(["kernel-clinico", "contratos", "dominio", "persistencia", "fixtures-sinteticas"]),
+  // `rule-bundle` empacota e assina a regra clínica (ADR-0007). Depende do
+  // kernel para versionar o que empacota, mas o kernel NÃO depende dele: a
+  // avaliação clínica não pode ficar acoplada ao mecanismo de distribuição.
+  "rule-bundle": new Set(["kernel-clinico", "dominio"]),
+  // `conformidade` executa o harness §7.6 contra fixtures pinadas. Depende de
+  // contrato e fixtures; nada depende dela — é folha de verificação.
+  conformidade: new Set(["contratos", "dominio", "fixtures-sinteticas"]),
+  // `observabilidade` instrumenta; não pode depender de persistência nem de
+  // API, para não inverter a direção (quem instrumenta não conhece o
+  // instrumentado além do vocabulário de domínio).
+  observabilidade: new Set(["dominio"]),
+  // `vigilancia` calcula indicadores sobre o que foi persistido.
+  vigilancia: new Set(["dominio", "persistencia"]),
+  api: new Set([
+    "kernel-clinico",
+    "contratos",
+    "dominio",
+    "persistencia",
+    "fixtures-sinteticas",
+    "rule-bundle",
+    "observabilidade",
+  ]),
   web: new Set(["contratos"]),
 };
 
