@@ -185,3 +185,11 @@ artefato. Tier econômico jamais participa de conteúdo clínico (§0.5).
 > pela **condição 3** (G3 aprovado por via — hoje 0 vias). A **2ª revisita
 > desta autorização segue ABERTA**, a conduzir pelo titular (com o 2º
 > revisor), tendo o parecer completo como insumo.
+
+> **Nota do escriba (2026-08-16 — GDEC-0012):** a **2ª revisita foi
+> CONDUZIDA e a AGT-3 APROVADA** pelo titular em conjunto com o 2º revisor
+> clínico (Dr. Marcelo Villaca Lima, CRM-SP 112678), tendo o parecer OS-16
+> completo como insumo — autorização mantida nos termos desta ata e das
+> condicionantes por operação do parecer. **Gatilho de revisita
+> remanescente: primeiro evento adverso em sombra/piloto.** Exercício
+> prático segue barrado pela condição 3 (G3 por via) e pelas condições 5-7.

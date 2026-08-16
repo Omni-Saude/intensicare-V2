@@ -694,6 +694,60 @@ provenance:
   validation_status: "N/A — decisões do titular; exceção: aprovação do 2º revisor atestada pelo titular, registro assinado pelo próprio nomeado recomendado"
 ```
 
+## GDEC-0012 — 2ª revisita da AGT-3 conduzida e APROVADA (titular + 2º revisor); condicionantes do parecer decompostas em sprints
+
+Transcrição de decisão tomada **por escrito, em sessão**, pelo titular
+(rodaquino-OMNI). O orquestrador do mapa é escriba, não decisor.
+
+```yaml
+id: GDEC-0012
+title: 2ª revisita AGT-3 aprovada (gatilho "primeiro parecer"); emenda do mapa com os sprints das condicionantes do parecer OS-16
+status: DECIDED
+statement: >
+  (1) A 2ª revisita da autorização AGT-3 (aberta pelo gatilho "primeiro
+  parecer jurídico") foi CONDUZIDA e a autorização APROVADA pelo titular
+  em conjunto com o segundo revisor clínico nomeado (Dr. Marcelo Villaca
+  Lima, CRM-SP 112678), tendo como insumo o parecer OS-16 completo
+  (2026-08-16). A autorização permanece nos termos da ata GDEC-0009 e das
+  condicionantes POR OPERAÇÃO do parecer; gatilho de revisita
+  remanescente: primeiro evento adverso em sombra/piloto. O exercício
+  prático segue barrado pela condição 3 (G3 aprovado por via — hoje 0
+  vias) e pelas condições 5-7. (2) As condicionantes do parecer ficam
+  decompostas em sprints do mapa até produção (emenda desta sessão):
+  SPR-G6-6 (instrumento art. 39 entre controladores), SPR-G6-7 (RIPD do
+  índice cross-PJ), SPR-G4-7 (evidência do caráter consultivo),
+  SPR-G3-13 (atos AMH: segregação do ie_perm_sms_email; anexação do
+  parecer ao ADR-043; emenda Q-06) e SPR-G0-4 (arquivo do PDF original +
+  alocação de EVID-*).
+decided_by: rodaquino-OMNI (titular) com aprovação do 2º revisor clínico (GDEC-0010)
+decided_date: "2026-08-16"
+rationale: >
+  O parecer completo satisfez a condição 4 no plano jurídico; a revisita
+  com o segundo revisor consolida a autorização sob as duas lentes
+  humanas disponíveis. A decomposição em sprints torna as condicionantes
+  rastreáveis e impede que "parecer recebido" seja lido como "dado real
+  liberado em bloco".
+supersession_rule: >
+  Primeiro evento adverso em sombra/piloto reabre a AGT-3; as condições
+  de revisão do próprio parecer (seção VIII, 5 condições, 24 meses)
+  aplicam-se ao parecer e, por arrasto, a esta aprovação.
+links:
+  requirements: []
+  hazards: []
+  adrs: []
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-16)
+  commit_sha_or_version: 4fba956 (estado ao decidir)
+  section_or_lines: "instruções: '2ª revisita da AGT-3 — feita e aprovada (eu + Dr. Marcelo)'; 'decompor os demais em sprints e emendar o mapa'"
+  date_collected: "2026-08-16"
+  collector: orquestrador do mapa até produção — escriba
+  transformation: "transcrita; efeitos e decomposição explicitados pelo escriba"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisão do titular com aprovação do 2º revisor, atestada por escrito"
+```
+
 ## Index
 
 | ID | Title | Status | Decided by | Decided date |
@@ -709,6 +763,7 @@ provenance:
 | GDEC-0009 | Agentificação dos Gates G1 e G2 (AGT-1..AGT-4; AGT-3 contra recomendação do orquestrador) | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0010 | Segundo revisor clínico nomeado — Dr. Marcelo Villaca Lima, CRM-SP 112678 (aceite + verificação pendentes; dispara revisita AGT-3) | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0011 | Contra-assinatura GDEC-0009; revisita AGT-3 aprovada pelo 2º revisor; OS-16 ENVIADA (jurista Dr. Lucas Alves de Sousa, OAB/GO 45.457) | DECIDED | rodaquino-OMNI | 2026-08-15 |
+| GDEC-0012 | 2ª revisita AGT-3 APROVADA (titular + 2º revisor, com parecer completo); condicionantes do parecer decompostas em sprints (emenda do mapa) | DECIDED | rodaquino-OMNI | 2026-08-16 |
 
 ## Notes
 
@@ -740,3 +795,6 @@ provenance:
 - **Nota (2026-08-15, fechamento do G0 residual):** `GDEC-0011` alocado
   (contra-assinatura; revisita AGT-3 concluída; OS-16 enviada). Próximo ID
   disponível: `GDEC-0012`.
+- **Nota (2026-08-16, fechamento da sessão do mapa):** `GDEC-0012` alocado
+  (2ª revisita AGT-3 aprovada; decomposição das condicionantes em sprints).
+  Próximo ID disponível: `GDEC-0013`.

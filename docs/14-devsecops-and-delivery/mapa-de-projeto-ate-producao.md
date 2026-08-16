@@ -159,6 +159,16 @@ do encargo). As mais materiais:
    ata recomendada e pendente. Esta versão do mapa incorpora a emenda nas
    fases G1/G2 (commit próprio, separado do verbatim `9382c8b`); G3..G8
    permanecem inalterados (ata, "o que NÃO muda").
+8. **Parecer OS-16 COMPLETO e 2ª revisita AGT-3 aprovada** (GDEC-0011/
+   GDEC-0012; `lgpd-os16/parecer-os16-2026-08-15-recebido.md`): favorável
+   nos 4 pontos + extensão; critérios de conteúdo satisfeitos; BLK-0014
+   EXECUTADO; via retrospectiva coberta (SPR-G1-10 exequível); campo segue
+   atrás de CEP/CONEP (BLK-0013); condição 4 da AGT-3 satisfeita e revisita
+   aprovada (titular + 2º revisor, GDEC-0010) — gatilho remanescente:
+   primeiro evento adverso. As **condicionantes por operação** do parecer
+   viram os sprints SPR-G0-4, SPR-G3-13, SPR-G4-7, SPR-G6-6 e SPR-G6-7
+   (esta emenda). Nenhuma operação de dado real inicia sem a sua
+   condicionante satisfeita.
 
 ### 2.3 O que já está FEITO e não será replicado como trabalho futuro
 
@@ -257,6 +267,7 @@ campo correspondente do sprint homônimo está no espelho YAML
 | **SPR-G0-2** | Decisões do titular | BLK-0002/BLK-0008 fechados: credencial verificada, linha de reporte, segundo revisor nomeado | Entradas atualizadas em `blockers-register.md`; nomeação registrada em `decision-register.md` | GDEC-0003 vigente | Segundo revisor humano nomeado e aceito; verificação de credencial registrada | — | RISK-0007 mitigação → G1 aprovação, G6/G8 pares de independência §4 | BLK-0002, BLK-0008, GDEC-0003, RISK-0007 | P | Existe um segundo profissional qualificado disponível (VALIDATION REQUIRED) |
 | **SPR-G0-1** | Engenharia/agentes V2 | Propagações residuais de GDEC-0008/0009 concluídas. **Já FEITOS** (não replicados): persistência do registro e adr-index (`75838b5`); linha GDEC-0008 na tabela Index (`ac4b1bd`); commit do espelho YAML (`9382c8b`); `pedido-de-comissionamento.md` §6 e `traceability-policy.md` §1.1 (ditados/decididos pelo titular — D#/D4 desta sessão) | Residuais: `hard-gate-assessment.md` §7 com marca da decisão P-1 (verificar estado atual antes); `lacunas-e-proximas-evidencias.md` L-4/L-6 → OS-23/24 | Ler-antes-de-escrever (anti-padrões 3/14); verificar `git status`/mtimes | Artefatos atualizados e commitados; gates CI verdes; nenhum status DECIDED em front matter (anti-padrão 6) | `check_doc_conventions` + `check_forbidden_content` (§15.1) | GDEC-0008 → **todos** os sprints que citam decisão de GDEC-0008 | GDEC-0008, GDEC-0009, GDEC-0002, BLK-0012, BLK-0016 | P | O dono da janela commita o próprio trabalho (padrão do ciclo 2) |
 | **SPR-G0-3** | Engenharia/agentes V2 | Tradução retroativa EN→pt-BR, tranches 2+ | Corpus forense, ADR-0001/0002, adr-index em pt-BR | GDEC-0008 item 8 persistido | Tranches registradas; CI verde | `check_doc_conventions` | — (não bloqueia gate) | GDEC-0006, GDEC-0008 | M | Execução em tranches, não nova decisão |
+| **SPR-G0-4** | Decisões do titular | **NOVO (parecer OS-16)**: PDF original assinado do parecer arquivado em `lgpd-os16/` e referenciado; EVID-* da recepção alocado pelo steward | Arquivo do original + referência no doc do parecer; entrada EVID | Titular fornece o PDF | Original arquivado; EVID alocado | `check_forbidden_content` | GDEC-0011 → higiene documental do G6/G8 | GDEC-0011, OS-16 | P | Pendência de forma, não de mérito |
 
 - **Marco humano de saída**: nomeações de BLK-0002/0008 (ato do titular).
 - **Dono**: rodaquino-OMNI (GDEC-0004).
@@ -412,6 +423,7 @@ onda):
 | **SPR-G3-5** | OS-19, OS-20 | Pacote de contrato publicado no repo AMH (sujeito=PSR; exclusões mínimas {vitais, Observation lab}); `Observation` populada via caminho estruturado com cobertura LOINC medida | Pinagem final; matriz §7.2 sai de 0 fontes evidenciadas | Manifesto completo com dono nomeado; povoamento e vínculo Encounter medidos | Dono AMH (critério 6 da OS-19) | OS-19, OS-20, BLK-0015, RISK-0003 | G | Depende de OS-05/08 e ondas anteriores |
 | **SPR-G3-6** | OS-22, OS-23, OS-24 | Sonda Bronze (ordem zero de C-1 — pode re-ponderar O3→O1-first); profile+fonte MedicationAdministration; contrato de ordem clínica | Escopo de implementação de C-1; RULE-GCS (gate sedativo); NEWS2 escala 2/limitação | Resultado da sonda registrado; critérios das OS-23/24 | Dono AMH | OS-22, OS-23, OS-24, BLK-0012, BLK-0016, RISK-0003 | M | OS-22 é barata e primeira ("ordem de execução zero") |
 | **SPR-G3-8** | (ato AMH) | Dono AMH do contrato nomeado (`producer.owner`) | MG-G3 (aprovação bilateral); SPR-G3-9 | Campo owner preenchido no manifesto publicado | Titular (como autoridade AMH declarada em DEC-G0-04) | BLK-0015, OS-19 | P | O titular, CEO de ambas, pode designar sem terceiros |
+| **SPR-G3-13** | (atos AMH — parecer OS-16) | Segregação explícita do `ie_perm_sms_email` no lago (Q-22); anexação do parecer ao ADR-043; emenda Q-06 ao ADR-043 (nomear art. 11, II, "f" e finalidade exclusiva) | Dado real de identidade (OS-11/15) com trilha jurídica completa | Segregação verificável; parecer anexado; emenda registrada | Dono AMH | GDEC-0011, GDEC-0012 | P | Atos pequenos do lado AMH; SPR-G3-12 permanece deliberadamente não cunhado |
 
 Swimlane 4 — Dependências externas:
 
@@ -453,6 +465,7 @@ Swimlane 4 — Dependências externas:
 | **SPR-G4-1** | Engenharia/agentes V2 | ADR-0002 completado; ADR-0006 instruído p/ decisão; ADR-0012..0024 redigidos em ordem de dependência (0012 API; 0013 FHIR/HL7; 0015/0016/0017 auth/authz/cripto; 0019 plataforma; 0020 observabilidade; 0021 frontend; 0022 supply chain; 0014 MCP; 0018 auditoria; 0023 legado; 0024 IA/ML) | 13+2 ADRs com opções e recomendação | SPR-G0-1 (estados propagados); premissas ASM-0008/0011 com dono | Cada ADR com opções, consequências, premissas §2.2 com dono | — | → SPR-G4-2 | ADR-0002, ADR-0006, ADR-0012..0024, ASM-0008, ASM-0011, RISK-0010 | G | Capacidades descritas como requisito, nunca fornecedor escolhido fora de ADR (§3.14) |
 | **SPR-G4-3** | Engenharia/agentes V2 | Artefatos UX §11: IA, modelo completo de estados obrigatórios (loading/empty/unavailable/…; fresh/aging/stale/…; estados de alerta; sessão), service blueprint, tabela contrato UI↔backend por elemento; requisito "registro limitado a esta instituição" (HAZ-0046/ADR-0004 §6.2) especificado | `docs/09-ux/` (ou local definido pelo índice §16) | Evidência G1 disponível (SPR-G1-7) para fundamentar; senão, marcado hipótese | Cada elemento de UI mapeado a fonte/estado/erro/authz/audit | §11 estados obrigatórios; WCAG 2.2 AA planejado | → SPR-G4-5, SPR-G7-2 | UX (taxonomia §8), HAZ-0046, DEC-G0-05 | G | UX evidence-based: preferência pessoal não é critério de aceite |
 | **SPR-G4-4** | Engenharia/agentes V2 | Contratos publicados: OpenAPI, AsyncAPI, perfis FHIR/terminologia, política MCP | `docs/07-apis/` conforme §12 e §16 | SPR-G4-2 (ADR-0012/0013/0014) | Contratos versionados antes de implementação (§12.1) | §14 contrato consumer-driven (estrutura) | → SPR-G5-1, SPR-G7-2 | ADR-0012, ADR-0013, ADR-0014, API/EVT (taxonomia §8) | G | Nenhum connector implementado antes do contrato |
+| **SPR-G4-7** | Engenharia/agentes V2 | **NOVO (parecer, Q-15)**: evidência consolidada e citável do **caráter consultivo** dos escores/alertas (decisão clínica permanece com profissional): requisito vinculante + trilha de revisão humana, ligados a §11, HAZ-0046 e ADR-0004 §6.2 | Artefato de evidência apto a ser citado no RIPD (SPR-G6-7) e no G6 | GDEC-0011 (parecer completo) | Artefato aprovado por painel AGT-4; citável | Painel AGT-4 | GDEC-0011 → SPR-G6-7, MG-G6 | GDEC-0011, HAZ-0046, GDEC-0009 | P | Consolida material já existente; não cria UX nova |
 | **SPR-G4-5** | Dependências externas | Validação com usuários (cenários simulados de tempo crítico) e usuários de tecnologias assistivas sobre os artefatos §11 | Relatórios de validação; medidas de usabilidade/compreensão/recuperação de erro/carga cognitiva | SPR-G4-3; participantes recrutados (herda infraestrutura de SPR-G1-4/6) | Critérios mensuráveis definidos antes; resultados registrados mesmo se contrários | §11 ("not preference-only interviews") | → MG-G4; retroalimenta SPR-G4-3 | VAL-0027, VAL-0031, VAL-0033 | G | Usuários de TA disponíveis; senão NÃO TESTADO explícito |
 
 - **Marco (MG-G4)**: aprovação de coerência por fatia. **Dono**: AUTH-UX +
@@ -499,6 +512,8 @@ Swimlane 4 — Dependências externas:
 | **SPR-G6-2** | Engenharia/agentes V2 | Controles SAF de alta severidade implementados e verificados no código da fatia/plataforma | SPR-G7-1 (código existe); ADRs 0015..0018 aceitos | Controle a controle: teste que o verifica; kernel com mutation testing | §14 (SAST/SCA/secret/IaC/SBOM; mutação; testes de segurança) | → SPR-G6-3/4 | SAF-0001..0042, THR-0001..0083 (P0 primeiro), SEC-0001..0059 | G | Implementação depende de stack aceita |
 | **SPR-G6-5** | Engenharia/agentes V2 | Safety case progride M1→M2/M3 com slots E-* populados por evidência real; defeaters retirados só com evidência; residual de BLK-0017 verificado (SAF-0042 já existe em `safety-requirements.md`) e submetido à disposição de AUTH-CLINSAFETY | MG-G1 (M1); evidências de G6/G7 | Slots atualizados sem promoção por agente (§7 do skeleton); BLK-0017 disposto por humano (não fechado por este mapa) | — | → MG-G8-PILOTO (safety case exigido) | HAZ-0045/0046/0047 (E-3.8/3.9/6.9), SAF-0042, BLK-0017 | M | Maturidade avança por evidência, nunca por redação |
 | **SPR-G6-3** | Dependências externas | Evidência adversarial de isolamento de tenant + teste de penetração por verificador independente (implementador ≠ verificador) | SPR-G6-2 | Relatório de pentest; achados triados | §14 penetração | → SPR-G6-4, G8 | AQ-6, DEC-G0-02 (G6 exige terceiro) | G | Verificador terceiro contratável |
+| **SPR-G6-6** | Dependências externas | **NOVO (parecer, itens II/Q-02/Q-08)**: instrumento escrito do art. 39 entre controladores (PJs clínicas, operadora, AMH) com alocação de papéis **por operação** e espelhamento da V2 como operadora do laço — redação jurídica + assinaturas | Instrumento assinado, arquivado e citável | GDEC-0011 (parecer completo); minuta jurídica externa | Assinado pelos controladores; condição do 1º apply do índice satisfeita | — | GDEC-0011 → 1º apply do índice (dado real OS-11/15), MG-G6 | GDEC-0011, BLK-0004, RISK-0011 | M | Redação é ato jurídico (externo); sem prazo atribuível |
+| **SPR-G6-7** | Engenharia/agentes V2 | **NOVO (parecer, Q-09)**: RIPD do índice cross-PJ — descrição, finalidade, necessidade/proporcionalidade, riscos aos titulares, salvaguardas e **vedações do §5º verificáveis** (controle negativo testável) — como PROPOSAL para aprovação privacy/legal | RIPD em `docs/11-security-privacy-compliance/` | GDEC-0011; SPR-G4-7 (evidência consultiva citável) | Aprovado por privacy/legal; anterior ao 1º apply | Painel AGT-4 | GDEC-0011, SPR-G4-7 → 1º apply do índice, MG-G6 | GDEC-0011, BLK-0004, RISK-0011, HAZ-0045 | M | Conteúdo mínimo ditado pelo parecer (Q-09) |
 
 - **Marco (MG-G6)**: aceite nominal de risco residual + aprovação
   privacy/legal. **Dono**: humanos autorizados + advogados (BLK-0004
@@ -642,9 +657,9 @@ Legenda: nós `MD-*` = marcos de decisão do titular; `MG-*` = marcos humanos
 de gate; `SPR-*` = sprints; arestas com rótulo `AMH` = dependência de
 execução AMH; `EXT` = dependência externa; demais = V2/titular. Caminho
 crítico controlável pela V2 em traço grosso (classe `crit`). O grafo
-sumariza: SPR-G0-3, SPR-G1-1, SPR-G1-3, SPR-G1-7 (consolidação da variante
-observacional), SPR-G2-1, SPR-G2-2, SPR-OC-2 e
-SPR-OC-3 não têm nó próprio (dependências projetadas nos marcos MD-*/MG-*
+sumariza: SPR-G0-3, SPR-G0-4, SPR-G1-1, SPR-G1-3, SPR-G1-7 (consolidação da
+variante observacional), SPR-G2-1, SPR-G2-2, SPR-G3-13, SPR-G4-7, SPR-G6-6,
+SPR-G6-7, SPR-OC-2 e SPR-OC-3 não têm nó próprio (dependências projetadas nos marcos MD-*/MG-*
 correspondentes); a fonte única e completa das dependências é o campo
 `dependencies` do YAML espelho. Nós `MG-*` equivalem aos sprints de marco
 homônimos (MG-G1≡SPR-G1-8; MG-G2≡SPR-G2-4; MG-G4≡SPR-G4-6; MG-G6≡SPR-G6-4;
@@ -926,6 +941,11 @@ Todo item acionável rastreia a pelo menos uma origem documental (encargo
 | SPR-G6-3 | AQ-6, DEC-G0-02, prompt §13 |
 | SPR-G6-4 (MG-G6) | BLK-0004, HAZ-0045, RISK-0011, prompt §13 |
 | SPR-G6-5 | Safety-case-skeleton (E-3.8/3.9/6.9, E-9.x), SAF-0042, BLK-0017 |
+| SPR-G6-6 (novo — parecer item II) | GDEC-0011, GDEC-0012, BLK-0004, RISK-0011, parecer OS-16 (Q-02/Q-08), art. 39 |
+| SPR-G6-7 (novo — parecer Q-09) | GDEC-0011, BLK-0004, RISK-0011, HAZ-0045, parecer OS-16 (vedações §5º verificáveis) |
+| SPR-G4-7 (novo — parecer Q-15) | GDEC-0011, HAZ-0046, ADR-0004 §6.2, prompt §11 |
+| SPR-G3-13 (novo — atos AMH do parecer) | GDEC-0011, parecer OS-16 (Q-06/Q-22), ADR-043 (AMH) |
+| SPR-G0-4 (novo — forma) | GDEC-0011, OS-16 |
 | SPR-G7-1 | Prompt §15.1/§15.2, ADR-0010/0019/0022, DEC-G0-09 |
 | SPR-G7-2 | Prompt §14 Gate G7 (11 passos), HAZ-0005, ADR-0007..0011, CRV |
 | SPR-G7-3 (MG-G7) | Prompt §14, GDEC-0003, §4 independência |

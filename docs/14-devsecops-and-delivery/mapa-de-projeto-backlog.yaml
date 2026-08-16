@@ -163,6 +163,21 @@ phases:
             effort: M
             estimation_assumptions:
               - "execução em tranches, não nova decisão"
+          - id: SPR-G0-4
+            swimlane: decisoes_titular
+            objective: "NOVO (parecer OS-16): PDF original assinado do parecer arquivado em lgpd-os16/ e referenciado; EVID-* da recepção alocado pelo steward"
+            deliverables:
+              - "original assinado arquivado + referência no doc do parecer; entrada EVID"
+            definition_of_ready:
+              - "titular fornece o PDF"
+            definition_of_done:
+              - "original arquivado; EVID alocado"
+            dependencies: [SPR-G1-2]
+            unlocks: []
+            tracked_ids: [GDEC-0011, OS-16]
+            effort: P
+            estimation_assumptions:
+              - "pendência de forma, não de mérito"
   - id: G1
     title: "Problema e uso pretendido (AGENTIFICADO — GDEC-0009/AGT-1/AGT-2)"
     current_state: PARCIAL
@@ -556,6 +571,21 @@ phases:
             effort: P
             estimation_assumptions:
               - "o titular, CEO de ambas, pode designar sem terceiros"
+          - id: SPR-G3-13
+            swimlane: execucao_amh
+            objective: "NOVO (atos AMH do parecer OS-16): segregação explícita do ie_perm_sms_email no lago (Q-22); anexação do parecer ao ADR-043; emenda Q-06 ao ADR-043 (nomear art. 11, II, f e finalidade exclusiva). SPR-G3-12 permanece deliberadamente não cunhado"
+            deliverables:
+              - "segregação verificável; parecer anexado; emenda registrada no ADR-043 (lado AMH)"
+            definition_of_ready:
+              - "parecer OS-16 completo (SPR-G1-2)"
+            definition_of_done:
+              - "três atos confirmados pelo dono AMH"
+            dependencies: [SPR-G1-2]
+            unlocks: [SPR-G3-3]
+            tracked_ids: [GDEC-0011, GDEC-0012, OS-16]
+            effort: P
+            estimation_assumptions:
+              - "atos pequenos do lado AMH"
       - id: EPC-G3-2
         title: "Contrato v1 e conformidade"
         tracked_ids: [BLK-0015, ASM-0002, ASM-0006]
@@ -708,6 +738,21 @@ phases:
             effort: G
             estimation_assumptions:
               - "nenhum connector implementado antes do contrato"
+          - id: SPR-G4-7
+            swimlane: engenharia_v2
+            objective: "NOVO (parecer, Q-15): evidência consolidada e citável do caráter consultivo dos escores/alertas (decisão clínica permanece com profissional) — requisito vinculante + trilha de revisão humana, ligados a §11, HAZ-0046 e ADR-0004 §6.2"
+            deliverables:
+              - "artefato de evidência citável no RIPD (SPR-G6-7) e no G6"
+            definition_of_ready:
+              - "parecer OS-16 completo (SPR-G1-2)"
+            definition_of_done:
+              - "aprovado por painel AGT-4; citável"
+            dependencies: [SPR-G1-2]
+            unlocks: [SPR-G6-7, SPR-G6-4]
+            tracked_ids: [GDEC-0011, HAZ-0046, GDEC-0009]
+            effort: P
+            estimation_assumptions:
+              - "consolida material já existente; não cria UX nova"
           - id: SPR-G4-5
             swimlane: dependencias_externas
             objective: "Validação com usuários (cenários simulados de tempo crítico) e usuários de tecnologias assistivas sobre os artefatos §11"
@@ -854,6 +899,36 @@ phases:
             effort: G
             estimation_assumptions:
               - "verificador terceiro contratável (DEC-G0-02 exige terceiro no G6)"
+          - id: SPR-G6-6
+            swimlane: dependencias_externas
+            objective: "NOVO (parecer, itens II/Q-02/Q-08): instrumento escrito do art. 39 entre controladores (PJs clínicas, operadora, AMH) com alocação de papéis por operação e espelhamento da V2 como operadora do laço — redação jurídica + assinaturas"
+            deliverables:
+              - "instrumento assinado, arquivado e citável"
+            definition_of_ready:
+              - "parecer OS-16 completo (SPR-G1-2); minuta jurídica externa"
+            definition_of_done:
+              - "assinado pelos controladores; condição do 1º apply do índice satisfeita"
+            dependencies: [SPR-G1-2]
+            unlocks: [SPR-G6-4, SPR-G3-3]
+            tracked_ids: [GDEC-0011, GDEC-0012, BLK-0004, RISK-0011]
+            effort: M
+            estimation_assumptions:
+              - "redação é ato jurídico externo; sem prazo atribuível"
+          - id: SPR-G6-7
+            swimlane: engenharia_v2
+            objective: "NOVO (parecer, Q-09): RIPD do índice cross-PJ — descrição, finalidade, necessidade/proporcionalidade, riscos aos titulares, salvaguardas e vedações do §5º verificáveis (controle negativo testável) — como PROPOSAL para aprovação privacy/legal"
+            deliverables:
+              - "RIPD em docs/11-security-privacy-compliance/"
+            definition_of_ready:
+              - "parecer completo (SPR-G1-2); evidência consultiva citável (SPR-G4-7)"
+            definition_of_done:
+              - "aprovado por privacy/legal; anterior ao 1º apply do índice"
+            dependencies: [SPR-G1-2, SPR-G4-7]
+            unlocks: [SPR-G6-4, SPR-G3-3]
+            tracked_ids: [GDEC-0011, BLK-0004, RISK-0011, HAZ-0045]
+            effort: M
+            estimation_assumptions:
+              - "conteúdo mínimo ditado pelo parecer (Q-09)"
           - id: SPR-G6-4
             swimlane: decisoes_titular
             objective: "MG-G6: risco residual aceito por humanos autorizados; P0/P1 dispostos; aprovação privacy/legal dos fluxos"
