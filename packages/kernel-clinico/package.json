@@ -16,6 +16,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest",
+    "test:mutacao": "pnpm --package=@stryker-mutator/core --package=@stryker-mutator/vitest-runner --package=typescript@5 dlx stryker run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {},

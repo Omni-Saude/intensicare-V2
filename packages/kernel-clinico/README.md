@@ -114,12 +114,88 @@ const registro = evaluateNews2({
   de `docs/05-clinical-safety/rule-releases/news2/reference-vectors.md`
   (vetores e vereditos inalterados).
 
+## Teste de mutação (§14 do orquestrador; pendência PRE-08)
+
+O kernel é o único componente de segurança clínica do produto, então a
+cobertura de linha não basta: o que interessa é se a suíte **detecta** uma
+alteração no comportamento da regra. A análise de mutação (Stryker, runner
+vitest do próprio pacote) mede exatamente isso.
+
+**Como rodar** (nenhuma instalação permanente; nada entra no `pnpm-lock.yaml`):
+
+```bash
+pnpm --filter @intensicare/kernel-clinico test:mutacao
+```
+
+O script resolve `@stryker-mutator/core`, `@stryker-mutator/vitest-runner` e
+`typescript@5` por `pnpm dlx`. O `typescript@5` é obrigatório: o
+pré-processador de `tsconfig` do Stryker usa a API `parseConfigFileTextToJson`,
+ausente no TypeScript 7 do workspace. Configuração em `stryker.config.json`
+(alvos: `src/news2.ts` e `src/types.ts`); relatório JSON em
+`reports/mutation/mutation.json` (ignorado pelo git, como `.stryker-tmp/`).
+
+**Resultado obtido** (1.076 mutantes; limiar de quebra configurado em 90%):
+
+| Arquivo | Score inicial | Score final | Mortos | Sobreviventes | Sem cobertura | Timeouts | Erros |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `src/news2.ts` | 65,73% | **93,07%** | 994 | 63 | 11 | 0 | 0 |
+| `src/types.ts` | 100% | **100%** | 8 | 0 | 0 | 0 | 0 |
+| total | 65,99% | **93,12%** | 1.002 | 63 | 11 | 0 | 0 |
+
+A subida de 65,99% para 93,12% (292 mutantes a mais mortos) veio de
+`test/news2.mutacao.test.ts` — 95 testes novos, **nenhuma** alteração no
+código de produção; a suíte passou de 130 para 225 testes. Nenhum
+sobrevivente revelou divergência entre o kernel e a spec `RULE-NEWS2 0.2.0`:
+as cinco tabelas de banda foram reconferidas linha a linha contra a spec
+§4.1/§3.3 e estão corretas, assim como os textos obrigatórios do §7.
+
+**Sobreviventes residuais (74) — classificação nominal.** Nenhum é matável
+pela API pública; todos foram inspecionados um a um:
+
+1. **Fronteira de epsilon ou de empate (11).** Trocas de `<`/`>` por `<=`/`>=`
+   em comparações contra `X ± 1e-9` (`roundToChartUnits` L224/228/233;
+   tolerância de conflito L386; faixa plausível L501; atualidade L515/522 e
+   L1078/1080) e o empate do insumo mais antigo (L1076). Matá-los exigiria um
+   insumo que caísse EXATAMENTE sobre o epsilon — inalcançável, porque idades
+   vêm de diferenças inteiras de milissegundos; um teste de ruído de ponto
+   flutuante não teria significado clínico.
+2. **Guarda estruturalmente sempre verdadeira/falsa (25).** Operandos de
+   `&&`/`||` que os tipos já garantem: `expectedUnit !== undefined` (L486) e
+   `range !== undefined` (L501), definidos para os cinco parâmetros numéricos;
+   `age.kind === "verified"` (L795), depois do retorno de `unknown`;
+   `input.pregnancy === "not_documented"` (L719), depois do gate;
+   `parameter === "o2_status"` (L534), depois do retorno dos codificados; e as
+   guardas de `status`/`totalScore`/`riskTier` em L640/675/715/752/959/963/981,
+   que só recebem combinações coerentes por construção.
+3. **Código defensivo comprovadamente inalcançável (16).** Ramo de soma
+   parcial L697–701 (exigiria `status === "valid"` com pontuação nula —
+   impossível, pois isso implica `o2_status` em falha, que já derruba o
+   agregado); `return "__unmappable__"` (L539); `case "spo2"` e `default:` de
+   `bandScoreForChartUnit` (L576/584, sombreados pelas métricas próprias da
+   SpO2); e os fallbacks de texto `"—"`, `"sem horário"`,
+   `"horário não informado"`, `"condição não especificada"` e `?? ""`
+   (L892/964/968/973/981).
+4. **Reescrita sem efeito observável (20).** `Date.parse` de `null`/`undefined`
+   já devolve `NaN` (L241); o retorno antecipado de `roundToChartUnits` (L224)
+   coincide com o caminho longo; `?? []` em `spo2ScaleAssignments` (L621) e
+   `.sort()` de escalas (L622) são reabsorvidos por `?? "scale1"` (L625/634);
+   `?.` em `observationUsed` (L860/879), nunca nulo nos ramos válidos;
+   `.trim()` (L966), com unidade sempre não vazia; `?? "nao_informado"` (L724),
+   que recai no mesmo rótulo; e `a + b` no desempate (L561), inócuo porque os
+   candidatos já chegam em ordem crescente.
+5. **Parâmetro morto em `buildNonScoringRecord` (2).** O argumento
+   `_annotations` (L604/617) não é lido pela função. **Pendência de limpeza**
+   — não corrigida aqui porque alterar `src/` estava fora do escopo desta
+   tarefa; nenhum efeito clínico.
+
 ## Scripts
 
 - `pnpm --filter @intensicare/kernel-clinico build` — compila para `dist/`.
 - `pnpm --filter @intensicare/kernel-clinico test -- --run` — roda os testes
-  (130: 93 vetores CRV + contagem + propriedades + unitários + duplicatas
-  temporais + fundação).
+  (225: 93 vetores CRV + contagem + propriedades + unitários + duplicatas
+  temporais + morte de mutantes + fundação).
+- `pnpm --filter @intensicare/kernel-clinico test:mutacao` — análise de
+  mutação (ver seção acima).
 
 ## Dependências de runtime
 

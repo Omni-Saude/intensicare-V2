@@ -1,0 +1,3 @@
+# Artefatos da análise de mutação (Stryker) — gerados, nunca versionados.
+.stryker-tmp/
+reports/
