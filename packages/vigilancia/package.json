@@ -1,0 +1,27 @@
+{
+  "name": "@intensicare/vigilancia",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Vigilância contínua: carga de alarmes, deriva de fonte, versão de regra e KPIR-14 (instrumentação sobre dados sintéticos).",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@intensicare/dominio": "workspace:*",
+    "@intensicare/persistencia": "workspace:*"
+  }
+}
