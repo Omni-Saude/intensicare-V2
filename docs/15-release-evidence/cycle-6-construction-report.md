@@ -56,7 +56,7 @@ enfraquecida para parecer progresso (anti-padrão 10).
 | 4. Architecture/UX contracts | 13 minutas de ADR (`ADR-0012`–`ADR-0024`), 5 artefatos UX do §11, contratos publicados | ADR baseline completo em minuta; UX §11 documentada; MG-G4 segue ato humano |
 | 5. Connector/security design | Política MCP, plano de perfis FHIR, catálogo de eventos | Documental; suites executáveis de conector seguem pendentes (SPR-G5-1) |
 | 6. TDD foundation slice | Monorepo executável + fatia vertical sintética ponta-a-ponta | Fatia demonstrada com dados sintéticos; **MG-G7 permanece ato humano pendente** |
-| 0. Bootstrap (residual) | CODEOWNERS ativado, metadados de mudança, tranches 3 e 4 de tradução | §15.1 majoritariamente coberto |
+| 0. Bootstrap (residual) | CODEOWNERS ativado, metadados de mudança, `pnpm verify`, lint, fronteira executável, tranches 3 e 4 de tradução | §15.1 coberto nos itens A–I, com as exceções da seção 5.3 |
 
 Fases 2, 3, 7, 8, 9 e 10 **não avançaram** e não poderiam: dependem de execução
 AMH (OS-01..24), de ambientes production-like inexistentes, de validações
@@ -75,7 +75,8 @@ externas e de atos humanos nominais.
 | `SPR-G7-1` | Fundações executáveis + CI §15.2 | `32d44e7` | Monorepo, CI bloqueante, política de dados sintéticos |
 | `SPR-G4-3` | Artefatos UX §11 | `f246892` | IA, modelo de estados, service blueprint, contrato UI↔backend |
 | `SPR-G4-4` | Contratos publicados | `4d5ad80` | Índice, eventos, política MCP, plano FHIR (parcial: AsyncAPI formal pendente) |
-| `SPR-G7-2` | Fatia vertical sintética | `87798af` | 11 passos com caminhos degradados; 315 testes verdes |
+| `SPR-G7-2` | Fatia vertical sintética | `87798af` | 11 passos com caminhos degradados |
+| `SPR-G6-2` (parcial) | Controles SAF/THR/SEC verificados no código | `8ccaaf3`, `957d3cf` | 40 testes adversariais; 3 achados reais, 2 corrigidos, 1 virou requisito de produção |
 
 Saídas SPARK e itens §15.1 fora da numeração de sprints do mapa: árvore de
 outcomes, exclusões consolidadas, índice de famílias (`3b86358`); CODEOWNERS,
@@ -98,10 +99,13 @@ SQL, RLS por tenant, outbox transacional ADR-0010, auditoria append-only);
 problem+json pt-BR, idempotência com hash de corpo); `apps/web` (React,
 estados obrigatórios do §11, WCAG 2.2 AA de projeto).
 
-**Verificação (OBSERVED, execução real):** `pnpm -r build` verde nos 7 projetos;
-`pnpm -r test -- --run` com **315 testes verdes**, dos quais 93 são vetores de
-referência clínicos `CRV-NEWS2-0101..0193` executados red/green com asserções
-sobre status, total, banda, disparo e razões, mais testes de propriedade
+**Verificação (OBSERVED, execução real ao fim do ciclo):** `pnpm verify` verde
+de ponta a ponta (exit 0) — typecheck, lint, fronteira de módulos, build,
+testes e os dois gates de documentação. **450 testes verdes**: kernel-clinico
+225, api 70, persistência 33 (mais 1 falha esperada que documenta o ACHADO-01
+da seção 5.1), web 77, domínio 18, contratos 14, fixtures 13. Entre eles, 93
+vetores de referência clínicos `CRV-NEWS2-0101..0193` executados red/green com
+asserções sobre status, total, banda, disparo e razões, e testes de propriedade
 (fast-check) sobre limites de banda, determinismo e idempotência.
 
 **Caminhos degradados demonstrados** (E2E em `apps/api/src/e2e.fatia.test.ts`):
@@ -137,6 +141,78 @@ revisão tocou semântica clínica, o resultado foi *encaminhamento a ratificaç
 nunca decisão.
 
 ---
+
+## 5.1 Verificação de controles de segurança (SPR-G6-2, parcial)
+
+Quarenta testes adversariais — não testes felizes — sobre a fatia, cada um
+citando o controle verificado. Cobriram: fail-closed sem contexto de tenant em
+13 tabelas; leitura e escrita cross-tenant; IDOR em 9 tabelas **sem oráculo de
+enumeração** (título, detalhe e status idênticos para "existe noutro tenant" e
+"não existe"); auditoria append-only; atomicidade do outbox sob violação real
+de restrição; concorrência otimista com 6 formas de `If-Match` inválido e
+corrida de dois atores; quarentena de 10 formas malformadas; escore `null`
+jamais `0` (`HAZ-0005`).
+
+**Três achados reais** (OBSERVED):
+
+| Achado | Gravidade | Disposição |
+|---|---|---|
+| `SET SESSION AUTHORIZATION` restaura superusuário na mesma conexão e a RLS deixa de valer — enquanto `SET ROLE` é negado, dando falsa impressão de caminho fechado (`THR-0050`, P0) | ALTA | **Não corrigível na fatia** (PGlite é embarcado e monousuário). Virou **requisito vinculante de produção** em `ADR-0016` §4.1: a aplicação deve conectar já autenticada como papel não superusuário, sem `BYPASSRLS`. **A conclusão sobre RLS sob PGlite não é transferível para produção** e precisa ser refeita contra PostgreSQL real antes de G6 |
+| `instance` do `problem+json` ecoava `request.url`, devolvendo o identificador do sujeito dentro do corpo de erro (`SAF-0026`/`SEC-0015`) | MÉDIA | **Corrigido** (`957d3cf`): URN opaca de ocorrência, correlacionável com a auditoria por `x-correlation-id`. O teste de regressão encontrou o mesmo vazamento em mais três pontos não cobertos pelo achado original |
+| Rota de demonstração aceitava escrita sem autenticação | MÉDIA | **Corrigida por remoção**; a convenção que ela demonstrava segue exercida na rota real, autenticada |
+
+**Limite metodológico registrado pelo próprio verificador:** teste escrito por
+agente **não é** a independência que `SEC-0009`/`SAF-0037` exigem, e PGlite não
+é PostgreSQL de produção. Nada disso fecha `THR-*`, `SAF-*`, `SEC-*`, `HAZ-*`
+ou o Gate G6 — os 27 P0 seguem OPEN, e G6 exige verificador terceiro
+independente (`DEC-G0-02`) mais aceite humano nominal (`MG-G6`).
+
+## 5.2 Mutação no kernel clínico (PRE-08 fechada)
+
+Exigência do §14 para o kernel de segurança. Stryker executado de fato contra
+`news2.ts` e `types.ts`: **1.076 mutantes**, score de **65,73% → 93,07%** em
+`news2.ts` (100% em `types.ts`), com **95 testes acrescentados** (suíte do
+kernel: 130 → 225).
+
+Três fatos que sustentam o número: **nenhuma linha de `src/` foi alterada** (o
+score subiu por teste, não por afrouxar o alvo); **nenhum defeito clínico foi
+encontrado** — as cinco tabelas de banda foram reconferidas linha a linha
+contra a spec §4.1/§3.3 e os textos obrigatórios contra o §7; e os **74
+sobreviventes residuais estão classificados nominalmente** com número de linha,
+nenhum matável pela API pública (fronteira de epsilon, guarda estruturalmente
+verdadeira, código defensivo inalcançável, reescrita sem efeito observável,
+parâmetro morto).
+
+Decisão deliberada: os mutantes de epsilon **não** foram perseguidos. Seriam
+mataveis com entradas do tipo `-1e-9`, mas produziriam testes de ruído de ponto
+flutuante sem significado clínico — o número subiria e o valor de segurança,
+não (prompt §20: não otimizar contagem de teste).
+
+Dois achados não clínicos ficaram registrados como limpeza pendente no README
+do pacote: parâmetro morto em `buildNonScoringRecord` e ramos inalcançáveis em
+`bandScoreForChartUnit`.
+
+## 5.3 Fundação de repositório (§15.1 A/B/D)
+
+`pnpm verify` agrega typecheck, lint, fronteira de módulos, build, testes e os
+dois gates de documentação em **um comando, exit 0**. Biome pinado; três regras
+desligadas com raciocínio inline — nenhuma por conveniência. A mais relevante:
+`noFloatingPromises` acusou 12 casos, dos quais 10 eram falso-positivo do
+`fast-check`; **os 2 reais são gap de produto** (o frontend trata rejeição de
+rede sem `.catch()`, deixando a tela presa em "carregando"), e corrigi-los
+exige decidir um estado de erro de UI — registrado como backlog (`PRE-07`), não
+mascarado.
+
+`scripts/check_module_boundaries.mjs` materializa a `ADR-0002`, que até aqui só
+existia em prosa: valida a direção real de dependências entre os módulos
+(kernel sem dependência de workspace; `apps/web` só depende de contratos) e foi
+testado positivo **e** negativo.
+
+Correção de robustez de teste: as suítes que sobem PGlite estouravam os limites
+padrão do vitest sob CPU concorrida e falhavam por **tempo**, não por
+comportamento. Vermelho intermitente em suíte de segurança clínica ensina a
+equipe a ignorar vermelho — limites explicitados com a justificativa no próprio
+arquivo de configuração.
 
 ## 6. Premissas de construção assumidas
 
@@ -207,7 +283,7 @@ do modelo agora documentado.
 
 ## 10. Método de orquestração
 
-Vinte e dois especialistas estreitos, todos com fronteira de domínio, escopo de
+Vinte e cinco especialistas estreitos, todos com fronteira de domínio, escopo de
 escrita disjunto e critério de aceitação explícitos; nenhum agente genérico.
 Roteamento por classe de tarefa: tier máximo para conteúdo clínico, de segurança
 e verificação adversarial; tier intermediário para trabalho estruturado de
