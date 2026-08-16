@@ -26,3 +26,9 @@ IDs when this directory is populated.
 **Populated when:** Gate G1 passes (observed workflows + named intended-use
 approver), after which the prioritized requirement catalog with stable IDs
 (OUT/USR/PRD per `docs/00-governance/traceability-policy.md`) lands here.
+
+**In the meantime:** `indice-priorizado-de-familias.md` in this same directory
+indexes, by real count and derived priority, the existing ID families
+(`SAF-*`, `HAZ-*`, `THR-*`, `SEC-*`, `DOM-*`, `QAS-*`, `IU-*`/`NIU-*`, `VAL-*`)
+that already function as de facto requirements while this directory stays
+empty — it is an index, not the catalog itself.
