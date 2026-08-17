@@ -621,3 +621,62 @@ Para cada alteração, responda:
 > teste/evidência proporcional ao risco, em vez de apenas afirmado?
 
 Se a resposta não puder ser demonstrada, não apresente a mudança como concluída.
+
+---
+
+## 16. Registro de execução (acrescentado em 2026-08-17 pelo executor)
+
+Esta seção **não altera o encargo acima**. Ela registra o que foi executado
+contra ele, para que uma sessão futura não replaneje trabalho já feito — o
+anti-padrão 15 do próprio encargo, na direção inversa.
+
+**Onde está:** branch `codex/finalizacao-plataforma-v2`, 20 commits sobre
+`main` @ `ecd32d5`, **PR #5 aberto** com 10 checks de CI verdes. `main`
+intacta. Nada foi mesclado; merge é ato do titular (`GDEC-0014`).
+
+**Leitura obrigatória na retomada, nesta ordem:**
+
+1. `docs/15-release-evidence/final-implementation-report.md` (§13 do encargo)
+2. `docs/15-release-evidence/final-implementation-audit.md` (matriz de delta, §5)
+3. `HANDOFF.yaml`, seção `consolidacao_final_2026_08_17`
+4. `.claude/CONTRATO-DE-AGENTES.md` e `.claude/agents/` (método do §9)
+
+**Estado medido:** `pnpm verify` exit 0 com **1.476 testes**, zero pulados,
+zero falhas, zero `expected fail` (linha de base: 1.026 + 1 `expected fail` P0,
+eliminado). Fronteira de tenant: **47 testes bloqueantes** contra PostgreSQL
+16.14 real. E2E de navegador 22/22. 148 verificações de contrato.
+
+**Os nove achados do §6** foram revalidados por reprodução no commit-base antes
+de qualquer edição. Disposição em §4 do relatório: ACH-01/03/05/06/09
+`RESOLVIDO` (alguns com limite declarado); ACH-02/04/07/08 `PARCIAL` ou
+`BLOQUEADO` por dependência humana ou externa, nunca por conveniência.
+
+**Seis revisões adversariais independentes** foram conduzidas (a 6ª não
+concluiu). Elas produziram **49 achados, sete deles P1**, dois exploráveis
+ponta a ponta contra PostgreSQL real. Todos os fechados estão dispostos na
+auditoria. **A taxa de achado NÃO convergiu**: as rodadas deram 8, 6, 9, 12 e
+12, e a 5ª reabriu uma classe que a 4ª declarava fechada. Não trate a contagem
+de rodadas como prova de robustez, e não presuma convergência.
+
+**Três erros do executor**, registrados no `HANDOFF.yaml` em vez de diluídos:
+verificação contra árvore em movimento (duas vezes, uma delas declarada
+"congelada" ao revisor); um `git add -A` que levou alteração parcial de
+migração; e uma alegação sobre `nextval` repassada sem medição, que era falsa.
+
+**Aberto e nomeado** (detalhe em `HANDOFF.yaml`): F1 função `SECURITY DEFINER`
+que leia o selo; F2 `ALTER TABLE … INHERIT` após as migrações; F3 outras
+asserções derivadas do próprio dado; F4 o contrato "escopo é a primeira
+escrita", ainda **não verificado**; F5 independência de relógio fora de
+`apps/web`, **não medida**.
+
+**Armadilha de medição desta bancada:** um `pnpm verify` sozinho leva o load a
+~28. Qualquer coisa em paralelo produz falhas por timeout que parecem defeitos e
+não são — o executor caiu nisso três vezes. Uma coisa pesada por vez; confira
+`uptime` antes de concluir de um vermelho; e o CI do PR #5 é evidência mais
+confiável que execução local.
+
+**Estado factual duro, inalterado:** 0 vias clínicas acionáveis; 47/47
+inelegíveis; `Observation` da AMH não consumível; candidato a integração;
+safety case M0; nenhum dado real acessado. Os seis pacotes de conteúdo clínico
+estão **byte-idênticos** ao commit-base. Nenhum gate aprovado, nenhum `MG-*`
+satisfeito.

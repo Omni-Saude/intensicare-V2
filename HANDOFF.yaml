@@ -462,6 +462,43 @@ consolidacao_final_2026_08_17:
     - "Gate estrutural ausente: a suíte roda com PERFIL e NODE_ENV ambos definidos; defeito que dependa da forma do ambiente real segue invisível por padrão."
     - "PortaMigracao (lock consultivo + versão durável de schema) sem implementação real; migrações concorrentes não serializadas."
     - "TLS na conexão de banco não coberto; custo de latência do selo de escopo não medido."
+  medicoes_finais_2026_08_17:
+    verify_maquina_ociosa: "pnpm verify exit 0, 1.476 testes em 11 pacotes, ZERO pulados, ZERO falhas, ZERO expected fail (kernel 305, api 336, rule-bundle 302, web 187, persistencia 83, vigilancia 77, conformidade 62, observabilidade 55, contratos 38, dominio 18, fixtures 13)"
+    fronteira_postgres: "47 testes bloqueantes contra PostgreSQL 16.14 real"
+    e2e: "22/22 Playwright, deterministico em 4 execucoes"
+    contratos: "148 verificacoes (openapi + asyncapi)"
+    ci_pr5: "10 checks verdes no commit 1a6f3df — build-and-test (pnpm verify com PostgreSQL real e IC_FRONTEIRA_PG=obrigatoria), ensaio-de-migracao, e2e-navegador, artefato-api, artefato-web, higiene-de-gate, vulnerabilidades-de-dependencia, doc-conventions, forbidden-content, change-metadata"
+    F6_fuso_horario: "RESPONDIDO — TZ=Pacific/Kiritimati (UTC+14): exit 0, 1.476 testes, zero falhas. A suite NAO depende de fuso. TZ=Pacific/Niue (UTC-11) NAO foi medido."
+  ARMADILHA_DE_MEDICAO_LOCAL: >-
+    LEIA ANTES DE INTERPRETAR QUALQUER VERMELHO LOCAL. Nesta maquina um unico
+    `pnpm verify` leva o load average a ~28 sozinho. Rodar QUALQUER outra coisa
+    em paralelo (outro verify, uma revisao adversarial que roda verify, um teste
+    de TZ) produz falhas por TIMEOUT que parecem defeitos e NAO SAO. O
+    orquestrador cometeu esse erro tres vezes e chegou a relatar uma
+    "dependencia de fuso horario" que era pura contencao — retratada depois com
+    medicao isolada. REGRA: uma coisa pesada por vez; se houver vermelho,
+    conferir `uptime` ANTES de concluir qualquer coisa; e o CI do PR #5 (runner
+    limpo) e' evidencia mais confiavel que esta bancada.
+  F5_NAO_MEDIDO: >-
+    Independencia de RELOGIO fora de apps/web NAO foi medida. apps/web recebeu
+    correcao estrutural (caminho unico de construcao que nao aceita agoraMs) e
+    prova empirica com o relogio do sistema em 2027 e 2019. kernel-clinico,
+    vigilancia, persistencia, conformidade e apps/api NAO receberam esse
+    tratamento. Tecnica barata e nao invasiva: falsificar apenas `Date` no setup
+    do vitest e rodar a suite em duas datas distantes. Num repositorio onde o
+    relogio e' semantica clinica (frescor, janelas, reavaliacao em tempo de
+    leitura), uma suite que so passa hoje e' defeito grave. UMA bomba-relogio
+    real ja foi encontrada e corrigida em apps/web, armada as 12:55:00Z.
+  SEXTA_REVISAO_NAO_CONCLUIDA: >-
+    A 6a rodada adversarial foi despachada e NAO concluiu (morreu por contencao
+    causada pelo proprio orquestrador, que rodava suites em paralelo). Alvos
+    nomeados pelos especialistas ao fechar a 5a, todos ABERTOS: (F1) funcao
+    SECURITY DEFINER de terceiro que leia o selo — o fecho de pg_rewrite cobre
+    view/matview e NAO cobre funcao; (F2) ALTER TABLE ... INHERIT aplicado
+    DEPOIS das migracoes, quando a auditoria ja rodou; (F3) outras assercoes
+    derivadas do proprio dado sob teste (o padrao circular foi corrigido em 2
+    lugares, pode haver irmaos); (F4) o contrato "escopo e' a primeira escrita"
+    segue NAO VERIFICADO — e' leitura de codigo, nao teste; (F5) acima.
   comandos_de_retomada: "ver docs/15-release-evidence/final-implementation-report.md §14"
 
 rules_for_any_resuming_agent:
