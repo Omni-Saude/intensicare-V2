@@ -1,297 +1,291 @@
 # IntensiCare V2
 
-> This README follows the evidence-labeling convention defined in
-> `docs/00-governance/evidence-notation.md`: material statements are
-> marked **OBSERVED** (verified directly, in this repository, as of the
-> date given), **SOURCE** (drawn from the orchestrator prompt), or
-> **PROPOSAL** (a recommendation, not yet ratified by any named human
-> authority). Unlabeled sentences in this file are structural/navigational,
-> not claims.
+### Sinais clínicos claros. Contexto explicável. Resposta humana coordenada.
 
-## What IntensiCare V2 is
+O **IntensiCare V2** é uma plataforma de apoio à decisão projetada para ajudar
+equipes de terapia intensiva a reconhecer, priorizar, explicar e coordenar a
+resposta à deterioração clínica. O produto organiza sinais dispersos em um
+fluxo consultivo, rastreável e orientado à ação humana — sem automatizar a
+decisão clínica.
 
-**SOURCE** (`INTENSICARE_V2_ORCHESTRATOR_PROMPT.md` §1): IntensiCare V2
-is a greenfield clinical decision-support platform whose mission is to
-"design and implement the smallest coherent platform that safely helps
-validated users recognize, prioritize, explain, and coordinate responses
-to clinically relevant deterioration in the validated care setting."
+> **Estado atual — engenharia e validação sintética.** A plataforma é
+> executável e sua principal fatia vertical funciona de ponta a ponta com dados
+> 100% sintéticos. Ela **não está liberada para uso clínico ou produção**, não
+> acessou dados reais e não sustenta alegações de efetividade clínica,
+> conformidade regulatória, segurança comprovada ou compatibilidade operacional
+> com a AMH. Permanecem **0 vias clínicas acionáveis**, 47/47 vias candidatas
+> inelegíveis e safety case em maturidade M0.
 
-**This is explicitly advisory, not autonomous or directive.** Per prompt
-§3 rule 15: "Keep clinical decision authority with accountable humans.
-Automation may calculate, summarize, route, and explain within approved
-intended use; it may not silently expand the intended use." Every
-alert, score, or recommendation IntensiCare V2 ever produces is
-designed to end in "authorized human acknowledgment, escalation,
-reassignment, resolution, or override" (prompt §1, the minimum candidate
-safety loop) — never in an automated clinical action.
+## O problema que o produto enfrenta
 
-## Greenfield policy
+Na UTI, sinais relevantes podem estar distribuídos entre sistemas, medições e
+momentos diferentes. O IntensiCare V2 foi desenhado para criar uma superfície
+única em que o intensivista possa:
 
-**SOURCE** (`INTENSICARE_V2_ORCHESTRATOR_PROMPT.md` §3 rules 1–5, full
-text in `docs/00-governance/legacy-import-policy.md`):
+- visualizar o estado do leito e a qualidade temporal dos dados;
+- entender quais parâmetros contribuíram para uma avaliação;
+- distinguir dado ausente, envelhecendo, desatualizado ou não computável;
+- reconhecer e coordenar trabalho sem apagar conflito, falha ou incerteza;
+- recuperar a proveniência da entrada, da regra, do resultado e da ação humana.
 
-- V2 lives in a new repository with independent history, package
-  namespace, secrets, environments, databases, deployment pipeline, and
-  release identity.
-- A prior system (`https://github.com/Omni-Saude/intensicare`, referred to as
-  "legacy") and an external data platform
-  (`Omni-Saude/amh-data-platform`, referred to as "AMH") are mounted
-  **read-only**. Neither is ever modified as part of V2 work.
-- **Default: do not copy** legacy or AMH code, schemas, migrations,
-  infrastructure, dependencies, clinical rules, screenshots, or tests.
-  An import requires a recorded license/IP decision, provenance, owner,
-  current-relevance statement, security review, clinical-relevance
-  review where applicable, a transformation log, and new V2 acceptance
-  tests — see `docs/00-governance/legacy-import-policy.md` §3 for the
-  full checklist. Nothing has been imported under this policy yet.
-- V2 does not use legacy database migrations as its baseline; it starts
-  with one reproducible migration history and a clean-install test
-  (not yet built — no database has been chosen; see "Current status"
-  below).
+Essas são capacidades de software demonstradas em cenário sintético — não uma
+promessa de desfecho clínico.
 
-## Evidence discipline
+## A experiência proposta
 
-**SOURCE** (`docs/00-governance/evidence-notation.md` §2): every
-material statement in this repository — requirement, risk, hazard,
-decision, status report, or code comment citing external authority —
-must carry exactly one of six labels:
+```mermaid
+flowchart LR
+    AMH["AMH / dados reais<br/>integração futura e bloqueada"] -. "candidato a integração" .-> ING
+    SYN["Fixtures SYNTH-<br/>única fonte usada hoje"] --> ING["Ingestão validada<br/>proveniência + idempotência"]
+    ING --> Q["Qualidade e temporalidade<br/>ausente · envelhecendo · velho"]
+    Q --> R["Despacho determinístico<br/>regra + bundle + fail-closed"]
+    R --> E["Avaliação explicável<br/>status e contribuições"]
+    E --> W["Alerta + item de trabalho<br/>outbox na mesma transação"]
+    W --> H["Reconhecimento humano<br/>concorrência otimista"]
+    H --> A["Auditoria append-only<br/>correlação e reconciliação"]
+```
 
-| Label | Meaning |
+O caminho pontilhado representa uma dependência real ainda não satisfeita. O
+caminho sólido é o fluxo já exercitado com fixtures sintéticas.
+
+## O que já funciona
+
+### Fatia vertical ponta a ponta
+
+- ingestão de observações com validação, quarentena e idempotência por hash do
+  corpo;
+- avaliação determinística do NEWS2 em **modo sombra, não acionável**;
+- estados explícitos de avaliação, sem converter ausência de dado em
+  normalidade;
+- criação durável de alerta, item de trabalho e outbox na mesma transação;
+- projeção da grade de leitos e histórico explicável por parâmetro;
+- reconhecimento de alerta com `If-Match`, controle de versão e tratamento
+  explícito de conflitos;
+- trilha de auditoria append-only para leituras e ações relevantes.
+
+### Regras clínicas governadas
+
+- kernel NEWS2 determinístico com vetores de teste e registro de comportamento;
+- dispatcher versionado, verificação de bundle e recusa fail-closed;
+- regra GCS implementada e testada no kernel, mas **não despachável na
+  aplicação**, pois ainda não existe bundle GCS aprovado/carregável;
+- assinatura, ativação, rollback, retirada e kill switch modelados no pacote de
+  rule bundle;
+- SOFA não implementado.
+
+Nenhuma regra está aprovada para uso clínico acionável. A execução do NEWS2
+serve à demonstração e validação técnica da arquitetura.
+
+### Segurança e isolamento testáveis
+
+- autenticação central com verificação JWS e adaptador OIDC/JWKS fail-closed;
+- adaptador sintético restrito aos perfis de desenvolvimento e teste;
+- contexto de tenant selado por transação e políticas de isolamento exercitadas
+  contra PostgreSQL 16.14 real;
+- testes adversariais para troca de papel, objetos alcançáveis, views,
+  herança, funções e gatilhos `SECURITY DEFINER`;
+- perfis endurecidos que recusam inicialização quando dependências obrigatórias
+  estão ausentes.
+
+Esses controles possuem evidência automatizada, mas **a fronteira de segurança
+ainda depende de verificação independente e do gate humano MG-G6**. A integração
+com um IdP real não foi executada; revogação de chave pode respeitar a janela de
+cache JWKS; TLS do banco e o custo de latência do selo de tenant ainda não foram
+validados para produção.
+
+### API, eventos e operação
+
+- contrato OpenAPI 3.1 e contrato AsyncAPI 3.0 versionados;
+- erros `application/problem+json`, cursores e concorrência otimista;
+- SSE contínuo no backend com replay por cursor, heartbeat, fila limitada,
+  backpressure, autorização por entrega e ticket efêmero de uso único;
+- superfícies distintas de liveness, readiness e startup;
+- telemetria tipada, redação de dados sensíveis e pacote de vigilância.
+
+O frontend ainda não consome o SSE contínuo: hoje ele usa leitura HTTP e expõe
+estados de conectividade de forma conservadora. O AsyncAPI possui verificação
+estrutural interna, mas ainda não foi validado contra o JSON Schema oficial da
+especificação 3.0.
+
+### UX clínica resiliente
+
+- grade de leitos, detalhe explicável e reconhecimento em duas etapas;
+- estados de carregamento, vazio, indisponibilidade, erro, degradação,
+  envelhecimento, dado velho, sessão e avaliação não computável;
+- comunicação que combina texto, ícone e cor;
+- cancelamento real de requisição, preservação rotulada do último dado e
+  recuperação de falha;
+- testes de teclado, foco, live regions, contraste, alvos de toque, reflow em
+  320 px e movimento reduzido.
+
+WCAG 2.2 AA é requisito de projeto, **não uma conformidade declarada**. A
+validação com pessoas usuárias de leitor de tela, ampliação e outras tecnologias
+assistivas não foi executada; o critério 2.4.11 também permanece sem validação
+dedicada.
+
+## Evidência reproduzível desta árvore
+
+Snapshot forense executado em **2026-08-17**. As contagens são medições do
+estado local auditado, não SLA nem aprovação de release.
+
+| Superfície | Resultado observado |
+|---|---:|
+| Projetos do workspace | 11 apps/pacotes |
+| Testes de pacote, unidade e integração | 1.497 verdes; 0 falhas |
+| Testes E2E em Chromium | 22 verdes; 0 falhas |
+| Verificações OpenAPI/AsyncAPI | 148 verdes |
+| Documentos verificados por convenção | 249 |
+| Arquivos cobertos pela varredura de conteúdo proibido | 592 |
+| Componentes no SBOM CycloneDX 1.6 | 58 |
+| Imagem API inspecionada | UID 1000; 69.510.456 bytes; gate verde |
+| Imagem web inspecionada | UID 101; 6.174.909 bytes; gate verde |
+
+O gate agregado `pnpm verify` passou com PostgreSQL 16.14 real e fronteira
+obrigatória. As imagens foram reconstruídas localmente a partir dos Dockerfiles
+pinados por digest e passaram pela inspeção de usuário, conteúdo e superfície.
+Isso **não** significa que os artefatos estejam assinados, que sua proveniência
+tenha sido verificada ou que tenham sido promovidos.
+
+A verificação de supply chain permanece transparente sobre dois achados: PGlite
+e `@intensicare/fixtures-sinteticas` ainda pertencem ao grafo de dependências de
+produção da API. Os perfis endurecidos impedem seu uso implícito, mas a separação
+física do artefato de produção ainda é oportunidade de melhoria.
+
+## Arquitetura do monorepo
+
+| Área | Responsabilidade principal |
 |---|---|
-| **SOURCE** | Copied or faithfully summarized from a cited artifact. |
-| **OBSERVED** | Directly verified in this repository, a pinned external repository, a test, or an environment. |
-| **INFERENCE** | A reasoned conclusion, naming every SOURCE/OBSERVED item it reasons from. |
-| **PROPOSAL** | A new recommendation awaiting a named human authority's decision. Not self-executing. |
-| **VALIDATION REQUIRED** | The default state for anything touching clinical correctness, legal/privacy basis, security acceptance, or residual risk, until a qualified human or empirical study closes it. |
-| **DECIDED** | Accepted by a named human authority, with date, rationale, and a supersession rule. **No agent may self-apply this label.** |
+| `apps/api` | composição Fastify, ingestão, projeções, autenticação, eventos e health |
+| `apps/web` | experiência React/Vite, estados resilientes e acessibilidade |
+| `packages/contratos` | tipos compartilhados, OpenAPI e AsyncAPI |
+| `packages/dominio` | invariantes e máquinas de estado puras |
+| `packages/kernel-clinico` | avaliação determinística de NEWS2 e GCS |
+| `packages/rule-bundle` | manifesto, assinatura, aprovação, ativação e rollback de regras |
+| `packages/persistencia` | PostgreSQL/PGlite, migrações, RLS, outbox e auditoria |
+| `packages/observabilidade` | métricas, tracing e redação por tipo |
+| `packages/vigilancia` | sinais de desempenho, dano e drift |
+| `packages/conformidade` | harness executável para contratos e cenários |
+| `packages/fixtures-sinteticas` | dados artificiais identificados pelo prefixo `SYNTH-` |
 
-Full rules, the required provenance block, and the copy-paste
-front-matter template are in `docs/00-governance/evidence-notation.md`.
-The CI gate that enforces front-matter presence (not label correctness,
-which is a human judgment) is described under "Running the docs
-checks" below.
+As fronteiras seguem um monólito modular e são verificadas por um gate próprio.
+Escolhas estruturais relevantes vivem em ADRs; uma dependência existente não é
+tratada como decisão arquitetural implícita.
 
-## Current status (OBSERVED, 2026-08-14)
-
-**SPARK discovery cycle 0, pre-Gate-G0.** Per
-`docs/00-governance/authority-model.md` and
-`docs/00-governance/registers/blockers-register.md`: Gate G0 (authority
-and access) is **NOT CLOSED**. As of 2026-08-14 all ten recorded
-blockers are `OPEN`, the majority because no named human holds any of
-the required `AUTH-*` decision-owner roles (product, clinical safety,
-security, privacy/legal, data-platform, UX, operations, intended-use
-approver — see `docs/00-governance/authority-model.md` §1). This is
-stated plainly rather than implied: **this repository currently has no
-named accountable human for any decision domain.** Every `owner` field
-in every document under `docs/` reads `UNASSIGNED — VALIDATION
-REQUIRED`, verbatim, by design — no agent may invent one.
-
-No application technology stack has been chosen, and none may be
-chosen by this task or by inference from the legacy repository (prompt
-§3 rule 14). Stack, platform, and database decisions are reserved for
-the ADR program (`docs/06-architecture/adrs/`, currently only a
-template — see `docs/06-architecture/adrs/ADR-template.md`).
-
-Documentation is being populated by multiple specialist contributors in
-parallel under the tree below; expect directories to fill in over time
-and treat any directory not yet listed as simply "not started," not as
-evidence of a decision to skip it.
-
-## Documentation map
-
-**SOURCE** (`INTENSICARE_V2_ORCHESTRATOR_PROMPT.md` §16, "Documentation
-architecture" — adapt only through an ADR):
-
-```text
-docs/
-├── 00-governance/              governance conventions, registers, authority model
-├── 01-vision-and-intended-use/ intended-use statement, non-intended uses, harm metrics
-├── 02-users-and-workflows/     user-role and workflow hypotheses
-├── 03-domain/                  glossary, conceptual model, invariants
-├── 04-product-requirements/
-├── 05-clinical-safety/         safety plan, hazard log, safety requirements
-├── 06-architecture/
-│   ├── system-context/
-│   ├── containers/
-│   ├── components/
-│   ├── quality-attributes/
-│   └── adrs/                   architecture decision records (template only so far)
-├── 07-data-and-provenance/
-├── 08-interoperability/
-│   ├── amh-data/                AMH compatibility dossier, contract inventory
-│   ├── fhir-smart/
-│   ├── hl7v2/
-│   ├── terminology/
-│   └── conformance/
-├── 09-api-events-and-mcp/
-├── 10-ux-and-accessibility/
-├── 11-security-privacy-compliance/
-├── 12-quality-validation-and-testing/  test strategy
-├── 13-operations-and-reliability/
-├── 14-devsecops-and-delivery/   this document's siblings: CI policy, branch-protection request
-├── 15-release-evidence/
-├── 16-validation-backlog/
-└── archive/
-    └── legacy-provenance/
-```
-
-**OBSERVED (2026-08-14):** directories `00`, `01`, `02`, `03`, `05`,
-`06` (partial — `adrs/` only), `08`, `12`, and `14` contain at least one
-file. `04`, `07`, `09`, `10`, `11`, `13`, `15`, `16`, and `archive/` do
-not yet exist in this repository. Re-run `find docs -mindepth 1
--maxdepth 1 -type d | sort` for the current state — this list is a
-snapshot, not a standing guarantee.
-
-## Running the docs checks
-
-Two Python 3 standard-library-only scripts implement the only CI gates
-that exist today (see `docs/14-devsecops-and-delivery/ci-policy.md` for
-the full policy, including which future gates are blocked on which
-ADRs):
-
-```bash
-python3 scripts/check_doc_conventions.py   # front-matter presence/shape on docs/**/*.md
-python3 scripts/check_forbidden_content.py # credentials, CPF-shaped, email, PHI-canary scan
-```
-
-Both run automatically on every push and pull request via
-`.github/workflows/docs-gates.yml` and are designed to be **blocking**,
-never advisory (prompt §3 rule 13). Note: the workflow running is not
-the same as it being *enforced* — see
-`docs/14-devsecops-and-delivery/branch-protection-request.md`, status
-BLOCKED pending repository-admin action.
-
-Ownership of review paths is defined (as an inactive skeleton — every
-rule is commented out pending named owners) in `.github/CODEOWNERS`.
-
-## Como desenvolver
-
-**OBSERVED (2026-08-16):** esta seção documenta o fluxo de desenvolvimento
-local e a verificação de um comando exigida por
-`INTENSICARE_V2_ORCHESTRATOR_PROMPT.md` §15.1 item B. Todos os comandos
-abaixo foram executados de verdade neste repositório na data acima.
+## Executar localmente
 
 ### Pré-requisitos
 
-- **Node.js 22 LTS** (`>=22.0.0 <23.0.0`, per `engines` em `package.json` raiz;
-  PRE-01 de `docs/06-architecture/premissas-de-construcao.md`).
-- **pnpm 9**, ativado via corepack:
+- Node.js `>=22 <23`;
+- pnpm `9.0.0` via Corepack;
+- Python 3 para os gates documentais;
+- Chromium do Playwright para a suíte E2E;
+- PostgreSQL 16 para reproduzir a fronteira real de tenant.
 
-  ```bash
-  corepack enable
-  corepack prepare pnpm@9.0.0 --activate
-  ```
-
-### Instalação
+### Instalação e verificação principal
 
 ```bash
-pnpm install
-```
-
-Instala as dependências de todo o monorepo (workspaces `packages/*` e
-`apps/*`, per `pnpm-workspace.yaml`) a partir do `pnpm-lock.yaml`
-committado. Em CI, o mesmo passo roda com `--frozen-lockfile` (falha se o
-lockfile divergir do manifesto — ADR-0022 S1).
-
-### Verificação em um comando
-
-```bash
+corepack enable
+corepack prepare pnpm@9.0.0 --activate
+pnpm install --frozen-lockfile
 pnpm verify
 ```
 
-Agrega, nesta ordem exata, tudo que precisa estar verde antes de abrir um
-PR: `typecheck` → `lint` (Biome) → `check:boundaries` (fronteira de módulo,
-ADR-0002) → `build` → `test` → `check:docs` → `check:forbidden`. Funciona
-do zero logo após `pnpm install`, sem nenhum passo manual adicional. Cada
-etapa também roda isoladamente (`pnpm typecheck`, `pnpm lint`, `pnpm
-check:boundaries`, `pnpm build`, `pnpm test`, `pnpm check:docs`, `pnpm
-check:forbidden`) — útil para iterar em uma etapa sem esperar as demais.
+### Demonstração sintética no navegador
 
-**Nota sobre `packages/persistencia` e o teste `it.fails`.** Essa suíte
-contém um teste deliberadamente marcado `it.fails` (ver
-`packages/persistencia/src/seguranca.test.ts`), que documenta um achado de
-segurança conhecido (ACHADO-01) — ele **precisa** continuar falhando por
-dentro para que o `it.fails` reporte sucesso. **OBSERVED**: rodar `pnpm
---filter @intensicare/persistencia test -- --run` isoladamente encerra com
-código de saída `0` e o relatório `33 passed | 1 expected fail (34)` — o
-Vitest já trata `it.fails` cujo corpo lança como um PASS, não como falha
-de suíte. `pnpm test` (o agregador `pnpm -r --if-present run test --
---run` usado por `pnpm verify`) também encerra com código `0` incluindo
-esse pacote — nenhum ajuste na agregação foi necessário. Se esse teste
-algum dia parar de falhar por dentro (ou seja, `it.fails` passar a reportar
-falha porque o achado foi corrigido), o `pnpm verify` vai ficar vermelho
-de propósito — troque `it.fails` por `it` normal só quando o ACHADO-01
-estiver de fato corrigido, nunca antes.
-
-### Formatação e lint (Biome)
-
-Uma única ferramenta — [Biome](https://biomejs.dev/), pinada em versão
-exata (`@biomejs/biome` em `devDependencies` da raiz) — faz formatação e
-lint. Configuração em `biome.jsonc` (formato `.jsonc` para permitir
-comentário ao lado de cada regra desligada e por quê). Foco declarado é
-**correção** (variáveis/imports não usados, imports organizados, promise
-não tratada), não preferência de estilo:
+A suíte E2E inicia API e web automaticamente, cria uma sessão apenas em memória
+e usa exclusivamente fixtures `SYNTH-`:
 
 ```bash
-pnpm format        # formata em modo escrita
-pnpm format:check  # só verifica, não escreve (usado implicitamente por `pnpm lint`)
-pnpm lint           # biome ci --error-on-warnings — o que `pnpm verify` roda
-pnpm lint:fix       # aplica só fixes SEGUROS (nunca --unsafe)
+pnpm test:e2e:instalar  # somente na primeira execução
+pnpm test:e2e
 ```
 
-Três regras de lint estão explicitamente **desligadas** com o motivo
-documentado inline em `biome.jsonc` (`noNonNullAssertion`,
-`nursery/noFloatingPromises`, `a11y/useSemanticElements`) porque a única
-correção que o Biome oferece para cada uma exigiria mudar comportamento em
-tempo de execução, não apenas mecânica — e este projeto nunca altera
-comportamento só para satisfazer o linter. Ver os comentários em
-`biome.jsonc` para o raciocínio completo de cada uma.
-
-### Fronteira de módulo (ADR-0002)
+Para exploração manual, em dois terminais:
 
 ```bash
-pnpm check:boundaries
+# terminal 1
+PERFIL=dev-synthetic pnpm --filter @intensicare/api dev
+
+# terminal 2
+pnpm --filter @intensicare/web dev
 ```
 
-Executa `scripts/check_module_boundaries.mjs`, que lê os `package.json`
-reais do workspace e falha (`exit 1`) se qualquer pacote declarar uma
-dependência de workspace fora da direção permitida por ADR-0002 (monólito
-modular, Opção A) — por exemplo, `packages/kernel-clinico` não pode
-depender de nada do workspace, e `apps/web` só pode depender de
-`packages/contratos`. Isso materializa como verificação automatizada a
-condição C5 de ADR-0002 §5.1 ("um mecanismo de imposição de fronteira...
-bloqueante de build, não consultivo").
+Depois, acesse `http://localhost:5173`. O perfil `dev-synthetic` é deliberado:
+sem perfil explícito a API falha antes de abrir a porta. A readiness pode
+responder 503 neste estágio porque bundle GCS e alvos operacionais obrigatórios
+ainda não estão satisfeitos; isso é comportamento fail-closed, não um atalho a
+ser removido.
 
-### Rodar um pacote isolado
+### Gates especializados
 
 ```bash
-pnpm --filter @intensicare/kernel-clinico test        # ou build / typecheck
-pnpm --filter @intensicare/api dev                     # apps/api em watch mode
-pnpm --filter @intensicare/web dev                      # apps/web via Vite
+pnpm test:fronteira       # requer PostgreSQL real e PG_TEST_URL
+pnpm test:e2e             # navegador real contra API local sintética
+pnpm check:supply-chain   # SBOM, licenças, vulnerabilidades, segredos e workflows
+pnpm check:contratos      # coerência OpenAPI/AsyncAPI e tipos
 ```
 
-O nome depois de `--filter` é o campo `name` do `package.json` do
-pacote/app (`@intensicare/<diretório>`). Alternativamente, `cd` até o
-diretório do pacote e rode `pnpm <script>` diretamente — cada
-`package.json` sob `packages/*`/`apps/*` expõe `build`, `test` e
-`typecheck` (e `dev`/`start` onde aplicável).
+## Estado de maturidade — sem atalhos semânticos
 
-## Disclaimer
+| Dimensão | Estado atual | O que falta para avançar |
+|---|---|---|
+| Plataforma executável | **Demonstrada com dados sintéticos** | consolidar a revisão adversarial em curso e reproduzir em checkout limpo |
+| Uso clínico | **Não autorizado** | evidência clínica, ratificações, revisão independente e gates humanos |
+| Vias acionáveis | **0** | dados elegíveis e validação por via; não basta existir código de regra |
+| Integração AMH | **Candidato a integração** | contrato/dado consumível, execução AMH e ambientes reais |
+| Safety case | **M0** | reduzir hazards, reunir evidência e obter aceites nomeados |
+| Segurança | **Controles testados; não aprovada** | IdP real, TLS, pentest/verificador independente e MG-G6 |
+| Acessibilidade | **Automação parcial verde** | validação assistiva e critérios manuais pendentes |
+| Supply chain | **Mecânica implementada** | retirar dependências sintéticas do artefato, assinar, atestar e promover por digest |
+| Produção | **Não atingida** | ambientes AMH, G8, operação, restore/rollback e aprovações nomeadas |
 
-**This repository, as of 2026-08-14, makes no clinical claim, no
-regulatory claim, and no compatibility claim of any kind.** Nothing
-here has been validated for clinical effectiveness, cleared or approved
-by any regulatory body, or demonstrated compatible with any external
-data platform for actionable clinical use. Per prompt §3 rule 11: "Do
-not claim clinical effectiveness, regulatory compliance, security,
-availability, or AMH compatibility without corresponding evidence and
-named approval." Where this repository currently states a compatibility
-finding (`docs/08-interoperability/amh-data/compatibility-finding.md`),
-it explicitly classifies AMH as an "integration candidate; not
-currently demonstrated compatible for actionable ICU evaluation" — a
-finding about the current evidence, not a rejection and not a
-clearance.
+### Dependências externas e humanas que continuam abertas
 
-## License
+- MG-G7: aceite humano da fatia, com revisor clínico independente;
+- aceite e credencial do Dr. Marcelo e ratificações clínicas pendentes;
+- parecer jurídico OS-16 em PDF original assinado;
+- BLK-0015 e definição de ownership AMH;
+- IdP, registry, chave de assinatura e identidade OIDC de CI reais;
+- ambientes de staging e produção da AMH;
+- proteção da branch principal com checks obrigatórios;
+- validação com tecnologias assistivas, pentest e verificação independente.
 
-See `LICENSE` at the repository root.
+Nenhum desses itens é fechado por teste, documentação, agente ou aumento de
+cobertura.
+
+## Como ler a evidência
+
+Comece por estes artefatos:
+
+1. [Relatório final de implementação](docs/15-release-evidence/final-implementation-report.md)
+   — capacidades, medições, limites e pendências;
+2. [Auditoria do delta](docs/15-release-evidence/final-implementation-audit.md)
+   — achados, severidade, critérios de aceite e disposição;
+3. [Relatório de construção do ciclo 6](docs/15-release-evidence/cycle-6-construction-report.md)
+   — como a primeira plataforma executável foi composta;
+4. [Análise mapa × estado](docs/14-devsecops-and-delivery/analise-pos-ciclo-6-mapa-vs-estado.md)
+   — situação real de G1 a G8;
+5. [Mapa até produção](docs/14-devsecops-and-delivery/mapa-de-projeto-ate-producao.md)
+   — trabalho restante, dependências e marcos humanos;
+6. [Índice de ADRs](docs/06-architecture/adrs/adr-index.md),
+   [OpenAPI](packages/contratos/openapi.yaml) e
+   [AsyncAPI](packages/contratos/asyncapi.yaml) — decisões e contratos.
+
+Afirmações materiais do repositório seguem a notação `SOURCE`, `OBSERVED`,
+`INFERENCE`, `PROPOSAL`, `VALIDATION REQUIRED` e `DECIDED`. Apenas uma autoridade
+humana nomeada pode aplicar `DECIDED` ou aprovar risco residual.
+
+## Princípios de contribuição
+
+- preserve o caráter consultivo e a autoridade clínica humana;
+- use apenas dados sintéticos até autorização explícita e ambiente apropriado;
+- não converta teste verde em alegação clínica, regulatória ou de segurança;
+- não trate pacote existente como integração concluída;
+- não enfraqueça gates, hazards ou contagens para comunicar progresso;
+- registre decisões arquiteturais em ADR e mudanças clínicas em bundle
+  versionado, revisável e rastreável;
+- mantenha o caminho degradado tão visível e testado quanto o caminho feliz.
+
+## Licença
+
+Distribuído sob a licença MIT. Consulte [LICENSE](LICENSE).
