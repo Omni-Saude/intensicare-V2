@@ -14,7 +14,8 @@
   },
   "files": [
     "dist",
-    "openapi.yaml"
+    "openapi.yaml",
+    "asyncapi.yaml"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

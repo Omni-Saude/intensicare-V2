@@ -31,6 +31,18 @@
  * segurança comprovada é feita por este pacote.
  */
 
+// Alias local: o nome público sai por `export *` abaixo; reimportá-lo com o
+// mesmo nome seria redeclaração no escopo do módulo.
+import type { TipoEventoFluxo as TipoEventoFluxoCanal } from "./asyncapi.js";
+
+/**
+ * Contrato do canal de eventos em tempo real (AsyncAPI — `../asyncapi.yaml`):
+ * nomes de evento SSE, estados de conexão, motivos de encerramento, política
+ * de evolução e transporte do handshake. Reexportado aqui para que
+ * `@intensicare/contratos` continue sendo o ponto de importação único.
+ */
+export * from "./asyncapi.js";
+
 export const packageVersion = "0.0.0" as const;
 
 // ---------------------------------------------------------------------------
@@ -344,13 +356,12 @@ export interface EventoFluxo {
    * `observacao-clinica-registrada` é o evento por fato clínico gravado
    * pelo outbox transacional (`clinical_observation_recorded` no backbone
    * interno) — surge no replay desde a integração real da fatia.
+   *
+   * O enum é derivado de `TIPOS_EVENTO_FLUXO` (`./asyncapi.ts`), a fonte
+   * única que o `asyncapi.yaml` repete e que `scripts/check_contratos.mjs`
+   * confronta com o catálogo em prosa — divergência FALHA o gate.
    */
-  tipo:
-    | "observacoes-ingeridas"
-    | "observacao-clinica-registrada"
-    | "avaliacao-computada"
-    | "alerta-criado"
-    | "alerta-atualizado";
+  tipo: TipoEventoFluxoCanal;
   tenantId: string;
   ocorridoEm: string;
   dados: unknown;

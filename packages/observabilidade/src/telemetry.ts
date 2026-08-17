@@ -23,9 +23,15 @@
  *
  * IDs de trace/span desta implementação são gerados por `node:crypto` no
  * formato hex de 16/32 caracteres do OTel; eles NÃO são propagados por
- * cabeçalho — a correlação HTTP existente hoje é o `x-correlation-id` que
- * `apps/api/src/routes.ts` já ecoa, e ligar os dois é trabalho de integração
- * ainda não feito (ver pendências).
+ * cabeçalho. A correlação HTTP existente é o `x-correlation-id` que
+ * `apps/api/src/routes.ts` ecoa.
+ *
+ * ESTADO REAL (atualizado em 2026-08-17, ACH-06): a telemetria PASSOU a ter
+ * consumidor — `apps/api/src/saude/telemetria.ts` emite sobre as rotas
+ * `/v1/*` reais. **Mas a junção de trace e `x-correlation-id` continua não
+ * feita**: são dois espaços de identificador que ninguém liga, e o texto
+ * anterior segue verdadeiro nessa parte específica. Ligá-los exige decidir
+ * propagação de contexto (`ADR-0020`), ainda em aberto.
  */
 import { randomBytes } from "node:crypto";
 import type {
