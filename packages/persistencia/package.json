@@ -2,7 +2,7 @@
   "name": "@intensicare/persistencia",
   "version": "0.0.0",
   "private": true,
-  "description": "Camada de persistência do IntensiCare V2 (classe PostgreSQL — PGlite em dev/teste).",
+  "description": "Camada de persistência do IntensiCare V2 (classe PostgreSQL — adaptador de servidor real e simulador PGlite rotulado, atrás da mesma porta).",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -18,6 +18,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && mkdir -p dist/migrations && cp -f src/migrations/*.sql dist/migrations/",
     "test": "vitest",
+    "test:fronteira": "vitest run src/postgres/fronteira-postgres.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

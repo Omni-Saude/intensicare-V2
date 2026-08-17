@@ -16,6 +16,14 @@
  * honesta do que esta fatia NÃO consegue verificar está em
  * `docs/11-security-privacy-compliance/verificacao-de-controles-fatia-g7.md`.
  *
+ * ESTE ARQUIVO RODA SOBRE O SIMULADOR PGlite. Sob PGlite o isolamento por
+ * tenant NÃO é fronteira de segurança: a conexão é única e o usuário
+ * autenticado é superusuário (ver o bloco A' adiante). A fronteira de
+ * produção — aplicação AUTENTICADA já como papel sem privilégio contra
+ * PostgreSQL real — é verificada, de forma BLOQUEANTE, em
+ * `src/postgres/fronteira-postgres.test.ts`. Generalizar RLS de PGlite para
+ * produção é anti-padrão explícito do contrato de agentes (§6 item 6).
+ *
  * Controles exercitados aqui: SEC-0001/SAF-0007 (fail-closed sem contexto),
  * SEC-0009/SAF-0008 (isolamento de tenant no armazenamento, com evidência
  * adversarial), SEC-0003 (autorização por instância de recurso — sondagem
@@ -25,10 +33,12 @@
  * (idempotência não vaza entre tenants). Ameaças de referência: THR-0001,
  * THR-0002, THR-0015, THR-0019 (P0). Perigos: HAZ-0013, HAZ-0023, HAZ-0035.
  *
- * ACHADOS registrados como `it.fails` (falha REAL de controle, deixada
- * visível e não consertada — conserto está fora do escopo deste agente):
- *   - ACHADO-01: o papel de aplicação consegue reescalar para superusuário
- *     na mesma conexão, o que anula a RLS. Ver o teste homônimo.
+ * NENHUM `it.fails` neste arquivo. O ACHADO-01 (o papel de aplicação
+ * reescala para superusuário na mesma conexão, anulando a RLS) deixou de ser
+ * uma falha P0 marcada como "esperada" num gate verde — anti-padrão §6 item 7
+ * do contrato — e passou a ser: (a) uma LIMITAÇÃO DO SIMULADOR afirmada
+ * positivamente no bloco A' abaixo, e (b) um controle de produção
+ * verificado de forma bloqueante em `src/postgres/fronteira-postgres.test.ts`.
  *
  * Dados 100% sintéticos (marcador `SYNTH-`, política GDEC-0014).
  */
@@ -430,14 +440,14 @@ describe("A. isolamento de tenant no armazenamento sob tentativa ativa de contor
   );
 
   it(
-    "SEC-0001 — DOCUMENTA a raiz de confiança: quem define `app.tenant_id` decide o que a RLS mostra (a RLS não substitui SEC-0001)",
+    "SEC-0009 — o escopo instalado é IMUTÁVEL dentro da transação: reescrever `app.tenant_id` não reescopa (ACHADO-02 corrigido)",
     async () => {
-      // Não é um defeito: é a propriedade estrutural do controle. A RLS
-      // impede a consulta SEM predicado de tenant (THR-0002), mas NÃO impede
-      // que a aplicação escolha o tenant ERRADO (THR-0001) — isso depende
-      // inteiramente de o tenant vir de identidade verificada. Nesta fatia o
-      // token é um stub sem verificação criptográfica (`apps/api/src/auth.ts`),
-      // logo SEC-0001 permanece NÃO VERIFICADO como controle de fronteira.
+      // ANTES da migração `0004_escopo_selado.sql`, este teste afirmava o
+      // OPOSTO: que reescrever `app.tenant_id` no meio da transação trocava o
+      // que a RLS mostrava. Revisão adversarial independente demonstrou que
+      // isso era leitura E escrita cross-tenant a partir de SQL arbitrário no
+      // processo (THR-0050). A asserção foi INVERTIDA — é estritamente mais
+      // exigente do que era.
       const visto = await withTenantTransaction(db, tenantA.tenantId, async (tx) => {
         const antes = await tx.query<{ id: string }>(`select id from organizations`);
         await tx.query("select set_config('app.tenant_id', $1, true)", [tenantB.tenantId]);
@@ -445,7 +455,40 @@ describe("A. isolamento de tenant no armazenamento sob tentativa ativa de contor
         return { antes: antes.rows.map((r) => r.id), depois: depois.rows.map((r) => r.id) };
       });
       expect(visto.antes).toEqual([tenantA.organizationId]);
-      expect(visto.depois).toEqual([tenantB.organizationId]);
+      expect(
+        visto.depois,
+        "reescrever app.tenant_id reescopou a transação — vazamento cross-tenant",
+      ).toEqual([tenantA.organizationId]);
+
+      // Chamar o instalador para outro tenant é recusado, não ignorado.
+      await expect(
+        withTenantTransaction(db, tenantA.tenantId, (tx) =>
+          tx.query("select intensicare_escopo.instalar($1)", [tenantB.tenantId]),
+        ),
+      ).rejects.toThrow(/escopo de tenant já instalado/i);
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    "SEC-0001 — LIMITE que permanece: a RLS não substitui SEC-0001 (quem ABRE a transação escolhe o tenant)",
+    async () => {
+      // Não é defeito a consertar aqui: é a propriedade estrutural do controle.
+      // A RLS impede a consulta SEM predicado de tenant (THR-0002), e agora
+      // também impede o pivô DENTRO de uma transação; mas NÃO impede que a
+      // aplicação abra a transação seguinte com o tenant ERRADO (THR-0001) —
+      // isso depende inteiramente de o tenant vir de identidade verificada.
+      // Nesta fatia o token é um stub sem verificação criptográfica
+      // (`apps/api/src/auth.ts`), logo SEC-0001 permanece NÃO VERIFICADO como
+      // controle de fronteira.
+      const comoA = await withTenantTransaction(db, tenantA.tenantId, (tx) =>
+        tx.query<{ id: string }>(`select id from organizations`),
+      );
+      const comoB = await withTenantTransaction(db, tenantB.tenantId, (tx) =>
+        tx.query<{ id: string }>(`select id from organizations`),
+      );
+      expect(comoA.rows.map((r) => r.id)).toEqual([tenantA.organizationId]);
+      expect(comoB.rows.map((r) => r.id)).toEqual([tenantB.organizationId]);
     },
     TEMPO_LIMITE_MS,
   );
@@ -455,47 +498,50 @@ describe("A. isolamento de tenant no armazenamento sob tentativa ativa de contor
 // A'. ACHADO-01 — reescalada de papel anula a RLS (falha REAL, isolada)
 // ---------------------------------------------------------------------------
 
-describe("A'. ACHADO-01 — o rebaixamento de papel é reversível na mesma conexão", () => {
+describe("A'. LIMITAÇÃO DO SIMULADOR PGlite — não é o controle de produção", () => {
   /**
-   * ACHADO DE ALTA PRIORIDADE (não consertado — conserto exige mudar a
-   * topologia de conexão, fora do escopo deste agente).
+   * ACHADO-01 — RESOLVIDO NA TOPOLOGIA DE PRODUÇÃO, PERSISTENTE NO SIMULADOR.
    *
-   * OBSERVADO nesta fatia: depois de `bootstrapDatabase`, a conexão roda
-   * como `intensicare_app` (nosuperuser) e a RLS vale. Mas o usuário
-   * AUTENTICADO ORIGINAL da sessão PGlite é `postgres` (superusuário) — e
-   * o PostgreSQL permite `SET SESSION AUTHORIZATION` de volta ao
-   * superusuário exatamente nessa condição (`SET ROLE postgres` é negado,
-   * o que dá a falsa impressão de que o caminho está fechado; não está).
-   * Logo qualquer caminho capaz de executar SQL arbitrário no processo
-   * (injeção de SQL, dependência comprometida — THR-0050 P0) restaura o
-   * superusuário e a RLS deixa de valer para TODOS os tenants.
+   * O que se observa aqui é uma propriedade do SIMULADOR, não um defeito em
+   * aberto do produto: o PGlite tem UMA conexão, cujo usuário AUTENTICADO é
+   * `postgres` (superusuário). A aplicação só chega a `intensicare_app`
+   * REBAIXANDO-SE (`set session authorization`), e o PostgreSQL permite
+   * `SET SESSION AUTHORIZATION` de volta exatamente nessa condição
+   * (`SET ROLE postgres` é negado, o que dá a falsa impressão de que o
+   * caminho está fechado; não está). Superusuário ignora RLS mesmo com
+   * `FORCE ROW LEVEL SECURITY`.
    *
-   * Consequência para SEC-0009 ("isolamento imposto pela camada de
-   * armazenamento"): nesta topologia o isolamento é imposto contra o
-   * CÓDIGO DE APLICAÇÃO CORRETO, não contra um adversário no processo.
+   * O CONTROLE de produção vive noutra topologia e é verificado, de forma
+   * BLOQUEANTE, contra PostgreSQL real e efêmero em
+   * `src/postgres/fronteira-postgres.test.ts`: lá a aplicação AUTENTICA-SE
+   * já como `intensicare_app` (sem SUPERUSER, sem BYPASSRLS, sem propriedade
+   * de tabela, papel dono do esquema é outro — migração
+   * `0003_fronteira_papeis.sql`), e todo caminho SQL de escalada é recusado
+   * pelo servidor. Ver ADR-0016 §4.1, THR-0050 (P0), SEC-0009, SAF-0008.
    *
-   * Encaminhamento (fora deste escopo): em ambiente real, a aplicação deve
-   * autenticar-se DIRETAMENTE como papel sem privilégio (nunca rebaixar-se
-   * a partir de superusuário) — matéria do ADR-0016 e do futuro docs/07.
-   *
-   * O teste abaixo afirma o CONTROLE desejado e está marcado `it.fails`
-   * porque o controle NÃO se sustenta hoje: ele falha, de propósito, e a
-   * suíte permanece verde por marcação explícita — não por omissão.
+   * Por isso NÃO existe mais nenhum `it.fails` neste arquivo: uma falha P0
+   * marcada como "esperada" dentro de um gate que termina verde é
+   * anti-padrão explícito do contrato (§6 item 7). Os dois testes abaixo
+   * AFIRMAM a limitação do simulador — passam de verdade, e falharão se o
+   * simulador mudar de comportamento, obrigando a revisitar esta nota.
    */
-  it.fails(
-    "SEC-0009/SEC-0003 — o papel de aplicação NÃO deveria conseguir reescalar para superusuário (ACHADO-01: consegue)",
+  it(
+    "SEC-0009 — no SIMULADOR (e só nele) o rebaixamento de papel é reversível: `set session authorization` devolve o superusuário",
     async () => {
       const db = await createTestDatabase();
       try {
-        try {
-          await db.exec("set session authorization postgres;");
-        } catch {
-          // Se o PostgreSQL recusasse aqui, o controle estaria sustentado —
-          // a asserção abaixo passaria e este `it.fails` acusaria a
-          // regressão (para melhor), obrigando a revisitar o ACHADO-01.
-        }
-        const usuario = await db.query<{ current_user: string }>("select current_user");
-        expect(usuario.rows[0]?.current_user).toBe("intensicare_app");
+        const antes = await db.query<{ current_user: string }>("select current_user");
+        expect(antes.rows[0]?.current_user).toBe("intensicare_app");
+
+        await db.exec("set session authorization postgres;");
+        const depois = await db.query<{ current_user: string }>("select current_user");
+        // Afirmação POSITIVA da limitação: se um dia o PGlite recusar isto, este
+        // teste falha e a nota acima precisa ser reescrita — em vez de a
+        // melhoria passar despercebida sob um `expected fail`.
+        expect(
+          depois.rows[0]?.current_user,
+          "o simulador mudou de comportamento: revisite a nota do ACHADO-01",
+        ).toBe("postgres");
       } finally {
         await db.close();
       }
@@ -504,7 +550,7 @@ describe("A'. ACHADO-01 — o rebaixamento de papel é reversível na mesma cone
   );
 
   it(
-    "SEC-0009 — demonstra a consequência do ACHADO-01: reescalado, o processo lê linhas de TODOS os tenants",
+    "SEC-0009 — consequência da limitação do simulador: reescalado, o processo lê linhas de TODOS os tenants",
     async () => {
       const db = await createTestDatabase();
       try {
