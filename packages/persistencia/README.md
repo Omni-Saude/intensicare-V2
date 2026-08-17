@@ -57,9 +57,21 @@ as migrações e exercita, de forma **bloqueante**:
   porque `has_table_privilege` é cego a um `GRANT UPDATE (tenant_id)` e um
   `UPDATE` sem `WHERE` não exige `SELECT`;
 - **tabela particionada** não escapa: os laços que criam política e a auditoria
-  de isolamento cobrem `relkind in ('r','p')`, e a auditoria **reprova ausência
-  de política** — antes ela partia de `pg_policy` e uma tabela sem política
-  nenhuma passava por vacuidade, deixando o pai particionado aberto;
+  de isolamento cobrem `relkind in ('r','p')`;
+- a auditoria e as guardas partem das relações **alcançáveis pelo papel de
+  aplicação**, em qualquer esquema — não do esquema `public`. Uma partição
+  criada **fora** de `public` nasce sem RLS/FORCE/política e era invisível às
+  três camadas; o conjunto auditado é agora `public` ∪ descendentes (partição
+  ou herança) ∪ relações que o app alcance por privilégio de tabela ou coluna.
+  Esse conjunto é **deliberadamente mais largo** que o laço que cria política
+  (restrito a `public`): a migração recusa e obriga o operador a corrigir, em
+  vez de plantar política em objeto que talvez nem seja dela;
+- a aplicação não pode ter `USAGE` em esquema fora de `public` /
+  `intensicare_escopo` — é o que mantém o conjunto acima limitado;
+- as sequências dão à aplicação apenas `USAGE`, nunca `SELECT`: `last_value` é
+  um contador **global sobre todos os tenants** e nenhuma RLS o cobre
+  (sequência não aceita política), logo `SELECT` seria oráculo de volume
+  cross-tenant;
 - nenhum objeto do schema `public` escapa da auditoria de isolamento:
   MATERIALIZED VIEW e FOREIGN TABLE são **recusadas** (não podem receber
   política de RLS) e VIEW exige `security_invoker=true` (sem isso roda com os
@@ -183,12 +195,27 @@ a `DISCARD SEQUENCES`, e a aplicação não pode lê-lo, forjá-lo nem apagá-lo
 O que se fecha é o pivô **dentro** de uma transação em voo (THR-0050), que é o
 alcance realista de injeção de SQL e de dependência comprometida.
 
-**Custo declarado:** toda transação escopada passa a escrever uma linha,
-inclusive as de leitura. A tabela é `unlogged`, tem chave primária no pid e é
-atualizada no lugar — guarda no máximo uma linha por pid de backend já usado e
-não cresce com o tráfego. Nenhum alvo de latência foi decidido (ADR-0011 §3,
-VALIDATION REQUIRED), então não há SLO a violar; o custo fica registrado para
-medição futura.
+**Custo declarado — e ele não é só latência.** Toda transação escopada passa a
+escrever uma linha, inclusive as de leitura. A tabela é `unlogged`, tem chave
+primária no pid e é atualizada no lugar — guarda no máximo uma linha por pid de
+backend já usado e não cresce com o tráfego. Nenhum alvo de latência foi
+decidido (ADR-0011 §3, VALIDATION REQUIRED), então não há SLO a violar.
+
+O custo **arquitetural** é maior e precisa entrar em qualquer decisão de
+topologia:
+
+- uma transação **somente-leitura fica inoperante** — `begin read only` seguido
+  de `instalar` falha com `cannot execute INSERT in a read-only transaction`, e
+  `default_transaction_read_only` é `PGC_USERSET` (a própria aplicação pode
+  ligá-lo e se auto-inutilizar);
+- portanto **nenhuma réplica de leitura (hot standby) pode servir esta
+  aplicação**, porque nela toda transação é somente-leitura por definição.
+  Escalar leitura por réplica exigirá outra âncora de escopo — decisão de
+  arquitetura, não deste pacote;
+- `nextval` **também atribui** o id de transação. Como os `bigserial` chamam
+  `nextval`, qualquer uso de sequência **antes** do `instalar` torna a
+  instalação recusada. É por isso que o escopo tem de ser a primeira instrução
+  após `begin`.
 
 ### Contexto vazio ≠ contexto ausente (OBSERVED, PostgreSQL 16 real)
 

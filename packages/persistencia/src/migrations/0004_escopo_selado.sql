@@ -54,6 +54,12 @@
 --    SEM escopo (nenhuma linha visível) e NÃO consegue instalar tenant nenhum
 --    — a atribuição do id de transação denuncia que já houve escrita. Perder o
 --    escopo é degradação segura; trocá-lo seria vazamento.
+-- 3. NÃO cobre quem já pode executar SQL arbitrário FORA do corpo da
+--    transação da aplicação (isto é, quem controla o próprio `comTenant`).
+--    Contra esse adversário nenhuma âncora de banco ajuda — é SEC-0001.
+-- 4. NÃO funciona em transação SOMENTE-LEITURA nem em réplica de leitura —
+--    ver "custo operacional" adiante. Não é degradação segura: é
+--    indisponibilidade, e está declarada como tal.
 --
 -- SUPERFÍCIE ATACADA E NÃO ATACADA (o verbo "verificado" vale só para a lista
 -- da esquerda). ATACADO e recusado, contra PostgreSQL 16.14 real: reescrita de
@@ -62,25 +68,40 @@
 -- `DISCARD ALL` dentro de transação; acesso direto (SELECT/UPDATE/DELETE) à
 -- tabela de selo; privilégio de coluna sobre ela; `pg_write_all_data` e
 -- `pg_read_all_data`; `SET ROLE` para o papel dono; cadeia de papéis
--- intermediários. NÃO ATACADO, e portanto NÃO verificado: encerramento da
--- transação pela própria aplicação (item 1 acima, estrutural), extensões de
--- terceiros carregadas no servidor, `COPY ... FROM PROGRAM` sob papel
--- privilegiado, e qualquer caminho fora do protocolo SQL (acesso ao sistema de
--- arquivos do servidor, réplica física, backup).
--- 3. NÃO cobre quem já pode executar SQL arbitrário FORA do corpo da
---    transação da aplicação (isto é, quem controla o próprio `comTenant`).
---    Contra esse adversário nenhuma âncora de banco ajuda — é SEC-0001.
+-- intermediários; matview / view sem `security_invoker` / tabela estrangeira em
+-- `public`; tabela particionada com o pai em `public`; PARTIÇÃO EM OUTRO
+-- ESQUEMA; `USAGE` concedido em esquema fora da lista permitida.
+-- NÃO ATACADO, e portanto NÃO verificado: encerramento da transação pela
+-- própria aplicação (item 1, estrutural), extensões de terceiros carregadas no
+-- servidor, `COPY ... FROM PROGRAM` sob papel privilegiado, e qualquer caminho
+-- fora do protocolo SQL (sistema de arquivos do servidor, réplica física,
+-- backup).
 --
 -- O que ela fecha é o pivô DENTRO de uma transação em voo (THR-0050, SQL
 -- arbitrário injetado no corpo da transação), que é o alcance realista de
 -- injeção de SQL e de dependência comprometida.
 --
--- CUSTO OPERACIONAL (declarado, não escondido): toda transação escopada passa a
--- escrever uma linha, inclusive as de leitura. A tabela é `unlogged` (não gera
--- WAL), tem chave primária no pid e é atualizada no lugar, então guarda no
+-- CUSTO OPERACIONAL (declarado, não escondido). Toda transação escopada passa
+-- a ESCREVER uma linha, inclusive as de leitura. A tabela é `unlogged` (não
+-- gera WAL), tem chave primária no pid e é atualizada no lugar, então guarda no
 -- máximo uma linha por pid de backend já usado — não cresce com o tráfego.
 -- Nenhum alvo de latência foi decidido (ADR-0011 §3, VALIDATION REQUIRED), logo
--- não há SLO a violar; o custo fica registrado para medição futura.
+-- não há SLO a violar; o custo de latência fica registrado para medição futura.
+--
+-- MAS O CUSTO NÃO É SÓ LATÊNCIA — é ARQUITETURAL (4ª revisão, ACHADO-09):
+--   * uma transação SOMENTE-LEITURA fica INOPERANTE. `begin read only` seguido
+--     de `instalar` falha com "cannot execute INSERT in a read-only
+--     transaction". E `default_transaction_read_only` é `PGC_USERSET`: a
+--     própria aplicação pode ligá-lo e se auto-inutilizar.
+--   * portanto NENHUMA RÉPLICA DE LEITURA (hot standby) pode servir esta
+--     aplicação, porque nela toda transação é somente-leitura por definição.
+--     Escalar leitura por réplica exigirá outra âncora de escopo — o que é
+--     decisão de arquitetura e de topologia, não deste arquivo.
+--   * `nextval` também ATRIBUI o id de transação. Como os `bigserial` deste
+--     esquema chamam `nextval`, qualquer uso de sequência ANTES do `instalar`
+--     torna a instalação recusada. É por isso que o escopo tem de ser a
+--     primeira instrução após `begin` — contrato verificado nos quatro
+--     caminhos de transação do produto.
 --
 -- IDEMPOTENTE e reaplicável. PREMISSA reversível (ADR-0016, regime
 -- GDEC-0015/GDEC-0017). Não fecha SEC-0009, SAF-0008, THR-0050 nem MG-G6.
@@ -270,6 +291,14 @@ begin
 end
 $$;
 
+-- 5b) Sequências: só USAGE, nunca SELECT ---------------------------------------
+-- `nextval` (usado pelos `bigserial`) exige USAGE. `SELECT` acrescenta a
+-- leitura de `last_value`, que é um contador GLOBAL sobre todos os tenants —
+-- ou seja, um oráculo de volume cross-tenant, sem nenhuma RLS que o cubra
+-- (sequência não aceita política). `0001`/`0002` concediam os dois.
+revoke select on all sequences in schema public from intensicare_app;
+grant usage on all sequences in schema public to intensicare_app;
+
 -- 6) VERIFICAÇÃO FAIL-CLOSED ----------------------------------------------------
 do $$
 declare
@@ -333,7 +362,29 @@ begin
      );
   if pendentes is not null then
     raise exception
-      'relação(ões) de public sem política ancorada na função selada: %', pendentes
+      'relação(ões) alcançáveis sem política ancorada na função selada: %', pendentes
+      using errcode = '42501';
+  end if;
+
+  -- ACHADO-13 (4ª revisão): `0001`/`0002` concediam `usage, select` em todas as
+  -- sequências. `SELECT` numa sequência expõe `last_value`, que é um contador
+  -- GLOBAL sobre todos os tenants — oráculo de volume cross-tenant legível pela
+  -- aplicação. Só `USAGE` é necessário para o `nextval` dos `bigserial`.
+  -- `offset 0` é cerca de otimização: sem ela o planejador pode avaliar
+  -- `has_sequence_privilege` ANTES do filtro `relkind = 'S'`, e a função
+  -- estoura ao receber uma tabela toast ("... is not a sequence").
+  select count(*) into quantidade
+    from (
+      select c.oid
+        from pg_class c join pg_namespace n on n.oid = c.relnamespace
+       where n.nspname = 'public' and c.relkind = 'S'
+       offset 0
+    ) seq
+   where has_sequence_privilege('intensicare_app', seq.oid, 'SELECT');
+  if quantidade > 0 then
+    raise exception
+      'intensicare_app tem SELECT em % sequência(s): last_value é contador global e vaza volume entre tenants',
+      quantidade
       using errcode = '42501';
   end if;
 

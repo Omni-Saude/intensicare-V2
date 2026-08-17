@@ -132,6 +132,22 @@ describe("vocabulário do canal de eventos", () => {
     }
   });
 
+  it("tem motivo honesto para falha do próprio servidor (ACHADO 7)", () => {
+    // Sem este valor, uma falha assíncrona só teria dois destinos: mentir
+    // reusando outro motivo, ou morrer calada. ADR-0011 P6/P10 e o prompt
+    // §20 proíbem os dois. Acrescentar valor a enum de plano de controle é
+    // evolução COMPATÍVEL pela política declarada neste mesmo módulo.
+    expect(MOTIVOS_ENCERRAMENTO).toContain("falha-interna");
+    expect(POLITICA_EVOLUCAO_EVENTOS.compativel).toContain(
+      "acrescentar valor a enum de plano de controle (motivo, estado de conexão)",
+    );
+    const descricao = DESCRICAO_MOTIVO_ENCERRAMENTO["falha-interna"];
+    // A descrição diz ao clínico que a tela pode estar velha e manda
+    // reconciliar — nunca expõe detalhe interno do erro.
+    expect(descricao).toContain("desatualizado");
+    expect(descricao).toContain("polling");
+  });
+
   it("declara a política de evolução, com a quebra nomeada explicitamente", () => {
     expect(POLITICA_EVOLUCAO_EVENTOS.quebra.length).toBeGreaterThan(0);
     expect(POLITICA_EVOLUCAO_EVENTOS.regraConsumidor).toContain("polling");

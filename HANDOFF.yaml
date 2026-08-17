@@ -387,13 +387,13 @@ consolidacao_final_2026_08_17:
   verificacao:
     comando: pnpm verify
     resultado: "exit 0"
-    testes: "1.446 verdes, ZERO pulados, ZERO falhas, ZERO expected fail (baseline: 1.026 + 1 expected fail P0)"
-    por_pacote: "api 319, kernel-clinico 305, rule-bundle 302, web 182, vigilancia 77, persistencia 76, conformidade 62, observabilidade 55, contratos 37, dominio 18, fixtures 13"
-    fronteira_postgres: "41 testes BLOQUEANTES contra PostgreSQL 16.14 real e efêmero (pnpm test:fronteira)"
+    testes: "1.457 verdes, ZERO pulados, ZERO falhas, ZERO expected fail (baseline: 1.026 + 1 expected fail P0)"
+    por_pacote: "api 326, kernel-clinico 305, rule-bundle 302, web 182, vigilancia 77, persistencia 79, conformidade 62, observabilidade 55, contratos 38, dominio 18, fixtures 13"
+    fronteira_postgres: "44 testes BLOQUEANTES contra PostgreSQL 16.14 real e efêmero (pnpm test:fronteira)"
     contratos: "148 verificações (pnpm check:contratos) sobre openapi.yaml e asyncapi.yaml"
     e2e_navegador: "22 cenários Playwright; ver estado corrente no relatório final §6"
     qualificacao_obrigatoria: >-
-      A contagem de 1.446 vale para máquina COM PostgreSQL disponível. Sem ele a
+      A contagem de 1.457 vale para máquina COM PostgreSQL disponível. Sem ele a
       suíte de fronteira se pula com aviso ruidoso em dev e FALHA sob CI=true ou
       IC_FRONTEIRA_PG=obrigatoria. ci-plataforma.yml recebeu services:postgres
       pinado por digest para que "verify verde" signifique "fronteira P0

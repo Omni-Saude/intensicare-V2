@@ -55,10 +55,10 @@ O resultado mensurável:
 | Métrica | Baseline (`ecd32d5`) | Agora | Δ |
 |---|---|---|---|
 | `pnpm verify` | exit 0 | **exit 0** | preservado |
-| Testes verdes | 1.026 | **1.446** | +420 |
+| Testes verdes | 1.026 | **1.457** | +431 |
 | `expected fail` | **1 (P0)** | **0** | eliminado |
 | Testes pulados | 0 | **0** | preservado |
-| Suíte contra PostgreSQL real | inexistente | **41 testes bloqueantes** | nova |
+| Suíte contra PostgreSQL real | inexistente | **44 testes bloqueantes** | nova |
 | Verificações de contrato | 0 (sem gate) | **148** | nova |
 | E2E de navegador autenticado | inexistente | **22/22 verdes** (4 execuções observadas) | nova |
 
@@ -277,35 +277,35 @@ disponível:
 
 | Pacote | Testes |
 |---|---|
-| `apps/api` | 319 |
+| `apps/api` | 326 |
 | `packages/kernel-clinico` | 305 |
 | `packages/rule-bundle` | 302 |
 | `apps/web` | 182 |
 | `packages/vigilancia` | 77 |
-| `packages/persistencia` | 76 |
+| `packages/persistencia` | 79 |
 | `packages/conformidade` | 62 |
 | `packages/observabilidade` | 55 |
-| `packages/contratos` | 37 |
+| `packages/contratos` | 38 |
 | `packages/dominio` | 18 |
 | `packages/fixtures-sinteticas` | 13 |
-| **Total** | **1.446 verdes · 0 falhas · 0 pulados · 0 `expected fail`** |
+| **Total** | **1.457 verdes · 0 falhas · 0 pulados · 0 `expected fail`** |
 
 A suíte de fronteira **não soma** ao total acima — ela é subconjunto dos 75 já
 contados para `packages/persistencia`. Executada isoladamente em modo
 bloqueante, `pnpm --filter @intensicare/persistencia test:fronteira` →
-**41 verdes** contra PostgreSQL 16.14 efêmero real;
+**44 verdes** contra PostgreSQL 16.14 efêmero real;
 `node scripts/check_contratos.mjs` → **148 verificações**;
 `python3 scripts/check_doc_conventions.py` → 249 arquivos, sem violação;
 `python3 scripts/check_forbidden_content.py` → 590 arquivos, sem achado.
 
 **Checkout limpo e hermético** (§12): clone fresco da branch em diretório
 separado, `pnpm install --frozen-lockfile` seguido de `pnpm verify` →
-**exit 0, os mesmos 1.446 testes em 11 pacotes, zero falhas e zero pulados**. O
+**exit 0, os mesmos 1.457 testes em 11 pacotes, zero falhas e zero pulados**. O
 verde não depende de árvore aquecida — a armadilha que o ciclo 6 documentou
 (typecheck antes de build, verde local por acidente) não voltou.
 
 **Qualificação obrigatória da contagem** (achado 4 da primeira revisão): o
-número 1.446 vale para uma máquina **com PostgreSQL disponível**. Sem ele, a
+número 1.457 vale para uma máquina **com PostgreSQL disponível**. Sem ele, a
 suíte de fronteira se pula com aviso ruidoso em desenvolvimento e **falha** sob
 `CI=true` ou `IC_FRONTEIRA_PG=obrigatoria`. Para que "verify verde" passe a
 significar "fronteira P0 exercitada", `ci-plataforma.yml` recebeu
@@ -676,10 +676,10 @@ git checkout codex/finalizacao-plataforma-v2
 
 # Gate completo (exige PostgreSQL local para exercitar a fronteira P0)
 pnpm install --frozen-lockfile
-pnpm verify                     # esperado: exit 0, 1.446 testes verdes
+pnpm verify                     # esperado: exit 0, 1.457 testes verdes
 
 # Fronteira de isolamento contra PostgreSQL real, em modo BLOQUEANTE
-pnpm test:fronteira             # esperado: 41 verdes
+pnpm test:fronteira             # esperado: 44 verdes
 
 # Cluster PostgreSQL efêmero, se não houver servidor
 node scripts/pg-efemero.mjs up      # JSON de uma linha na stdout

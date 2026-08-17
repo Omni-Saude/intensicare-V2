@@ -169,7 +169,14 @@ export const DESCRICAO_ESTADO_CONEXAO: Readonly<Record<EstadoConexao, string>> =
  * - `escopo-divergente` — ADR-0011 P2 / ADR-0016 §4.1 (fail-closed quando
  *   o tenant do envelope não bate com a chave escopada da assinatura);
  * - `desligamento-servidor` — encerramento operacional (ADR-0011 §8.3
- *   iii: conexões derrubáveis em massa COM instrução de reconciliação).
+ *   iii: conexões derrubáveis em massa COM instrução de reconciliação);
+ * - `falha-interna` — o servidor não conseguiu sustentar a assinatura
+ *   (falha na leitura do backbone durável, na revalidação de sessão ou na
+ *   autorização de entrega). Existe porque a alternativa era pior: sem um
+ *   motivo honesto, uma falha assíncrona vira socket que morre calado, ou
+ *   pior, pulsação `online` enquanto o servidor já não está em dia —
+ *   ADR-0011 P6/P10 e prompt §20 proíbem os dois. O cliente recebe
+ *   instrução de reconciliar; NENHUM detalhe do erro viaja no fio.
  */
 export const MOTIVOS_ENCERRAMENTO = [
   "cursor-irretomavel",
@@ -179,6 +186,7 @@ export const MOTIVOS_ENCERRAMENTO = [
   "contexto-alterado",
   "escopo-divergente",
   "desligamento-servidor",
+  "falha-interna",
 ] as const;
 
 export type MotivoEncerramento = (typeof MOTIVOS_ENCERRAMENTO)[number];
@@ -199,6 +207,8 @@ export const DESCRICAO_MOTIVO_ENCERRAMENTO: Readonly<Record<MotivoEncerramento, 
     "Um evento com escopo de tenant divergente da assinatura foi detectado. A assinatura foi encerrada de imediato (fail-closed).",
   "desligamento-servidor":
     "O servidor está encerrando as conexões de push. Reconcilie por polling e reconecte conforme a política informada.",
+  "falha-interna":
+    "O servidor não conseguiu sustentar esta assinatura e a encerrou de propósito. O que está na tela pode estar desatualizado: reconcilie por polling antes de confiar nela.",
 };
 
 /**
