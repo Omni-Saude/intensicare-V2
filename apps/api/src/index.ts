@@ -228,6 +228,18 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Fas
     limites: LIMITES_ILUSTRATIVOS,
     reconexao: { ...RECONEXAO_ILUSTRATIVA },
     caminhoReconciliacao: "/v1/projecoes/grade-leitos",
+    // Sem este observador a falha assíncrona encerra o cliente corretamente,
+    // com instrução de reconciliação, mas NÃO deixa rastro no servidor — uma
+    // entrega que morre em silêncio do lado de quem opera.
+    //
+    // O `erro` cru é entregue de propósito e NÃO é registrado: ele pode
+    // carregar detalhe de infraestrutura (host, credencial, caminho), e quem
+    // fia é quem decide o que vira log. Registramos a ORIGEM, que é o que
+    // permite atribuir a falha sem publicar o interior dela — mesma disciplina
+    // do `instanciaSegura` no corpo de erro (`SAF-0026`/`SEC-0015`).
+    registrarFalha: (origem) => {
+      app.log.error({ origem }, "falha na entrega de eventos");
+    },
   });
 
   app.setErrorHandler((error, request, reply) => {

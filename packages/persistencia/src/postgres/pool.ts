@@ -53,6 +53,8 @@ interface DiagnosticoIdentidade {
   readonly papeis_perigosos_alcancaveis: number;
   readonly tabelas_proprias: number;
   readonly alcanca_ancora_do_escopo: boolean;
+  readonly relacoes_alcancaveis_sem_isolamento: number;
+  readonly esquemas_fora_da_lista: number;
 }
 
 /**
@@ -125,7 +127,40 @@ const SQL_DIAGNOSTICO_IDENTIDADE = `
        from pg_roles alvo
        cross join (select to_regclass('intensicare_escopo.selo') as oid) ancora
       where ancora.oid is not null
-        and pg_has_role(session_user, alvo.oid, 'MEMBER')) as alcanca_ancora_do_escopo
+        and pg_has_role(session_user, alvo.oid, 'MEMBER')) as alcanca_ancora_do_escopo,
+    -- CORRIGIDO (4a revisao adversarial, ACHADO-11/P2): esta guarda partia de
+    -- nspname = 'public'. Uma PARTICAO em outro esquema, de uma tabela
+    -- particionada de public, nasce sem RLS/FORCE/politica e nao era vista.
+    -- O invariante e sobre as relacoes ALCANCAVEIS, nao sobre um esquema.
+    (select count(*)::int
+       from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where c.relkind in ('r', 'p')
+        and n.nspname <> 'information_schema'
+        and n.nspname not like 'pg\\_%'
+        and exists (
+          select 1 from pg_attribute a
+           where a.attrelid = c.oid and a.attname = 'tenant_id'
+             and a.attnum > 0 and not a.attisdropped)
+        and exists (
+          select 1 from pg_roles alvo
+           where pg_has_role(session_user, alvo.oid, 'MEMBER')
+             and has_table_privilege(alvo.oid, c.oid,
+                   'SELECT, INSERT, UPDATE, DELETE, REFERENCES'))
+        and (
+          not c.relrowsecurity
+          or not c.relforcerowsecurity
+          or not exists (select 1 from pg_policy pol where pol.polrelid = c.oid)
+        )) as relacoes_alcancaveis_sem_isolamento,
+    -- A aplicacao nao deve alcancar esquema fora da lista permitida: e o que
+    -- mantem o conjunto acima limitado e auditavel.
+    (select count(*)::int
+       from pg_namespace n
+      where n.nspname not in ('public', 'intensicare_escopo', 'information_schema')
+        and n.nspname not like 'pg\\_%'
+        and exists (
+          select 1 from pg_roles alvo
+           where pg_has_role(session_user, alvo.oid, 'MEMBER')
+             and has_schema_privilege(alvo.oid, n.oid, 'USAGE'))) as esquemas_fora_da_lista
   from pg_roles papel
   where papel.rolname = session_user`;
 
@@ -161,6 +196,16 @@ export function motivosDeRecusaDeIdentidade(d: DiagnosticoIdentidade): string[] 
   if (d.alcanca_ancora_do_escopo) {
     motivos.push(
       "o papel conectado tem privilégio sobre intensicare_escopo.selo — a âncora do escopo de tenant não tem RLS por construção, e quem a escreve forja o escopo (verifique GRANTs e papéis predefinidos como pg_write_all_data / pg_read_all_data)",
+    );
+  }
+  if (d.relacoes_alcancaveis_sem_isolamento > 0) {
+    motivos.push(
+      `o papel conectado alcança ${d.relacoes_alcancaveis_sem_isolamento} relação(ões) com coluna tenant_id sem RLS/FORCE/política — inclusive partições fora do esquema public, que nascem sem isolamento`,
+    );
+  }
+  if (d.esquemas_fora_da_lista > 0) {
+    motivos.push(
+      `o papel conectado alcança ${d.esquemas_fora_da_lista} esquema(s) fora da lista permitida (public, intensicare_escopo)`,
     );
   }
   if (d.usuario_atual !== d.usuario_sessao) {

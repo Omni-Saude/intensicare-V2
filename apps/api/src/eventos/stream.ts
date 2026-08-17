@@ -126,7 +126,21 @@ export interface OpcoesGatewayEventos {
   readonly criarEscritor?: (resposta: RespostaBruta) => EscritorSse;
   /** Costura de teste: relógio injetável. */
   readonly agora?: () => number;
+  /**
+   * Observador de falha assíncrona (ADR-0020). Recebe o erro BRUTO, para
+   * que o servidor possa investigar; nada disso vai para o fio. Quem fia é
+   * responsável por redigir o que registrar — o erro pode conter detalhe
+   * de infraestrutura. Padrão: silêncio (nunca `console.log`).
+   */
+  readonly registrarFalha?: (origem: OrigemDeFalha, erro: unknown) => void;
 }
+
+/**
+ * As bordas assíncronas do gateway. Nomeadas para que a falha seja
+ * atribuível a um ponto do ciclo de vida, em vez de virar "erro no
+ * stream".
+ */
+export type OrigemDeFalha = "iniciar" | "bombear" | "pulsar" | "drenar";
 
 /** Estados que o SERVIDOR emite. `reconnecting`/`reconciled` são do cliente. */
 type EstadoEmitidoPeloServidor = Extract<
@@ -190,25 +204,74 @@ class ConexaoEventos {
    * a `online` — mantendo a conexão aberta.
    */
   async iniciar(): Promise<void> {
-    this.#escritor.escrever(montarQuadroDeRetry(this.#opcoes.reconexao.esperaMinimaMs));
-    this.#emitirEstado("replaying");
+    try {
+      this.#escritor.escrever(montarQuadroDeRetry(this.#opcoes.reconexao.esperaMinimaMs));
+      this.#emitirEstado("replaying");
 
-    // Assinar ANTES do catch-up: o que for produzido durante o catch-up
-    // apenas marca releitura — nunca se perde entre as duas fases.
-    this.#cancelarAssinatura = this.#opcoes.notificador.assinar(this.#chave, () => {
-      void this.#bombear();
+      // Assinar ANTES do catch-up: o que for produzido durante o catch-up
+      // apenas marca releitura — nunca se perde entre as duas fases.
+      this.#cancelarAssinatura = this.#opcoes.notificador.assinar(this.#chave, () => {
+        this.#dispararProtegido("bombear", () => this.#bombear());
+      });
+
+      await this.#bombear();
+      if (this.#encerrada) return;
+
+      // `online` só DEPOIS de o catch-up ter de fato terminado.
+      this.#emitirEstado(this.#fila.tamanho > 0 ? "degraded" : "online");
+      this.#timerPulsacao = setInterval(() => {
+        this.#dispararProtegido("pulsar", () => this.#pulsar());
+      }, this.#opcoes.limites.intervaloPulsacaoMs);
+      // `unref` para que uma conexão viva não segure o encerramento do
+      // processo (e não pendure a suíte de testes).
+      this.#timerPulsacao.unref?.();
+    } catch (erro) {
+      // NUNCA rejeita: quem chama já executou `reply.hijack()` e não teria
+      // como responder um erro HTTP — a rejeição viraria socket pendurado.
+      await this.#encerrarPorFalha("iniciar", erro);
+    }
+  }
+
+  /**
+   * Tratamento final das bordas assíncronas (ACHADO 7; anti-padrão §10-13).
+   * Toda promessa disparada sem `await` passa por aqui — a falha vira
+   * encerramento INSTRUÍDO, nunca rejeição solta.
+   */
+  #dispararProtegido(origem: OrigemDeFalha, operacao: () => Promise<void>): void {
+    operacao().catch((erro: unknown) => {
+      void this.#encerrarPorFalha(origem, erro);
     });
+  }
 
-    await this.#bombear();
-    if (this.#encerrada) return;
-
-    this.#emitirEstado(this.#fila.tamanho > 0 ? "degraded" : "online");
-    this.#timerPulsacao = setInterval(() => {
-      void this.#pulsar();
-    }, this.#opcoes.limites.intervaloPulsacaoMs);
-    // `unref` para que uma conexão viva não segure o encerramento do
-    // processo (e não pendure a suíte de testes).
-    this.#timerPulsacao.unref?.();
+  /**
+   * O servidor não consegue sustentar a assinatura. Registra para o
+   * operador e encerra COM instrução — o cliente termina informado, não
+   * iludido (ADR-0011 P5/P6/P10; prompt §20).
+   */
+  async #encerrarPorFalha(origem: OrigemDeFalha, erro: unknown): Promise<void> {
+    try {
+      this.#opcoes.registrarFalha?.(origem, erro);
+    } catch {
+      // Observador defeituoso não pode impedir o encerramento.
+    }
+    try {
+      await this.encerrarCom("falha-interna", null);
+    } catch {
+      // Último recurso: se nem a instrução pôde ser escrita, o socket
+      // fecha assim mesmo. Um fim sem instrução ainda é melhor que uma
+      // conexão pendurada com aparência de viva.
+      try {
+        this.#encerrada = true;
+        this.#pararTimers();
+        this.#cancelarAssinatura?.();
+        this.#cancelarAssinatura = undefined;
+        this.#escritor.encerrar();
+      } catch {
+        // Este método é o FIM da cadeia de tratamento: ele não pode
+        // rejeitar, ou `#dispararProtegido` reintroduziria exatamente a
+        // promessa sem tratamento final que o ACHADO 7 aponta.
+      }
+    }
   }
 
   /** Encerramento por desconexão do cliente — nada a instruir. */
@@ -245,11 +308,16 @@ class ConexaoEventos {
       reconexao: this.#opcoes.reconexao,
       emitidoEm: new Date(this.#agora()).toISOString(),
     };
-    this.#escritor.escrever(
-      montarQuadro({ evento: EVENTO_SSE_INSTRUCAO_RECONCILIACAO, dados: instrucao }),
-    );
-    this.#emitirEstado("offline");
-    this.#escritor.encerrar();
+    try {
+      this.#escritor.escrever(
+        montarQuadro({ evento: EVENTO_SSE_INSTRUCAO_RECONCILIACAO, dados: instrucao }),
+      );
+      this.#emitirEstado("offline");
+    } finally {
+      // O encerramento do socket não depende de a instrução ter sido
+      // escrita: conexão pendurada é pior que instrução perdida.
+      this.#escritor.encerrar();
+    }
   }
 
   #pararTimers(): void {
@@ -293,6 +361,17 @@ class ConexaoEventos {
       return;
     }
 
+    // ORDEM DELIBERADA (ACHADO 7). A releitura do backbone vem ANTES de
+    // anunciar o estado. Na ordem anterior, a pulsação com
+    // `"estado":"online"` era escrita e só depois vinha o `await` que podia
+    // rejeitar — o cliente ficava com um "estou em dia" que o servidor já
+    // não sustentava. Isso é dado stale com aparência de atual
+    // (anti-padrão §10-14) e o oposto do que ADR-0011 P6 exige. Se a
+    // releitura falhar, `#dispararProtegido` encerra instruído e NENHUMA
+    // pulsação é emitida nesta rodada.
+    await this.#bombear();
+    if (this.#encerrada) return;
+
     const estado: EstadoEmitidoPeloServidor = this.#fila.tamanho > 0 ? "degraded" : "online";
     if (estado !== this.#estado) this.#emitirEstado(estado);
 
@@ -303,8 +382,6 @@ class ConexaoEventos {
       pendentes: this.#fila.tamanho,
     };
     this.#escritor.escrever(montarQuadro({ evento: EVENTO_SSE_PULSACAO, dados: pulsacao }));
-
-    await this.#bombear();
   }
 
   /**
@@ -407,7 +484,7 @@ class ConexaoEventos {
     if (this.#timerReexameDreno !== undefined || this.#encerrada) return;
     this.#timerReexameDreno = setTimeout(() => {
       this.#timerReexameDreno = undefined;
-      void this.#drenar();
+      this.#dispararProtegido("drenar", () => this.#drenar());
     }, this.#opcoes.limites.intervaloReexameDrenoMs);
     this.#timerReexameDreno.unref?.();
   }

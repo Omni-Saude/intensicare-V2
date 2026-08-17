@@ -202,6 +202,8 @@ interface Cenario {
   readonly controle: Controle;
   readonly controleDoGateway: ControleDoGateway;
   readonly linhasDeLog: string[];
+  /** Falhas assíncronas reportadas ao observador do servidor (ACHADO 7). */
+  readonly falhasObservadas: { origem: string; erro: unknown }[];
   publicar(tipo: EventoFluxo["tipo"], dados: unknown, tenantId?: string): EventoFluxo;
   abrir(opcoes?: { cursor?: number; cabecalhos?: Record<string, string> }): Promise<{
     resposta: Response;
@@ -218,6 +220,7 @@ async function montarCenario(
   const notificador = new NotificadorEmMemoria();
   const emissor = new EmissorDeTickets<ContextoVerificado>(ajustes.ttlTicketSegundos ?? 30);
   const linhasDeLog: string[] = [];
+  const falhasObservadas: { origem: string; erro: unknown }[] = [];
   const controle: Controle = {
     revalidar: () => ({ permitido: true }),
     autorizar: () => ({ permitido: true }),
@@ -307,6 +310,9 @@ async function montarCenario(
     limites: { ...LIMITES_DE_TESTE, ...ajustes.limites },
     reconexao: RECONEXAO,
     caminhoReconciliacao: "/v1/projecoes/grade-leitos",
+    registrarFalha: (origem, erro) => {
+      falhasObservadas.push({ origem, erro });
+    },
     criarEscritor: (resposta: RespostaBruta): EscritorSse => {
       const real = new EscritorSseHttp(resposta);
       // Envoltório sempre ativo, mas TRANSPARENTE enquanto não saturado: a
@@ -347,6 +353,7 @@ async function montarCenario(
     controle,
     controleDoGateway,
     linhasDeLog,
+    falhasObservadas,
     publicar(tipo, dados, tenantId = TENANT) {
       proximaSequencia += 1;
       const evento: EventoFluxo = {
@@ -608,6 +615,177 @@ describe("autorização por evento (ADR-0011 P3; ADR-0016 §4.1)", () => {
     expect(doG7.valor).not.toBe(doB.valor);
     expect(doB.valor).not.toContain(TENANT);
   });
+});
+
+/**
+ * ACHADO 7 (revisão adversarial nº4). As dependências do gateway são
+ * assíncronas e podem REJEITAR: leitura do backbone, revalidação de sessão
+ * e autorização por evento. Antes desta correção, `stream.ts` não tinha um
+ * único `.catch(` e as três bordas (`void this.#bombear()`,
+ * `void this.#pulsar()`, `void this.#drenar()`) deixavam a rejeição subir
+ * solta — anti-padrão 13. Pior: a pulsação com `"estado":"online"` era
+ * ESCRITA ANTES do `await` que podia rejeitar, deixando o cliente com um
+ * "estou em dia" que o servidor não sustentava — anti-padrão 14 e o oposto
+ * de ADR-0011 P6.
+ *
+ * A regra que estes testes impõem: toda falha assíncrona termina em
+ * ENCERRAMENTO INSTRUÍDO, e nenhum `online` fica sem cobertura.
+ */
+describe("ACHADO 7 — bordas assíncronas que rejeitam", () => {
+  /** Captura rejeições não tratadas do processo durante o teste. */
+  async function comVigiaDeRejeicoes<T>(corpo: () => Promise<T>): Promise<T> {
+    const soltas: unknown[] = [];
+    const vigia = (motivo: unknown): void => {
+      soltas.push(motivo);
+    };
+    process.on("unhandledRejection", vigia);
+    try {
+      const resultado = await corpo();
+      // Rejeições não tratadas são detectadas no checkpoint de microtarefas
+      // seguinte; dar tempo antes de afirmar que não houve nenhuma.
+      await dormir(150);
+      expect(soltas.map((m) => (m instanceof Error ? m.message : String(m)))).toEqual([]);
+      return resultado;
+    } finally {
+      process.off("unhandledRejection", vigia);
+    }
+  }
+
+  it("leitura do backbone que REJEITA no catch-up encerra com instrução, sem rejeição solta", async () => {
+    await comVigiaDeRejeicoes(async () => {
+      const c = await cenario();
+      c.controle.falharLeitura = true;
+
+      const { leitor } = await c.abrir();
+      const instrucao = await leitor.esperarQuadro((q) => q.evento === "instrucao-reconciliacao");
+      const corpo = JSON.parse(instrucao.dados!) as Record<string, unknown>;
+
+      expect(corpo.motivo).toBe("falha-interna");
+      expect(corpo.acao).toBe("reconciliar-por-polling");
+      // A instrução NUNCA vaza o erro interno ao cliente.
+      expect(JSON.stringify(corpo)).not.toContain("SYNTH-FALHA");
+      // Jamais anunciou `online` — o catch-up nunca terminou.
+      expect(leitor.quadros.some((q) => (q.dados ?? "").includes('"estado":"online"'))).toBe(false);
+      await leitor.esperarFim();
+    });
+  }, 30_000);
+
+  it("leitura que REJEITA na pulsação NÃO deixa um `online` sem cobertura", async () => {
+    await comVigiaDeRejeicoes(async () => {
+      const c = await cenario();
+      const { leitor } = await c.abrir();
+      await leitor.esperarQuadro(
+        (q) => q.evento === "estado-conexao" && q.dados!.includes('"estado":"online"'),
+      );
+      // Deixa passar ao menos uma pulsação saudável.
+      await leitor.esperarQuadro((q) => q.evento === "pulsacao");
+      const pulsacoesAntes = leitor.quadros.filter((q) => q.evento === "pulsacao").length;
+
+      // A leitura do backbone passa a falhar ENTRE pulsações.
+      c.controle.falharLeitura = true;
+
+      const instrucao = await leitor.esperarQuadro((q) => q.evento === "instrucao-reconciliacao");
+      expect(JSON.parse(instrucao.dados!)).toMatchObject({ motivo: "falha-interna" });
+
+      // O ponto do achado: a pulsação que falhou NÃO escreveu `online`
+      // antes de descobrir a falha. Nenhuma pulsação nova foi emitida.
+      const pulsacoesDepois = leitor.quadros.filter((q) => q.evento === "pulsacao").length;
+      expect(pulsacoesDepois).toBe(pulsacoesAntes);
+
+      // O último estado anunciado é `offline`, não `online`.
+      const ultimoEstado = leitor.quadros.filter((q) => q.evento === "estado-conexao").at(-1);
+      expect(ultimoEstado?.dados).toContain('"estado":"offline"');
+      await leitor.esperarFim();
+    });
+  }, 30_000);
+
+  it("revalidarSessao que REJEITA encerra com instrução, sem rejeição solta", async () => {
+    await comVigiaDeRejeicoes(async () => {
+      const c = await cenario();
+      const { leitor } = await c.abrir();
+      await leitor.esperarQuadro(
+        (q) => q.evento === "estado-conexao" && q.dados!.includes('"estado":"online"'),
+      );
+
+      c.controle.falharRevalidacao = true;
+
+      const instrucao = await leitor.esperarQuadro((q) => q.evento === "instrucao-reconciliacao");
+      expect(JSON.parse(instrucao.dados!)).toMatchObject({ motivo: "falha-interna" });
+      expect(instrucao.dados).not.toContain("SYNTH-FALHA");
+      await leitor.esperarFim();
+    });
+  }, 30_000);
+
+  it("autorizarEntrega que REJEITA encerra com instrução — a entrega não continua às cegas", async () => {
+    await comVigiaDeRejeicoes(async () => {
+      const c = await cenario();
+      const { leitor } = await c.abrir();
+      await leitor.esperarQuadro(
+        (q) => q.evento === "estado-conexao" && q.dados!.includes('"estado":"online"'),
+      );
+
+      c.controle.falharAutorizacao = true;
+      c.publicar("alerta-criado", { id: "SYNTH-ALERTA-9" });
+
+      const instrucao = await leitor.esperarQuadro((q) => q.evento === "instrucao-reconciliacao");
+      expect(JSON.parse(instrucao.dados!)).toMatchObject({ motivo: "falha-interna" });
+      // Nenhum evento entregue sem autorização decidida.
+      expect(leitor.eventosDeDados()).toHaveLength(0);
+      await leitor.esperarFim();
+    });
+  }, 30_000);
+
+  it("rejeição no reexame de dreno agendado (borda do temporizador) também encerra instruído", async () => {
+    await comVigiaDeRejeicoes(async () => {
+      const c = await cenario({
+        limites: { maximoEventosNaFila: 4096, intervaloPulsacaoMs: 60_000 },
+      });
+      // Satura: o dreno para e agenda reexame por temporizador.
+      c.controle.saturado = true;
+      c.publicar("avaliacao-computada", { i: 1 });
+
+      const { leitor } = await c.abrir();
+      await dormir(80);
+
+      // Dessatura e faz a autorização rejeitar: quem retoma o dreno é o
+      // temporizador — exatamente a borda `void this.#drenar()`.
+      c.controle.falharAutorizacao = true;
+      c.controle.saturado = false;
+
+      const instrucao = await leitor.esperarQuadro((q) => q.evento === "instrucao-reconciliacao");
+      expect(JSON.parse(instrucao.dados!)).toMatchObject({ motivo: "falha-interna" });
+      await leitor.esperarFim();
+    });
+  }, 30_000);
+
+  it("a falha é reportada ao observador do servidor, não ao cliente", async () => {
+    const c = await cenario();
+    c.controle.falharLeitura = true;
+    const { leitor } = await c.abrir();
+    await leitor.esperarQuadro((q) => q.evento === "instrucao-reconciliacao");
+    await leitor.esperarFim();
+
+    expect(c.falhasObservadas.length).toBeGreaterThan(0);
+    const primeira = c.falhasObservadas[0];
+    if (primeira === undefined) throw new Error("nenhuma falha observada");
+    expect(primeira.origem).toMatch(/bombear|pulsar|drenar|iniciar/);
+    // O erro BRUTO chega ao observador do servidor...
+    expect((primeira.erro as Error).message).toContain("SYNTH-FALHA");
+    // ...e NÃO chega ao cliente: nenhum quadro carrega o texto do erro.
+    expect(leitor.quadros.every((q) => !(q.dados ?? "").includes("SYNTH-FALHA"))).toBe(true);
+  }, 30_000);
+
+  it('o primeiro quadro com `"estado":"online"` continua sendo o de estado-conexao', async () => {
+    // Protege a âncora de fim de catch-up usada pelos testes de API: a
+    // substring não é exclusiva do quadro `estado-conexao` (a pulsação
+    // também a serializa), mas `iniciar()` emite o estado ANTES de armar o
+    // temporizador de pulsação. A reordenação de `#pulsar` preserva isso.
+    const c = await cenario();
+    const { leitor } = await c.abrir();
+    await leitor.esperarQuadro((q) => q.evento === "pulsacao");
+    const primeiro = leitor.quadros.find((q) => (q.dados ?? "").includes('"estado":"online"'));
+    expect(primeiro?.evento).toBe("estado-conexao");
+  }, 30_000);
 });
 
 describe("desligamento operacional (ADR-0011 §8.3 iii)", () => {

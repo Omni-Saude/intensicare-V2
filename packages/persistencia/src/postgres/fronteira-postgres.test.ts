@@ -1759,9 +1759,7 @@ function registrarSuite(urlSuperusuario: string): void {
               `create table synth_fora.synth_medicoes_b partition of public.synth_medicoes
                  for values in ('SYNTH-TENANT-PG-B')`,
             );
-            await administrativa.executar(
-              `grant usage on schema synth_fora to ${PAPEL_APLICACAO}`,
-            );
+            await administrativa.executar(`grant usage on schema synth_fora to ${PAPEL_APLICACAO}`);
             await administrativa.executar(
               `grant select, insert on synth_fora.synth_medicoes_b to ${PAPEL_APLICACAO}`,
             );
@@ -1816,17 +1814,26 @@ function registrarSuite(urlSuperusuario: string): void {
           // `nextval` nos `bigserial`.
           const privilegios = await porta.comTenant(TENANT_A, (tx) =>
             tx.query<{ nome: string; le: boolean; usa: boolean }>(
-              `select c.relname as nome,
-                      has_sequence_privilege($1, c.oid, 'SELECT') as le,
-                      has_sequence_privilege($1, c.oid, 'USAGE') as usa
-                 from pg_class c join pg_namespace n on n.oid = c.relnamespace
-                where n.nspname = 'public' and c.relkind = 'S'
-                order by c.relname`,
+              // `offset 0` é cerca de otimização: sem ela o planejador pode
+              // avaliar has_sequence_privilege antes do filtro relkind='S' e
+              // estourar sobre uma tabela toast.
+              `select seq.relname as nome,
+                      has_sequence_privilege($1, seq.oid, 'SELECT') as le,
+                      has_sequence_privilege($1, seq.oid, 'USAGE') as usa
+                 from (
+                   select c.oid, c.relname
+                     from pg_class c join pg_namespace n on n.oid = c.relnamespace
+                    where n.nspname = 'public' and c.relkind = 'S'
+                    offset 0
+                 ) seq
+                order by seq.relname`,
               [PAPEL_APLICACAO],
             ),
           );
-          expect(privilegios.rows.length, "nenhuma sequência encontrada — teste inconclusivo")
-            .toBeGreaterThan(0);
+          expect(
+            privilegios.rows.length,
+            "nenhuma sequência encontrada — teste inconclusivo",
+          ).toBeGreaterThan(0);
           for (const seq of privilegios.rows) {
             expect(seq.usa, `${seq.nome}: a aplicação precisa de USAGE para nextval`).toBe(true);
             expect(seq.le, `${seq.nome}: SELECT expõe last_value (oráculo de volume)`).toBe(false);

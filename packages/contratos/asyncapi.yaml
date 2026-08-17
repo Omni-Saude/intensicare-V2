@@ -390,6 +390,12 @@ components:
         - contexto-alterado
         - escopo-divergente
         - desligamento-servidor
+        # O servidor não conseguiu sustentar a assinatura (falha na leitura
+        # do backbone, na revalidação de sessão ou na autorização de
+        # entrega). Encerra INSTRUÍDO em vez de deixar a conexão com
+        # aparência de saudável — ADR-0011 P6/P10; prompt §20. Nenhum
+        # detalhe do erro viaja no fio.
+        - falha-interna
 
     AcaoReconciliacao:
       type: string
