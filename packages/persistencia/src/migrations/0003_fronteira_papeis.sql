@@ -120,18 +120,41 @@ begin
     return;
   end if;
 
+  -- Sequência OWNED (ligada a coluna por `serial`/`bigserial`/`identity`, isto
+  -- é, com dependência `pg_depend.deptype = 'a'`) NÃO pode ter o dono trocado:
+  -- o PostgreSQL recusa incondicionalmente, porque ela segue o dono da tabela
+  -- por construção. `ALTER TABLE ... OWNER TO` já a arrasta junto — reatribuí-la
+  -- aqui seria ao mesmo tempo impossível e redundante. Sequências
+  -- INDEPENDENTES seguem no laço, porque essas precisam mesmo ser reatribuídas.
+  --
+  -- A ordem é EXPLÍCITA e adversa de propósito (sequências antes das tabelas).
+  -- Medido contra PostgreSQL 16.14: `alter sequence ... owner to <dono atual>`
+  -- é no-op e não ergue erro, então o defeito só aparecia quando a sequência
+  -- era visitada ANTES da sua tabela. Sem `order by`, o resultado dependia da
+  -- ordem de varredura de `pg_class` e o teste passava por sorte. Fixando a
+  -- ordem adversa, uma regressão aqui falha sempre, nunca às vezes.
   for objeto in
     select c.oid::regclass as nome, c.relkind
       from pg_class c
       join pg_namespace n on n.oid = c.relnamespace
      where n.nspname = 'public'
-       and c.relkind in ('r', 'S')
+       and c.relkind in ('r', 'p', 'S')
        and pg_get_userbyid(c.relowner) <> 'intensicare_migrador'
+       and not (
+         c.relkind = 'S'
+         and exists (
+           select 1 from pg_depend d
+            where d.classid = 'pg_class'::regclass
+              and d.objid = c.oid
+              and d.deptype = 'a'
+         )
+       )
+     order by case when c.relkind = 'S' then 0 else 1 end, c.relname
   loop
-    if objeto.relkind = 'r' then
-      execute format('alter table %s owner to intensicare_migrador', objeto.nome);
-    else
+    if objeto.relkind = 'S' then
       execute format('alter sequence %s owner to intensicare_migrador', objeto.nome);
+    else
+      execute format('alter table %s owner to intensicare_migrador', objeto.nome);
     end if;
   end loop;
 
@@ -170,7 +193,7 @@ begin
   for tabela in
     select c.oid::regclass as referencia, c.relname
       from pg_class c join pg_namespace n on n.oid = c.relnamespace
-     where n.nspname = 'public' and c.relkind = 'r'
+     where n.nspname = 'public' and c.relkind in ('r', 'p')
        -- Compatibilidade PARA A FRENTE: a `0004` substitui estas políticas por
        -- uma âncora mais forte (`intensicare_escopo.tenant_atual()`). Reaplicar
        -- a `0003` depois da `0004` NÃO pode rebaixar o controle de volta ao
@@ -293,7 +316,7 @@ begin
 
   select string_agg(c.relname, ', ' order by c.relname) into tabelas_sem_isolamento
     from pg_class c join pg_namespace n on n.oid = c.relnamespace
-   where n.nspname = 'public' and c.relkind = 'r'
+   where n.nspname = 'public' and c.relkind in ('r', 'p')
      and (
        not c.relrowsecurity
        or not c.relforcerowsecurity

@@ -107,12 +107,24 @@ const SQL_DIAGNOSTICO_IDENTIDADE = `
     -- pg_write_all_data só aparece DEPOIS de um SET ROLE — e perguntar
     -- has_table_privilege(session_user, ...) devolveria falso enquanto o
     -- caminho de escalada continuava aberto.
+    -- CORRIGIDO (3a revisao adversarial, ACHADO-02/P1): has_table_privilege
+    -- responde só sobre privilégio de TABELA. Um GRANT UPDATE (tenant_id)
+    -- não aparecia nele, o detector devolvia false, o pool abria, e a
+    -- aplicação reescrevia a coluna do selo — UPDATE sem WHERE não exige
+    -- SELECT. A verificação passa a cobrir também privilégio de COLUNA.
     (select coalesce(bool_or(
               has_table_privilege(
-                alvo.oid, 'intensicare_escopo.selo',
-                'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')), false)
+                alvo.oid, ancora.oid,
+                'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+              or exists (
+                select 1 from pg_attribute a
+                 where a.attrelid = ancora.oid and a.attnum > 0 and not a.attisdropped
+                   and has_column_privilege(alvo.oid, ancora.oid, a.attnum,
+                         'SELECT, INSERT, UPDATE, REFERENCES')
+              )), false)
        from pg_roles alvo
-      where to_regclass('intensicare_escopo.selo') is not null
+       cross join (select to_regclass('intensicare_escopo.selo') as oid) ancora
+      where ancora.oid is not null
         and pg_has_role(session_user, alvo.oid, 'MEMBER')) as alcanca_ancora_do_escopo
   from pg_roles papel
   where papel.rolname = session_user`;

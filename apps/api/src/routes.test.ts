@@ -26,19 +26,19 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { gerarTokenSintetico } from "./auth.js";
 import { buildServer } from "./index.js";
 
-/**
- * Âncora de fim de catch-up. O servidor só emite `event: estado-conexao`
- * DEPOIS de drenar o backlog (`eventos/stream.ts`: `await this.#bombear()`
- * e então `#emitirEstado`). Ancorar nela é o que torna uma asserção de
- * AUSÊNCIA honesta.
- *
- * ACHADO P2 de revisão adversarial (2026-08-17): estas asserções paravam por
- * SILÊNCIO TEMPORAL (`ociosidadeMs`). Se o catch-up ficasse mais lento que a
- * janela — CPU concorrida, banco frio —, "nenhum evento do outro tenant"
- * passaria vacuamente, porque nada teria sido lido ainda. Silêncio não é
- * prova de ausência; o quadro de controle é.
- */
-const FIM_DO_CATCHUP = "event: estado-conexao";
+// `"estado":"online"` e NÃO `event: estado-conexao`: o servidor emite um quadro
+// `estado-conexao` com `replaying` ANTES de drenar o backlog
+// (`eventos/stream.ts`: `#emitirEstado("replaying")` na linha 194, `await
+// this.#bombear()` só na 202) e outro com `online` DEPOIS (linha 205). Ancorar
+// na substring nua do NOME do evento casava com o quadro de ABERTURA do
+// catch-up — a asserção de ausência voltava a ser vácua sob produtor lento,
+// backlog maior, TLS ou proxy, e só não falhava porque os dois quadros costumam
+// chegar no mesmo pedaço de TCP. Achado P2 de terceira revisão adversarial.
+//
+// `degraded` (linha 205, quando a fila não esvaziou) significa backlog NÃO
+// drenado e portanto NÃO conta como fim de catch-up — ancorar em `online`
+// exclui os dois casos errados de uma vez.
+const FIM_DO_CATCHUP = '"estado":"online"';
 const catchUpConcluido = (texto: string): boolean => texto.includes(FIM_DO_CATCHUP);
 
 /** Tipos de `EventoFluxo` do contrato — os únicos que o fluxo publica. */

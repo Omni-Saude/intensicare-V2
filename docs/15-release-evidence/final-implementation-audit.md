@@ -10,9 +10,9 @@ source: >-
   docs/15-release-evidence/cycle-6-construction-report.md;
   docs/14-devsecops-and-delivery/analise-pos-ciclo-6-mapa-vs-estado.md;
   docs/11-security-privacy-compliance/verificacao-de-controles-fatia-g7.md
-date_collected: "2026-08-16"
+date_collected: "2026-08-17"
 collector: orquestrador técnico de consolidação; revalidação por especialistas estreitos de escopo disjunto
-last_updated: "2026-08-16"
+last_updated: "2026-08-17"
 ---
 
 # Matriz de auditoria de delta — consolidação final
@@ -234,7 +234,7 @@ execução, está em `docs/15-release-evidence/final-implementation-report.md`.
 
 ## 5. Disposição final (2026-08-17)
 
-Estado ao fim da rodada. `pnpm verify` **exit 0**, **1.441 testes verdes**,
+Estado ao fim da rodada. `pnpm verify` **exit 0**, **1.445 testes verdes**,
 **zero pulados**, **zero falhas**, **zero `expected fail`** (baseline: 1.026 +
 1 `expected fail` P0).
 

@@ -52,6 +52,13 @@ export interface OpcoesProvisionamento {
   readonly migrarComo?: "migrador" | "superusuario";
   /** Derruba o banco antes de criar. Só para bancos de verificação. */
   readonly recriarBanco?: boolean;
+  /**
+   * Dono do BANCO. `migrador` é o correto e é o padrão. `superusuario`
+   * reproduz o estado LEGADO real — banco e objetos do superusuário, que é
+   * como um ambiente anterior a esta fatia estaria. Sem esta opção não é
+   * possível exercitar de verdade o caminho de atualização.
+   */
+  readonly donoDoBanco?: "migrador" | "superusuario";
 }
 
 export interface BancoProvisionado {
@@ -141,7 +148,12 @@ export async function provisionarBanco(opcoes: OpcoesProvisionamento): Promise<B
       [opcoes.banco],
     );
     if (existente.rows.length === 0) {
-      await administrativa.executar(`create database ${opcoes.banco} owner ${PAPEL_MIGRADOR}`);
+      const dono =
+        opcoes.donoDoBanco === "superusuario"
+          ? opcoesDaUrl(opcoes.urlSuperusuario).usuario
+          : PAPEL_MIGRADOR;
+      exigirIdentificador(dono, "dono do banco");
+      await administrativa.executar(`create database ${opcoes.banco} owner ${dono}`);
     }
     // Sem CONNECT para PUBLIC: só os dois papéis nomeados entram.
     await administrativa.executar(`revoke all on database ${opcoes.banco} from public`);

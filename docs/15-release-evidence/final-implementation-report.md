@@ -10,7 +10,7 @@ source: >-
   ecd32d555291a6ab75e6bb2c3227ad557d87a368 (main);
   execuções reais de pnpm verify, pnpm --filter … test, test:fronteira e
   test:e2e registradas neste documento;
-  duas revisões adversariais independentes sobre as fronteiras P0
+  três revisões adversariais independentes sobre as fronteiras P0
 date_collected: "2026-08-17"
 collector: orquestrador técnico de consolidação; construção por 12 especialistas estreitos de escopo disjunto
 last_updated: "2026-08-17"
@@ -32,7 +32,7 @@ risco, hazard, ADR ou ordem de serviço.
 | Branch de trabalho | `codex/finalizacao-plataforma-v2` |
 | `main` alterada? | **Não.** Nenhum commit foi feito na `main` |
 | Branches históricas | `cycle-4/*` e `cycle-5/*` **não** foram mescladas nem usadas como fonte |
-| Escopo | os nove achados do §6 do encargo, mais o que duas revisões adversariais independentes acrescentaram |
+| Escopo | os nove achados do §6 do encargo, mais o que três revisões adversariais independentes acrescentaram |
 
 Método (§9): doze especialistas estreitos com fronteira de domínio, escopo de
 escrita **disjunto** e critério de aceitação explícitos; nenhum agente genérico.
@@ -55,10 +55,10 @@ O resultado mensurável:
 | Métrica | Baseline (`ecd32d5`) | Agora | Δ |
 |---|---|---|---|
 | `pnpm verify` | exit 0 | **exit 0** | preservado |
-| Testes verdes | 1.026 | **1.441** | +415 |
+| Testes verdes | 1.026 | **1.445** | +419 |
 | `expected fail` | **1 (P0)** | **0** | eliminado |
 | Testes pulados | 0 | **0** | preservado |
-| Suíte contra PostgreSQL real | inexistente | **36 testes bloqueantes** | nova |
+| Suíte contra PostgreSQL real | inexistente | **40 testes bloqueantes** | nova |
 | Verificações de contrato | 0 (sem gate) | **148** | nova |
 | E2E de navegador autenticado | inexistente | **22/22 verdes**, determinístico | nova |
 
@@ -67,13 +67,24 @@ tenant deixou de ser assegurada por um simulador embarcado** e passou a ser
 exercitada contra PostgreSQL 16.14 real, e que a falha P0 que vivia como
 `expected fail` dentro de um gate verde foi **eliminada**, não renomeada.
 
-Duas revisões adversariais independentes foram conduzidas por agentes que não
-escreveram o código. A primeira devolveu **`REFUTADO`** com oito achados, três
-deles P1 reproduzidos contra banco real. Todos foram corrigidos. A segunda,
-sobre as correções, devolveu **`CONFIRMADO_COM_RESSALVAS`**: as três cláusulas
-P1 **não reabriram** sob ataque renovado, e os seis achados novos são todos
-P2/P3 — **nenhum P0 ou P1**. Este relatório registra isso como resultado do
-método, não como incidente: era exatamente para isso que a revisão existia.
+**Três** revisões adversariais independentes foram conduzidas por agentes que
+não escreveram o código, e a taxa de achado **não convergiu**:
+
+| Rodada | Veredito | Achados |
+|---|---|---|
+| 1ª | **`REFUTADO`** | 8 — três P1 reproduzidos contra banco real |
+| 2ª (sobre as correções) | **`CONFIRMADO_COM_RESSALVAS`** | 6 P2/P3; as três P1 não reabriram |
+| 3ª (sobre as correções da 2ª) | **`REFUTADO`** | 9 — dois P1 com leitura **e escrita** cross-tenant reproduzidas |
+
+Todos foram corrigidos. Somam-se dois defeitos achados fora das revisões: um por
+execução de navegador real e um pelo orquestrador ao validar as migrações contra
+PostgreSQL real. Ao todo **nove cláusulas caíram**.
+
+Isto é registrado como resultado do método, não como incidente — era exatamente
+para isso que a revisão existia. Mas a leitura honesta do conjunto é a inversa
+da tranquilizadora: **três rodadas não bastaram para convergir**, e a terceira
+achou mais que a segunda. Nenhuma delas substitui o verificador terceiro
+independente que `DEC-G0-02` exige.
 
 **Nada nesta entrega altera o estado factual duro.** Continuam valendo: **0 vias
 clínicas acionáveis**; matriz **47/47 inelegíveis**; `Observation` da AMH **não
@@ -85,7 +96,7 @@ em **M0**; **nenhum dado real acessado**. Nenhum gate foi aprovado, nenhum
 
 ## 3. Pontos fortes preservados
 
-Verificados por execução, não por leitura:
+Verificados por **execução** nesta rodada:
 
 - kernel NEWS2 determinístico, sem relógio interno e sem dependência de runtime;
 - 93 vetores `CRV-NEWS2-0101..0193` e a mutação de 93,07% do kernel — **os seis
@@ -95,9 +106,24 @@ Verificados por execução, não por leitura:
 - outbox transacional, auditoria append-only, concorrência otimista;
 - idempotência por hash do corpo com conflito explícito em replay divergente;
 - `problem+json` sem eco do identificador do sujeito;
-- CI sem `continue-on-error`, actions pinadas por SHA de 40 caracteres, entrada
-  única por `pnpm verify`;
 - rótulo permanente de limitação institucional/sintética na UX (`HAZ-0046`).
+
+Verificados por **inspeção estrutural**, não por execução. A distinção importa e
+uma versão anterior desta seção a apagava, listando os três itens abaixo sob o
+rótulo "verificados por execução" — corrigido após auditoria de honestidade:
+
+- CI sem `continue-on-error`, sem `if:` de escape, actions pinadas por SHA de 40
+  caracteres: zero ocorrências nos quatro workflows. **Ler YAML não é executar**;
+- a mutação de 93,07% do kernel **não foi reexecutada** nesta rodada
+  (`packages/kernel-clinico/reports/mutation/` data de 2026-08-16, anterior ao
+  primeiro commit desta branch). Ela sobrevive pelo argumento de
+  **byte-identidade** dos seis pacotes clínicos, que foi confirmado — não por
+  medição nova;
+- a **entrada única** por `pnpm verify` deixou de valer nesta rodada:
+  `ci-plataforma.yml` ganhou um segundo job (`e2e-navegador`), e `pnpm verify`
+  não cobre `test:fronteira`, `test:e2e` nem `check:supply-chain`. A troca é
+  deliberada e está justificada em §6, mas registrá-la como ponto forte
+  *preservado* seria falso.
 
 ---
 
@@ -177,6 +203,47 @@ devolve `6 infos`, exit 0, de forma estável em execuções repetidas. A hipóte
 mais plausível é que a execução tenha apanhado a árvore no meio de edição
 concorrente. Fica como observação aberta, não como achado fechado.
 
+### 4.3 Terceira revisão adversarial — veredito `REFUTADO`
+
+Pedida pelo titular justamente porque a taxa de achado não havia caído. Foi a
+decisão certa: a terceira rodada achou **mais** que a segunda.
+
+| # | Achado | Sev. | Estado |
+|---|---|---|---|
+| 1 | Tabela **PARTICIONADA** em `public` escapa da auditoria de isolamento: a correção da 2ª rodada alargou só os *contadores* de propriedade para `('r','p','m','v','f')`; os dois laços de política e a auditoria seguiam em `relkind = 'r'`. Leitura **e escrita** cross-tenant reproduzidas com as duas migrações em exit 0 | **P1** | **CORRIGIDO** |
+| 2 | O selo é forjável por **privilégio de COLUNA**: `has_table_privilege` responde só sobre tabela, então `GRANT UPDATE (tenant_id)` é invisível ao detector, o pool abre e a aplicação reescreve o selo | **P1** | **CORRIGIDO** |
+| 3 | O marcador anti-savepoint é **zerável** por `DISCARD SEQUENCES` — irrestrito, session-local e permitido dentro de transação. O caminho de exceção era **fail-open** | P2 | **CORRIGIDO** |
+| 4 | `pool.ts` não verificava a sequência da âncora que a `0004` declara essencial | P2 | **CORRIGIDO por remoção** da sequência |
+| 5 | A âncora de fim de catch-up do SSE dispara no quadro de **início** (`replaying`, emitido antes de `#bombear()`), não no de fim (`online`) — as asserções de ausência voltavam a ser vácuas | P2 | **CORRIGIDO** |
+| 6 | `.rejects.toThrow()` sem tipo: "negado por privilégio" e "objeto não existe" são o mesmo verde, sobre 18 caminhos de escalada | P2 | Registrado |
+| 7 | Emissor sintético alcançável por vocabulário de perfil paralelo que não passa por `exigirCoerenciaDePerfil` (não alcançável pela composição atual) | P3 | Registrado |
+| 8 | Verdes falsos residuais fora dos alvos: laços sem guarda de não-vacuidade em `index.test.ts`, `resiliencia-rede.spec.ts`, `gcs.unidade.test.ts`, `semantic-checks.test.ts` | P2/P3 | Registrado |
+| 9 | A árvore mutou durante a revisão — nenhuma alegação "verde" deste ciclo é atribuível a um estado único | P3 | Registrado |
+
+Mais um **décimo defeito, encontrado pelo orquestrador** ao validar as migrações
+contra PostgreSQL real: `0003` **abortava** no caminho de atualização, porque o
+laço de propriedade chamava `alter sequence … owner to` sobre sequência *owned*,
+o que o PostgreSQL recusa incondicionalmente.
+
+**A investigação desse último é o achado mais instrutivo da rodada.** O teste
+que deveria tê-lo pego passava **por sorte**: `alter sequence … owner to <dono
+atual>` é no-op e não ergue erro, então o erro só aparece se a sequência for
+visitada **antes** da sua tabela — e o laço não tinha `ORDER BY`, dependendo da
+ordem de varredura de `pg_class`. A correção foi dupla: excluir sequências
+*owned* (a causa real) **e fixar a ordem adversa**, para que uma regressão falhe
+sempre em vez de às vezes.
+
+Duas decisões de desenho desta rodada merecem registro, porque removem
+superfície em vez de acrescentar verificação:
+
+- a âncora anti-savepoint deixou de ser uma sequência (zerável) e passou a ser a
+  **atribuição do id de transação**, medida como imune a `ROLLBACK TO SAVEPOINT`
+  **e** a `DISCARD SEQUENCES`. A sequência foi **removida**, o que dissolve o
+  achado 4 em vez de remendá-lo;
+- a auditoria de isolamento passou a **reprovar tabela sem política nenhuma**.
+  Antes ela partia de `pg_policy` e, portanto, passava por vacuidade sobre
+  exatamente o objeto mais perigoso: o que não tem política alguma.
+
 ---
 
 ## 5. Mudanças por componente
@@ -207,28 +274,28 @@ disponível:
 | `packages/rule-bundle` | 302 |
 | `apps/web` | 182 |
 | `packages/vigilancia` | 77 |
-| `packages/persistencia` | 71 |
+| `packages/persistencia` | 75 |
 | `packages/conformidade` | 62 |
 | `packages/observabilidade` | 55 |
 | `packages/contratos` | 37 |
 | `packages/dominio` | 18 |
 | `packages/fixtures-sinteticas` | 13 |
-| **Total** | **1.441 verdes · 0 falhas · 0 pulados · 0 `expected fail`** |
+| **Total** | **1.445 verdes · 0 falhas · 0 pulados · 0 `expected fail`** |
 
 Além disso: `pnpm --filter @intensicare/persistencia test:fronteira` →
-**36 verdes** contra PostgreSQL 16.14 efêmero real;
+**40 verdes** contra PostgreSQL 16.14 efêmero real;
 `node scripts/check_contratos.mjs` → **148 verificações**;
-`python3 scripts/check_doc_conventions.py` → 248 arquivos, sem violação;
-`python3 scripts/check_forbidden_content.py` → 589 arquivos, sem achado.
+`python3 scripts/check_doc_conventions.py` → 249 arquivos, sem violação;
+`python3 scripts/check_forbidden_content.py` → 590 arquivos, sem achado.
 
 **Checkout limpo e hermético** (§12): clone fresco da branch em diretório
 separado, `pnpm install --frozen-lockfile` seguido de `pnpm verify` →
-**exit 0, os mesmos 1.441 testes em 11 pacotes, zero falhas e zero pulados**. O
+**exit 0, os mesmos 1.445 testes em 11 pacotes, zero falhas e zero pulados**. O
 verde não depende de árvore aquecida — a armadilha que o ciclo 6 documentou
 (typecheck antes de build, verde local por acidente) não voltou.
 
 **Qualificação obrigatória da contagem** (achado 4 da primeira revisão): o
-número 1.441 vale para uma máquina **com PostgreSQL disponível**. Sem ele, a
+número 1.445 vale para uma máquina **com PostgreSQL disponível**. Sem ele, a
 suíte de fronteira se pula com aviso ruidoso em desenvolvimento e **falha** sob
 `CI=true` ou `IC_FRONTEIRA_PG=obrigatoria`. Para que "verify verde" passe a
 significar "fronteira P0 exercitada", `ci-plataforma.yml` recebeu
@@ -334,8 +401,8 @@ por funções `SECURITY DEFINER` com `search_path` fixo e chave
 1. **Isto não é "RLS verificada".** Verificação exige verificador terceiro
    independente (`DEC-G0-02`) e aceite humano nominal (`MG-G6`). Os 27 P0 do
    threat model seguem `OPEN`. Teste escrito por agente não é a independência
-   que `SEC-0009`/`SAF-0037` exigem — e esta rodada mostra por quê: duas
-   cláusulas caíram sob revisão adversarial.
+   que `SEC-0009`/`SAF-0037` exigem — e esta rodada mostra por quê: **nove**
+   cláusulas caíram ao longo de três revisões adversariais independentes.
 2. **Troca de tenant entre transações distintas na mesma conexão continua
    possível** e **não é fechável pelo banco**: é assim que um pool multi-tenant
    funciona. Escolher o tenant ao **abrir** é matéria de identidade autenticada
@@ -521,7 +588,7 @@ nenhuma proteção de branch alterada.**
    armazenamento agora protege contra SQL arbitrário em voo; **não** protege
    contra um chamador que peça o tenant errado. Isso é `SEC-0001`, e depende de
    IdP real. É o risco P0 remanescente.
-2. **Duas cláusulas caíram na primeira revisão adversarial.** É razoável presumir
+2. **Nove cláusulas caíram ao longo de três revisões adversariais.** É razoável presumir
    que um terceiro par de olhos ainda tenha trabalho. Uma segunda revisão foi
    conduzida sobre as correções; ela **não** substitui o verificador terceiro
    independente que `DEC-G0-02` exige.
@@ -579,10 +646,10 @@ git checkout codex/finalizacao-plataforma-v2
 
 # Gate completo (exige PostgreSQL local para exercitar a fronteira P0)
 pnpm install --frozen-lockfile
-pnpm verify                     # esperado: exit 0, 1.441 testes verdes
+pnpm verify                     # esperado: exit 0, 1.445 testes verdes
 
 # Fronteira de isolamento contra PostgreSQL real, em modo BLOQUEANTE
-pnpm test:fronteira             # esperado: 36 verdes
+pnpm test:fronteira             # esperado: 40 verdes
 
 # Cluster PostgreSQL efêmero, se não houver servidor
 node scripts/pg-efemero.mjs up      # JSON de uma linha na stdout
