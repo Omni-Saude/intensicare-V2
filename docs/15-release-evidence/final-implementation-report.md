@@ -55,7 +55,7 @@ O resultado mensurável:
 | Métrica | Baseline (`ecd32d5`) | Agora | Δ |
 |---|---|---|---|
 | `pnpm verify` | exit 0 | **exit 0** | preservado |
-| Testes verdes | 1.026 | **1.477** | +451 |
+| Testes verdes | 1.026 | **1.497** | +471 |
 | `expected fail` | **1 (P0)** | **0** | eliminado |
 | Testes pulados | 0 | **0** | preservado |
 | Suíte contra PostgreSQL real | inexistente | **47 testes bloqueantes** | nova |
@@ -285,18 +285,18 @@ disponível:
 
 | Pacote | Testes |
 |---|---|
-| `apps/api` | 336 |
+| `apps/api` | 347 |
 | `packages/kernel-clinico` | 305 |
 | `packages/rule-bundle` | 302 |
 | `apps/web` | 187 |
 | `packages/vigilancia` | 77 |
-| `packages/persistencia` | 83 |
+| `packages/persistencia` | 92 |
 | `packages/conformidade` | 63 |
 | `packages/observabilidade` | 55 |
 | `packages/contratos` | 38 |
 | `packages/dominio` | 18 |
 | `packages/fixtures-sinteticas` | 13 |
-| **Total** | **1.477 verdes · 0 falhas · 0 pulados · 0 `expected fail`** |
+| **Total** | **1.497 verdes · 0 falhas · 0 pulados · 0 `expected fail`** |
 
 A suíte de fronteira **não soma** ao total acima — ela é subconjunto dos 83 já
 contados para `packages/persistencia`. Executada isoladamente em modo
@@ -308,7 +308,7 @@ bloqueante, `pnpm --filter @intensicare/persistencia test:fronteira` →
 
 **Independência de fuso horário** (`OBSERVED`, execução real e isolada): a suíte
 completa foi executada sob `TZ=Pacific/Kiritimati` (UTC+14) e sob
-`TZ=Pacific/Niue` (UTC−11) — **1.477 testes verdes, zero falhas, exit 0 nas
+`TZ=Pacific/Niue` (UTC−11) — **1.497 testes verdes, zero falhas, exit 0 nas
 duas**. Nenhuma dependência de fuso.
 
 Registro de uma medição errada e sua correção, porque o processo importa tanto
@@ -347,12 +347,12 @@ parâmetro) é mudança de produto e precisa de dono.
 
 **Checkout limpo e hermético** (§12): clone fresco da branch em diretório
 separado, `pnpm install --frozen-lockfile` seguido de `pnpm verify` →
-**exit 0, os mesmos 1.477 testes em 11 pacotes, zero falhas e zero pulados**. O
+**exit 0, os mesmos 1.497 testes em 11 pacotes, zero falhas e zero pulados**. O
 verde não depende de árvore aquecida — a armadilha que o ciclo 6 documentou
 (typecheck antes de build, verde local por acidente) não voltou.
 
 **Qualificação obrigatória da contagem** (achado 4 da primeira revisão): o
-número 1.477 vale para uma máquina **com PostgreSQL disponível**. Sem ele, a
+número 1.497 vale para uma máquina **com PostgreSQL disponível**. Sem ele, a
 suíte de fronteira se pula com aviso ruidoso em desenvolvimento e **falha** sob
 `CI=true` ou `IC_FRONTEIRA_PG=obrigatoria`. Para que "verify verde" passe a
 significar "fronteira P0 exercitada", `ci-plataforma.yml` recebeu
@@ -747,7 +747,7 @@ git checkout codex/finalizacao-plataforma-v2
 
 # Gate completo (exige PostgreSQL local para exercitar a fronteira P0)
 pnpm install --frozen-lockfile
-pnpm verify                     # esperado: exit 0, 1.477 testes verdes
+pnpm verify                     # esperado: exit 0, 1.497 testes verdes
 
 # Fronteira de isolamento contra PostgreSQL real, em modo BLOQUEANTE
 pnpm test:fronteira             # esperado: 47 verdes

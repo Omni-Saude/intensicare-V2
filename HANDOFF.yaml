@@ -387,13 +387,13 @@ consolidacao_final_2026_08_17:
   verificacao:
     comando: pnpm verify
     resultado: "exit 0"
-    testes: "1.477 verdes, ZERO pulados, ZERO falhas, ZERO expected fail (baseline: 1.026 + 1 expected fail P0)"
+    testes: "1.497 verdes, ZERO pulados, ZERO falhas, ZERO expected fail (baseline: 1.026 + 1 expected fail P0)"
     por_pacote: "api 336, kernel-clinico 305, rule-bundle 302, web 187, vigilancia 77, persistencia 83, conformidade 62, observabilidade 55, contratos 38, dominio 18, fixtures 13"
     fronteira_postgres: "47 testes BLOQUEANTES contra PostgreSQL 16.14 real e efêmero (pnpm test:fronteira)"
     contratos: "148 verificações (pnpm check:contratos) sobre openapi.yaml e asyncapi.yaml"
     e2e_navegador: "22 cenários Playwright; ver estado corrente no relatório final §6"
     qualificacao_obrigatoria: >-
-      A contagem de 1.477 vale para máquina COM PostgreSQL disponível. Sem ele a
+      A contagem de 1.497 vale para máquina COM PostgreSQL disponível. Sem ele a
       suíte de fronteira se pula com aviso ruidoso em dev e FALHA sob CI=true ou
       IC_FRONTEIRA_PG=obrigatoria. ci-plataforma.yml recebeu services:postgres
       pinado por digest para que "verify verde" signifique "fronteira P0
@@ -426,7 +426,7 @@ consolidacao_final_2026_08_17:
     (DEC-G0-02) encontrará mais.
   medicoes_de_robustez: >-
     FUSO HORÁRIO: FECHADO. Suíte completa sob TZ=Pacific/Kiritimati (UTC+14) e
-    TZ=Pacific/Niue (UTC-11), máquina isolada: 1.477 verdes, zero falhas, exit 0
+    TZ=Pacific/Niue (UTC-11), máquina isolada: 1.497 verdes, zero falhas, exit 0
     nas duas. Uma primeira medição, feita em paralelo com outro trabalho pesado,
     produziu falhas relatadas como dependência de fuso; eram CONTENÇÃO (um caso
     de 731548 ms) e a alegação foi RETIRADA.
@@ -480,12 +480,12 @@ consolidacao_final_2026_08_17:
     - "PortaMigracao (lock consultivo + versão durável de schema) sem implementação real; migrações concorrentes não serializadas."
     - "TLS na conexão de banco não coberto; custo de latência do selo de escopo não medido."
   medicoes_finais_2026_08_17:
-    verify_maquina_ociosa: "pnpm verify exit 0, 1.477 testes em 11 pacotes, ZERO pulados, ZERO falhas, ZERO expected fail (kernel 305, api 336, rule-bundle 302, web 187, persistencia 83, vigilancia 77, conformidade 62, observabilidade 55, contratos 38, dominio 18, fixtures 13)"
+    verify_maquina_ociosa: "pnpm verify exit 0, 1.497 testes em 11 pacotes, ZERO pulados, ZERO falhas, ZERO expected fail (kernel 305, api 336, rule-bundle 302, web 187, persistencia 83, vigilancia 77, conformidade 62, observabilidade 55, contratos 38, dominio 18, fixtures 13)"
     fronteira_postgres: "47 testes bloqueantes contra PostgreSQL 16.14 real"
     e2e: "22/22 Playwright, deterministico em 4 execucoes"
     contratos: "148 verificacoes (openapi + asyncapi)"
     ci_pr5: "10 checks verdes no commit 1a6f3df — build-and-test (pnpm verify com PostgreSQL real e IC_FRONTEIRA_PG=obrigatoria), ensaio-de-migracao, e2e-navegador, artefato-api, artefato-web, higiene-de-gate, vulnerabilidades-de-dependencia, doc-conventions, forbidden-content, change-metadata"
-    F6_fuso_horario: "RESPONDIDO — TZ=Pacific/Kiritimati (UTC+14): exit 0, 1.477 testes, zero falhas. A suite NAO depende de fuso. TZ=Pacific/Niue (UTC-11) NAO foi medido."
+    F6_fuso_horario: "RESPONDIDO — TZ=Pacific/Kiritimati (UTC+14): exit 0, 1.497 testes, zero falhas. A suite NAO depende de fuso. TZ=Pacific/Niue (UTC-11) NAO foi medido."
   ARMADILHA_DE_MEDICAO_LOCAL: >-
     LEIA ANTES DE INTERPRETAR QUALQUER VERMELHO LOCAL. Nesta maquina um unico
     `pnpm verify` leva o load average a ~28 sozinho. Rodar QUALQUER outra coisa
