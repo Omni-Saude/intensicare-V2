@@ -7,9 +7,19 @@
  * testes de componente e para o modo `?mock` — nunca como fonte paralela
  * de verdade.
  *
- * PREMISSA (reversível, GDEC-0015/0017): o fluxo dev usa o token bearer
- * SINTÉTICO do stub de autenticação da API (ADR-0015 `not-started`) com o
- * tenant do cenário G7 — jamais um formato real de token.
+ * SESSÃO POR INJEÇÃO (ACH-07). Este cliente NÃO conhece credencial alguma:
+ * recebe um `ProvedorSessao` (`./sessao.ts`) e pede a ele o cabeçalho
+ * `Authorization` a cada chamada. A constante `TOKEN_DEV` que existia aqui
+ * até o ciclo 6 foi REMOVIDA — ela embutia credencial sintética no bundle e
+ * era o anti-padrão 8 do contrato comum. Sem provedor de sessão que forneça
+ * credencial, o cliente RECUSA (estado `proibido`, visível) em vez de emitir
+ * requisição anônima ou cair para um dublê.
+ *
+ * CANCELAMENTO REAL. Todo caminho de I/O repassa o `AbortSignal` recebido em
+ * `OpcoesChamada.sinal` ao próprio `fetch`. Quando o sinal é abortado, a
+ * rejeição do `fetch` é PROPAGADA ao chamador em vez de virar uma resposta de
+ * falha — só assim o hook consegue distinguir "cancelei" de "falhou", e só
+ * assim a conexão é de fato encerrada (e não apenas ignorada).
  *
  * As funções `mapear*` são puras e exportadas para teste — elas traduzem
  * o vocabulário do contrato (backend) para os identificadores de estado
@@ -42,10 +52,13 @@ import type {
 import type {
   BandaRisco,
   EstadoAvaliacao,
+  EstadoCarregamento,
   EstadoFrescor,
   EstadoItemTrabalho,
 } from "../domain/estados.js";
 import { ROTULO_PARAMETRO } from "../domain/news2.js";
+import { exigirPerfilDesenvolvimento } from "../perfil.js";
+import type { ProvedorSessao } from "./sessao.js";
 import type {
   ClienteApiIntensiCare,
   ModoDemonstracao,
@@ -53,9 +66,6 @@ import type {
   RespostaApi,
 } from "./tipos.js";
 import { CABECALHO_IDEMPOTENCIA } from "./tipos.js";
-
-/** Token sintético do fluxo dev — tenant do cenário G7 (nunca formato real). */
-const TOKEN_DEV = "SYNTH-TOKEN.SYNTH-TENANT-G7.SYNTH-PROFISSIONAL-WEB";
 
 // ---------------------------------------------------------------------------
 // Mapeamentos puros contrato → domínio da UI
@@ -227,6 +237,19 @@ export function mapearItemTrabalho(item: ItemTrabalho): Alerta {
 // Cliente HTTP
 // ---------------------------------------------------------------------------
 
+/**
+ * Traduz o status HTTP de uma falha para o identificador de estado da 1ª
+ * família do §11. 401/403 viram `proibido` (estado próprio, com `role="alert"`
+ * na tela) — nunca são achatados em "erro" genérico, porque a recuperação de
+ * uma falha de autorização é diferente da de uma falha de rede.
+ */
+export function estadoDeFalhaHttp(status: number): EstadoCarregamento {
+  if (status === 401 || status === 403) return "proibido";
+  if (status === 0 || status === 503) return "indisponivel";
+  if (status === 408 || status === 504) return "tempo_esgotado";
+  return "erro";
+}
+
 function problemaDe(status: number, corpo: unknown, fallbackTitle: string): ProblemDetails {
   const talvez = corpo as Partial<ProblemDetails> | null;
   return {
@@ -283,19 +306,68 @@ interface RespostaHttp<T> {
   problema: ProblemDetails | null;
 }
 
-/** Cria o cliente HTTP real contra a API local (`/v1/*`, via proxy do Vite em dev). */
-export function criarClienteHttp(baseUrl = ""): ClienteApiIntensiCare {
-  async function chamar<T>(caminho: string, init?: RequestInit): Promise<RespostaHttp<T>> {
+/** Problema devolvido quando o provedor de sessão não fornece credencial (S2). */
+const PROBLEMA_SEM_SESSAO: ProblemDetails = {
+  type: "about:blank",
+  title: "Sem sessão ativa",
+  status: 401,
+  detail:
+    "Não há sessão autenticada para falar com a API. Nenhuma requisição foi enviada — " +
+    "o aplicativo não emite chamada anônima nem usa credencial substituta.",
+};
+
+export interface OpcoesClienteHttp {
+  /**
+   * Provedor de sessão (`./sessao.ts`). OBRIGATÓRIO e sem valor padrão: um
+   * default aqui reintroduziria exatamente o fallback silencioso que o
+   * ACH-07 removeu.
+   */
+  readonly sessao: ProvedorSessao;
+  /** Prefixo da URL. Vazio em dev (o proxy do Vite roteia `/v1/*`). */
+  readonly baseUrl?: string;
+  /** `fetch` injetável — permite testar cancelamento sem rede real. */
+  readonly fetchImpl?: typeof fetch;
+}
+
+/** Cria o cliente HTTP real contra a API (`/v1/*`, via proxy do Vite em dev). */
+export function criarClienteHttp(opcoes: OpcoesClienteHttp): ClienteApiIntensiCare {
+  const { sessao, baseUrl = "" } = opcoes;
+  const executarFetch: typeof fetch =
+    opcoes.fetchImpl ?? ((entrada, inicio) => globalThis.fetch(entrada, inicio));
+
+  async function chamar<T>(
+    caminho: string,
+    sinal?: AbortSignal,
+    init?: RequestInit,
+  ): Promise<RespostaHttp<T>> {
     try {
-      const resposta = await fetch(`${baseUrl}${caminho}`, {
+      // DENTRO do `try` de propósito: se o provedor de sessão LANÇAR (uma
+      // renovação que rejeita, por exemplo), isso é "não há credencial" — o
+      // caminho `proibido` abaixo —, não uma exceção que escapa do cliente e
+      // faz a tela declarar falha de rede. O cliente não confia que o provedor
+      // nunca lance; ele garante o próprio contrato.
+      const autorizacao = await sessao.cabecalhoAutorizacao(sinal);
+      if (autorizacao === null) {
+        // S2: ausência de sessão NUNCA vira requisição anônima.
+        return { ok: false, status: 401, corpo: null, problema: PROBLEMA_SEM_SESSAO };
+      }
+
+      const resposta = await executarFetch(`${baseUrl}${caminho}`, {
         ...init,
+        ...(sinal !== undefined ? { signal: sinal } : {}),
         headers: {
-          authorization: `Bearer ${TOKEN_DEV}`,
+          authorization: autorizacao,
           accept: "application/json",
           ...(init?.body !== undefined ? { "content-type": "application/json" } : {}),
           ...(init?.headers ?? {}),
         },
       });
+
+      if (resposta.status === 401 || resposta.status === 403) {
+        // Quem decide o que 401/403 significa para a sessão é o provedor.
+        sessao.registrarRespostaNaoAutorizada(resposta.status);
+      }
+
       const corpo: unknown = await resposta.json().catch(() => null);
       if (!resposta.ok) {
         return {
@@ -306,7 +378,11 @@ export function criarClienteHttp(baseUrl = ""): ClienteApiIntensiCare {
         };
       }
       return { ok: true, status: resposta.status, corpo: corpo as T, problema: null };
-    } catch {
+    } catch (erro) {
+      // CANCELAMENTO PROPAGA. Traduzir um aborto em "API indisponível" faria
+      // a tela declarar uma falha que não houve — e esconderia do chamador
+      // que a requisição foi cancelada por ele mesmo.
+      if (sinal?.aborted === true) throw erro;
       return {
         ok: false,
         status: 0,
@@ -315,7 +391,7 @@ export function criarClienteHttp(baseUrl = ""): ClienteApiIntensiCare {
           type: "about:blank",
           title: "API indisponível",
           status: 503,
-          detail: "Não foi possível falar com a API local (apps/api). O serviço está no ar?",
+          detail: "Não foi possível falar com a API (apps/api). O serviço está no ar?",
         },
       };
     }
@@ -323,21 +399,41 @@ export function criarClienteHttp(baseUrl = ""): ClienteApiIntensiCare {
 
   function falha<T>(resposta: RespostaHttp<unknown>): RespostaApi<T> {
     return {
-      estadoCarregamento:
-        resposta.status === 0 || resposta.status === 503 ? "indisponivel" : "erro",
+      estadoCarregamento: estadoDeFalhaHttp(resposta.status),
       dados: null,
       problema: resposta.problema,
     };
   }
 
-  async function buscarGrade(): Promise<RespostaHttp<GradeLeitosResposta>> {
-    return chamar<GradeLeitosResposta>("/v1/projecoes/grade-leitos");
+  /**
+   * Aplica a guarda de perfil ao modo de demonstração. Forçar estado é
+   * ferramenta de revisão de UI; fora de desenvolvimento a chamada LANÇA.
+   */
+  function forcarOuNulo<T>(opcoesChamada?: OpcoesChamada): RespostaApi<T> | null {
+    if (!opcoesChamada?.forcarResultado) return null;
+
+    // 1) Recusa observável: fora de desenvolvimento isto LANÇA.
+    exigirPerfilDesenvolvimento("modo de demonstração (forcarResultado)");
+
+    // 2) Eliminação em build: `import.meta.env.DEV` vira o literal `false` em
+    //    produção, tornando `respostaForcada` inalcançável e removível pelo
+    //    empacotador — assim nem o TEXTO do modo de demonstração chega ao
+    //    pacote emitido. O primeiro build desta correção passou pela guarda
+    //    por pouco (o literal proibido era a frase longa do controle, e o que
+    //    vazava era a frase curta da resposta forçada); a lição virou um
+    //    marcador novo em `../build/guardaArtefatoSintetico.ts`.
+    return import.meta.env.DEV ? respostaForcada<T>(opcoesChamada.forcarResultado) : null;
+  }
+
+  async function buscarGrade(sinal?: AbortSignal): Promise<RespostaHttp<GradeLeitosResposta>> {
+    return chamar<GradeLeitosResposta>("/v1/projecoes/grade-leitos", sinal);
   }
 
   return {
     async listarGradeLeitos(opcoes?: OpcoesChamada): Promise<RespostaApi<ItemGradeLeito[]>> {
-      if (opcoes?.forcarResultado) return respostaForcada(opcoes.forcarResultado);
-      const resposta = await buscarGrade();
+      const forcada = forcarOuNulo<ItemGradeLeito[]>(opcoes);
+      if (forcada) return forcada;
+      const resposta = await buscarGrade(opcoes?.sinal);
       if (!resposta.ok || resposta.corpo === null) return falha(resposta);
       const leitos = resposta.corpo.leitos.map(mapearEntradaGrade);
       if (leitos.length === 0) {
@@ -350,8 +446,9 @@ export function criarClienteHttp(baseUrl = ""): ClienteApiIntensiCare {
       leitoId: string,
       opcoes?: OpcoesChamada,
     ): Promise<RespostaApi<ItemGradeLeito>> {
-      if (opcoes?.forcarResultado) return respostaForcada(opcoes.forcarResultado);
-      const grade = await buscarGrade();
+      const forcada = forcarOuNulo<ItemGradeLeito>(opcoes);
+      if (forcada) return forcada;
+      const grade = await buscarGrade(opcoes?.sinal);
       if (!grade.ok || grade.corpo === null) return falha(grade);
       const entrada = grade.corpo.leitos.find((l) => l.leitoId === leitoId);
       if (entrada === undefined) {
@@ -370,6 +467,7 @@ export function criarClienteHttp(baseUrl = ""): ClienteApiIntensiCare {
       if (entrada.pacienteRef !== null) {
         const avaliacoes = await chamar<AvaliacoesPacienteResposta>(
           `/v1/pacientes/${encodeURIComponent(entrada.pacienteRef)}/avaliacoes`,
+          opcoes?.sinal,
         );
         const maisRecente = avaliacoes.ok ? avaliacoes.corpo?.avaliacoes[0] : undefined;
         if (maisRecente !== undefined) {
@@ -388,7 +486,8 @@ export function criarClienteHttp(baseUrl = ""): ClienteApiIntensiCare {
       chaveIdempotencia: string,
       opcoes?: OpcoesChamada,
     ): Promise<RespostaApi<Alerta>> {
-      if (opcoes?.forcarResultado) return respostaForcada(opcoes.forcarResultado);
+      const forcada = forcarOuNulo<Alerta>(opcoes);
+      if (forcada) return forcada;
       if (!chaveIdempotencia) {
         return {
           estadoCarregamento: "erro",
@@ -404,12 +503,13 @@ export function criarClienteHttp(baseUrl = ""): ClienteApiIntensiCare {
 
       // A versão vista (If-Match) vem da projeção corrente — concorrência
       // otimista de ponta a ponta: conflito 412 aparece como erro explícito.
-      const grade = await buscarGrade();
+      const grade = await buscarGrade(opcoes?.sinal);
       const versao =
         grade.corpo?.leitos.map((l) => l.alerta).find((a) => a?.id === alertaId)?.versao ?? 0;
 
       const resposta = await chamar<ReconhecerAlertaResposta>(
         `/v1/alertas/${encodeURIComponent(alertaId)}/reconhecer`,
+        opcoes?.sinal,
         {
           method: "POST",
           headers: {

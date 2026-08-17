@@ -1,0 +1,205 @@
+/**
+ * apps/web/src/components/GaleriaEstados.tsx
+ *
+ * Galeria de revisão que renderiza TODOS os identificadores obrigatórios do
+ * §11, agrupados pelas seis famílias do
+ * `docs/10-ux-and-accessibility/modelo-de-estados-obrigatorios.md`.
+ *
+ * POR QUE EXISTE. ADR-0021 F4: "a ausência de um estado obrigatório é defeito
+ * bloqueante de revisão, não uma melhoria futura". Sem uma superfície que
+ * mostre os 43 identificadores lado a lado, a única forma de verificar
+ * cobertura era ler o union type — e um tipo declarado não prova que existe
+ * texto, tom, glifo e marcação acessível para cada valor. A galeria também é
+ * o alvo mais denso do axe: uma varredura aqui cobre todas as combinações de
+ * tom/contraste de uma vez.
+ *
+ * HONESTIDADE. Esta tela é um catálogo de APRESENTAÇÃO. Nada aqui é dado de
+ * paciente, nada aqui foi originado por transporte real, e os estados de
+ * conectividade `reproduzindo`/`reconciliado` são exibidos ainda que o
+ * transporte que os produziria (replay por cursor, ADR-0011 P4) não exista
+ * nesta fatia — a própria tela declara isso, em vez de sugerir capacidade.
+ *
+ * Só é alcançável em desenvolvimento (`?estados`, guardado em `App.tsx`).
+ */
+import type {
+  EstadoAvaliacao,
+  EstadoCarregamento,
+  EstadoConectividade,
+  EstadoFrescor,
+  EstadoItemTrabalho,
+  EstadoSessao,
+  FrescorVisao,
+} from "../domain/estados.js";
+import {
+  textoAvaliacao,
+  textoCarregamento,
+  textoConectividade,
+  textoFrescor,
+  textoFrescorVisao,
+  textoItemTrabalho,
+  textoSessao,
+} from "../domain/linguagem.js";
+import { BadgeTom } from "./BadgeTom.js";
+
+const CARREGAMENTO: EstadoCarregamento[] = [
+  "carregando",
+  "vazio",
+  "indisponivel",
+  "proibido",
+  "tempo_esgotado",
+  "retentando",
+  "parcial",
+  "pronto",
+  "erro",
+];
+
+const FRESCOR: EstadoFrescor[] = [
+  "atual",
+  "envelhecendo",
+  "desatualizado",
+  "expirado",
+  "ausente",
+  "invalido",
+  "conflitante",
+  "corrigido",
+  "substituido",
+];
+
+const AVALIACAO: EstadoAvaliacao[] = [
+  "valida",
+  "parcial",
+  "nao_avaliada",
+  "desatualizada",
+  "invalida",
+];
+
+const ITEM_TRABALHO: EstadoItemTrabalho[] = [
+  "nao_atribuido",
+  "atribuido",
+  "reconhecido",
+  "escalado",
+  "sobreposto",
+  "resolvido",
+  "suprimido",
+  "reaberto",
+];
+
+const CONECTIVIDADE: EstadoConectividade[] = [
+  "online",
+  "degradado",
+  "offline",
+  "reconectando",
+  "reproduzindo",
+  "reconciliado",
+];
+
+const SESSAO: EstadoSessao[] = [
+  "ativa",
+  "expirando",
+  "expirada",
+  "recuperada",
+  "trabalho_nao_salvo_protegido",
+];
+
+const FRESCOR_VISAO: FrescorVisao[] = ["atual", "desatualizado_apos_falha"];
+
+interface FamiliaProps<T extends string> {
+  titulo: string;
+  idSecao: string;
+  nota: string;
+  valores: readonly T[];
+  traduzir: (valor: T) => { texto: string; tom: Parameters<typeof BadgeTom>[0]["tom"] };
+}
+
+function Familia<T extends string>({ titulo, idSecao, nota, valores, traduzir }: FamiliaProps<T>) {
+  return (
+    <section aria-labelledby={idSecao} className="galeria-familia">
+      <h3 id={idSecao}>
+        {titulo} <small>({valores.length})</small>
+      </h3>
+      <p>{nota}</p>
+      <ul className="galeria-lista">
+        {valores.map((valor) => {
+          const { texto, tom } = traduzir(valor);
+          return (
+            <li key={valor} data-identificador={valor} className="galeria-item">
+              <code>{valor}</code>
+              <BadgeTom texto={texto} tom={tom} />
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+/** Catálogo completo dos estados obrigatórios do §11 (revisão, apenas dev). */
+export function GaleriaEstados() {
+  return (
+    <section aria-labelledby="galeria-titulo">
+      <h2 id="galeria-titulo">Galeria de estados obrigatórios (§11)</h2>
+      <p>
+        Catálogo de APRESENTAÇÃO para revisão de UI. Nenhum item abaixo é dado de paciente, e nenhum
+        foi originado por transporte real. Os textos em pt-BR são PROVISÓRIOS: a ratificação de
+        terminologia clínica corre pelo processo da ADR-0029 (condição C2, ainda aberta) e nenhuma
+        redação aqui é definitiva.
+      </p>
+
+      <Familia
+        titulo="1. Carregamento (componente/tela)"
+        idSecao="galeria-carregamento"
+        nota="Estados de obtenção de uma tela ou lista. `erro`, `indisponivel` e `proibido` são anunciados assertivamente e oferecem ação de recuperação."
+        valores={CARREGAMENTO}
+        traduzir={textoCarregamento}
+      />
+
+      <Familia
+        titulo="2. Frescor do dado clínico"
+        idSecao="galeria-frescor"
+        nota="Originado no backend a partir do tempo clínico de fonte (ADR-0008 N5/SAF-0004). O frontend nunca infere estes valores."
+        valores={FRESCOR}
+        traduzir={textoFrescor}
+      />
+
+      <Familia
+        titulo="3. Avaliação clínica"
+        idSecao="galeria-avaliacao"
+        nota="`nao_avaliada` e `invalida` são fail-closed: nunca exibem escore, banda ou cor de severidade, e nunca reusam o tom de 'sem problema' (HAZ-0005; ADR-0029 P1)."
+        valores={AVALIACAO}
+        traduzir={textoAvaliacao}
+      />
+
+      <Familia
+        titulo="4. Item de trabalho (alerta)"
+        idSecao="galeria-item-trabalho"
+        nota="Ciclo de vida da ADR-0009 W1. `reconhecido` (ciência) é deliberadamente distinto de `resolvido` (encerramento) — ADR-0029 P5."
+        valores={ITEM_TRABALHO}
+        traduzir={textoItemTrabalho}
+      />
+
+      <Familia
+        titulo="5. Conectividade"
+        idSecao="galeria-conectividade"
+        nota="ATENÇÃO: `reproduzindo` e `reconciliado` são renderizáveis, mas NÃO são produzidos por transporte real nesta fatia — não há SSE, WebSocket nem cursor de replay (ADR-0011 P4 pendente). Estão aqui como catálogo de apresentação, não como capacidade."
+        valores={CONECTIVIDADE}
+        traduzir={textoConectividade}
+      />
+
+      <Familia
+        titulo="6. Sessão"
+        idSecao="galeria-sessao"
+        nota="Originada no provedor de sessão (ADR-0015, `not-started`). `trabalho_nao_salvo_protegido` declara preservação e reapresentação para confirmação — jamais reenvio automático (ADR-0009 W2)."
+        valores={SESSAO}
+        traduzir={textoSessao}
+      />
+
+      <Familia
+        titulo="7. Frescor da visão (transporte)"
+        idSecao="galeria-frescor-visao"
+        nota="Introduzido no ACH-07 e SEPARADO da família 2: descreve apenas se o conteúdo em tela é anterior a uma falha de recarga. Não é juízo clínico."
+        valores={FRESCOR_VISAO}
+        traduzir={textoFrescorVisao}
+      />
+    </section>
+  );
+}

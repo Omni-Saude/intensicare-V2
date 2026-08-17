@@ -16,6 +16,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { App } from "../App.js";
+import { criarSessaoControlada } from "../api/sessao.js";
 import type { ClienteApiIntensiCare } from "../api/tipos.js";
 import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
 import { BadgeTom } from "./BadgeTom.js";
@@ -344,9 +345,32 @@ describe("Telas de nível superior — estado inicial (sem jsdom, useEffect não
   });
 
   it("App renderiza o banner de contexto e a grade de leitos", () => {
-    const html = renderToStaticMarkup(<App />);
+    // ACH-07: `App` passou a RECEBER cliente e sessão por injeção (a criação
+    // migrou para `api/resolverCliente.ts`, que é assíncrona porque o dublê
+    // de desenvolvimento só é alcançável por `import()` dinâmico).
+    const html = renderToStaticMarkup(
+      <App
+        cliente={clientePendente}
+        sessao={criarSessaoControlada("ativa", "Bearer SYNTH-TESTE")}
+      />,
+    );
     expect(html).toMatch(/CONSULTIVO/);
     expect(html).toMatch(/Grade de leitos/);
     expect(html).toMatch(/lang="pt-BR"/);
+  });
+
+  it("App com sessão EXPIRADA não renderiza dado de paciente, e mantém o banner", () => {
+    const html = renderToStaticMarkup(
+      <App cliente={clientePendente} sessao={criarSessaoControlada("expirada", null)} />,
+    );
+    // O banner permanente nunca é removido condicionalmente (HAZ-0046).
+    expect(html).toMatch(/CONSULTIVO/);
+    expect(html).toMatch(/[Rr]egistro limitado a esta instituição/);
+    // A tela clínica não é montada (modelo de estados §4; IA-N12). A âncora é
+    // o id do cabeçalho da GRADE — o `<h1>` da casca contém "Grade de leitos"
+    // legitimamente e não prova nada sobre a montagem da tela.
+    expect(html).toMatch(/Sessão expirada/);
+    expect(html).not.toMatch(/grade-leitos-titulo/);
+    expect(html).not.toMatch(/grade-leitos/);
   });
 });

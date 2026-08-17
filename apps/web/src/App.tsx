@@ -1,10 +1,13 @@
-import { useState } from "react";
-import { criarClienteHttp } from "./api/clienteHttp.js";
-import { criarClienteMock } from "./api/clienteMock.js";
+import { useEffect, useState } from "react";
+import type { ProvedorSessao } from "./api/sessao.js";
 import type { ClienteApiIntensiCare } from "./api/tipos.js";
+import { AvisoSessao } from "./components/AvisosDeEstado.js";
 import { BannerContexto } from "./components/BannerContexto.js";
 import { DetalhePaciente } from "./components/DetalhePaciente.js";
+import { GaleriaEstados } from "./components/GaleriaEstados.js";
 import { GradeLeitos } from "./components/GradeLeitos.js";
+import type { EstadoSessao } from "./domain/estados.js";
+import { ehPerfilDesenvolvimento, pedeGaleriaDeEstados } from "./perfil.js";
 
 /**
  * Casca de navegação desta fatia (SPR-G7-2): grade de leitos ↔ detalhe
@@ -12,29 +15,81 @@ import { GradeLeitos } from "./components/GradeLeitos.js";
  * fatia — ver README, seção de pendências); a navegação é só estado de
  * React, suficiente para as duas telas exigidas pela tarefa.
  *
- * Integração SPR-G7-2: o cliente padrão é o cliente HTTP REAL do contrato
- * (`criarClienteHttp`, contra `apps/api` via proxy do Vite em dev). O
- * mock permanece disponível para testes de componente e via `?mock` na
- * URL — explicitamente, nunca como fallback silencioso.
+ * MUDANÇA DO ACH-07. `App` deixou de CRIAR o cliente: ele agora o RECEBE.
+ * A criação (que decide perfil, `?mock` e sessão) mudou para
+ * `api/resolverCliente.ts` e é executada por `main.tsx` ANTES de montar a
+ * árvore, porque o dublê de desenvolvimento só é alcançável por `import()`
+ * dinâmico — o que torna a decisão assíncrona e a recusa em perfil não-dev
+ * uma exceção observável, não um `if` silencioso dentro de um render.
  *
- * O cliente de API é criado uma única vez por sessão do app
- * (`useState(() => ...)`, nunca recriado a cada renderização).
+ * Efeito colateral desejado: `App` passa a ser testável com qualquer cliente
+ * injetado, sem depender de `window.location`.
  */
-function criarClientePadrao(): ClienteApiIntensiCare {
-  const querModo =
-    typeof window !== "undefined" && new URLSearchParams(window.location.search).has("mock");
-  return querModo ? criarClienteMock() : criarClienteHttp();
+interface AppProps {
+  cliente: ClienteApiIntensiCare;
+  sessao: ProvedorSessao;
+  /** `window.location.search`; injetável em teste. */
+  busca?: string;
 }
 
-export function App() {
-  const [cliente] = useState(() => criarClientePadrao());
+export function App({ cliente, sessao, busca = "" }: AppProps) {
   const [leitoSelecionado, setLeitoSelecionado] = useState<string | null>(null);
+  const [estadoSessao, setEstadoSessao] = useState<EstadoSessao>(() => sessao.estadoAtual());
+
+  // O estado de sessão é ORIGINADO no provedor (S3) — a tela assina, nunca
+  // deduz expiração contando tempo por conta própria.
+  useEffect(() => {
+    setEstadoSessao(sessao.estadoAtual());
+    return sessao.assinar(setEstadoSessao);
+  }, [sessao]);
+
+  // Galeria de estados: superfície de revisão de UI que renderiza TODOS os
+  // identificadores obrigatórios do §11. Só existe em desenvolvimento.
+  //
+  // `import.meta.env.DEV` vem PRIMEIRO e é literal em tempo de build: sem ele,
+  // a condição seria só uma chamada de função e o empacotador não conseguiria
+  // provar que o ramo é inalcançável — a galeria inteira vazaria para o
+  // pacote de produção (foi exatamente o que aconteceu com
+  // `ControleDemonstracao`, detectado pela guarda de bundle).
+  if (import.meta.env.DEV && ehPerfilDesenvolvimento() && pedeGaleriaDeEstados(busca)) {
+    return (
+      <div lang="pt-BR">
+        <BannerContexto />
+        <main>
+          <GaleriaEstados />
+        </main>
+      </div>
+    );
+  }
+
+  /**
+   * Sessão expirada bloqueia a tela clínica e o dado de paciente deixa de
+   * ser renderizado (modelo de estados §4: "limpa dado de paciente do estado
+   * de cliente"; IA-N12). O banner de contexto permanece — ele nunca é
+   * removido condicionalmente (HAZ-0046).
+   */
+  if (estadoSessao === "expirada") {
+    return (
+      <div lang="pt-BR">
+        <BannerContexto />
+        <main>
+          <h1>IntensiCare V2 — Grade de leitos (fatia sintética)</h1>
+          <AvisoSessao estado="expirada" />
+          <p>
+            Nenhum dado de paciente é exibido enquanto a sessão estiver expirada. Reautentique para
+            continuar.
+          </p>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div lang="pt-BR">
       <BannerContexto />
       <main>
         <h1>IntensiCare V2 — Grade de leitos (fatia sintética)</h1>
+        <AvisoSessao estado={estadoSessao} />
         {leitoSelecionado ? (
           <DetalhePaciente
             leitoId={leitoSelecionado}

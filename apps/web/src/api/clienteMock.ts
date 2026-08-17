@@ -14,6 +14,7 @@
  * nunca apresentado como persistência real.
  */
 import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
+import { type AmbienteBuild, ambienteAtual, exigirPerfilDesenvolvimento } from "../perfil.js";
 import { compor, criarDadosSinteticos } from "./fixtures.js";
 import type {
   ClienteApiIntensiCare,
@@ -25,9 +26,28 @@ import type {
 
 const ATRASO_PADRAO_MS = 150;
 
-function esperar(ms: number): Promise<void> {
+/**
+ * Espera cancelável (ACH-07). O `esperar` anterior ignorava cancelamento: um
+ * componente desmontado durante o atraso continuava com um `setTimeout` vivo
+ * e resolvia depois. Aqui o aborto REJEITA com a razão do sinal e limpa o
+ * temporizador — o mock passa a exercitar o mesmo contrato de cancelamento
+ * que o cliente HTTP, de modo que um teste de componente contra o mock prova
+ * o mesmo comportamento que a produção.
+ */
+function esperar(ms: number, sinal?: AbortSignal): Promise<void> {
+  if (sinal?.aborted === true) return Promise.reject(sinal.reason);
   if (ms <= 0) return Promise.resolve();
-  return new Promise((resolver) => setTimeout(resolver, ms));
+  return new Promise((resolver, rejeitar) => {
+    function aoAbortar(): void {
+      clearTimeout(identificador);
+      rejeitar(sinal?.reason);
+    }
+    const identificador = setTimeout(() => {
+      sinal?.removeEventListener("abort", aoAbortar);
+      resolver();
+    }, ms);
+    sinal?.addEventListener("abort", aoAbortar, { once: true });
+  });
 }
 
 function problemaPadrao(status: number, title: string, detail: string): ProblemaLocal {
@@ -73,8 +93,18 @@ function respostaForcada<T>(modo: ModoDemonstracao, dadosProntos: T | null): Res
   }
 }
 
-/** Cria um cliente mock com seu próprio estado em memória (isolado por instância — útil em teste). */
-export function criarClienteMock(): ClienteApiIntensiCare {
+/**
+ * Cria um cliente mock com seu próprio estado em memória (isolado por
+ * instância — útil em teste).
+ *
+ * GUARDA DE PERFIL (ACH-07): LANÇA `RecusaDePerfilError` fora de
+ * desenvolvimento. Um dublê alimentado por fixtures nunca pode servir uma
+ * tela clínica em build não-dev — é o anti-padrão 9 do contrato comum. A
+ * guarda fica no construtor (e não no ponto de uso) para que NENHUM caminho
+ * de chamada consiga instanciá-lo indevidamente.
+ */
+export function criarClienteMock(ambiente: AmbienteBuild = ambienteAtual()): ClienteApiIntensiCare {
+  exigirPerfilDesenvolvimento("cliente mock alimentado por fixtures sintéticas", ambiente);
   const dados = criarDadosSinteticos();
   const cacheIdempotencia = new Map<string, Alerta>();
 
@@ -84,7 +114,7 @@ export function criarClienteMock(): ClienteApiIntensiCare {
 
   return {
     async listarGradeLeitos(opcoes?: OpcoesChamada): Promise<RespostaApi<ItemGradeLeito[]>> {
-      await esperar(opcoes?.atrasoMs ?? ATRASO_PADRAO_MS);
+      await esperar(opcoes?.atrasoMs ?? ATRASO_PADRAO_MS, opcoes?.sinal);
 
       const leitos = leitosCompostos();
 
@@ -103,7 +133,7 @@ export function criarClienteMock(): ClienteApiIntensiCare {
       leitoId: string,
       opcoes?: OpcoesChamada,
     ): Promise<RespostaApi<ItemGradeLeito>> {
-      await esperar(opcoes?.atrasoMs ?? ATRASO_PADRAO_MS);
+      await esperar(opcoes?.atrasoMs ?? ATRASO_PADRAO_MS, opcoes?.sinal);
 
       const leitoBase = dados.leitosBase.find((item) => item.leitoId === leitoId);
       const leito = leitoBase ? compor(leitoBase, dados.alertas) : undefined;
@@ -132,7 +162,7 @@ export function criarClienteMock(): ClienteApiIntensiCare {
       chaveIdempotencia: string,
       opcoes?: OpcoesChamada,
     ): Promise<RespostaApi<Alerta>> {
-      await esperar(opcoes?.atrasoMs ?? ATRASO_PADRAO_MS);
+      await esperar(opcoes?.atrasoMs ?? ATRASO_PADRAO_MS, opcoes?.sinal);
 
       if (!chaveIdempotencia) {
         return {

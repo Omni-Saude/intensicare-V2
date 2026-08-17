@@ -9,7 +9,9 @@
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:e2e": "playwright test",
+    "test:e2e:instalar": "playwright install --with-deps chromium"
   },
   "dependencies": {
     "@intensicare/contratos": "workspace:*",
@@ -17,9 +19,16 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.62.1",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.4",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.5",
     "@vitejs/plugin-react": "6.0.5",
+    "axe-core": "4.13.0",
+    "jsdom": "30.0.1",
     "vite": "8.2.1"
   }
 }

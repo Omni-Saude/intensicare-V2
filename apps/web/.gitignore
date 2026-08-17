@@ -1,0 +1,17 @@
+# Artefatos GERADOS pela suíte E2E do Playwright — nunca versionados.
+#
+# Este `.gitignore` aninhado segue a mesma convenção já usada em
+# `packages/kernel-clinico` e é respeitado pelo Biome, que roda com
+# `vcs.useIgnoreFile: true` (ver `biome.jsonc`). Sem ele, o relatório JSON e o
+# diretório de resultados fazem `pnpm lint` FALHAR por formatação de arquivo
+# gerado — um vermelho que não diz nada sobre o código e que ensina a equipe a
+# ignorar vermelho.
+#
+# `test-results/` também guarda rastros e capturas de tela de falha, que podem
+# conter renderização de dados sintéticos: mesmo sintéticos, artefato de
+# execução não pertence ao repositório.
+test-results/
+playwright-report/
+blob-report/
+e2e-resultado.json
+.playwright/

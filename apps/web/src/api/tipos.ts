@@ -46,6 +46,14 @@ export interface OpcoesChamada {
   forcarResultado?: ModoDemonstracao;
   /** Atraso simulado (ms) antes de resolver — default pequeno; 0 em testes. */
   atrasoMs?: number;
+  /**
+   * Sinal de cancelamento (ACH-07). Toda implementação da porta DEVE
+   * repassá-lo à operação de I/O subjacente — no cliente HTTP, ao próprio
+   * `fetch`, para que o cancelamento seja REAL (a conexão é encerrada) e não
+   * uma flag que descarta o resultado depois de recebê-lo. O cancelamento é
+   * observável no próprio sinal (`sinal.aborted`, `sinal.reason`).
+   */
+  sinal?: AbortSignal;
 }
 
 /** Porta do cliente de API consumida pelas telas desta fatia. */
