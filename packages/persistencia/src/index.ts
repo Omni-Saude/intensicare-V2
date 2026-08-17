@@ -2,9 +2,19 @@
  * @intensicare/persistencia
  *
  * Camada de persistência do IntensiCare V2. PREMISSA (reversível,
- * GDEC-0015/0017): classe PostgreSQL, com PGlite (`@electric-sql/pglite`)
- * em desenvolvimento e teste — Postgres real fica para ambientes futuros
- * (ver docs/06-architecture/premissas-de-construcao.md PRE-03).
+ * GDEC-0015/0017): classe PostgreSQL. Há DOIS adaptadores atrás da mesma
+ * porta (`./postgres/porta.ts`):
+ *
+ *   - `AdaptadorPostgres` — PostgreSQL real; a aplicação AUTENTICA-SE já como
+ *     papel sem privilégio (`intensicare_app`), separado do papel dono do
+ *     esquema (`intensicare_migrador`). É a única topologia em que a RLS por
+ *     tenant é fronteira de segurança verificável, e é a exercitada contra
+ *     servidor real e efêmero em `./postgres/fronteira-postgres.test.ts`.
+ *   - `AdaptadorPglite` — o SIMULADOR embarcado (`@electric-sql/pglite`),
+ *     para desenvolvimento e para os testes que não dependem da fronteira.
+ *     Rotulado em tempo de execução (`fronteiraDeIsolamentoVerificavel:
+ *     false`): nenhuma evidência de isolamento colhida nele é transferível
+ *     para produção (ACHADO-01, THR-0050 P0).
  *
  * Esta fatia (SPR-G7-2) implementa: migrações SQL puras (tenancy, fato
  * clínico canônico, alerta/item de trabalho, auditoria, outbox — ADR-0003,
@@ -39,6 +49,7 @@ export async function checkConnection(db: PGlite): Promise<boolean> {
   return result.rows[0]?.one === 1;
 }
 
+export * from "./postgres/index.js";
 export * from "./repositories/clinical-repository.js";
 export * from "./repositories/tenancy-repository.js";
 export * from "./session.js";
