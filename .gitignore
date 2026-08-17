@@ -1,7 +1,19 @@
 ### AL ###
 #Template for AL projects for Dynamics 365 Business Central
 #launch.json folder
-.vscode/
+# `.vscode/*` e NÃO `.vscode/`: o git não desce em diretório excluído, então uma
+# negação `!` sobre arquivo dentro dele não teria efeito algum. Excluindo o
+# CONTEÚDO, as exceções abaixo passam a valer.
+.vscode/*
+# EXCEÇÕES: configuração de workspace COMPARTILHADA, que precisa ser versionada.
+# `settings.json` corrige o dialeto SQL aplicado pelo editor às migrações
+# PostgreSQL (sem ele, uma extensão T-SQL instalada produz centenas de erros
+# falsos) e `extensions.json` recomenda a extensão que devolve diagnóstico
+# correto. São decisão de projeto, não preferência de máquina — por isso saem
+# do ignore acima, que continua valendo para `launch.json`, `tasks.json` e
+# qualquer estado local.
+!.vscode/settings.json
+!.vscode/extensions.json
 #Cache folder
 .alcache/
 #Symbols folder
