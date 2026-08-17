@@ -15,9 +15,9 @@ safe execution cycle. Evidence labels per `docs/00-governance/evidence-notation.
 
 ## 1. Repository and access state (OBSERVED, 2026-08-14)
 
-- V2 repository: `/Users/familia/code/intensicare-V2`, independent history
+- V2 repository: `https://github.com/Omni-Saude/intensicare-V2`, independent history
   (initial commit `cb35521`), work on branch `cycle-0/spark-foundation`.
-- Legacy repository present read-only at `/Users/familia/intensicare/`,
+- Legacy repository present read-only at `https://github.com/Omni-Saude/intensicare`,
   never modified. Provenance defect recorded: `INTENSICARE_TECHNICAL_ASSESSMENT.md`
   is an **untracked working-tree file** — not commit-pinned; line citations can
   drift silently (see pathway-portfolio handoff; EVID register).

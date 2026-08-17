@@ -21,3 +21,19 @@ rad.json
 *.flf
 #Test results file
 TestResults.xml
+
+### Node.js / pnpm monorepo (IntensiCare V2 — SPR-G7-1) ###
+node_modules/
+dist/
+*.tsbuildinfo
+.pglite/
+.pnpm-store/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+
+# Cache do Python (gerado pelos scripts de gate)
+__pycache__/
+*.pyc

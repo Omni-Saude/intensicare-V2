@@ -44,7 +44,7 @@ Two consequences follow directly and are the spine of this document:
 
 | Token | Resolves to |
 |---|---|
-| `PROMPT:n-m` | `/Users/familia/code/intensicare-V2/INTENSICARE_V2_ORCHESTRATOR_PROMPT.md`, lines n–m |
+| `PROMPT:n-m` | `https://github.com/Omni-Saude/intensicare-V2/blob/main/INTENSICARE_V2_ORCHESTRATOR_PROMPT.md`, lines n–m |
 | `HAZ-0028` | `docs/05-clinical-safety/hazard-log.md`, "PHI or identifiers are written to logs, traces, metrics, error bodies, fixtures, screenshots, tickets, agent prompts, or model-provider requests" (`joint`, classified `Undesirable`, S3/L4) |
 | `AMH-DOSSIER` | `docs/08-interoperability/amh-data/four-layer-dossier.md` |
 | `AMH-INVENTORY` | `docs/08-interoperability/amh-data/contract-inventory.md` |

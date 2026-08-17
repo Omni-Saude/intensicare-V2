@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """check_forbidden_content.py — Forbidden-content gate for IntensiCare V2.
 
-Scans docs/, scripts/, .github/, and README.md (at the repository root)
-for text patterns that must never appear in this repository:
+Scans docs/, scripts/, .github/, apps/, packages/, and README.md (at the
+repository root) for text patterns that must never appear in this
+repository:
 
   1. Credential-shaped strings: GitHub OAuth/user/fine-grained tokens,
      AWS access-key IDs, and PEM private-key headers.
@@ -37,6 +38,19 @@ Design notes
 * Findings are reported as file:line with a redacted excerpt — the
   point of this gate is to prove *something* matched, not to echo a
   live secret into CI logs.
+
+Coverage of apps/ and packages/ (added SPR-G7-1, 2026-08-16)
+--------------------------------------------------------------
+Once a monorepo with real code exists under `apps/` and `packages/`
+(pnpm workspaces — see `docs/06-architecture/premissas-de-construcao.md`),
+the PHI/credential/forbidden-content gate must cover source code, not only
+documentation: a hardcoded CPF or a real (non-`SYNTH-`) `portable_subject_ref`
+in a fixture or test file is exactly as much a leak as one in a markdown
+doc. `node_modules/` and `dist/` are pruned from the directory walk (not
+merely filtered from results) — third-party dependency trees are out of
+this repository's control and would otherwise dominate scan time with
+irrelevant content, and `dist/` is build output already excluded from git
+by `.gitignore`.
 """
 from __future__ import annotations
 
@@ -44,8 +58,12 @@ import os
 import re
 import sys
 
-SCAN_ROOTS = ["docs", "scripts", ".github"]
+SCAN_ROOTS = ["docs", "scripts", ".github", "apps", "packages"]
 SCAN_FILES = ["README.md"]
+
+# Directory names pruned from the walk entirely (not descended into) under
+# every root in SCAN_ROOTS — see "Coverage of apps/ and packages/" above.
+EXCLUDED_DIR_NAMES = {"node_modules", "dist"}
 
 # No addresses are currently allowlisted. Any addition requires a
 # DECIDED entry in docs/00-governance/registers/decision-register.md —
@@ -92,7 +110,10 @@ def iter_target_files(repo_root: str):
         if not os.path.isdir(root_path):
             continue
         for dirpath, dirnames, filenames in os.walk(root_path):
-            dirnames.sort()
+            # Prune in place so os.walk never descends into these dirs at
+            # all (not just a post-hoc filter of results) — see module
+            # docstring "Coverage of apps/ and packages/".
+            dirnames[:] = sorted(d for d in dirnames if d not in EXCLUDED_DIR_NAMES)
             for name in sorted(filenames):
                 yield os.path.join(dirpath, name)
     for rel in SCAN_FILES:

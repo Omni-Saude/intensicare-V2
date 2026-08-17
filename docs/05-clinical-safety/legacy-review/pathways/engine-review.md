@@ -1,25 +1,29 @@
 ---
 id: LEGREV-TRILHAS-ENGINE
-title: Legacy trilhas/pathway engine — clinical-safety mechanics review
+title: Engine legado de trilhas/pathway — revisão da mecânica de segurança clínica
 label: OBSERVED
 status: PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)
 statement: >
-  Source-verified review of the V1 trilhas engine mechanics with a clinical-safety
-  lens: load/compile, enrollment, evaluation cadence, state machine, missing/invalid/
-  stale-input behavior, suppression, alert delivery, and the false-green
-  vector-coverage gate. Decisive finding: an absent input silently skips its
-  criterion and the aggregate renders "normal" — the HAZ-0005 failure shape is
-  present in the NEW declarative engine and is tested as intended behavior. Proposed
-  verdict SUPERSEDE.
+  Revisão source-verified da mecânica do engine de trilhas da V1 com uma lente de
+  segurança clínica: carga/compilação, matrícula (enrollment), cadência de
+  avaliação, máquina de estados, comportamento de entrada ausente/inválida/obsoleta,
+  supressão, entrega de alerta, e o gate de cobertura de vetores false-green.
+  Achado decisivo: uma entrada ausente pula silenciosamente seu critério e o
+  agregado renderiza "normal" — a forma de falha do HAZ-0005 está presente no
+  engine declarativo NOVO e é testada como comportamento pretendido. Veredito
+  proposto: SUPERSEDE.
 provenance:
-  source_repo: intensicare (legacy V1, READ-ONLY)
-  path_or_url: src/intensicare/services/ (trilhas_* and pathway_* modules), scripts/, tests/
-  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (legacy HEAD at pin, 2026-08-15)
-  section_or_lines: per-citation below; SHA-256 per file listed in section 0
+  source_repo: intensicare (legado V1, READ-ONLY)
+  path_or_url: src/intensicare/services/ (módulos trilhas_* e pathway_*), scripts/, tests/
+  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD legado no pin, 2026-08-15)
+  section_or_lines: por citação abaixo; SHA-256 por arquivo listado na seção 0
   date_collected: 2026-08-15
-  collector: legacy care-pathway definitions forensics reviewer (cycle 1, Task 1)
-  transformation: read in full; behavior traced line-by-line; false-green gate reproduced live; verdict proposed
-  confidence: high
+  collector: revisor forense de definições de pathway de cuidado legadas (ciclo 1, Tarefa 1)
+  transformation: >
+    traduzido EN→pt-BR, tranche 3, GDEC-0008 item 8 (lido por completo;
+    comportamento rastreado linha a linha; gate false-green reproduzido ao vivo;
+    veredito proposto)
+  confidence: alta
   owner: UNASSIGNED — VALIDATION REQUIRED
   validation_status: VALIDATION REQUIRED
 links:
@@ -28,13 +32,15 @@ supersedes: null
 superseded_by: null
 ---
 
-# Trilhas / pathway engine — clinical-safety mechanics review
+> Traduzido EN→pt-BR em 2026-08-16 (GDEC-0008 item 8, tranche 3); original EN preservado no histórico git.
 
-## 0. Files reviewed and hashes
+# Engine de trilhas / pathway — revisão da mecânica de segurança clínica
 
-All from the pin manifest (`docs/archive/legacy-provenance/legacy-pin-cycle-1.md`)
-unless marked "hashed by reviewer" (absent from manifest; hashed at read time,
-2026-08-15):
+## 0. Arquivos revisados e hashes
+
+Todos do manifesto de pin (`docs/archive/legacy-provenance/legacy-pin-cycle-1.md`)
+exceto quando marcados "hashed by reviewer" (ausentes do manifesto, hasheados
+no momento da leitura, 2026-08-15):
 
 ```text
 a2ef8717276699bd013ede8eac5d1dc618607e72b76e664c09525ca6c54f4734  src/intensicare/services/trilhas_compiler.py
@@ -53,7 +59,7 @@ dcd1e76e7086106e659dce52e59a374350d8a4a662b63d9959a562dbf32eff64  src/intensicar
 68ca230a47b7ad5be991cdfc4319ad1d6a6e6112d14b185506588ebed772a203  _work/alerts/schema/pathway.schema.json
 ```
 
-Hashed by reviewer (absent from pin manifest):
+Hasheado pelo revisor (ausente do manifesto de pin):
 
 ```text
 b8a38ebe4cb21894dafb913c0c28df223eda21555e0dbcdc54b2ef8e1fc37eb7  scripts/check_vector_coverage.py
@@ -72,258 +78,300 @@ ee403fbe4d63d694993ac4858f83f8bc3cc920cbe413f3323b3e6c8fae6fc992  docs/plan/_wor
 6d79efcb164b7989f9c3992a9f2647b9ea213cb329bef837681ad85bbaf0e5de  docs/plan/_work/alerts/sepsis.yaml
 ```
 
-## 1. Architecture: three coexisting runtimes
+## 1. Arquitetura: três runtimes coexistindo
 
-OBSERVED — at the pinned commit, three pathway runtimes coexist:
+OBSERVED — no commit fixado, três runtimes de pathway coexistem:
 
-1. **TrilhasEngine** (`trilhas_engine.py`) — "stateless declarative rule engine…
-   Replaces the imperative PathwayStore" (lines 1-6). Loads
-   `_work/alerts/pathways/*.yaml`, pre-compiles predicates, evaluates via
-   TrilhasEvaluator, emits `AlertFiring` records stamped with
+1. **TrilhasEngine** (`trilhas_engine.py`) — "stateless declarative rule
+   engine… Replaces the imperative PathwayStore" (linhas 1-6). Carrega
+   `_work/alerts/pathways/*.yaml`, pré-compila predicados, avalia via
+   TrilhasEvaluator, emite registros `AlertFiring` carimbados com
    `definition_version` + `content_hash` (ADR-0020/021).
-2. **PathwayStore** (`trilhas_state.py`) — deprecated in-memory state machine
-   ("Migration deadline: 2026-09-01", line 16) still wired as the default store via
-   `domain_trilhas_engine._default_store` (line 111) — and still what
-   `TrilhasEngine.get_patient_pathways` itself delegates to
-   (`trilhas_engine.py:213-234`): the *new* engine answers "what pathways is this
-   patient on" from the *deprecated in-memory* store.
-3. **pathway_enrollment.py + pathway_repository.py** — the Postgres-backed port of
-   the state-machine rules (the actual production enrollment/evaluation path), which
-   re-reads the YAML engine privately for severity classification
-   (`pathway_enrollment.py:641-681`).
+2. **PathwayStore** (`trilhas_state.py`) — deprecado, máquina de estados em
+   memória ("Migration deadline: 2026-09-01", linha 16) ainda conectada como
+   o store padrão via `domain_trilhas_engine._default_store` (linha 111) — e
+   ainda o que o próprio `TrilhasEngine.get_patient_pathways` delega
+   (`trilhas_engine.py:213-234`): o engine *novo* responde "em quais
+   pathways este paciente está" a partir do store *em memória, deprecado*.
+3. **pathway_enrollment.py + pathway_repository.py** — a porta apoiada em
+   Postgres das regras da máquina de estados (o caminho real de
+   matrícula/avaliação em produção), que relê o engine YAML privadamente
+   para classificação de severidade (`pathway_enrollment.py:641-681`).
 
-INFERENCE: three runtimes over one content set, with different missing-data
-semantics each (see §4), reproduce the dual-runtime hazard the legacy assessment
-already flagged (candidate-inventory CAND-0006 row, `LEGACY-TA:719-727`).
+INFERENCE: três runtimes sobre um único conjunto de conteúdo, cada um com
+semânticas de dado ausente diferentes (ver §4), reproduzem o hazard de
+runtime duplo que a avaliação legada já sinalizava (linha CAND-0006 do
+candidate-inventory, `LEGACY-TA:719-727`).
 
-## 2. Load and compile-time validation
+## 2. Validação de carga e tempo de compilação
 
 OBSERVED (`trilhas_engine.py:105-144, 273-382`):
 
-- YAML loaded with `yaml.safe_load`; **the JSON schema
-  (`pathway.schema.json`) is not applied at load time** — schema conformance is a
-  CI-time concern only. Unparseable/dict-less/id-less files are skipped with a
-  WARNING (`_load_file:279-297`) — a deleted or malformed pathway vanishes silently
-  from the portfolio at runtime.
-- Per-criterion predicate compilation at load; **fail-fast hybrid policy**: any
-  predicate compile failure deactivates the whole pathway (never partial evaluation
-  of a clinical pathway — lines 317-353, recorded in public `load_failures`), and
-  zero active pathways raises `RuntimeError` at boot (lines 133-144). This is real,
-  well-considered safety engineering.
-- **But both production consumers neutralize the fail-fast**: the API's
-  `_get_engine` catches any init exception and falls back to the legacy 4-pathway
-  seed catalog (`api/v1/pathways.py:100-114`, "using legacy catalog"), and
-  `pathway_enrollment._get_trilhas_engine` catches and degrades severity to
-  `"normal"` (`pathway_enrollment.py:655-681`, docstring: "a definitions-load hiccup
-  must degrade _determine_severity to its 'normal' fallback"). A boot that should
-  fail loudly instead serves stale content or normal-severity answers.
-- Compiler validation (`trilhas_compiler.py`) is genuinely strong: no eval/exec
-  (AST + operator map, lines 1-46); band continuity enforced — no gaps/overlaps,
-  last band must reach +inf (lines 372-389); NOT-combinator arity enforced;
-  temporal fields validated. CI gates A/B/C (`scripts/validate_alerts.py`) re-run
-  band partition through the real compiler and check unit strings and the two
-  rationale facades. Preserved intelligence worth carrying forward as ideas.
-- Band sets cover `[lowest lower bound, +inf)` only — a value below the lowest
-  bound matches no band and evaluates `met=False, severity normal`
-  (`trilhas_compiler.py:577-593`). See §4 for the clinical consequence.
-- Content addressing: `compute_content_hash` (canonical JSON SHA-256,
-  `trilhas_compiler.py:54-74`). OBSERVED via recomputation: all twelve YAMLs'
-  declared `pathway.content_hash` values match the hash computed over the file
-  excluding the `content_hash` field — the hashes are real, not placeholders (the
-  `pathway_definitions_sync.py:16-23` docstring claiming "every YAML definition
-  ships with a fake placeholder content_hash" is **stale** at the pinned commit).
-  The boot-time sync recomputes and persists the real hash and logs mismatches
-  without blocking (`pathway_definitions_sync.py:95-121`).
+- YAML carregado com `yaml.safe_load`; **o schema JSON
+  (`pathway.schema.json`) não é aplicado no momento da carga** — a
+  conformidade com o schema é uma preocupação apenas em tempo de CI.
+  Arquivos não parseáveis/sem dict/sem id são pulados com um WARNING
+  (`_load_file:279-297`) — uma pathway apagada ou malformada desaparece
+  silenciosamente do portfólio em runtime.
+- Compilação de predicado por critério na carga; **política híbrida
+  fail-fast**: qualquer falha de compilação de predicado desativa a pathway
+  inteira (nunca avaliação parcial de uma pathway clínica — linhas 317-353,
+  registrado em `load_failures` público), e zero pathways ativas dispara
+  `RuntimeError` no boot (linhas 133-144). Isso é engenharia de segurança
+  real e bem pensada.
+- **Mas ambos os consumidores em produção neutralizam o fail-fast**: o
+  `_get_engine` da API captura qualquer exceção de inicialização e recorre
+  ao catálogo seed legado de 4 pathways (`api/v1/pathways.py:100-114`,
+  "using legacy catalog"), e o
+  `pathway_enrollment._get_trilhas_engine` captura e degrada a severidade
+  para `"normal"` (`pathway_enrollment.py:655-681`, docstring: "a
+  definitions-load hiccup must degrade _determine_severity to its 'normal'
+  fallback"). Um boot que deveria falhar alto, em vez disso, serve conteúdo
+  obsoleto ou respostas de severidade normal.
+- A validação do compilador (`trilhas_compiler.py`) é genuinamente forte:
+  sem eval/exec (AST + mapa de operadores, linhas 1-46); continuidade de
+  faixas aplicada — sem lacunas/sobreposições, a última faixa deve alcançar
+  +inf (linhas 372-389); aridade do combinador NOT aplicada; campos
+  temporais validados. Os gates de CI A/B/C
+  (`scripts/validate_alerts.py`) rerodam a partição de faixas pelo
+  compilador real e checam strings de unidade e as duas fachadas de
+  rationale. Inteligência preservada que vale a pena carregar como ideias.
+- Os conjuntos de faixas cobrem apenas `[limite inferior mais baixo, +inf)`
+  — um valor abaixo da faixa mais baixa não bate com nenhuma faixa e avalia
+  `met=False, severity normal` (`trilhas_compiler.py:577-593`). Ver §4 para
+  a consequência clínica.
+- Content addressing: `compute_content_hash` (SHA-256 de JSON canônico,
+  `trilhas_compiler.py:54-74`). OBSERVED por recomputação: os valores
+  `pathway.content_hash` declarados das doze YAMLs correspondem ao hash
+  computado sobre o arquivo excluindo o campo `content_hash` — os hashes
+  são reais, não placeholders (a docstring de
+  `pathway_definitions_sync.py:16-23` alegando "every YAML definition ships
+  with a fake placeholder content_hash" está **obsoleta** no commit
+  fixado). A sincronização no boot recomputa e persiste o hash real e loga
+  discrepâncias sem bloquear (`pathway_definitions_sync.py:95-121`).
 
-## 3. Enrollment triggers and evaluation cadence
+## 3. Gatilhos de matrícula e cadência de avaliação
 
 OBSERVED:
 
-- **Enrollment is exclusively manual** (API POST → `pathway_enrollment.enroll_patient`;
-  starts at `initial`, severity `normal`; duplicate-active guarded by partial unique
-  index with race fallback, lines 190-224). There is no automatic enrollment
-  trigger anywhere. Eligibility checking (`check_pathway_eligibility`,
-  `domain_trilhas_engine.py:184-362`) is advisory, exists for only 4 of 12 slugs
-  (Rules 15-18), and **defaults to eligible**: with no patient data — "Elegibilidade
-  presumida"; with non-matching data — "Sem contraindicações automáticas
+- **A matrícula é exclusivamente manual** (API POST →
+  `pathway_enrollment.enroll_patient`; começa em `initial`, severidade
+  `normal`; ativo-duplicado protegido por índice único parcial com
+  fallback de corrida, linhas 190-224). Não existe nenhum gatilho de
+  matrícula automática em nenhum lugar. A checagem de elegibilidade
+  (`check_pathway_eligibility`, `domain_trilhas_engine.py:184-362`) é
+  consultiva, existe para apenas 4 dos 12 slugs (Regras 15-18), e **o
+  padrão é elegível**: sem dados do paciente — "Elegibilidade presumida";
+  com dados não correspondentes — "Sem contraindicações automáticas
   identificadas. Elegível mediante avaliação clínica."
-- **Evaluation cadence**: the YAML `evaluation.mode`
-  (micro-batch/near-real-time/hybrid) is parsed (`trilhas_engine.py:315`) and
-  consumed by **nothing** — no scheduler exists. Actual triggers are exactly two:
-  (a) best-effort after every vitals ingestion
-  (`services/vitals.py:415-423` → `pathway_auto_evaluation.evaluate_enrolled_pathways`,
-  exceptions swallowed: "NUNCA derruba a ingestão"), and (b) manual criteria PUT.
-  Consequence: pathways whose inputs are not vitals (7 of 12 have zero auto-sourced
-  inputs — see per-pathway reviews) are evaluated only if a human PUTs values; the
-  sepse bundle timers only advance when an evaluation happens to be triggered — an
-  overdue hour-1 antibiotic alert will not fire on a patient with no new vitals.
-- Input sourcing: generic builder provides 9 keys (pam, fc, fr, temp, spo2,
-  vasopressor_dose, creatinina, debito_urinario, rass_score) from the LATEST
-  persisted rows **with no freshness window**
-  (`pathway_auto_evaluation.py:113-158`); sepse has a dedicated provider
-  (`sepsis_input_provider.build_sepsis_inputs`) which the module docstring records
-  as having had **"ZERO callers in the live codebase"** before the Dim A re-audit
-  wired it (`pathway_auto_evaluation.py:1-10`).
+- **Cadência de avaliação**: o `evaluation.mode` do YAML
+  (micro-batch/near-real-time/hybrid) é parseado (`trilhas_engine.py:315`)
+  e consumido por **nada** — nenhum scheduler existe. Os gatilhos reais são
+  exatamente dois: (a) melhor-esforço após toda ingestão de vitais
+  (`services/vitals.py:415-423` →
+  `pathway_auto_evaluation.evaluate_enrolled_pathways`, exceções
+  engolidas: "NUNCA derruba a ingestão"), e (b) PUT manual de critérios.
+  Consequência: pathways cujas entradas não são vitais (7 de 12 têm zero
+  entradas auto-alimentadas — ver revisões por pathway) só são avaliadas se
+  um humano fizer PUT de valores; os temporizadores de bundle da sepse só
+  avançam quando uma avaliação por acaso é disparada — um alerta de
+  antibiótico da hora-1 vencido não dispara em um paciente sem vitais
+  novos.
+- Fonte de entrada: um builder genérico fornece 9 chaves (pam, fc, fr,
+  temp, spo2, vasopressor_dose, creatinina, debito_urinario, rass_score) a
+  partir das linhas persistidas MAIS RECENTES **sem janela de frescor**
+  (`pathway_auto_evaluation.py:113-158`); a sepse tem um provider dedicado
+  (`sepsis_input_provider.build_sepsis_inputs`) que a docstring do módulo
+  registra como tendo tido **"ZERO callers in the live codebase"** antes
+  que a re-auditoria da Dim A o conectasse
+  (`pathway_auto_evaluation.py:1-10`).
 
-## 4. Missing, invalid, and stale input behavior — the decisive lines
+## 4. Comportamento de entrada ausente, inválida e obsoleta — as linhas decisivas
 
-OBSERVED, the HAZ-0005 lens:
+OBSERVED, sob a lente do HAZ-0005:
 
-1. **Absent input → silent skip → normal.**
-   `trilhas_compiler._lookup` raises `KeyError` for a missing key (lines 717-729);
-   `TrilhasEvaluator.evaluate_pathway` catches it and `continue`s past the criterion
-   at DEBUG level (`trilhas_evaluator.py:388-397`); `build_alert` computes
-   `overall_severity = "normal"` over zero active firings
-   (`trilhas_evaluator.py:472-481`). **A patient with no data and a patient verified
-   normal produce identical output.** There is no `not_evaluated` state anywhere —
-   the severity vocabulary is closed at `normal|watch|urgent|critical`
-   (`trilhas_evaluator.py:293-298`; schema CON-SEED-11). Tested as INTENDED:
-   `tests/test_trilhas_evaluator.py:437-449` asserts missing input → no firing.
-2. **Composite amplification.** Composites evaluate all sub-predicates without
-   short-circuit (`trilhas_compiler.py:629-641`); a `KeyError` from ANY sub-input
-   propagates and kills the WHOLE criterion — including an OR whose other branch is
-   satisfied. The V1 parity suite documents this and pads inputs with neutral
-   defaults ("PAM=999…") to avoid it (`tests/test_sepse_yaml_parity.py:118-131`).
-   Clinical vector: septic shock silenced by one absent boolean
-   (`sepse-review.md` §4).
-3. **Invalid input → normal.** Non-numeric values in threshold/graded/temporal
-   evaluation return `met=False, severity normal`
-   (`trilhas_compiler.py:532-543, 565-575, 681-696`) — a detected type failure is
-   coerced to the most reassuring state (prohibition P-1/P-2 shape,
-   `evaluation-status-semantics.md` §4).
-4. **Below-lowest-band → normal.** `matched_band is None` guard returns normal
-   (`trilhas_compiler.py:584-593`). Live vectors: FiO2 charted as fraction
-   (`respiratorio-review.md` §7); urine output fed in mL/day against a mL/kg/h band
-   set (`renal-review.md` §7). **Units are never checked at evaluation time** —
-   Gate A validates unit *strings* against a registry at CI time only.
-5. **Stale input → treated as current.** No freshness/staleness concept exists in
-   compiler, evaluator, engine, or auto-evaluation ("latest row" queries, unlimited
-   age). The domain alert catalogs (docs/plan set) declare `staleness_max` fields —
-   the pathway pipeline implements nothing of the kind.
-6. **Enrollment-layer semantics differ per runtime.** (a) Deprecated in-memory Rule
-   10: severity = met/total ratio — fewer met ⇒ MORE severe, so never-evaluated
-   criteria inflate severity (`trilhas_state.py:633-658`); (b) the Postgres port
-   explicitly calls that "a P0 clinical-safety bug (gatekeeper G-S2)" and replaces
-   it with band-classification of evaluated criteria where **pending criteria are
-   excluded and all-pending ⇒ "normal"** (`pathway_enrollment.py:63-71, 684-782`)
-   — the fix removes false-critical and installs false-normal; (c) the declarative
-   evaluator renders missing as normal per item 1. Three runtimes, three different
-   wrong answers to "what does absence mean," none expressible as `not_evaluated`.
-7. **Evaluation error → skip/normal.** Predicate compile failure at evaluation time
-   → criterion skipped (`trilhas_evaluator.py:376-385`); auto-evaluation wraps each
-   enrollment in try/except recording `outcome.error` but continuing
-   (`pathway_auto_evaluation.py:331-341`); the vitals hook swallows everything
-   (`services/vitals.py:415-423`). No evaluation error is ever surfaced to a
-   clinical consumer.
+1. **Entrada ausente → pulo silencioso → normal.**
+   `trilhas_compiler._lookup` dispara `KeyError` para uma chave ausente
+   (linhas 717-729); `TrilhasEvaluator.evaluate_pathway` a captura e dá
+   `continue` no critério em nível DEBUG (`trilhas_evaluator.py:388-397`);
+   `build_alert` calcula `overall_severity = "normal"` sobre zero disparos
+   ativos (`trilhas_evaluator.py:472-481`). **Um paciente sem dados e um
+   paciente verificado normal produzem a mesma saída.** Não existe nenhum
+   estado `not_evaluated` em nenhum lugar — o vocabulário de severidade é
+   fechado em `normal|watch|urgent|critical`
+   (`trilhas_evaluator.py:293-298`; schema CON-SEED-11). Testado como
+   PRETENDIDO: `tests/test_trilhas_evaluator.py:437-449` afirma que entrada
+   ausente → sem disparo.
+2. **Amplificação de composto.** Compostos avaliam todos os sub-predicados
+   sem short-circuit (`trilhas_compiler.py:629-641`); um `KeyError` de
+   QUALQUER sub-entrada se propaga e mata o critério INTEIRO — incluindo um
+   OR cujo outro ramo está satisfeito. A suíte de paridade da V1 documenta
+   isso e preenche entradas com padrões neutros ("PAM=999…") para evitá-lo
+   (`tests/test_sepse_yaml_parity.py:118-131`). Vetor clínico: choque
+   séptico silenciado por um booleano ausente (`sepse-review.md` §4).
+3. **Entrada inválida → normal.** Valores não numéricos em avaliação de
+   limiar/graduada/temporal retornam `met=False, severity normal`
+   (`trilhas_compiler.py:532-543, 565-575, 681-696`) — uma falha de tipo
+   detectada é coagida para o estado mais tranquilizador (forma de
+   proibição P-1/P-2, `evaluation-status-semantics.md` §4).
+4. **Abaixo-da-faixa-mais-baixa → normal.** A guarda `matched_band is None`
+   retorna normal (`trilhas_compiler.py:584-593`). Vetores ao vivo: FiO2
+   registrada como fração (`respiratorio-review.md` §7); débito urinário
+   alimentado em mL/dia contra um conjunto de faixas em mL/kg/h
+   (`renal-review.md` §7). **Unidades nunca são checadas no momento da
+   avaliação** — o Gate A valida *strings* de unidade contra um registro
+   apenas em tempo de CI.
+5. **Entrada obsoleta → tratada como atual.** Não existe nenhum conceito de
+   frescor/obsolescência no compilador, avaliador, engine, ou
+   auto-avaliação (consultas de "linha mais recente", sem limite de idade).
+   Os catálogos de alerta de domínio (conjunto docs/plan) declaram campos
+   `staleness_max` — o pipeline de pathway não implementa nada do tipo.
+6. **A semântica da camada de matrícula difere por runtime.** (a) A Regra
+   10 em memória deprecada: severidade = razão atendido/total — menos
+   atendido ⇒ MAIS severo, então critérios nunca-avaliados inflam a
+   severidade (`trilhas_state.py:633-658`); (b) a porta Postgres chama isso
+   explicitamente de "a P0 clinical-safety bug (gatekeeper G-S2)" e a
+   substitui por classificação em faixas dos critérios avaliados onde
+   **critérios pendentes são excluídos e tudo-pendente ⇒ "normal"**
+   (`pathway_enrollment.py:63-71, 684-782`) — a correção remove o
+   falso-crítico e instala o falso-normal; (c) o avaliador declarativo
+   renderiza ausência como normal conforme o item 1. Três runtimes, três
+   respostas erradas diferentes para "o que significa ausência", nenhuma
+   expressável como `not_evaluated`.
+7. **Erro de avaliação → pulo/normal.** Falha de compilação de predicado no
+   momento da avaliação → critério pulado (`trilhas_evaluator.py:376-385`);
+   a auto-avaliação envolve cada matrícula em try/except registrando
+   `outcome.error`, mas continuando (`pathway_auto_evaluation.py:331-341`);
+   o hook de vitais engole tudo (`services/vitals.py:415-423`). Nenhum erro
+   de avaliação é jamais exposto a um consumidor clínico.
 
-## 5. State machine
+## 5. Máquina de estados
 
-OBSERVED (`pathway_enrollment.py:250-410`; port of `trilhas_state.py` Rules 3-14):
+OBSERVED (`pathway_enrollment.py:250-410`; porta das Regras 3-14 de
+`trilhas_state.py`):
 
-- States are ordered, forward-only; advancement rule: **if ALL criteria in the
-  pathway are met, advance exactly one state** per evaluation (lines 340-355).
-  Criteria are pathway-global — not scoped per state; the schema's `auto_advance`
-  affordance (per-state conditions, timers) is used by **zero** YAMLs and ignored by
-  the state machine. Terminal state ⇒ `status=completed`.
-- **"Met" carries opposite meanings in the two live layers.** In the declarative
-  evaluator, met = condition detected (alert-worthy). In the enrollment state
-  machine, met = goal achieved (progress toward `alta`). The auto-evaluation bridge
-  inverts graded results only ("met = severity == normal",
-  `pathway_auto_evaluation.py:166-190`) and passes boolean/composite/temporal
-  through unchanged — so for sepse v4, "septic shock present" counts as a *met*
-  criterion pushing the enrollment toward resolution, and via
-  `_determine_severity`'s boolean classification a true compliance boolean reads
-  severity `urgent` (`profilaxia-review.md` §7). The semantics collision is
-  documented in the bridge's own docstring.
-- Trend: any transition history ⇒ "improving" (`pathway_enrollment.py:785-816`) —
-  a one-transition enrollment is labeled improving forever ("worsening" is
-  unreachable: transitions are forward-only).
-- Recommendations: hard-coded PT-BR directive texts selected by pathway name +
-  severity (`pathway_enrollment.py:819-1019`), including operational instructions
-  ("Considerar… posição prona se P/F < 150", "iniciar cristaloide 30 mL/kg", "PSV
-  5-7 cmH₂O ou tubo T por 30-120 min"). INFERENCE: system-generated directive
-  clinical instructions keyed off a severity whose computation treats absence as
-  normal — advisory-vs-directive boundary risk (HAZ-0044 adjacent; VAL-0011).
-- State changes publish a best-effort `pathway.updated` WebSocket event; publish
-  failure is swallowed (`pathway_enrollment.py:587-628`).
+- Os estados são ordenados, apenas para frente; regra de avanço: **se
+  TODOS os critérios da pathway forem atendidos, avança exatamente um
+  estado** por avaliação (linhas 340-355). Os critérios são globais à
+  pathway — não escopados por estado; a facilidade `auto_advance` do
+  schema (condições por estado, temporizadores) é usada por **zero** YAMLs
+  e ignorada pela máquina de estados. Estado terminal ⇒
+  `status=completed`.
+- **"Met" carrega significados opostos nas duas camadas ativas.** No
+  avaliador declarativo, met = condição detectada (digna de alerta). Na
+  máquina de estados de matrícula, met = meta alcançada (progresso rumo à
+  `alta`). A ponte de auto-avaliação inverte apenas resultados graduados
+  ("met = severity == normal", `pathway_auto_evaluation.py:166-190`) e
+  passa boolean/composite/temporal inalterados — então, para a sepse v4,
+  "choque séptico presente" conta como um critério *met* empurrando a
+  matrícula rumo à resolução, e via classificação booleana de
+  `_determine_severity` um booleano de compliance verdadeiro lê severidade
+  `urgent` (`profilaxia-review.md` §7). A colisão de semântica está
+  documentada na própria docstring da ponte.
+- Tendência: qualquer histórico de transição ⇒ "improving"
+  (`pathway_enrollment.py:785-816`) — uma matrícula com uma única transição
+  é rotulada melhorando para sempre ("worsening" é inalcançável: as
+  transições são apenas para frente).
+- Recomendações: textos diretivos em pt-BR hardcoded selecionados por nome
+  de pathway + severidade (`pathway_enrollment.py:819-1019`), incluindo
+  instruções operacionais ("Considerar… posição prona se P/F < 150",
+  "iniciar cristaloide 30 mL/kg", "PSV 5-7 cmH₂O ou tubo T por 30-120
+  min"). INFERENCE: instruções clínicas diretivas geradas pelo sistema,
+  vinculadas a uma severidade cujo cálculo trata ausência como normal —
+  risco de fronteira consultivo-vs-diretivo (adjacente ao HAZ-0044;
+  VAL-0011).
+- Mudanças de estado publicam um evento WebSocket `pathway.updated` de
+  melhor-esforço; falha de publicação é engolida
+  (`pathway_enrollment.py:587-628`).
 
-## 6. Suppression and alert delivery
+## 6. Supressão e entrega de alerta
 
 OBSERVED:
 
-- Suppression (`trilhas_evaluator.py:84-286`): per (mpi, pathway, criterion)
-  cooldown + per-hour rate limit, Redis-backed with **silent per-process in-memory
-  fallback** when Redis is unavailable (lines 108-120) — suppression state then
-  diverges across workers (duplicate alerts, or uneven suppression; HAZ-0022 shape).
-  Suppressed firings are carried in the record but **excluded from
-  `overall_severity` and score** (lines 469-481): during a cooldown window a
-  persisting critical condition can aggregate to `normal`.
-- **Alert delivery: the declarative engine's output goes nowhere.** The only
-  production call sites of `TrilhasEngine.evaluate` are two "validation pass
-  (non-blocking)" blocks that **log** the firings and discard them
-  (`api/v1/pathways.py:713, 796-817`: `logger.info("TrilhasEngine produced %d
-  alert(s)…")`). No persistence, no notification, no routing. INFERENCE: the twelve
-  pathway definitions, their band sets and suppression configs constitute an
-  alerting capability that is displayed (catalog, enrollment, progress endpoints)
-  but **cannot reach a clinician** — the structural form of HAZ-0043's "capability
-  incapable of evaluating anything," here "capability incapable of delivering
-  anything."
+- Supressão (`trilhas_evaluator.py:84-286`): cooldown por (mpi, pathway,
+  critério) + limite de taxa por hora, apoiado em Redis com **fallback
+  silencioso em memória por processo** quando o Redis está indisponível
+  (linhas 108-120) — o estado de supressão então diverge entre workers
+  (alertas duplicados, ou supressão desigual; forma do HAZ-0022). Os
+  disparos suprimidos são carregados no registro, mas **excluídos de
+  `overall_severity` e do escore** (linhas 469-481): durante uma janela de
+  cooldown, uma condição crítica persistente pode agregar para `normal`.
+- **Entrega de alerta: a saída do engine declarativo não vai a lugar
+  nenhum.** Os únicos pontos de chamada em produção de
+  `TrilhasEngine.evaluate` são dois blocos de "validation pass
+  (non-blocking)" que **logam** os disparos e os descartam
+  (`api/v1/pathways.py:713, 796-817`: `logger.info("TrilhasEngine produced
+  %d alert(s)…")`). Sem persistência, sem notificação, sem roteamento.
+  INFERENCE: as doze definições de pathway, seus conjuntos de faixas e
+  configurações de supressão constituem uma capacidade de alerting que é
+  exibida (catálogo, matrícula, endpoints de progresso), mas **não
+  consegue alcançar um clínico** — a forma estrutural do "capability
+  incapable of evaluating anything" do HAZ-0043, aqui "capability
+  incapable of delivering anything."
 
-## 7. The false-green vector-coverage gate (candidate-inventory 1.1h) — located and explained
+## 7. O gate de cobertura de vetores false-green (candidate-inventory 1.1h) — localizado e explicado
 
 OBSERVED — `scripts/check_vector_coverage.py` (SHA-256 §0):
 
-- The gate scans `docs/plan/_work/alerts/*.yaml` (line 24) — the nine **domain
-  alert catalogs**, NOT the twelve pathway YAMLs.
-- `load_all_catalogs` (lines 39-49): a file without a top-level `alert_groups` key
-  gets a stderr WARNING and is **skipped from the catalog list** — it does not fail
-  the gate.
-- OBSERVED at the pinned HEAD: all nine domain YAMLs use a top-level `alerts:` key
-  and none contains `alert_groups` (grep count 0 in each; hashes §0). So every file
-  is skipped, `total = 0`, `missing = []`, `no_condition = []`.
-- `main` (lines 114-145) prints threshold WARNINGS ("Expected >= 50 alerts, found
-  0", "Expected >= 266 vectors, found 0") that are **not failures**, then, because
-  `missing` and `no_condition` are empty, prints
-  `✅ PASSED: All 0 alerts have test vectors and conditions.` and returns **exit 0**.
-- Reproduced live 2026-08-15: `python3 scripts/check_vector_coverage.py` at the
-  pinned HEAD prints exactly that and exits 0.
+- O gate varre `docs/plan/_work/alerts/*.yaml` (linha 24) — os nove
+  **catálogos de alerta de domínio**, NÃO as doze YAMLs de pathway.
+- `load_all_catalogs` (linhas 39-49): um arquivo sem uma chave de topo
+  `alert_groups` recebe um WARNING no stderr e é **pulado da lista de
+  catálogo** — isso não reprova o gate.
+- OBSERVED no HEAD fixado: todas as nove YAMLs de domínio usam uma chave de
+  topo `alerts:` e nenhuma contém `alert_groups` (contagem de grep 0 em
+  cada uma; hashes §0). Então todo arquivo é pulado, `total = 0`,
+  `missing = []`, `no_condition = []`.
+- `main` (linhas 114-145) imprime WARNINGS de limiar ("Expected >= 50
+  alerts, found 0", "Expected >= 266 vectors, found 0") que **não são
+  falhas**, e então, porque `missing` e `no_condition` estão vazios,
+  imprime `✅ PASSED: All 0 alerts have test vectors and conditions.` e
+  retorna código de saída **0**.
+- Reproduzido ao vivo em 2026-08-15:
+  `python3 scripts/check_vector_coverage.py` no HEAD fixado imprime
+  exatamente isso e sai com 0.
 
-INFERENCE: the gate's pass condition is vacuously satisfiable — a structural-key
-mismatch between the gate and its data converts "nothing was validated" into a green
-check. The legacy assessment's "False-green gate; validates nothing"
-(candidate-inventory 1.1h) is confirmed from source and from execution. Design
-lesson for V2: coverage gates MUST fail on zero-population (denominator floor as a
-hard error, not a warning), and schema drift between validator and content must
-itself be a failure.
+INFERENCE: a condição de sucesso do gate é vacuamente satisfazível — um
+descasamento de chave estrutural entre o gate e seus dados converte "nada
+foi validado" em um check verde. O "False-green gate; validates nothing" da
+avaliação legada (candidate-inventory 1.1h) é confirmado a partir da fonte e
+da execução. Lição de design para a V2: gates de cobertura DEVEM falhar em
+população-zero (piso de denominador como erro rígido, não warning), e o
+desvio de schema entre validador e conteúdo deve ele próprio ser uma falha.
 
-## 8. What is worth preserving (intelligence, not code)
+## 8. O que vale a pena preservar (inteligência, não código)
 
-INFERENCE — preserved-intelligence candidates for the migration manifest (ideas
-only; `legacy-import-policy.md` §1 default do-not-copy applies):
+INFERENCE — candidatos a inteligência preservada para o manifesto de
+migração (apenas ideias; a política padrão de não-copiar de
+`legacy-import-policy.md` §1 se aplica):
 
-1. Declarative content model: pathway-as-data with typed predicates
-   (threshold/graded/boolean/composite/temporal), schema, and per-definition
-   evidence block.
-2. No-eval AST compiler with build-time band-partition enforcement (gaps/overlaps
-   impossible to load).
-3. Content-addressed definitions (SHA-256 canonical-JSON) stamped onto every firing
-   for traceability; boot-time DB mirror with hash-drift logging.
-4. Deterministic temporal predicates (duration computed upstream; no clock in the
-   predicate).
-5. Fail-fast whole-pathway deactivation on compile failure + refuse-to-boot on
-   zero active definitions (the policy — provided consumers do not neutralize it).
-6. Oracle-parity testing discipline (sepse v4's 31 golden vectors with bounded,
-   documented xfails).
+1. Modelo de conteúdo declarativo: pathway-como-dado com predicados
+   tipados (threshold/graded/boolean/composite/temporal), schema, e bloco
+   de evidência por definição.
+2. Compilador AST sem eval com aplicação de partição de faixas em tempo de
+   build (lacunas/sobreposições impossíveis de carregar).
+3. Definições content-addressed (SHA-256 de JSON canônico) carimbadas em
+   todo disparo para rastreabilidade; espelho de BD no boot com log de
+   desvio de hash.
+4. Predicados temporais determinísticos (duração computada upstream; sem
+   relógio no predicado).
+5. Desativação fail-fast da pathway inteira em falha de compilação +
+   recusa de boot em zero definições ativas (a política — desde que os
+   consumidores não a neutralizem).
+6. Disciplina de teste de paridade com oráculo (os 31 vetores golden da
+   sepse v4 com xfails limitados e documentados).
 
-## 9. Verdict
+## 9. Veredito
 
-**PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI): SUPERSEDE**
-(engine, all three runtimes, as a whole). Rationale: the engine has no algebra in
-which "not evaluated" is representable — absence, invalidity, staleness, evaluation
-error, and suppression all collapse into `normal` or into silence; the state machine
-and evaluator assign opposite meanings to "met"; eligibility defaults to eligible;
-declared cadence is unimplemented; and the alert output is not delivered. These are
-architectural properties, not bugs to patch — V2's evaluation-status contract
-(`evaluation-status-semantics.md`) is the replacement design. The §8 items should be
-carried forward as documented ideas in the migration manifest. Not DECIDED; nothing
-here authorizes import or reuse.
+**PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI):
+SUPERSEDE** (o engine, os três runtimes, como um todo). Racional: o engine
+não tem nenhuma álgebra na qual "não avaliado" seja representável — ausência,
+invalidez, obsolescência, erro de avaliação e supressão todos colapsam em
+`normal` ou em silêncio; a máquina de estados e o avaliador atribuem
+significados opostos a "met"; a elegibilidade tem padrão elegível; a
+cadência declarada não é implementada; e a saída de alerta não é entregue.
+Essas são propriedades arquiteturais, não bugs a corrigir — o contrato de
+status de avaliação da V2 (`evaluation-status-semantics.md`) é o desenho
+substituto. Os itens de §8 devem ser carregados adiante como ideias
+documentadas no manifesto de migração. Não é DECIDED; nada aqui autoriza
+importação ou reuso.

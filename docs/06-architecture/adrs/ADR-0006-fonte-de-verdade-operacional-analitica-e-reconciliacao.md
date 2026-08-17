@@ -1,7 +1,7 @@
 ---
 id: ADR-0006
 title: Fonte de verdade operacional versus analítica e reconciliação entre lanes
-status: proposed
+status: accepted  # GDEC-0016 (2026-08-16, titular): Opção A — lane operacional V2 autoritativa no laço; analítica AMH p/ reconciliação
 status_history:
   - status: not-started
     date: 2026-08-14

@@ -1,71 +1,82 @@
 ---
 id: LEGREV-SOFA-0001
-title: Legacy review — SOFA scoring clinical content (V1 services/sofa.py and trilhas-era rule records)
+title: Revisão legada — conteúdo clínico do scoring SOFA (V1 services/sofa.py e registros de regra da era trilhas)
 label: PROPOSAL
 status: PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)
 statement: >
-  Intensivist-rigor forensic review of the legacy V1 SOFA implementation against Vincent 1996
-  and Sepsis-3, including per-component discrepancy tables, HAZ-0005 zero-coercion tracing,
-  and the partial-SOFA analysis that feeds ADR-0008. Everything herein is PROPOSAL; no
-  clinical authority has ratified any statement.
+  Revisão forense com rigor de intensivista da implementação legada V1 do SOFA
+  contra Vincent 1996 e o Sepsis-3, incluindo tabelas de discrepância por
+  componente, rastreamento de coerção a zero do HAZ-0005, e a análise de
+  SOFA-parcial que alimenta a ADR-0008. Tudo aqui é PROPOSAL; nenhuma autoridade
+  clínica ratificou nenhuma declaração.
 provenance:
-  source_repo: intensicare (legacy V1, READ-ONLY)
-  path_or_url: src/intensicare/services/sofa.py and docs/rules/clinical-scoring/ (see per-citation table §1)
-  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD at pin; per-file SHA-256 in §1)
-  section_or_lines: per-citation line references throughout
+  source_repo: intensicare (legado V1, READ-ONLY)
+  path_or_url: src/intensicare/services/sofa.py e docs/rules/clinical-scoring/ (ver tabela por citação §1)
+  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD no pin; SHA-256 por arquivo em §1)
+  section_or_lines: referências de linha por citação ao longo do documento
   date_collected: 2026-08-15
-  collector: legacy sepsis-score forensics reviewer (cycle 1, Task 1); accountable reviewer rodaquino-OMNI
-  transformation: verbatim excerpts plus reviewer analysis; analysis labeled INFERENCE/PROPOSAL
-  confidence: high (source verification); low (clinical dispositions — unratified)
+  collector: revisor forense de escores de sepse legados (ciclo 1, Tarefa 1); revisor responsável rodaquino-OMNI
+  transformation: >
+    traduzido EN→pt-BR, tranche 3, GDEC-0008 item 8 (trechos verbatim mais análise
+    do revisor; análise rotulada INFERENCE/PROPOSAL)
+  confidence: alta (verificação de fonte); baixa (disposições clínicas — não ratificadas)
   owner: UNASSIGNED — VALIDATION REQUIRED
   validation_status: VALIDATION REQUIRED
 links:
   requirements: [SAF-0001, SAF-0002, SAF-0003]
   hazards: [HAZ-0005, HAZ-0006, HAZ-0032, HAZ-0043]
-  adrs: [ADR-0008 (pending — §7 is its input)]
+  adrs: [ADR-0008 (pendente — §7 é seu insumo)]
   tests: []
   pr: null
 supersedes: null
 superseded_by: null
 ---
 
-# SOFA — legacy clinical-content review
+> Traduzido EN→pt-BR em 2026-08-16 (GDEC-0008 item 8, tranche 3); original EN preservado no histórico git.
 
-**PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).** No statement in
-this record is a clinical decision. Verdicts use `docs/00-governance/legacy-import-policy.md`
-§4 vocabulary and are import *proposals* only.
+# SOFA — revisão de conteúdo clínico legado
 
-## 1. Sources verified, with hashes
+**PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).** Nenhuma
+declaração neste registro é uma decisão clínica. Os vereditos usam o vocabulário de
+`docs/00-governance/legacy-import-policy.md` §4 e são apenas *propostas* de
+importação.
 
-All paths relative to `/Users/familia/intensicare` (READ-ONLY), pinned at git HEAD
-`1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79`, hashes re-computed at review time
-(2026-08-15) and compared to `docs/archive/legacy-provenance/legacy-pin-cycle-1.md`.
+## 1. Fontes verificadas, com hashes
 
-| Artifact | SHA-256 | Manifest |
+Todos os caminhos relativos a `https://github.com/Omni-Saude/intensicare` (READ-ONLY), fixados
+(pinned) no HEAD git `1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79`, hashes
+recalculados no momento da revisão (2026-08-15) e comparados a
+`docs/archive/legacy-provenance/legacy-pin-cycle-1.md`.
+
+| Artefato | SHA-256 | Manifesto |
 |---|---|---|
 | `src/intensicare/services/sofa.py` | `731b3507cc07b2d5318f4759229527d2eac1f45b62eba269168d43560739b84a` | match |
 | `src/intensicare/models/clinical_score.py` | `fc987ad0d037b1f153451240178dc12ab988a1104d7bc4a88dc460972234ff43` | match |
-| `docs/rules/clinical-scoring/RULE-CLINICAL-SCORING-001…-007, -011, -012` | per manifest lines 453-461 (all match) | match |
-| `docs/rules/physiological-calculation/RULE-CLINICAL-SCORING-008/-009/-010` | per manifest lines 1078-1080 (all match) | match |
-| `tests/test_sofa.py` | `95278fe50179a4f7904eacb256285472f51cf86ea3bfbf6c92a5890ab42610c7` | **not in manifest — hashed at review time (hash-and-note)** |
-| `docs/plan/_work/ratification-decisions.yaml` | `b90c3cbbf11f22e440d7258e1e9c8fd556009a4c572717b839f51e73f7ee4751` | **not in manifest — hashed at review time (hash-and-note)** |
+| `docs/rules/clinical-scoring/RULE-CLINICAL-SCORING-001…-007, -011, -012` | por linhas 453-461 do manifesto (todos match) | match |
+| `docs/rules/physiological-calculation/RULE-CLINICAL-SCORING-008/-009/-010` | por linhas 1078-1080 do manifesto (todos match) | match |
+| `tests/test_sofa.py` | `95278fe50179a4f7904eacb256285472f51cf86ea3bfbf6c92a5890ab42610c7` | **não está no manifesto — hasheado no momento da revisão (hash-and-note)** |
+| `docs/plan/_work/ratification-decisions.yaml` | `b90c3cbbf11f22e440d7258e1e9c8fd556009a4c572717b839f51e73f7ee4751` | **não está no manifesto — hasheado no momento da revisão (hash-and-note)** |
 
-**OBSERVED — two distinct SOFA lineages exist in the legacy evidence:**
+**OBSERVED — duas linhagens distintas de SOFA existem na evidência legada:**
 
-1. **The live V1 engine**: `src/intensicare/services/sofa.py` (reviewed from code, §2-§6).
-2. **The trilhas-era implementation** (`ahlabs-trilhas@8166c07eae`,
-   `trilha_manual/models/sofa.py`), documented in RULE-CLINICAL-SCORING-001…-012. Its
-   underlying code is **SOURCE NOT LOCATED — cannot review as code**: the `ahlabs-trilhas`
-   repository is not mounted. It is reviewed here only *as documented* in the extracted
-   rule records (§5), which are themselves in-repo, hashed evidence.
+1. **O engine V1 em produção**: `src/intensicare/services/sofa.py` (revisado a
+   partir do código, §2-§6).
+2. **A implementação da era trilhas** (`ahlabs-trilhas@8166c07eae`,
+   `trilha_manual/models/sofa.py`), documentada em
+   RULE-CLINICAL-SCORING-001…-012. Seu código subjacente está **SOURCE NOT
+   LOCATED — não é possível revisar como código**: o repositório
+   `ahlabs-trilhas` não está montado. É revisado aqui apenas *conforme
+   documentado* nos registros de regra extraídos (§5), que são eles próprios
+   evidência hasheada, dentro do repositório.
 
-The task packet names "RULE-CLINICAL-SCORING-001 through -012"; -008, -009 and -010 live in
-`docs/rules/physiological-calculation/` (same rule-ID series, different cluster directory).
-All twelve were located and reviewed. No RULE-CLINICAL-SCORING file is missing.
+O pacote de tarefa nomeia "RULE-CLINICAL-SCORING-001 through -012"; -008, -009 e
+-010 residem em `docs/rules/physiological-calculation/` (mesma série de ID de
+regra, diretório de cluster diferente). Todos os doze foram localizados e
+revisados. Nenhum arquivo RULE-CLINICAL-SCORING está faltando.
 
-## 2. Formula as implemented (verbatim, `services/sofa.py`)
+## 2. Fórmula conforme implementada (verbatim, `services/sofa.py`)
 
-Component cut-point constants — `sofa.py:62-100`:
+Constantes de corte por componente — `sofa.py:62-100`:
 
 ```python
 SOFA_RESP_PF_NORMAL = 400  # >= 400 -> 0
@@ -84,7 +95,7 @@ SOFA_URINE_OUTPUT_SEVERE = 200  # < 200 -> 4
 SOFA_URINE_OUTPUT_MODERATE = 500  # < 500 -> 3
 ```
 
-Respiration — `sofa.py:168-196` (excerpt):
+Respiração — `sofa.py:168-196` (trecho):
 
 ```python
     if pao2_fio2 is None:
@@ -104,7 +115,7 @@ Respiration — `sofa.py:168-196` (excerpt):
         score = 2
 ```
 
-Cardiovascular — `sofa.py:301-335` (excerpt):
+Cardiovascular — `sofa.py:301-335` (trecho):
 
 ```python
     if map_value is None:
@@ -127,7 +138,7 @@ Cardiovascular — `sofa.py:301-335` (excerpt):
         score = 2
 ```
 
-Renal — `sofa.py:400-427` (excerpt):
+Renal — `sofa.py:400-427` (trecho):
 
 ```python
     both_missing = creatinine is None and urine_output_ml_day is None
@@ -144,253 +155,296 @@ Renal — `sofa.py:400-427` (excerpt):
     return max(cr_score, uo_score), None
 ```
 
-Total — `sofa.py:504`: `total = resp_score + coag_score + liver_score + cv_score +
-neuro_score + renal_score`. Coagulation (`sofa.py:219-230`), liver (`sofa.py:254-265`) and
-neurological (`sofa.py:358-369`) are simple band lookups with `None -> (0, "missing")`.
+Total — `sofa.py:504`: `total = resp_score + coag_score + liver_score +
+cv_score + neuro_score + renal_score`. Coagulação (`sofa.py:219-230`), fígado
+(`sofa.py:254-265`) e neurológico (`sofa.py:358-369`) são buscas em faixa
+simples com `None -> (0, "missing")`.
 
-Mortality-risk banding — `sofa.py:40-59`: `<=6 low, <=9 moderate, <=12 high, else
-very_high`; docstring (`sofa.py:43-49`) quotes bands "SOFA 0-6: ~<10% … 13-14: ~50-60%,
-15-24: ~80-90%, >15: ~>90%".
+Classificação de risco de mortalidade — `sofa.py:40-59`: `<=6 baixo, <=9
+moderado, <=12 alto, senão muito_alto`; a docstring (`sofa.py:43-49`) cita as
+faixas "SOFA 0-6: ~<10% … 13-14: ~50-60%, 15-24: ~80-90%, >15: ~>90%".
 
-Version claim — `sofa.py:20`: `SOFA_VERSION = "SOFA-v2.0.0"  # CLINICALLY RATIFIED per
-RAT-CLINICAL-SCORING-01/02/03`.
+Alegação de versão — `sofa.py:20`: `SOFA_VERSION = "SOFA-v2.0.0"  #
+CLINICALLY RATIFIED per RAT-CLINICAL-SCORING-01/02/03`.
 
-## 3. Authoritative definitions
+## 3. Definições autoritativas
 
-- **Vincent JL, Moreno R, Takala J, Willatts S, De Mendonça A, Bruining H, Reinhart CK,
-  Suter PM, Thijs LG.** The SOFA (Sepsis-related Organ Failure Assessment) score to
-  describe organ dysfunction/failure. On behalf of the Working Group on Sepsis-Related
-  Problems of the ESICM. *Intensive Care Medicine*. 1996;22(7):707-710.
-  <https://link.springer.com/article/10.1007/BF01709751> — the defining table: respiration
-  PaO2/FiO2 ≥400=0, 300-399=1, 200-299=2, 100-199 **with respiratory support**=3, <100
-  **with respiratory support**=4; platelets (×10³/µL) ≥150/100-149/50-99/20-49/<20;
-  bilirubin (mg/dL) <1.2 / 1.2-1.9 / 2.0-5.9 / 6.0-11.9 / ≥12.0 (µmol/L <20 / 20-32 /
-  33-101 / 102-204 / >204); cardiovascular MAP ≥70=0, MAP <70=1, dopamine ≤5 or dobutamine
-  (any dose)=2, dopamine >5 or epinephrine ≤0.1 or norepinephrine ≤0.1=3, dopamine >15 or
-  epinephrine >0.1 or norepinephrine >0.1=4, **adrenergic doses in µg/kg/min administered
-  for at least 1 h**; GCS 15=0, 13-14=1, 10-12=2, 6-9=3, <6=4; renal creatinine (mg/dL)
-  <1.2 / 1.2-1.9 / 2.0-3.4 / 3.5-4.9 / ≥5.0 **or** urine output <500 mL/day=3, <200
-  mL/day=4. (Verified against the publisher's article record and the secondary rendering at
-  PMC6880479, Lambden S et al., *Crit Care* 2019;23:374, "The SOFA score — development,
-  utility and challenges", <https://pmc.ncbi.nlm.nih.gov/articles/PMC6880479/>.)
-- **Singer M, Deutschman CS, Seymour CW, et al.** The Third International Consensus
-  Definitions for Sepsis and Septic Shock (Sepsis-3). *JAMA*. 2016;315(8):801-810.
-  doi:10.1001/jama.2016.0287, <https://pmc.ncbi.nlm.nih.gov/articles/PMC4968574/> —
-  sepsis is operationalized as "an acute increase in total SOFA score ≥2 points consequent
-  to the infection", with "baseline SOFA score … assumed to be zero in patients not known
-  to have preexisting organ dysfunction"; SOFA ≥2 associated with in-hospital mortality of
-  "approximately 10%" in the presumed-infection population.
-- **Evans L, Rhodes A, Alhazzani W, et al.** Surviving Sepsis Campaign: International
-  Guidelines for Management of Sepsis and Septic Shock 2021. *Crit Care Med*
-  2021;49(11):e1063-e1143 and *Intensive Care Med* 2021;47:1181-1247.
-  doi:10.1007/s00134-021-06506-y — relevant to SOFA use context; screening-tool
-  recommendations reviewed in `qsofa-review.md` §6.
+- **Vincent JL, Moreno R, Takala J, Willatts S, De Mendonça A, Bruining H,
+  Reinhart CK, Suter PM, Thijs LG.** The SOFA (Sepsis-related Organ Failure
+  Assessment) score to describe organ dysfunction/failure. On behalf of the
+  Working Group on Sepsis-Related Problems of the ESICM. *Intensive Care
+  Medicine*. 1996;22(7):707-710.
+  <https://link.springer.com/article/10.1007/BF01709751> — a tabela
+  definidora: respiração PaO2/FiO2 ≥400=0, 300-399=1, 200-299=2, 100-199 **com
+  suporte respiratório**=3, <100 **com suporte respiratório**=4; plaquetas
+  (×10³/µL) ≥150/100-149/50-99/20-49/<20; bilirrubina (mg/dL) <1,2 / 1,2-1,9 /
+  2,0-5,9 / 6,0-11,9 / ≥12,0 (µmol/L <20 / 20-32 / 33-101 / 102-204 / >204);
+  cardiovascular PAM ≥70=0, PAM <70=1, dopamina ≤5 ou dobutamina (qualquer
+  dose)=2, dopamina >5 ou epinefrina ≤0,1 ou norepinefrina ≤0,1=3, dopamina
+  >15 ou epinefrina >0,1 ou norepinefrina >0,1=4, **doses adrenérgicas em
+  µg/kg/min administradas por pelo menos 1 h**; GCS 15=0, 13-14=1, 10-12=2,
+  6-9=3, <6=4; creatinina renal (mg/dL) <1,2 / 1,2-1,9 / 2,0-3,4 / 3,5-4,9 /
+  ≥5,0 **ou** débito urinário <500 mL/dia=3, <200 mL/dia=4. (Verificado
+  contra o registro do artigo da editora e a apresentação secundária em
+  PMC6880479, Lambden S et al., *Crit Care* 2019;23:374, "The SOFA score —
+  development, utility and challenges",
+  <https://pmc.ncbi.nlm.nih.gov/articles/PMC6880479/>.)
+- **Singer M, Deutschman CS, Seymour CW, et al.** The Third International
+  Consensus Definitions for Sepsis and Septic Shock (Sepsis-3). *JAMA*.
+  2016;315(8):801-810. doi:10.1001/jama.2016.0287,
+  <https://pmc.ncbi.nlm.nih.gov/articles/PMC4968574/> — a sepse é
+  operacionalizada como "an acute increase in total SOFA score ≥2 points
+  consequent to the infection", com "baseline SOFA score … assumed to be zero
+  in patients not known to have preexisting organ dysfunction" (citações
+  mantidas em inglês, texto literal da fonte); SOFA ≥2 associado a
+  mortalidade intra-hospitalar de "approximately 10%" na população com
+  infecção presumida.
+- **Evans L, Rhodes A, Alhazzani W, et al.** Surviving Sepsis Campaign:
+  International Guidelines for Management of Sepsis and Septic Shock 2021.
+  *Crit Care Med* 2021;49(11):e1063-e1143 e *Intensive Care Med*
+  2021;47:1181-1247. doi:10.1007/s00134-021-06506-y — relevante ao contexto
+  de uso do SOFA; recomendações de instrumento de rastreio revisadas em
+  `qsofa-review.md` §6.
 
-SOURCE-quality note: the mortality percentages quoted in `sofa.py:43-49` are **not** part
-of Vincent 1996. They resemble figures reported in the later serial-SOFA literature
-(Ferreira FL, Bota DP, Bross A, Mélot C, Vincent JL. Serial evaluation of the SOFA score to
-predict outcome in critically ill patients. *JAMA*. 2001;286(14):1754-1758), but the code
-cites nothing; attribution is unverified. See D-10.
+Nota de qualidade SOURCE: os percentuais de mortalidade citados em
+`sofa.py:43-49` **não** fazem parte de Vincent 1996. Eles se assemelham a
+cifras relatadas na literatura posterior de SOFA seriado (Ferreira FL, Bota
+DP, Bross A, Mélot C, Vincent JL. Serial evaluation of the SOFA score to
+predict outcome in critically ill patients. *JAMA*. 2001;286(14):1754-1758),
+mas o código não cita nada; a atribuição não é verificada. Ver D-10.
 
-## 4. Per-component discrepancy table — `services/sofa.py` vs Vincent 1996
+## 4. Tabela de discrepâncias por componente — `services/sofa.py` vs Vincent 1996
 
-Legend: **MATCH** = numerically identical to the 1996 table; **DEV** = deviation or
-uncited interpretive extension.
+Legenda: **MATCH** = numericamente idêntico à tabela de 1996; **DEV** =
+desvio ou extensão interpretativa não citada.
 
-| # | Component | Finding | Verdict | Evidence |
+| # | Componente | Achado | Veredito | Evidência |
 |---|---|---|---|---|
-| D-01 | Respiration cut-points | 400/300/200/100 mmHg, inclusive-low bands | MATCH | `sofa.py:184-192` |
-| D-02 | Respiration ventilation gate | Scores 3-4 require `mechanical_ventilation=True`; `<200` unventilated capped at 2 | **DEV (interpretation)** — Vincent 1996 says "with respiratory support", which by common convention includes non-invasive support (CPAP/NIV); legacy narrows to a single mechanical-ventilation boolean, and the cap-at-2 handling of unsupported P/F <200 is an uncited (though widespread) convention. Both need explicit V2 ratification. | `sofa.py:190-195` |
-| D-03 | SpO2/FiO2 surrogate | **Absent.** No SpO2/FiO2 fallback exists anywhere in the scorer. | Not a discrepancy; recorded because ADR-0008 partial policy (§7) must not assume one exists. Any V2 surrogate needs its own citation (e.g. Pandharipande et al. 2009 imputation) and ratification. | whole file |
-| D-04 | Respiration in-band validation | P/F `< 20` raises `ValueError` (FiO2-percent heuristic); a bool input returns `(0, "invalid_type")` | **DEV (safety)** — three different failure algebras in one function (exception, coerced zero, coerced zero + status). The `invalid_type` status is **not** propagated: `calculate_sofa` checks only `== "missing"` (`sofa.py:468-469`), so an invalid input silently contributes 0 with no missing-flag. A genuine P/F of 20-99 with percent-coded FiO2 passes the guard undetected (e.g. PaO2 80/FiO2 "40" gives 2.0 → raises; PaO2 80/FiO2 "2.5"-style partial errors do not). | `sofa.py:171-182, 468-469` |
-| D-05 | Coagulation platelets | ≥150=0, <150=1, <100=2, <50=3, <20=4 (×10³/µL) | MATCH | `sofa.py:222-230` |
-| D-06 | Liver bilirubin | <1.2 / <2.0 / <6.0 / <12.0 / ≥12.0 mg/dL — continuous bands, no dead gaps | MATCH numerically, **DEV (units)** — the docstring reads "based on bilirubin (mg/dL or µmol/L)" (`sofa.py:239`) while thresholds are mg/dL-only. A µmol/L value passed as-is over-scores by ~17× (normal 10 µmol/L reads as 10 "mg/dL" → 3 points). No unit is carried on the argument; unit safety is wholly the caller's. HAZ-0032 territory. | `sofa.py:238-246, 254-265` |
-| D-07 | Cardiovascular — MAP missing with vasopressor present | `map_value is None → (0, "missing")` **before** vasopressor evaluation: a patient on norepinephrine 0.5 µg/kg/min with no MAP recorded scores CV = 0 | **DEV (clinical, worst single defect in this file)** — the 1996 table scores vasopressor tiers independently of MAP; the legacy short-circuit discards positive evidence of severe shock and returns the healthiest value. | `sofa.py:301-302` |
-| D-08 | Cardiovascular dose tiers | Dopamine ≤5→2, ≤15→3, >15→4; epinephrine/norepinephrine ≤0.1→3, >0.1→4; dobutamine any→2; doses in µg/kg/min | MATCH (tier values and unit) | `sofa.py:313-333` |
-| D-09 | Cardiovascular duration condition | Vincent 1996 requires adrenergic agents "for at least 1 h"; legacy has **no duration condition** | **DEV** — transient bolus-driven rates tier identically to sustained infusions. | `sofa.py:273-335` |
-| D-10 | Cardiovascular unknown dose / unknown agent | Unknown dopamine dose defaults to 2; unknown epi/norepi dose defaults to 3; unknown agent string (e.g. vasopressin, phenylephrine) defaults to 2 | **DEV (uncited guessing)** — silently under-scores (norepinephrine >0.1 with missing dose is a true 4 reported as 3; vasopressin — absent from the 1996 table — is scored *below* the low-dopamine tier). Single-string `vasopressor_type` cannot represent combination therapy (norepinephrine + vasopressin), which is routine in septic shock. | `sofa.py:314-333` |
-| D-11 | Neurological GCS bands | 15=0, 13-14=1, 10-12=2, 6-9=3, <6=4 | MATCH | `sofa.py:361-369` |
-| D-12 | Neurological sedation behavior | **No sedation handling of any kind.** A RASS −5 sedated patient's GCS 3 scores 4 points, indistinguishable from structural coma | **DEV (flag, do not adjudicate here)** — assessed-GCS-under-sedation policy belongs to the neuro workstream review; cross-reference only. Legacy has documented RASS content (`docs/rules/clinical-scoring/RULE-CLINICAL-SCORING-014`, RULE-SEDACAO-003) but the SOFA scorer never consults it. | `sofa.py:343-369` |
-| D-13 | Neurological input validation | GCS is not range-checked; a physiologically impossible GCS above 15 (e.g. 20) scores 1 point via the `>= 13` branch, and GCS < 3 scores 4 | **DEV (minor)** — valid range 3-15 is documented elsewhere in legacy (`RULE-CLINICAL-SCORING-013`) but not enforced here. | `sofa.py:358-369` |
-| D-14 | Renal creatinine | <1.2 / <2.0 / <3.5 / <5.0 / ≥5.0 mg/dL — continuous, no dead gap at 5.0 | MATCH (and fixes the trilhas-era dead gap, §5) | `sofa.py:405-414` |
-| D-15 | Renal urine output | <500 mL/day→3, <200 mL/day→4; final = `max(cr_score, uo_score)` | MATCH on cut-points; the `max()` combination is the accepted convention (the 1996 table lists creatinine *or* urine output per band). **DEV (window)** — the argument is a caller-supplied "24-hour urine output in mL" (`sofa.py:395`); no 24 h window assembly, pro-rating, or catheter-context check exists anywhere in the scorer, and the current input provider supplies no urine output at all (see `sepse-pathway-clinical-review.md` §5). The 24 h criterion is therefore a *label*, not an implemented measurement window. | `sofa.py:377-427` |
-| D-16 | Renal partial-missing | Creatinine `None` with urine output present → `cr_score = 0` silently; urine output `None` with creatinine present → `uo_score = 0` silently. Only both-missing sets a `"missing"` status | **DEV (zero-coercion inside a "present" component)** — a one-input renal score is reported with no partiality marker. | `sofa.py:400-424` |
-| D-17 | Total score | Plain sum; components that are missing contribute 0; total presented as 0-24 int | **DEV** — a 3-organ partial evaluates to the same type and range as a 6-organ complete score. `missing_components` exists on `SOFAResult` (`sofa.py:122`) but the persistence model `clinical_score.score_value` is a bare non-null int with no status column (`clinical_score.py:21`; `components` JSONB is nullable, `clinical_score.py:30`) — the metadata is structurally droppable, which is exactly the LEGACY-TA:478 finding behind HAZ-0005. | `sofa.py:504`, `clinical_score.py:21,30` |
-| D-18 | Mortality banding | `classify_sofa_mortality_risk`: ≤6 low, ≤9 moderate, ≤12 high, ≥13 very_high | **DEV (uncited + internally inconsistent)** — not in Vincent 1996; docstring's own bands say 13-14 ≈ 50-60% yet 13-14 classifies `very_high` alongside ">15: ~>90%", and the quoted bands overlap ("15-24: ~80-90%" vs ">15: ~>90%"). No citation anywhere. Any V2 banding needs a named source and ratification. | `sofa.py:40-59, 124-138` |
-| D-19 | Ratification claim | `# CLINICALLY RATIFIED per RAT-CLINICAL-SCORING-01/02/03` | **DEV (governance)** — the ratification register's authority line reads `authority: 'repository owner delegation (session directive: "use deep think to decide on the RATIFICATION items…")'` (`docs/plan/_work/ratification-decisions.yaml:1-3`), i.e. an en-bloc owner/agent delegation, not a named, verifiable clinical authority. Consistent with LEGACY-TA:125/465 (approver CRM/institution unverifiable). Under `evidence-notation.md` §2 rule 3 this cannot stand as DECIDED in V2; every legacy "RATIFIED" claim is void for V2 purposes. | `sofa.py:20`; `ratification-decisions.yaml:1-3` |
+| D-01 | Cortes de respiração | 400/300/200/100 mmHg, faixas inclusivas-no-limite-inferior | MATCH | `sofa.py:184-192` |
+| D-02 | Gate de ventilação da respiração | Escores 3-4 exigem `mechanical_ventilation=True`; `<200` não ventilado tem teto em 2 | **DEV (interpretação)** — Vincent 1996 diz "with respiratory support", que por convenção comum inclui suporte não invasivo (CPAP/VNI); o legado restringe a um único booleano de ventilação mecânica, e o tratamento de teto-em-2 para P/F <200 não suportado é uma convenção não citada (embora difundida). Ambos precisam de ratificação V2 explícita. | `sofa.py:190-195` |
+| D-03 | Substituto SpO2/FiO2 | **Ausente.** Nenhum fallback SpO2/FiO2 existe em nenhum lugar do scorer. | Não é uma discrepância; registrado porque a política de parcial da ADR-0008 (§7) não deve presumir que existe uma. Qualquer substituto V2 precisa de sua própria citação (p.ex. imputação de Pandharipande et al. 2009) e ratificação. | arquivo inteiro |
+| D-04 | Validação dentro-da-faixa da respiração | P/F `< 20` dispara `ValueError` (heurística de FiO2-percentual); uma entrada bool retorna `(0, "invalid_type")` | **DEV (segurança)** — três álgebras de falha diferentes em uma única função (exceção, zero coagido, zero coagido + status). O status `invalid_type` **não** é propagado: `calculate_sofa` checa apenas `== "missing"` (`sofa.py:468-469`), então uma entrada inválida contribui silenciosamente com 0 sem nenhuma flag de ausência. Um P/F genuíno de 20-99 com FiO2 codificado em percentual passa pela guarda sem ser detectado (p.ex. PaO2 80/FiO2 "40" dá 2,0 → dispara; erros parciais estilo PaO2 80/FiO2 "2,5" não). | `sofa.py:171-182, 468-469` |
+| D-05 | Plaquetas (coagulação) | ≥150=0, <150=1, <100=2, <50=3, <20=4 (×10³/µL) | MATCH | `sofa.py:222-230` |
+| D-06 | Bilirrubina (fígado) | <1,2 / <2,0 / <6,0 / <12,0 / ≥12,0 mg/dL — faixas contínuas, sem lacunas mortas | MATCH numericamente, **DEV (unidades)** — a docstring diz "based on bilirubin (mg/dL or µmol/L)" (`sofa.py:239`), enquanto os limiares são apenas mg/dL. Um valor em µmol/L passado como está superestima em ~17× (10 µmol/L normal lido como 10 "mg/dL" → 3 pontos). Nenhuma unidade é carregada no argumento; a segurança de unidade é inteiramente do chamador. Território do HAZ-0032. | `sofa.py:238-246, 254-265` |
+| D-07 | Cardiovascular — PAM ausente com vasopressor presente | `map_value is None → (0, "missing")` **antes** da avaliação de vasopressor: um paciente em norepinefrina 0,5 µg/kg/min sem PAM registrada pontua CV = 0 | **DEV (clínico, pior defeito único deste arquivo)** — a tabela de 1996 pontua os níveis de vasopressor independentemente da PAM; o short-circuit legado descarta evidência positiva de choque grave e retorna o valor mais saudável. | `sofa.py:301-302` |
+| D-08 | Níveis de dose cardiovascular | Dopamina ≤5→2, ≤15→3, >15→4; epinefrina/norepinefrina ≤0,1→3, >0,1→4; dobutamina qualquer→2; doses em µg/kg/min | MATCH (valores de nível e unidade) | `sofa.py:313-333` |
+| D-09 | Condição de duração cardiovascular | Vincent 1996 exige agentes adrenérgicos "for at least 1 h"; o legado **não tem condição de duração** | **DEV** — doses transitórias em bolus são niveladas identicamente a infusões sustentadas. | `sofa.py:273-335` |
+| D-10 | Dose desconhecida / agente desconhecido cardiovascular | Dose de dopamina desconhecida tem padrão 2; dose de epi/norepi desconhecida tem padrão 3; string de agente desconhecido (p.ex. vasopressina, fenilefrina) tem padrão 2 | **DEV (chute não citado)** — subestima silenciosamente (norepinefrina >0,1 com dose ausente é um 4 verdadeiro relatado como 3; vasopressina — ausente da tabela de 1996 — pontua *abaixo* do nível de dopamina-baixa). Um único `vasopressor_type` de string não consegue representar terapia combinada (norepinefrina + vasopressina), rotina no choque séptico. | `sofa.py:314-333` |
+| D-11 | Faixas de GCS neurológico | 15=0, 13-14=1, 10-12=2, 6-9=3, <6=4 | MATCH | `sofa.py:361-369` |
+| D-12 | Comportamento de sedação neurológico | **Nenhum tratamento de sedação de nenhum tipo.** Um paciente sedado com RASS −5 e GCS 3 pontua 4 pontos, indistinguível de coma estrutural | **DEV (sinalizar, não adjudicar aqui)** — a política de GCS-avaliado-sob-sedação pertence à revisão do workstream de neuro; apenas referência cruzada. O legado tem conteúdo de RASS documentado (`docs/rules/clinical-scoring/RULE-CLINICAL-SCORING-014`, RULE-SEDACAO-003), mas o scorer de SOFA nunca o consulta. | `sofa.py:343-369` |
+| D-13 | Validação de entrada neurológica | O GCS não tem checagem de faixa; um GCS fisiologicamente impossível acima de 15 (p.ex. 20) pontua 1 ponto via o ramo `>= 13`, e GCS < 3 pontua 4 | **DEV (menor)** — a faixa válida 3-15 está documentada em outro lugar no legado (`RULE-CLINICAL-SCORING-013`), mas não é aplicada aqui. | `sofa.py:358-369` |
+| D-14 | Creatinina renal | <1,2 / <2,0 / <3,5 / <5,0 / ≥5,0 mg/dL — contínua, sem lacuna morta em 5,0 | MATCH (e corrige a lacuna morta da era trilhas, §5) | `sofa.py:405-414` |
+| D-15 | Débito urinário renal | <500 mL/dia→3, <200 mL/dia→4; final = `max(cr_score, uo_score)` | MATCH nos cortes; a combinação por `max()` é a convenção aceita (a tabela de 1996 lista creatinina *ou* débito urinário por faixa). **DEV (janela)** — o argumento é um "débito urinário de 24 horas em mL" fornecido pelo chamador (`sofa.py:395`); nenhuma montagem de janela de 24 h, prorrateamento, ou checagem de contexto de cateter existe em nenhum lugar do scorer, e o provider de entrada atual não fornece nenhum débito urinário (ver `sepse-pathway-clinical-review.md` §5). O critério de 24 h é, portanto, um *rótulo*, não uma janela de medição implementada. | `sofa.py:377-427` |
+| D-16 | Ausência parcial renal | Creatinina `None` com débito urinário presente → `cr_score = 0` silenciosamente; débito urinário `None` com creatinina presente → `uo_score = 0` silenciosamente. Apenas ambos-ausentes define um status `"missing"` | **DEV (coerção a zero dentro de um componente "presente")** — um escore renal de uma entrada é reportado sem nenhum marcador de parcialidade. | `sofa.py:400-424` |
+| D-17 | Escore total | Soma simples; componentes ausentes contribuem 0; total apresentado como int 0-24 | **DEV** — uma avaliação parcial de 3 órgãos é avaliada com o mesmo tipo e faixa de um escore completo de 6 órgãos. `missing_components` existe em `SOFAResult` (`sofa.py:122`), mas o modelo de persistência `clinical_score.score_value` é um int não-nulo simples, sem coluna de status (`clinical_score.py:21`; o JSONB `components` é nullable, `clinical_score.py:30`) — o metadado é estruturalmente descartável, exatamente o achado LEGACY-TA:478 por trás do HAZ-0005. | `sofa.py:504`, `clinical_score.py:21,30` |
+| D-18 | Classificação de mortalidade | `classify_sofa_mortality_risk`: ≤6 baixo, ≤9 moderado, ≤12 alto, ≥13 muito_alto | **DEV (não citada + internamente inconsistente)** — não está em Vincent 1996; as próprias faixas da docstring dizem 13-14 ≈ 50-60%, ainda que 13-14 seja classificada `muito_alto` ao lado de ">15: ~>90%", e as faixas citadas se sobrepõem ("15-24: ~80-90%" vs ">15: ~>90%"). Nenhuma citação em nenhum lugar. Qualquer classificação V2 precisa de uma fonte nomeada e ratificação. | `sofa.py:40-59, 124-138` |
+| D-19 | Alegação de ratificação | `# CLINICALLY RATIFIED per RAT-CLINICAL-SCORING-01/02/03` | **DEV (governança)** — a linha de autoridade do registro de ratificação diz `authority: 'repository owner delegation (session directive: "use deep think to decide on the RATIFICATION items…")'` (`docs/plan/_work/ratification-decisions.yaml:1-3`), ou seja, uma delegação em bloco de dono/agente, não uma autoridade clínica nomeada e verificável. Consistente com LEGACY-TA:125/465 (aprovador com CRM/instituição não verificáveis). Sob `evidence-notation.md` §2 regra 3, isso não pode se sustentar como DECIDED na V2; toda alegação legada de "RATIFIED" é nula para os propósitos da V2. | `sofa.py:20`; `ratification-decisions.yaml:1-3` |
 
-**Discrepancy count (live engine): 12 DEV findings (D-02, D-04, D-06, D-07, D-09, D-10,
-D-12, D-13, D-15, D-16, D-17, D-18) plus one governance finding (D-19); 6 MATCH.**
+**Contagem de discrepâncias (engine em produção): 12 achados DEV (D-02, D-04,
+D-06, D-07, D-09, D-10, D-12, D-13, D-15, D-16, D-17, D-18) mais um achado de
+governança (D-19); 6 MATCH.**
 
-Three worst: **D-07** (missing MAP silently zeroes the cardiovascular score of a patient on
-vasopressors), **D-17** (partial totals typed and persisted identically to complete totals
-— the HAZ-0005 mechanism), **D-06** (docstring invites a 17× bilirubin unit error).
+Três piores: **D-07** (PAM ausente zera silenciosamente o escore
+cardiovascular de um paciente em vasopressores), **D-17** (totais parciais
+tipados e persistidos identicamente a totais completos — o mecanismo do
+HAZ-0005), **D-06** (a docstring convida a um erro de unidade de bilirrubina
+de 17×).
 
-## 5. The trilhas-era SOFA (RULE-CLINICAL-SCORING-001…-012) — reviewed as documented
+## 5. O SOFA da era trilhas (RULE-CLINICAL-SCORING-001…-012) — revisado conforme documentado
 
-Underlying code `ahlabs-trilhas@8166c07eae` — **SOURCE NOT LOCATED** (repo not mounted);
-findings below are SOURCE statements from the hashed rule records, not re-verified code.
+Código subjacente `ahlabs-trilhas@8166c07eae` — **SOURCE NOT LOCATED**
+(repositório não montado); os achados abaixo são declarações SOURCE dos
+registros de regra hasheados, não código re-verificado.
 
-| Rule | Documented content | Documented verdict | Review comment |
+| Regra | Conteúdo documentado | Veredito documentado | Comentário de revisão |
 |---|---|---|---|
-| 001 (total) | Sum of six sub-scores, 0-24 | VERIFIED | Sum is correct *given* sub-scores; the record itself notes `None` sub-scores raise `TypeError` on sum — an availability failure mode V2 must not inherit. |
-| 002 (respiration) | Cut-points 400/300/200/100 correct, but (a) FiO2 stored 21-100 (percent) upstream while thresholds assume fraction → ratio ~100× too small, nearly every patient scores 4; (b) **no ventilation gate on scores 3-4** | DISCREPANCY, high impact | Both defects independently corrupt the respiratory sub-score; V1 `services/sofa.py` fixed (b) and half-guards (a) via the `<20` heuristic (D-04). |
-| 003 (coagulation) | Bands exact (/mm³ scale); platelets == 0 treated as no-data → 0 | VERIFIED | The 0-sentinel is another value-domain overload of "missing onto healthy". |
-| 004 (liver) | Strict-`<` upper bounds create dead gaps [1.9,2.0), [5.9,6.0), [11.9,12.0) returning `None` → sum raises or mis-sums | DISCREPANCY, moderate | A scoring function that can *crash the whole SOFA* on bilirubin 1.95 mg/dL. Fixed in V1 `services/sofa.py` (continuous bands). |
-| 005 (cardiovascular) | Noradrenaline read as raw **ml volume** with a 3-vs-4 split at ">10 ml"; dopamine and epinephrine absent entirely; MAP <70=1 and dobutamine-any=2 match | DISCREPANCY, high | An incoherent unit mapping (ml is not µg/kg/min); any norepinephrine patient can be mis-tiered either way. |
-| 006 (CNS) | GCS bands exact | VERIFIED | GCS 0 / >15 fall to 0 ("no data") — same overload pattern as 003. |
-| 007 (renal) | Creatinine exactly 5.0 (and (4.9,5.0]) matches **no branch** → 0 renal points at the top of the scale; 2-point band written 2.0-4.0 but shadowed; urine cut-points match | DISCREPANCY, high | A 4-point undercount on a common laboratory value. Fixed in V1 `services/sofa.py` (D-14). |
-| 008 (P/F ratio) | `po2/fio2` with `False` sentinel for missing; FiO2 percent-vs-fraction internally inconsistent across the codebase | DISCREPANCY, high | The unit incoherence is systemic, not local — decisive argument for V2 requiring UCUM-coded quantities at the boundary (`compatibility-finding.md` §3.1). |
-| 009 (MAP) | `((2·PAD)+PAS)/3`, falsy input → 0 | VERIFIED (formula) | MAP=0 as missing-sentinel feeds D-07-style coercion downstream. |
-| 010 (age) | days//365 age; negative/0 quirks | DISCREPANCY, low | Out of SOFA scope; relevant only to population gating (VAL-0006/0007). |
-| 011 (sourcing) | On save, copies prontuario fields; noradrenaline only when relation exists, otherwise **stale prior value retained** | VERIFIED (as workflow) | The stale-retention quirk is an HAZ-0006 mechanism. |
-| 012 (assembly) | First-admission input assembly; all six organs represented | VERIFIED (as workflow) | Inherits every upstream unit hazard. |
+| 001 (total) | Soma de seis sub-escores, 0-24 | VERIFIED | A soma está correta *dados* os sub-escores; o próprio registro anota que sub-escores `None` disparam `TypeError` na soma — um modo de falha de disponibilidade que a V2 não deve herdar. |
+| 002 (respiração) | Cortes 400/300/200/100 corretos, mas (a) FiO2 armazenado 21-100 (percentual) upstream enquanto os limiares presumem fração → razão ~100× pequena demais, quase todo paciente pontua 4; (b) **nenhum gate de ventilação nos escores 3-4** | DISCREPANCY, alto impacto | Ambos os defeitos corrompem independentemente o sub-escore respiratório; o `services/sofa.py` da V1 corrigiu (b) e meio-protege (a) via a heurística `<20` (D-04). |
+| 003 (coagulação) | Faixas exatas (escala /mm³); plaquetas == 0 tratado como sem-dado → 0 | VERIFIED | O sentinela-0 é mais uma sobrecarga de domínio-de-valor de "ausente sobre saudável". |
+| 004 (fígado) | Limites superiores estritos-`<` criam lacunas mortas [1,9;2,0), [5,9;6,0), [11,9;12,0) retornando `None` → soma dispara ou soma incorretamente | DISCREPANCY, moderado | Uma função de scoring que pode *derrubar o SOFA inteiro* em bilirrubina 1,95 mg/dL. Corrigido no `services/sofa.py` da V1 (faixas contínuas). |
+| 005 (cardiovascular) | Noradrenalina lida como **volume ml** bruto com um corte 3-vs-4 em ">10 ml"; dopamina e epinefrina totalmente ausentes; PAM <70=1 e dobutamina-qualquer=2 correspondem | DISCREPANCY, alto | Um mapeamento de unidade incoerente (ml não é µg/kg/min); qualquer paciente em norepinefrina pode ser mal-classificado em qualquer direção. |
+| 006 (SNC) | Faixas de GCS exatas | VERIFIED | GCS 0 / >15 caem para 0 ("sem dado") — mesmo padrão de sobrecarga do 003. |
+| 007 (renal) | Creatinina exatamente 5,0 (e (4,9;5,0]) não bate com **nenhum ramo** → 0 pontos renais no topo da escala; faixa de 2 pontos escrita 2,0-4,0 mas sombreada; cortes de débito urinário correspondem | DISCREPANCY, alto | Uma subcontagem de 4 pontos em um valor laboratorial comum. Corrigido no `services/sofa.py` da V1 (D-14). |
+| 008 (relação P/F) | `po2/fio2` com sentinela `False` para ausência; FiO2 percentual-vs-fração internamente inconsistente por toda a base de código | DISCREPANCY, alto | A incoerência de unidade é sistêmica, não local — argumento decisivo para a V2 exigir quantidades codificadas em UCUM na fronteira (`compatibility-finding.md` §3.1). |
+| 009 (PAM) | `((2·PAD)+PAS)/3`, entrada falsy → 0 | VERIFIED (fórmula) | PAM=0 como sentinela-de-ausência alimenta a coerção estilo D-07 a jusante. |
+| 010 (idade) | idade em dias//365; peculiaridades negativas/0 | DISCREPANCY, baixo | Fora do escopo do SOFA; relevante apenas ao gating populacional (VAL-0006/0007). |
+| 011 (fonte) | Ao salvar, copia campos de prontuário; noradrenalina apenas quando existe relação, senão **valor prévio obsoleto retido** | VERIFIED (como workflow) | A peculiaridade de retenção obsoleta é um mecanismo do HAZ-0006. |
+| 012 (montagem) | Montagem de entrada da primeira admissão; todos os seis órgãos representados | VERIFIED (como workflow) | Herda todo hazard de unidade upstream. |
 
-INFERENCE: the trilhas lineage is not a candidate for import in any form; its value is the
-failure catalog above, which V2's absent-input probe (SAF-0002) and unit-mapping tests
-(HAZ-0032) should encode as regression vectors.
+INFERENCE: a linhagem trilhas não é candidata a importação em nenhuma forma;
+seu valor é o catálogo de falhas acima, que a sonda de entrada ausente do
+SAF-0002 da V2 e os testes de mapeamento de unidade (HAZ-0032) devem
+codificar como vetores de regressão.
 
-## 6. HAZ-0005 zero-coercion — traced per component (live engine)
+## 6. Coerção a zero do HAZ-0005 — rastreada por componente (engine em produção)
 
-HAZ-0005 (hazard-log.md:129) is **E1 — occurred**: all-absent inputs returned SOFA 0.
-Mechanism, verified from code:
+O HAZ-0005 (hazard-log.md:129) é **E1 — ocorreu**: entradas todas-ausentes
+retornaram SOFA 0. Mecanismo, verificado a partir do código:
 
-| Component | Missing input | Behavior | Decisive lines |
+| Componente | Entrada ausente | Comportamento | Linhas decisivas |
 |---|---|---|---|
-| Respiration | `pao2_fio2=None` | returns `(0, "missing")` | `sofa.py:168-169` |
-| Respiration | bool passed | returns `(0, "invalid_type")` — **and the status is dropped**; `calculate_sofa` records only `"missing"` | `sofa.py:171-172, 468-469` |
-| Coagulation | `platelets=None` | `(0, "missing")` | `sofa.py:219-220` |
-| Liver | `bilirubin=None` | `(0, "missing")` | `sofa.py:254-255` |
-| Cardiovascular | `map_value=None` | `(0, "missing")` — **even when vasopressor type/dose are present** | `sofa.py:301-302` |
-| Cardiovascular | dose `None`, agent known | scored 2 or 3 by guess, status `None` — not even flagged missing | `sofa.py:314-315, 324-325` |
-| Neurological | `gcs=None` | `(0, "missing")` | `sofa.py:358-359` |
-| Renal | both `None` | `(0, "missing")` (single flag `"creatinine_and_urine_output"`) | `sofa.py:400-402, 492-493` |
-| Renal | exactly one of the pair `None` | the absent half scores 0 **with no flag at all** | `sofa.py:405, 417-418` |
-| Total | any/all missing | components sum as 0s; all-absent → `total_score=0` with `missing_components` list populated but the persisted `score_value` int carries no status | `sofa.py:504`; `clinical_score.py:21,30` |
+| Respiração | `pao2_fio2=None` | retorna `(0, "missing")` | `sofa.py:168-169` |
+| Respiração | bool passado | retorna `(0, "invalid_type")` — **e o status é descartado**; `calculate_sofa` registra apenas `"missing"` | `sofa.py:171-172, 468-469` |
+| Coagulação | `platelets=None` | `(0, "missing")` | `sofa.py:219-220` |
+| Fígado | `bilirubin=None` | `(0, "missing")` | `sofa.py:254-255` |
+| Cardiovascular | `map_value=None` | `(0, "missing")` — **mesmo quando tipo/dose de vasopressor estão presentes** | `sofa.py:301-302` |
+| Cardiovascular | dose `None`, agente conhecido | pontuado 2 ou 3 por chute, status `None` — nem sequer sinalizado como ausente | `sofa.py:314-315, 324-325` |
+| Neurológico | `gcs=None` | `(0, "missing")` | `sofa.py:358-359` |
+| Renal | ambos `None` | `(0, "missing")` (flag única `"creatinine_and_urine_output"`) | `sofa.py:400-402, 492-493` |
+| Renal | exatamente um do par `None` | a metade ausente pontua 0 **sem nenhuma flag** | `sofa.py:405, 417-418` |
+| Total | qualquer/todos ausentes | componentes somam como 0s; todos-ausentes → `total_score=0` com a lista `missing_components` populada, mas o `score_value` int persistido não carrega status | `sofa.py:504`; `clinical_score.py:21,30` |
 
-Intent evidence: `tests/test_sofa.py` **asserts** this behavior as correct —
-`(None, False, (0, "missing"))` (test_sofa.py:36), `(None, (0, "missing"))` for platelets,
-bilirubin, GCS (test_sofa.py:95,121,234), `score_cardiovascular(None) == (0, "missing")`
-(test_sofa.py:147-148). The zero-coercion is designed and test-enforced, not accidental.
+Evidência de intenção: `tests/test_sofa.py` **afirma** esse comportamento
+como correto — `(None, False, (0, "missing"))` (test_sofa.py:36), `(None,
+(0, "missing"))` para plaquetas, bilirrubina, GCS (test_sofa.py:95,121,234),
+`score_cardiovascular(None) == (0, "missing")` (test_sofa.py:147-148). A
+coerção a zero é projetada e reforçada por teste, não acidental.
 
-**HAZ-0005 verdict per component class:** confirmed for all six components; aggravated in
-cardiovascular (positive severity evidence discarded, `sofa.py:301-302`) and renal
-(sub-component absence unflagged, `sofa.py:405,417`); aggravated at the type level by
-`invalid_type` erasure (`sofa.py:171-172` + `468-469`). V2 SAF-0002's absent-input probe
-must include every row of the table above as a negative test.
+**Veredito do HAZ-0005 por classe de componente:** confirmado para todos os
+seis componentes; agravado no cardiovascular (evidência de severidade
+positiva descartada, `sofa.py:301-302`) e no renal (ausência de
+sub-componente sem flag, `sofa.py:405,417`); agravado em nível de tipo pelo
+apagamento de `invalid_type` (`sofa.py:171-172` + `468-469`). A sonda de
+entrada ausente do SAF-0002 da V2 deve incluir toda linha da tabela acima
+como teste negativo.
 
-## 7. PARTIAL-SOFA ANALYSIS — INPUT TO ADR-0008
+## 7. ANÁLISE DE SOFA-PARCIAL — INPUT TO ADR-0008
 
-**Marked as mandatory input to ADR-0008. Everything in this section is PROPOSAL.**
+**Marcado como insumo obrigatório para a ADR-0008. Tudo nesta seção é
+PROPOSAL.**
 
-### 7.1 What is computable from currently evidenced AMH sources
+### 7.1 O que é computável a partir das fontes AMH atualmente evidenciadas
 
-SOURCE (`docs/08-interoperability/amh-data/compatibility-finding.md` §3, pinned AMH
-`0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116`): at the evidence snapshot AMH has **zero
-populated Observations of any category** — laboratory Observation is blocked by an empty
-Bronze source, the only Observation profile pattern-fixes `category = laboratory`, and no
-vital-signs profile exists at all. No medication-administration contract with dose
-granularity was evidenced; no urine-output source of any kind was identified
-(`candidate-inventory.md` CAND-0003).
+SOURCE (`docs/08-interoperability/amh-data/compatibility-finding.md` §3, AMH
+fixado `0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116`): no snapshot de evidência,
+a AMH tem **zero Observations populadas de qualquer categoria** — a
+Observation laboratorial é bloqueada por uma fonte Bronze vazia, o único
+padrão de perfil Observation fixa `category = laboratory`, e nenhum perfil
+de sinais vitais existe de forma alguma. Nenhum contrato de administração de
+medicação com granularidade de dose foi evidenciado; nenhuma fonte de
+débito urinário de nenhum tipo foi identificada (`candidate-inventory.md`
+CAND-0003).
 
-**Consequence, stated without softening: today the number of SOFA components computable
-from evidenced AMH sources is zero of six.** Not "partial" — zero. A V2 SOFA against
-today's AMH evidence would run permanently in `not_evaluated`; admitting it would
-instantiate HAZ-0043 (permanent emptiness habituated into reassuring quiet). This is the
-compatibility finding's own inference (`AMH-CF §3.3`) applied to this instrument, and it is
-why CAND-0003 is marked INELIGIBLE "twice over".
+**Consequência, dita sem suavização: hoje o número de componentes de SOFA
+computáveis a partir de fontes AMH evidenciadas é zero de seis.** Não
+"parcial" — zero. Um SOFA V2 contra a evidência AMH de hoje rodaria
+permanentemente em `not_evaluated`; admiti-lo instanciaria o HAZ-0043
+(vazio permanente habituado a um silêncio tranquilizador). Esta é a própria
+inferência do achado de compatibilidade (`AMH-CF §3.3`) aplicada a este
+instrumento, e é por isso que o CAND-0003 é marcado INELEGÍVEL "duas vezes".
 
-### 7.2 If laboratory Observations later populate conformantly (LOINC + UCUM)
+### 7.2 Se Observations laboratoriais mais tarde popularam conformemente (LOINC + UCUM)
 
-Component-by-component source demand, from the input signature at `sofa.py:435-445`:
+Demanda de fonte por componente, a partir da assinatura de entrada em
+`sofa.py:435-445`:
 
-| Component | Inputs needed | Would labs-only populate it? |
+| Componente | Entradas necessárias | Apenas-labs populariam? |
 |---|---|---|
-| Coagulation | platelet count | **Yes** (laboratory) |
-| Liver | total bilirubin | **Yes** (laboratory) |
-| Renal (creatinine half) | serum creatinine | **Yes**; the urine-output half needs a fluid-balance source that does not exist — the renal component would itself be a *silent partial* unless V2 models it explicitly (D-16) |
-| Respiration | PaO2 (blood gas — laboratory) **and** FiO2 + respiratory-support status (device/vitals context) | **No** — blood gas alone is insufficient; FiO2 and ventilation status have no evidenced source |
-| Cardiovascular | MAP (vital sign) + vasopressor agent and dose in µg/kg/min (medication administration) | **No** — neither class is evidenced |
-| Neurological | GCS (clinical assessment/vital-signs class) | **No** — structurally excluded by the laboratory-fixed profile |
+| Coagulação | contagem de plaquetas | **Sim** (laboratorial) |
+| Fígado | bilirrubina total | **Sim** (laboratorial) |
+| Renal (metade creatinina) | creatinina sérica | **Sim**; a metade de débito urinário precisa de uma fonte de balanço hídrico que não existe — o componente renal seria em si um *parcial silencioso*, a menos que a V2 o modele explicitamente (D-16) |
+| Respiração | PaO2 (gasometria — laboratorial) **e** FiO2 + status de suporte respiratório (contexto de dispositivo/vitais) | **Não** — gasometria sozinha é insuficiente; FiO2 e status de ventilação não têm fonte evidenciada |
+| Cardiovascular | PAM (sinal vital) + agente e dose de vasopressor em µg/kg/min (administração de medicação) | **Não** — nenhuma das duas classes está evidenciada |
+| Neurológico | GCS (classe de avaliação clínica/sinais vitais) | **Não** — estruturalmente excluído pelo perfil fixado em laboratorial |
 
-So the *best* conformant-labs future yields **2 of 6 components fully, plus half of a
-third**: coagulation + liver + creatinine-only renal. Maximum obtainable partial total:
-12 of 24 points, from the three organ systems that least resemble the bedside
-deterioration axes (no hemodynamics, no oxygenation, no consciousness).
+Então o *melhor* futuro conformante-apenas-labs produz **2 de 6 componentes
+completamente, mais metade de um terceiro**: coagulação + fígado + renal
+apenas-creatinina. Total parcial máximo obtenível: 12 de 24 pontos, dos três
+sistemas orgânicos que menos se assemelham aos eixos de deterioração à
+beira do leito (sem hemodinâmica, sem oxigenação, sem consciência).
 
-### 7.3 Is a labs-only partial SOFA clinically defensible? — both sides
+### 7.3 Um SOFA parcial apenas-labs é clinicamente defensável? — os dois lados
 
-**For presenting a labs-only partial (steel-manned):**
-- The three computable components are real organ-dysfunction signals; platelets, bilirubin
-  and creatinine trends carry legitimate prognostic weight, and clinicians already reason
-  on isolated laboratory trends.
-- A partial with explicit bounds ("coag/liver/renal only; respiratory, cardiovascular and
-  CNS NOT assessed") is more information than nothing, and evaluation-status-semantics.md
-  §3.2 provides exactly the `partial` state for a declared, approved subset.
-- Sepsis-3 itself tolerates missing-at-baseline assumptions (baseline SOFA assumed zero),
-  so the instrument's literature is not allergic to pragmatic conventions.
+**A favor de apresentar um parcial apenas-labs (esgrimido com força):**
+- Os três componentes computáveis são sinais reais de disfunção orgânica;
+  tendências de plaquetas, bilirrubina e creatinina carregam peso
+  prognóstico legítimo, e clínicos já raciocinam sobre tendências
+  laboratoriais isoladas.
+- Um parcial com limites explícitos ("apenas coag/fígado/renal; respiratório,
+  cardiovascular e SNC NÃO avaliados") é mais informação que nada, e
+  evaluation-status-semantics.md §3.2 fornece exatamente o estado `partial`
+  para um subconjunto declarado e aprovado.
+- O próprio Sepsis-3 tolera pressupostos de ausência-na-linha-de-base
+  (SOFA basal presumido zero), então a literatura do instrumento não é
+  avessa a convenções pragmáticas.
 
-**Against (steel-manned):**
-- SOFA's validity claims attach to the six-organ aggregate; a 3-of-6 subset is **a
-  different, unvalidated instrument** wearing SOFA's name. PROMPT:418 (quoted in
-  evaluation-status-semantics.md §3.2) forbids silently altering a clinical definition; an
-  honest subset would have to be *separately evidenced*, not badged "SOFA".
-- The missing half is systematically the **acute** half. Labs cycle on hours-to-daily
-  cadence; hemodynamic collapse, desaturation and coma evolve in minutes. A labs-only
-  "SOFA 2" on a patient in vasopressor-dependent shock is D-07 at portfolio scale: the
-  score is lowest exactly when the unmeasured axis is the one failing (candidate hazard
-  PH-01/PH-03 mechanics, `candidate-inventory.md` §5).
-- Sepsis-3's diagnostic use is **ΔSOFA ≥2 versus baseline**. A partial instrument cannot
-  anchor a Δ, because the baseline and the current value may cover different component
-  subsets on different days (PH-03: "a composite describing a patient state that never
+**Contra (esgrimido com força):**
+- As alegações de validade do SOFA se ligam ao agregado de seis órgãos; um
+  subconjunto de 3-de-6 é **um instrumento diferente, não validado**
+  usando o nome do SOFA. O PROMPT:418 (citado em
+  evaluation-status-semantics.md §3.2) proíbe alterar silenciosamente uma
+  definição clínica; um subconjunto honesto teria que ser *evidenciado
+  separadamente*, não rotulado "SOFA".
+- A metade ausente é sistematicamente a metade **aguda**. Labs ciclam em
+  cadência de horas-a-diária; colapso hemodinâmico, dessaturação e coma
+  evoluem em minutos. Um "SOFA 2" apenas-labs em um paciente em choque
+  dependente de vasopressor é o D-07 em escala de portfólio: o escore é o
+  mais baixo exatamente quando o eixo não medido é o que está falhando
+  (mecânica do hazard candidato PH-01/PH-03, `candidate-inventory.md` §5).
+- O uso diagnóstico do Sepsis-3 é **ΔSOFA ≥2 versus a linha de base**. Um
+  instrumento parcial não consegue ancorar um Δ, porque a linha de base e o
+  valor atual podem cobrir subconjuntos de componentes diferentes em dias
+  diferentes (PH-03: "a composite describing a patient state that never
   existed at any instant").
-- The legacy lesson (HAZ-0005) is precisely that a low number produced from absence reads
-  as reassurance. A labs-only partial is *structured* absence.
+- A lição legada (HAZ-0005) é precisamente que um número baixo produzido a
+  partir da ausência lê como tranquilidade. Um parcial apenas-labs é
+  ausência *estruturada*.
 
-**Recommendation — PROPOSAL:** V2 must not compute a partial SOFA *total* under any
-labs-only source state. If clinical governance wants the computable fragment surfaced, it
-should be (a) presented as **per-organ component scores, never summed**, each with its own
-evaluation status and freshness; and (b) admitted, if at all, as a separately named and
-separately evidenced pathway per PROMPT:418 — not as "SOFA". The SOFA pathway itself
-returns `not_evaluated` (reason `missing_required_input:<component>`) until all six
-components have evidenced, in-window sources, unless a named clinical authority ratifies an
-explicit partial policy under evaluation-status-semantics.md §3.2 — which today would fail
-that section's own entry condition (no approved partial policy exists, and none can be
-approved against nonexistent sources). ΔSOFA (the Sepsis-3 criterion) additionally requires
-a ratified baseline convention before it can exist at all. **VALIDATION REQUIRED:**
-`AUTH-CLINSAFETY`; feeds ADR-0008 directly; see also VAL-0023 (freshness windows per
-input — unresolved) and VAL-0006/0007 (adult-only gating — unresolved and BLOCKING).
+**Recomendação — PROPOSAL:** a V2 não deve computar um *total* de SOFA
+parcial sob nenhum estado de fonte apenas-labs. Se a governança clínica
+quiser o fragmento computável exposto, ele deve ser (a) apresentado como
+**escores de componente por órgão, nunca somados**, cada um com seu próprio
+status de avaliação e frescor; e (b) admitido, se admitido, como uma
+pathway separadamente nomeada e separadamente evidenciada por PROMPT:418 —
+não como "SOFA". A própria pathway do SOFA retorna `not_evaluated` (motivo
+`missing_required_input:<componente>`) até que todos os seis componentes
+tenham fontes evidenciadas e dentro-da-janela, a menos que uma autoridade
+clínica nomeada ratifique uma política de parcial explícita sob
+evaluation-status-semantics.md §3.2 — o que hoje falharia a própria
+condição de entrada dessa seção (nenhuma política de parcial aprovada
+existe, e nenhuma pode ser aprovada contra fontes inexistentes). O ΔSOFA (o
+critério do Sepsis-3) exige adicionalmente uma convenção de linha de base
+ratificada antes de poder existir de forma alguma. **VALIDATION REQUIRED:**
+`AUTH-CLINSAFETY`; alimenta a ADR-0008 diretamente; ver também VAL-0023
+(janelas de frescor por entrada — não resolvido) e VAL-0006/0007 (gating
+apenas-adulto — não resolvido e BLOCKING).
 
-## 8. Clinical verdicts — PROPOSAL, per legacy-import-policy §4
+## 8. Vereditos clínicos — PROPOSAL, conforme legacy-import-policy §4
 
-| Artifact | Verdict | Rationale |
+| Artefato | Veredito | Racional |
 |---|---|---|
-| `services/sofa.py` cut-point constants and band structure (D-01, D-05, D-06 numeric, D-08, D-11, D-14, D-15 cut-points) | **VALIDATE** | Numerically faithful to Vincent 1996; may inform a V2 spec as *reference values*, re-derived from the primary source with V2 acceptance tests — never copied as code. Import blocked anyway until legacy-import-policy §3 items (owner, license, clinical review) exist. |
-| `services/sofa.py` missing/invalid-input handling (§6) | **REJECT** | The HAZ-0005 mechanism itself, test-enforced. V2's evaluation-status algebra (SAF-0001/0002) is its replacement; carry the table in §6 as negative-test vectors only. |
-| `services/sofa.py` cardiovascular unknown-dose/unknown-agent defaults, missing-MAP short-circuit (D-07, D-10) | **REJECT** | Silent clinical guessing; discards severity evidence. |
-| `services/sofa.py` mortality-risk banding (D-18) | **REJECT** | Uncited, internally inconsistent; any V2 banding must be sourced and ratified fresh. |
-| Ventilation-gate and cap-at-2 interpretation (D-02) | **VALIDATE** | Common convention but uncited; V2 must decide "respiratory support" scope (invasive/NIV/HFNC) with a named source. |
-| `SOFAResult.missing_components` concept (D-17) | **TRANSFORM** | The one good instinct in the file — absence is at least *recorded*. V2 supersedes it with a first-class evaluation status that is unconstructible without one; the legacy list shows the intent existed and was structurally dropped at persistence. |
-| `clinical_score` persistence shape | **REJECT** | Non-null bare int score with no status column is the persistence half of HAZ-0005. |
-| Trilhas-era rule set 001-012 (§5) | **REJECT (retain as failure catalog)** | Superseded twice over; unit incoherence and dead-gap defects are valuable only as regression vectors for V2 tests. |
-| Legacy "RAT-*" ratification claims (D-19) | **REJECT** | Authority is an owner/agent delegation, not a named clinical approver; void under V2 evidence notation. |
+| Constantes de corte e estrutura de faixa do `services/sofa.py` (D-01, D-05, D-06 numérico, D-08, D-11, D-14, D-15 cortes) | **VALIDATE** | Numericamente fiel a Vincent 1996; pode informar uma especificação V2 como *valores de referência*, re-derivados da fonte primária com testes de aceitação V2 — nunca copiados como código. Importação bloqueada de qualquer forma até que os itens de legacy-import-policy §3 (dono, licença, revisão clínica) existam. |
+| Tratamento de entrada ausente/inválida do `services/sofa.py` (§6) | **REJECT** | O próprio mecanismo do HAZ-0005, reforçado por teste. A álgebra de status de avaliação da V2 (SAF-0001/0002) é sua substituta; carregar a tabela de §6 apenas como vetores de teste negativo. |
+| Padrões de dose-desconhecida/agente-desconhecido cardiovascular, short-circuit de PAM-ausente do `services/sofa.py` (D-07, D-10) | **REJECT** | Chute clínico silencioso; descarta evidência de severidade. |
+| Classificação de risco de mortalidade do `services/sofa.py` (D-18) | **REJECT** | Não citada, internamente inconsistente; qualquer classificação V2 deve ser sourced e ratificada do zero. |
+| Interpretação de gate-de-ventilação e teto-em-2 (D-02) | **VALIDATE** | Convenção comum, mas não citada; a V2 deve decidir o escopo de "suporte respiratório" (invasivo/VNI/HFNC) com uma fonte nomeada. |
+| Conceito de `SOFAResult.missing_components` (D-17) | **TRANSFORM** | O único bom instinto do arquivo — a ausência é ao menos *registrada*. A V2 o supera com um status de avaliação de primeira classe que é não-construível sem um; a lista legada mostra que a intenção existia e foi estruturalmente descartada na persistência. |
+| Formato de persistência de `clinical_score` | **REJECT** | Um int de escore não-nulo simples sem coluna de status é a metade de persistência do HAZ-0005. |
+| Conjunto de regras 001-012 da era trilhas (§5) | **REJECT (manter como catálogo de falhas)** | Superado duas vezes; incoerência de unidade e defeitos de lacuna morta são valiosos apenas como vetores de regressão para testes V2. |
+| Alegações de ratificação "RAT-*" legadas (D-19) | **REJECT** | A autoridade é uma delegação de dono/agente, não um aprovador clínico nomeado; nula sob a notação de evidência da V2. |
 
-## 9. Surviving elements proposed for V2 specs (PROPOSAL)
+## 9. Elementos sobreviventes propostos para especificações V2 (PROPOSAL)
 
-1. The Vincent 1996 table itself, cited from the primary source, as the single normative
-   reference for any V2 SOFA content — with the four interpretation points that the
-   primary source leaves open explicitly enumerated for ratification: respiratory-support
-   scope (D-02), unsupported P/F <200 handling (D-02), vasopressor duration condition
-   (D-09), combination-vasopressor handling (D-10).
-2. Unit discipline as a contract precondition: UCUM-coded quantities for bilirubin
-   (mg/dL vs µmol/L), creatinine, platelets, FiO2-as-fraction; unmappable unit →
-   `invalid`, never scored (per evaluation-status-semantics.md §3.5; the trilhas FiO2
-   catastrophe in §5 is the standing justification).
-3. §6's table as SAF-0002 absent-input probe vectors; §5's trilhas defects (bilirubin
-   1.95, creatinine 5.0, FiO2 percent) as named regression vectors.
-4. Per-organ component explanation (candidate-inventory CAND-0003 requirement) and the
-   §7.3 rule: no partial total, components never summed across missing organs, ΔSOFA only
-   after a ratified baseline convention.
+1. A própria tabela de Vincent 1996, citada da fonte primária, como a única
+   referência normativa para qualquer conteúdo de SOFA V2 — com os quatro
+   pontos de interpretação que a fonte primária deixa em aberto
+   explicitamente enumerados para ratificação: escopo de suporte
+   respiratório (D-02), tratamento de P/F <200 não suportado (D-02),
+   condição de duração de vasopressor (D-09), tratamento de vasopressor
+   combinado (D-10).
+2. Disciplina de unidade como precondição de contrato: quantidades
+   codificadas em UCUM para bilirrubina (mg/dL vs µmol/L), creatinina,
+   plaquetas, FiO2-como-fração; unidade não mapeável →
+   `invalid`, nunca pontuada (conforme evaluation-status-semantics.md §3.5;
+   a catástrofe de FiO2 da trilhas em §5 é a justificativa permanente).
+3. A tabela de §6 como vetores de sonda de entrada ausente do SAF-0002; os
+   defeitos da trilhas de §5 (bilirrubina 1,95, creatinina 5,0, FiO2
+   percentual) como vetores de regressão nomeados.
+4. Explicação de componente por órgão (exigência do CAND-0003 do
+   candidate-inventory) e a regra de §7.3: nenhum total parcial,
+   componentes nunca somados através de órgãos ausentes, ΔSOFA apenas após
+   uma convenção de linha de base ratificada.
 
-*Reviewed by rodaquino-OMNI (accountable reviewer of record, GDEC-0003). No PHI, no real
-patient data; all values in this document are published thresholds or synthetic examples.*
+*Revisado por rodaquino-OMNI (revisor responsável de registro, GDEC-0003).
+Sem PHI, sem dados reais de paciente; todos os valores neste documento são
+limiares publicados ou exemplos sintéticos.*

@@ -1,23 +1,26 @@
 ---
 id: LEGREV-QSOFA-0001
-title: Legacy review — qSOFA scoring clinical content (V1 services/qsofa.py and consumers)
+title: Revisão legada — conteúdo clínico do scoring qSOFA (V1 services/qsofa.py e consumidores)
 label: PROPOSAL
 status: PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)
 statement: >
-  Intensivist-rigor forensic review of the legacy V1 qSOFA implementation against Sepsis-3
-  (Singer 2016) and the Surviving Sepsis Campaign 2021 guideline, including exact cut-point
-  verification, HAZ-0005 zero-coercion tracing, the mandatory post-2021 SSC standing
-  analysis, and import verdicts. Everything herein is PROPOSAL; no clinical authority has
-  ratified any statement.
+  Revisão forense com rigor de intensivista da implementação legada V1 do qSOFA
+  contra o Sepsis-3 (Singer 2016) e a diretriz Surviving Sepsis Campaign 2021,
+  incluindo verificação exata dos cortes, rastreamento de coerção a zero do
+  HAZ-0005, a análise obrigatória do posicionamento pós-2021 da SSC, e vereditos de
+  importação. Tudo aqui é PROPOSAL; nenhuma autoridade clínica ratificou nenhuma
+  declaração.
 provenance:
-  source_repo: intensicare (legacy V1, READ-ONLY)
-  path_or_url: src/intensicare/services/qsofa.py and consumers (see per-citation table §1)
-  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD at pin; per-file SHA-256 in §1)
-  section_or_lines: per-citation line references throughout
+  source_repo: intensicare (legado V1, READ-ONLY)
+  path_or_url: src/intensicare/services/qsofa.py e consumidores (ver tabela por citação §1)
+  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD no pin; SHA-256 por arquivo em §1)
+  section_or_lines: referências de linha por citação ao longo do documento
   date_collected: 2026-08-15
-  collector: legacy sepsis-score forensics reviewer (cycle 1, Task 1); accountable reviewer rodaquino-OMNI
-  transformation: verbatim excerpts plus reviewer analysis; analysis labeled INFERENCE/PROPOSAL
-  confidence: high (source verification); low (clinical dispositions — unratified)
+  collector: revisor forense de escores de sepse legados (ciclo 1, Tarefa 1); revisor responsável rodaquino-OMNI
+  transformation: >
+    traduzido EN→pt-BR, tranche 3, GDEC-0008 item 8 (trechos verbatim mais análise do
+    revisor; análise rotulada INFERENCE/PROPOSAL)
+  confidence: alta (verificação de fonte); baixa (disposições clínicas — não ratificadas)
   owner: UNASSIGNED — VALIDATION REQUIRED
   validation_status: VALIDATION REQUIRED
 links:
@@ -30,31 +33,34 @@ supersedes: null
 superseded_by: null
 ---
 
-# qSOFA — legacy clinical-content review
+> Traduzido EN→pt-BR em 2026-08-16 (GDEC-0008 item 8, tranche 3); original EN preservado no histórico git.
+
+# qSOFA — revisão de conteúdo clínico legado
 
 **PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).**
 
-## 1. Sources verified, with hashes
+## 1. Fontes verificadas, com hashes
 
-Paths relative to `/Users/familia/intensicare` (READ-ONLY), pinned at git HEAD
-`1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79`; hashes re-computed 2026-08-15 against
-`docs/archive/legacy-provenance/legacy-pin-cycle-1.md`.
+Caminhos relativos a `https://github.com/Omni-Saude/intensicare` (READ-ONLY), fixados (pinned)
+no HEAD git `1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79`; hashes recalculados em
+2026-08-15 contra `docs/archive/legacy-provenance/legacy-pin-cycle-1.md`.
 
-| Artifact | SHA-256 | Manifest |
+| Artefato | SHA-256 | Manifesto |
 |---|---|---|
 | `src/intensicare/services/qsofa.py` | `48b69f39f7b789c5f12f005931c9d02cc9b8da562c9aecee804d594530bab8ce` | match |
-| `src/intensicare/services/domain_sepsis.py` (qSOFA consumer) | `853d2e38a8167d28e7eb242872e871024abe00b4868fc22f7c02502f99d3ccf8` | match |
+| `src/intensicare/services/domain_sepsis.py` (consumidor do qSOFA) | `853d2e38a8167d28e7eb242872e871024abe00b4868fc22f7c02502f99d3ccf8` | match |
 | `src/intensicare/services/sepsis_input_provider.py` | `650bdd8c512fd08e673cde124269dd5c05a214ac07510011d53954cdd738b1cb` | match |
-| `_work/alerts/sepse.yaml` (root — standalone qSOFA alert) | `1af8062d535ff0a9efa12a1606c7b37b975bd0635a8800f155491e958ced5dfa` | match |
-| `_work/alerts/pathways/sepse.yaml` (v4 pathway — qSOFA criteria) | `b84c9693295f5d820cb2796b6a789f10cfb9200409741af4e0ba78b7ad4ec7f0` | match |
-| `tests/test_qsofa.py` | `ed463f369f95d1a2ecd1766b5f095b149f78815a35b0927cdb43d590b3465e13` | **not in manifest — hashed at review time (hash-and-note)** |
+| `_work/alerts/sepse.yaml` (raiz — alerta qSOFA autônomo) | `1af8062d535ff0a9efa12a1606c7b37b975bd0635a8800f155491e958ced5dfa` | match |
+| `_work/alerts/pathways/sepse.yaml` (pathway v4 — critérios qSOFA) | `b84c9693295f5d820cb2796b6a789f10cfb9200409741af4e0ba78b7ad4ec7f0` | match |
+| `tests/test_qsofa.py` | `ed463f369f95d1a2ecd1766b5f095b149f78815a35b0927cdb43d590b3465e13` | **não está no manifesto — hasheado no momento da revisão (hash-and-note)** |
 
-No dedicated qSOFA rule doc exists in `docs/rules/` (grep for "qsofa" hits only sepse/
-sedacao/estabilidade cluster records, reviewed in `sepse-pathway-clinical-review.md`).
+Não existe documento de regra dedicado ao qSOFA em `docs/rules/` (grep por "qsofa"
+atinge apenas registros de cluster sepse/sedacao/estabilidade, revisados em
+`sepse-pathway-clinical-review.md`).
 
-## 2. Formula as implemented (verbatim, `services/qsofa.py`)
+## 2. Fórmula conforme implementada (verbatim, `services/qsofa.py`)
 
-Constants — `qsofa.py:25-28`:
+Constantes — `qsofa.py:25-28`:
 
 ```python
 QSOFA_HIGH_RISK_MIN = 2  # total >= 2 (of 3) -> high risk for sepsis
@@ -63,7 +69,7 @@ QSOFA_SBP_HYPOTENSION_MAX = 100  # systolic BP <= 100 mmHg -> 1 point
 QSOFA_GCS_NORMAL = 15  # GCS < 15 (altered mentation) -> 1 point
 ```
 
-Criterion functions — `qsofa.py:79-81, 96-98, 113-115`:
+Funções de critério — `qsofa.py:79-81, 96-98, 113-115`:
 
 ```python
     if rr is None:
@@ -79,163 +85,181 @@ Criterion functions — `qsofa.py:79-81, 96-98, 113-115`:
     return (1, None) if gcs < QSOFA_GCS_NORMAL else (0, None)
 ```
 
-Aggregation — `qsofa.py:138-164`: three independent criterion scores summed
-(`total = rr_score + sbp_score + gcs_score`, `qsofa.py:158`), `missing_criteria` list
-collected per criterion (`qsofa.py:141-150`). Threshold — `qsofa.py:50-59`:
-`is_high_risk = total_score >= 2`; `risk_level` is the binary `"high_risk"` /
-`"low_risk"`.
+Agregação — `qsofa.py:138-164`: três escores de critério independentes somados
+(`total = rr_score + sbp_score + gcs_score`, `qsofa.py:158`), lista
+`missing_criteria` coletada por critério (`qsofa.py:141-150`). Limiar —
+`qsofa.py:50-59`: `is_high_risk = total_score >= 2`; `risk_level` é o binário
+`"high_risk"` / `"low_risk"`.
 
-**Combination logic, stated precisely:** each of the three criteria is an independent
-binary point (no AND/OR structure between the cut-points); the positive-screen condition
-is `sum >= 2`, i.e. 2-of-3. This matches the published instrument's structure.
+**Lógica de combinação, dita com precisão:** cada um dos três critérios é um
+ponto binário independente (sem estrutura AND/OR entre os cortes); a condição de
+triagem positiva é `soma >= 2`, ou seja, 2-de-3. Isso corresponde à estrutura do
+instrumento publicado.
 
-## 3. Authoritative definition
+## 3. Definição autoritativa
 
-- **Singer M, Deutschman CS, Seymour CW, et al.** The Third International Consensus
-  Definitions for Sepsis and Septic Shock (Sepsis-3). *JAMA*. 2016;315(8):801-810.
-  doi:10.1001/jama.2016.0287, <https://pmc.ncbi.nlm.nih.gov/articles/PMC4968574/> —
-  qSOFA criteria verbatim: "respiratory rate of 22/min or greater, altered mentation, or
-  systolic blood pressure of 100 mm Hg or less"; positive at ≥2 of 3; intended for
-  "out-of-hospital, emergency department, or general hospital ward settings" to identify
-  adult patients **with suspected infection** likely to have poor outcomes. On mentation:
-  the task force derivation used "Glasgow Coma Scale score of 13 or less" but chose to
-  "emphasize altered mentation because it represents any Glasgow Coma Scale score less
-  than 15".
-- **Evans L, Rhodes A, Alhazzani W, et al.** Surviving Sepsis Campaign 2021. *Crit Care
-  Med* 2021;49(11):e1063-e1143 / *Intensive Care Med* 2021;47:1181-1247.
-  doi:10.1007/s00134-021-06506-y — screening recommendation quoted in §6.
+- **Singer M, Deutschman CS, Seymour CW, et al.** The Third International
+  Consensus Definitions for Sepsis and Septic Shock (Sepsis-3). *JAMA*.
+  2016;315(8):801-810. doi:10.1001/jama.2016.0287,
+  <https://pmc.ncbi.nlm.nih.gov/articles/PMC4968574/> — critérios qSOFA,
+  verbatim: "respiratory rate of 22/min or greater, altered mentation, or
+  systolic blood pressure of 100 mm Hg or less"; positivo em ≥2 de 3;
+  destinado a "out-of-hospital, emergency department, or general hospital ward
+  settings" para identificar pacientes adultos **com suspeita de infecção**
+  com maior probabilidade de desfecho ruim. Sobre a mentação: a derivação do
+  task force usou "Glasgow Coma Scale score of 13 or less", mas optou por
+  "emphasize altered mentation because it represents any Glasgow Coma Scale
+  score less than 15" (citações mantidas em inglês, texto literal da fonte).
+- **Evans L, Rhodes A, Alhazzani W, et al.** Surviving Sepsis Campaign 2021.
+  *Crit Care Med* 2021;49(11):e1063-e1143 / *Intensive Care Med*
+  2021;47:1181-1247. doi:10.1007/s00134-021-06506-y — recomendação de
+  rastreio citada em §6.
 
-## 4. Discrepancy table — `services/qsofa.py` vs Sepsis-3
+## 4. Tabela de discrepâncias — `services/qsofa.py` vs Sepsis-3
 
-| # | Item | Finding | Verdict | Evidence |
+| # | Item | Achado | Veredito | Evidência |
 |---|---|---|---|---|
-| Q-01 | RR cut-point | `>= 22` /min | MATCH ("22/min or greater") | `qsofa.py:26,81` |
-| Q-02 | SBP cut-point | `<= 100` mmHg | MATCH ("100 mm Hg or less") | `qsofa.py:27,98` |
-| Q-03 | Mentation cut-point | `GCS < 15` | MATCH (Sepsis-3's stated operationalization "any Glasgow Coma Scale score less than 15"; note the derivation cohort used GCS ≤13 — V2 must pick one and cite it) | `qsofa.py:28,115` |
-| Q-04 | Threshold | `>= 2` of 3 | MATCH | `qsofa.py:25,52` |
-| Q-05 | Suspected-infection condition | **Absent from the scorer.** `calculate_qsofa` evaluates any patient; the infection gate exists only in one consumer (`domain_sepsis._eval_screen_01`) | **DEV (definitional)** — qSOFA's published meaning is conditional on suspected infection; an ungated qSOFA number on an undifferentiated ICU population is a different, unevidenced use (candidate-inventory CAND-0004; PH-04 → HAZ-0036). | `qsofa.py:123-164`; `domain_sepsis.py:276-278` |
-| Q-06 | Setting | Module docstring markets qSOFA without setting restriction; Sepsis-3 scopes it to non-ICU settings (in ICU, full SOFA is the recommended instrument). The root alert file gates one alert on `icu_setting == false` (`_work/alerts/sepse.yaml:23-36`) — the *only* place the setting condition survives — but no code computes `icu_setting` (grep of `src/` finds no producer), so the gate is structurally unevaluable. | **DEV** | `qsofa.py:1-10`; `_work/alerts/sepse.yaml:30-32` |
-| Q-07 | Purpose framing | Docstring: "Identifies patients at high risk for sepsis"; result property `sepsis` framing (`is_high_risk`), pathway band label "Alta probabilidade de sepse" (v4 `crit-sep-qsofa`) | **DEV (mischaracterization)** — Sepsis-3 frames qSOFA as a predictor of *poor outcome* (mortality, prolonged ICU stay) in suspected infection, explicitly **not** a diagnostic or probability-of-sepsis statement, and the v4 band label "Disfunção orgânica" for qSOFA=2 conflates qSOFA with the SOFA-based organ-dysfunction criterion. | `qsofa.py:4,9-10,50-52`; `_work/alerts/pathways/sepse.yaml:97-104` |
-| Q-08 | Input validation | No range checks: RR of 0 scores 0 (bradypnea/apnea contributes nothing — faithful to the instrument but worth stating), GCS values outside 3-15 accepted, negative values accepted | **DEV (minor)** | `qsofa.py:79-115`; `tests/test_qsofa.py:39` |
-| Q-09 | Pre-computed override in consumer | `domain_sepsis._compute_qsofa_points`: if a `qsofa` input key is present it is trusted verbatim — `_num` converts `True → 1.0`, floats are truncated by `int()`, and no 0-3 range check exists (a payload `qsofa: 7` is accepted) | **DEV (consumer)** — the canonical scorer can be bypassed by an unvalidated upstream value. | `domain_sepsis.py:247-250, 163-172` |
-| Q-10 | Freshness | `sepsis_input_provider` feeds qSOFA from the **latest persisted VitalSign with no age bound** (`_fetch_latest_vital` orders by `recorded_at desc`, no window) | **DEV (HAZ-0006)** — an arbitrarily stale RR/SBP/GCS triple scores as current. VAL-0023 unresolved. | `sepsis_input_provider.py:126-134, 374` |
+| Q-01 | Corte de FR | `>= 22` /min | MATCH ("22/min or greater") | `qsofa.py:26,81` |
+| Q-02 | Corte de PAS | `<= 100` mmHg | MATCH ("100 mm Hg or less") | `qsofa.py:27,98` |
+| Q-03 | Corte de mentação | `GCS < 15` | MATCH (operacionalização declarada do Sepsis-3, "any Glasgow Coma Scale score less than 15"; note que a coorte de derivação usou GCS ≤13 — a V2 deve escolher uma e citá-la) | `qsofa.py:28,115` |
+| Q-04 | Limiar | `>= 2` de 3 | MATCH | `qsofa.py:25,52` |
+| Q-05 | Condição de suspeita de infecção | **Ausente do scorer.** `calculate_qsofa` avalia qualquer paciente; o gate de infecção existe apenas em um consumidor (`domain_sepsis._eval_screen_01`) | **DEV (definicional)** — o significado publicado do qSOFA é condicional à suspeita de infecção; um número de qSOFA sem gate em uma população de UTI indiferenciada é um uso diferente, sem evidência (candidate-inventory CAND-0004; PH-04 → HAZ-0036). | `qsofa.py:123-164`; `domain_sepsis.py:276-278` |
+| Q-06 | Ambiente de cuidado | A docstring do módulo promove o qSOFA sem restrição de ambiente; o Sepsis-3 o escopa para ambientes fora de UTI (em UTI, o SOFA completo é o instrumento recomendado). O arquivo de alerta raiz condiciona um alerta a `icu_setting == false` (`_work/alerts/sepse.yaml:23-36`) — o *único* lugar onde a condição de ambiente sobrevive — mas nenhum código calcula `icu_setting` (grep de `src/` não encontra produtor), então o gate é estruturalmente inavaliável. | **DEV** | `qsofa.py:1-10`; `_work/alerts/sepse.yaml:30-32` |
+| Q-07 | Enquadramento de propósito | Docstring: "Identifies patients at high risk for sepsis"; enquadramento da propriedade de resultado `sepsis` (`is_high_risk`), rótulo de faixa do pathway "Alta probabilidade de sepse" (v4 `crit-sep-qsofa`) | **DEV (caracterização incorreta)** — o Sepsis-3 enquadra o qSOFA como preditor de *desfecho ruim* (mortalidade, permanência prolongada em UTI) em suspeita de infecção, explicitamente **não** uma declaração diagnóstica ou de probabilidade-de-sepse, e o rótulo de faixa v4 "Disfunção orgânica" para qSOFA=2 confunde o qSOFA com o critério de disfunção orgânica baseado no SOFA. | `qsofa.py:4,9-10,50-52`; `_work/alerts/pathways/sepse.yaml:97-104` |
+| Q-08 | Validação de entrada | Sem checagens de faixa: FR de 0 pontua 0 (bradipneia/apneia não contribui em nada — fiel ao instrumento, mas vale registrar), valores de GCS fora de 3-15 são aceitos, valores negativos são aceitos | **DEV (menor)** | `qsofa.py:79-115`; `tests/test_qsofa.py:39` |
+| Q-09 | Override pré-computado no consumidor | `domain_sepsis._compute_qsofa_points`: se uma chave de entrada `qsofa` está presente, ela é confiada verbatim — `_num` converte `True → 1.0`, floats são truncados por `int()`, e não existe checagem de faixa 0-3 (um payload `qsofa: 7` é aceito) | **DEV (consumidor)** — o scorer canônico pode ser contornado por um valor upstream não validado. | `domain_sepsis.py:247-250, 163-172` |
+| Q-10 | Frescor | `sepsis_input_provider` alimenta o qSOFA a partir do **último VitalSign persistido, sem limite de idade** (`_fetch_latest_vital` ordena por `recorded_at desc`, sem janela) | **DEV (HAZ-0006)** — um trio RR/PAS/GCS arbitrariamente obsoleto pontua como atual. VAL-0023 não resolvido. | `sepsis_input_provider.py:126-134, 374` |
 
-**Discrepancy count: 6 DEV (Q-05, Q-06, Q-07, Q-08, Q-09, Q-10); 4 MATCH (Q-01..Q-04).**
-The three cut-points and the 2-of-3 threshold are exactly Sepsis-3; every deviation is in
-*conditions of use*, not arithmetic.
+**Contagem de discrepâncias: 6 DEV (Q-05, Q-06, Q-07, Q-08, Q-09, Q-10); 4 MATCH
+(Q-01..Q-04).** Os três cortes e o limiar 2-de-3 são exatamente Sepsis-3; todo
+desvio está nas *condições de uso*, não na aritmética.
 
-Three worst: **Q-05** (infection condition absent from the instrument itself), **Q-09**
-(unvalidated pre-computed score bypasses the scorer), **Q-10** (unbounded input staleness).
+Três piores: **Q-05** (condição de infecção ausente do próprio instrumento),
+**Q-09** (escore pré-computado não validado contorna o scorer), **Q-10**
+(obsolescência de entrada sem limite).
 
-## 5. HAZ-0005 zero-coercion — traced per criterion
+## 5. Coerção a zero do HAZ-0005 — rastreada por critério
 
-| Criterion | Missing input | Behavior | Decisive lines |
+| Critério | Entrada ausente | Comportamento | Linhas decisivas |
 |---|---|---|---|
-| Respiratory rate | `rr=None` | `(0, "missing")` — contributes 0 to the sum | `qsofa.py:79-80` |
-| Systolic BP | `sbp=None` | `(0, "missing")` | `qsofa.py:96-97` |
-| Mentation | `gcs=None` | `(0, "missing")` | `qsofa.py:113-114` |
-| Total | all `None` | `total_score=0`, `is_high_risk=False`, `missing_criteria=['respiratory_rate','systolic_bp','gcs']` — a never-assessed patient is typed identically to a screened-negative patient | `qsofa.py:138-164` |
+| Frequência respiratória | `rr=None` | `(0, "missing")` — contribui 0 para a soma | `qsofa.py:79-80` |
+| PA sistólica | `sbp=None` | `(0, "missing")` | `qsofa.py:96-97` |
+| Mentação | `gcs=None` | `(0, "missing")` | `qsofa.py:113-114` |
+| Total | todos `None` | `total_score=0`, `is_high_risk=False`, `missing_criteria=['respiratory_rate','systolic_bp','gcs']` — um paciente nunca avaliado é tipado de forma idêntica a um paciente com triagem negativa | `qsofa.py:138-164` |
 
-Consequences downstream, verified:
+Consequências a jusante, verificadas:
 
-- `domain_sepsis._compute_qsofa_points` returns the coerced 0-2 partial sum as a plain
-  int; `_eval_screen_01` then reports "qSOFA=0 < 2" as a *reason string*, not a status
-  (`domain_sepsis.py:280-288`).
-- `sepsis_input_provider._build_sirs_qsofa_inputs` makes the coercion **unconditional at
-  the pathway boundary**: while every other input key is deliberately *omitted when
-  unknown* ("never guessed, never defaulted", `sepsis_input_provider.py:16-25`), the two
-  keys `sirs_count`/`qsofa_score` "are always present" even with zero underlying
-  measurements — the module docstring itself names this "inherited canonical behavior, not
-  invented here" (`sepsis_input_provider.py:21-25, 197-231, 360-361`). A patient with no
-  vitals at all therefore enters the declarative pathway with `qsofa_score: 0`.
-- Intent evidence: `tests/test_qsofa.py:31,55,79` assert `(None, (0, "missing"))` per
-  criterion — designed and test-enforced.
+- `domain_sepsis._compute_qsofa_points` retorna a soma parcial coagida 0-2 como
+  um int puro; `_eval_screen_01` então reporta "qSOFA=0 < 2" como uma *string de
+  motivo*, não um status (`domain_sepsis.py:280-288`).
+- `sepsis_input_provider._build_sirs_qsofa_inputs` torna a coerção
+  **incondicional na fronteira do pathway**: enquanto toda outra chave de
+  entrada é deliberadamente *omitida quando desconhecida* ("never guessed,
+  never defaulted", `sepsis_input_provider.py:16-25`), as duas chaves
+  `sirs_count`/`qsofa_score` "are always present" mesmo sem nenhuma medição
+  subjacente — a própria docstring do módulo nomeia isso "inherited canonical
+  behavior, not invented here" (`sepsis_input_provider.py:21-25, 197-231,
+  360-361`). Um paciente sem nenhum sinal vital, portanto, entra no pathway
+  declarativo com `qsofa_score: 0`.
+- Evidência de intenção: `tests/test_qsofa.py:31,55,79` afirmam
+  `(None, (0, "missing"))` por critério — projetado e reforçado por teste.
 
-**HAZ-0005 verdict: confirmed for all three criteria and for the total; aggravated at the
-provider boundary, where the one component with a safe-omission contract carves out an
-explicit exception for exactly these two scores.** For a 2-of-3 instrument the clinical
-direction is one-way: missingness can only ever *suppress* a positive screen (false
-reassurance), never create one.
+**Veredito HAZ-0005: confirmado para os três critérios e para o total; agravado
+na fronteira do provider, onde o único componente com um contrato de omissão
+segura abre uma exceção explícita exatamente para esses dois escores.** Para um
+instrumento 2-de-3, a direção clínica é de mão única: a ausência de dados só
+pode *suprimir* uma triagem positiva (falsa tranquilidade), nunca criar uma.
 
-## 6. qSOFA POST-2021 STANDING — mandatory section
+## 6. POSICIONAMENTO PÓS-2021 do qSOFA — seção obrigatória
 
 SOURCE — Surviving Sepsis Campaign 2021 (Evans L, et al., *Crit Care Med*
 2021;49(11):e1063-e1143 / *Intensive Care Med* 2021;47:1181-1247,
-doi:10.1007/s00134-021-06506-y), screening recommendations:
+doi:10.1007/s00134-021-06506-y), recomendações de rastreio:
 
-> "We recommend **against** using qSOFA compared with SIRS, NEWS, or MEWS as a single
-> screening tool for sepsis or septic shock." — **strong recommendation,
-> moderate-quality evidence.**
+> "We recommend **against** using qSOFA compared with SIRS, NEWS, or MEWS as a
+> single screening tool for sepsis or septic shock." — **strong
+> recommendation, moderate-quality evidence.** (citação mantida em inglês,
+> texto literal da diretriz, incluindo a força de recomendação GRADE.)
 
-(Companion recommendation: performance-improvement programmes for sepsis should include
-sepsis screening and standard operating procedures; the guideline's rationale for the
-qSOFA recommendation is qSOFA's poor *sensitivity* as a screen — it is specific but misses
-too many septic patients at presentation.)
+(Recomendação complementar: programas de melhoria de performance para sepse
+devem incluir rastreio de sepse e procedimentos operacionais padrão; o
+racional da diretriz para a recomendação sobre o qSOFA é a *sensibilidade*
+pobre do qSOFA como rastreio — ele é específico, mas deixa passar pacientes
+sépticos demais na apresentação.)
 
-Application to the legacy artifacts, per artifact:
+Aplicação aos artefatos legados, por artefato:
 
-1. **`sepsis_qsofa_alert` (`_work/alerts/sepse.yaml:23-36`)** — `qsofa_score >= 2 AND
-   icu_setting == false`, severity high, guideline_source cites Singer 2016. This is
-   structurally a **single-tool qSOFA sepsis screen** — precisely the pattern SSC 2021
-   issues a strong recommendation against. The 2016 citation was defensible when written;
-   it is superseded. Retaining this alert in V2 would implement a practice the current
-   authoritative guideline strongly recommends against. **Verdict: REJECT.**
-2. **`ALERT-SEPSIS-SCREEN-01` / v4 `crit-sep-screen`** (`domain_sepsis.py:269-288`;
-   `_work/alerts/pathways/sepse.yaml:218-245`) — infection gate AND (qSOFA ≥2 **OR**
-   SIRS ≥2). This is *not* a single-tool qSOFA screen: the OR with SIRS restores
-   sensitivity, and the infection gate respects the instrument's condition of use. It is,
-   however, self-labeled "SSC-2021 RATIFIED" — an overstatement: SSC 2021 does not endorse
-   any specific composite, and its preferred screening instruments are NEWS/MEWS/SIRS;
-   a locally assembled qSOFA-OR-SIRS composite is an **unvalidated institutional
-   instrument** requiring its own evidence. The "RATIFIED (RAT-SEPSE-01/02)" provenance
-   traces to `docs/plan/_work/ratification-decisions.yaml:1-3`, whose stated authority is
-   "repository owner delegation (session directive …)" — not a named clinical authority
-   (see `sofa-review.md` D-19). **Verdict: VALIDATE (concept), REJECT (the ratification
-   claim).**
-3. **v4 `crit-sep-qsofa` graded criterion** (`pathways/sepse.yaml:85-105`) — a standalone
-   graded qSOFA band (0-2 normal / 2 urgent "Disfunção orgânica" / 3 critical "Alta
-   probabilidade de sepse") with **no infection gate and no setting gate** on the
-   criterion itself. As a driver of severity display it re-creates the single-tool
-   pattern with additionally misleading labels (Q-07). **Verdict: REJECT as an alert
-   driver; at most VALIDATE as a *displayed component* subordinate to a ratified
-   screening policy.**
+1. **`sepsis_qsofa_alert` (`_work/alerts/sepse.yaml:23-36`)** —
+   `qsofa_score >= 2 AND icu_setting == false`, severidade alta,
+   guideline_source cita Singer 2016. Isso é estruturalmente um **rastreio de
+   sepse por qSOFA de instrumento único** — exatamente o padrão contra o qual
+   a SSC 2021 emite uma recomendação forte. A citação de 2016 era defensável
+   quando escrita; está superada. Manter esse alerta na V2 implementaria uma
+   prática que a diretriz autoritativa atual recomenda fortemente contra.
+   **Veredito: REJECT.**
+2. **`ALERT-SEPSIS-SCREEN-01` / v4 `crit-sep-screen`**
+   (`domain_sepsis.py:269-288`; `_work/alerts/pathways/sepse.yaml:218-245`) —
+   gate de infecção AND (qSOFA ≥2 **OR** SIRS ≥2). Isso *não* é um rastreio de
+   qSOFA de instrumento único: o OR com SIRS restaura a sensibilidade, e o
+   gate de infecção respeita a condição de uso do instrumento. Está, contudo,
+   autorrotulado "SSC-2021 RATIFIED" — um exagero: a SSC 2021 não endossa
+   nenhum composto específico, e seus instrumentos de rastreio preferidos são
+   NEWS/MEWS/SIRS; um composto qSOFA-OU-SIRS montado localmente é um
+   **instrumento institucional não validado** que exige evidência própria. A
+   proveniência "RATIFIED (RAT-SEPSE-01/02)" remonta a
+   `docs/plan/_work/ratification-decisions.yaml:1-3`, cuja autoridade
+   declarada é "repository owner delegation (session directive …)" — não uma
+   autoridade clínica nomeada (ver `sofa-review.md` D-19). **Veredito:
+   VALIDATE (conceito), REJECT (a alegação de ratificação).**
+3. **Critério graduado v4 `crit-sep-qsofa`** (`pathways/sepse.yaml:85-105`) —
+   uma faixa graduada de qSOFA autônoma (0-2 normal / 2 urgente "Disfunção
+   orgânica" / 3 crítico "Alta probabilidade de sepse") **sem gate de
+   infecção e sem gate de ambiente** no próprio critério. Como direcionador de
+   exibição de severidade, ela recria o padrão de instrumento único com
+   rótulos adicionalmente enganosos (Q-07). **Veredito: REJECT como
+   direcionador de alerta; no máximo VALIDATE como *componente exibido*
+   subordinado a uma política de rastreio ratificada.**
 
-INFERENCE — implications for any V2 qSOFA-driven alert: (a) a qSOFA-only sepsis screening
-alert cannot be admitted without contradicting a strong recommendation of the governing
-2021 guideline — the burden of evidence to overrule it is on a named clinical authority,
-not on legacy precedent; (b) qSOFA may still legitimately appear as a *component* of a
-multi-signal screen or as contextual display, but that composite is a new instrument that
-must be separately evidenced (PROMPT:418 discipline); (c) the ICU-setting question is
-sharper than legacy acknowledged — IntensiCare's stated population is ICU, where Sepsis-3
-recommends full SOFA and where qSOFA's evidence base is weakest; VAL-0009 (approved care
-settings) gates this decision. Cross-reference: CAND-0004's infection-suspicion source gap
-("no identified source of any kind") remains unresolved and is decisive — see
-`sepse-pathway-clinical-review.md` §5.
+INFERENCE — implicações para qualquer alerta V2 orientado a qSOFA: (a) um
+alerta de rastreio de sepse baseado apenas em qSOFA não pode ser admitido sem
+contradizer uma recomendação forte da diretriz vigente de 2021 — o ônus da
+evidência para derrubá-la está sobre uma autoridade clínica nomeada, não sobre
+o precedente legado; (b) o qSOFA ainda pode legitimamente aparecer como
+*componente* de um rastreio multi-sinal ou como exibição contextual, mas esse
+composto é um instrumento novo que precisa ser evidenciado separadamente
+(disciplina PROMPT:418); (c) a questão do ambiente de UTI é mais aguda do que
+o legado reconheceu — a população declarada do IntensiCare é UTI, onde o
+Sepsis-3 recomenda o SOFA completo e onde a base de evidência do qSOFA é mais
+fraca; VAL-0009 (ambientes de cuidado aprovados) condiciona essa decisão.
+Referência cruzada: a lacuna de fonte de suspeita de infecção do CAND-0004
+("no identified source of any kind") permanece não resolvida e é decisiva —
+ver `sepse-pathway-clinical-review.md` §5.
 
-## 7. Clinical verdicts — PROPOSAL, per legacy-import-policy §4
+## 7. Vereditos clínicos — PROPOSAL, conforme legacy-import-policy §4
 
-| Artifact | Verdict | Rationale |
+| Artefato | Veredito | Racional |
 |---|---|---|
-| qSOFA cut-points and 2-of-3 threshold (`qsofa.py:25-28,52`) | **VALIDATE** | Numerically exact to Sepsis-3; usable in a V2 spec only as re-derived, cited reference values, and only inside a ratified use-context (infection gate + setting) that legacy lacks. GCS <15 vs ≤13 operationalization must be explicitly chosen and cited. |
-| Missing-input handling (§5) | **REJECT** | HAZ-0005 mechanism, test-enforced; superseded by V2 evaluation-status algebra (SAF-0001/0002). Carry §5 rows as absent-input probe vectors. |
-| `missing_criteria` metadata concept | **TRANSFORM** | Same disposition as `SOFAResult.missing_components` (`sofa-review.md` §8): the intent survives as a first-class evaluation status, not an advisory list. |
-| Standalone qSOFA alert (`_work/alerts/sepse.yaml:23-36`) | **REJECT** | Contradicts SSC 2021 strong recommendation (§6.1). |
-| qSOFA-OR-SIRS + infection-gate screen concept (SCREEN-01 / crit-sep-screen) | **VALIDATE** | Clinically plausible composite; unvalidated instrument; requires named clinical ownership, an evidenced infection-suspicion source, and its own performance evidence before admission. |
-| Pre-computed `qsofa` passthrough (`domain_sepsis.py:247-250`) | **REJECT** | Unvalidated override of the canonical scorer. |
-| "high risk for sepsis" / "Alta probabilidade de sepse" framing (Q-07) | **REJECT** | Misstates the instrument's validated claim; wording for any V2 surface is pt-BR clinician-validated per evaluation-status-semantics.md §6. |
+| Cortes do qSOFA e limiar 2-de-3 (`qsofa.py:25-28,52`) | **VALIDATE** | Numericamente exatos ao Sepsis-3; utilizáveis em uma especificação V2 apenas como valores de referência re-derivados e citados, e apenas dentro de um contexto de uso ratificado (gate de infecção + ambiente) que o legado não tem. A operacionalização GCS <15 vs ≤13 deve ser explicitamente escolhida e citada. |
+| Tratamento de entrada ausente (§5) | **REJECT** | Mecanismo do HAZ-0005, reforçado por teste; superado pela álgebra de status de avaliação da V2 (SAF-0001/0002). Carregar as linhas de §5 como vetores de sonda de entrada ausente. |
+| Conceito de metadados `missing_criteria` | **TRANSFORM** | Mesma disposição de `SOFAResult.missing_components` (`sofa-review.md` §8): a intenção sobrevive como status de avaliação de primeira classe, não como lista consultiva. |
+| Alerta qSOFA autônomo (`_work/alerts/sepse.yaml:23-36`) | **REJECT** | Contradiz a recomendação forte da SSC 2021 (§6.1). |
+| Conceito de rastreio qSOFA-OU-SIRS + gate de infecção (SCREEN-01 / crit-sep-screen) | **VALIDATE** | Composto clinicamente plausível; instrumento não validado; exige titularidade clínica nomeada, uma fonte de suspeita de infecção evidenciada, e evidência de performance própria antes da admissão. |
+| Passthrough de `qsofa` pré-computado (`domain_sepsis.py:247-250`) | **REJECT** | Override não validado do scorer canônico. |
+| Enquadramento "high risk for sepsis" / "Alta probabilidade de sepse" (Q-07) | **REJECT** | Deturpa a alegação validada do instrumento; a redação para qualquer superfície V2 é validada por clínico em pt-BR conforme evaluation-status-semantics.md §6. |
 
-## 8. Surviving elements proposed for V2 specs (PROPOSAL)
+## 8. Elementos sobreviventes propostos para especificações V2 (PROPOSAL)
 
-1. The three cut-points and 2-of-3 threshold, cited to Singer 2016, with the GCS
-   operationalization decision (any GCS <15 vs derivation's ≤13) recorded as an explicit
-   ratification item.
-2. The rule that qSOFA output is only interpretable under a documented
-   suspected-infection condition — as a *precondition in the type*, not a consumer
-   convention (CAND-0004's gate finding).
-3. SSC 2021's screening recommendation as a standing constraint on portfolio admission:
-   no single-tool qSOFA sepsis alert (§6).
-4. §5's rows as SAF-0002 absent-input probe vectors, including the provider-boundary
-   case (zero vitals persisted → `qsofa_score: 0` emitted) as a named regression test.
+1. Os três cortes e o limiar 2-de-3, citados a Singer 2016, com a decisão de
+   operacionalização do GCS (qualquer GCS <15 vs o ≤13 da derivação) registrada
+   como item de ratificação explícito.
+2. A regra de que a saída do qSOFA só é interpretável sob uma condição de
+   suspeita de infecção documentada — como *precondição no tipo*, não como
+   convenção de consumidor (achado de gate do CAND-0004).
+3. A recomendação de rastreio da SSC 2021 como restrição permanente à admissão
+   no portfólio: nenhum alerta de sepse por qSOFA de instrumento único (§6).
+4. As linhas de §5 como vetores de sonda de entrada ausente do SAF-0002,
+   incluindo o caso de fronteira do provider (zero sinais vitais persistidos →
+   `qsofa_score: 0` emitido) como teste de regressão nomeado.
 
-*Reviewed by rodaquino-OMNI (accountable reviewer of record, GDEC-0003). No PHI; all
-values are published thresholds or synthetic examples.*
+*Revisado por rodaquino-OMNI (revisor responsável de registro, GDEC-0003). Sem
+PHI; todos os valores são limiares publicados ou exemplos sintéticos.*

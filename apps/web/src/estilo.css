@@ -1,0 +1,247 @@
+/**
+ * apps/web/src/estilo.css
+ *
+ * Estilo mínimo desta fatia (SPR-G7-2). Cores dos tons semânticos
+ * (`.badge-tom--*`) foram escolhidas e conferidas manualmente para
+ * contraste WCAG 2.2 AA (texto normal ≥ 4.5:1) contra o próprio fundo do
+ * selo — validação automatizada (ex.: axe-core) não está disponível
+ * nesta fatia (@testing-library/react e jsdom não instalados; ver
+ * pendências no README). Nenhum estado depende só de cor: todo selo
+ * carrega também texto e um glifo (`../domain/linguagem.ts`
+ * `glifoTom`).
+ */
+
+:root {
+  color-scheme: light dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  background: #f7f8fa;
+  color: #14181f;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #10141a;
+    color: #e8ecf1;
+  }
+}
+
+a,
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 3px solid #0b3d66;
+  outline-offset: 2px;
+}
+
+.banner-contexto {
+  background: #1c2530;
+  color: #ffffff;
+  padding: 0.6rem 1rem;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.banner-contexto strong {
+  letter-spacing: 0.03em;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.badge-tom {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.badge-tom__glifo {
+  font-weight: 700;
+}
+
+.badge-tom--neutro {
+  background: #eef1f4;
+  color: #1c2530;
+}
+.badge-tom--positivo {
+  background: #e6f7ec;
+  color: #14532d;
+}
+.badge-tom--informativo {
+  background: #e7f1fb;
+  color: #0b3d66;
+}
+.badge-tom--atencao {
+  background: #fff4e0;
+  color: #6b4400;
+}
+.badge-tom--alerta {
+  background: #ffe6e6;
+  color: #7a1010;
+}
+.badge-tom--critico {
+  background: #7a1010;
+  color: #ffffff;
+}
+.badge-tom--inconclusivo {
+  background: #efe9fb;
+  color: #3a2a66;
+}
+
+main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 1rem 3rem;
+}
+
+.grade-leitos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1rem;
+  padding: 1rem 0;
+  list-style: none;
+  margin: 0;
+}
+
+.cartao-leito {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid #d7dce2;
+  border-radius: 0.6rem;
+  padding: 0.85rem 1rem;
+  background: #ffffff;
+  margin: 0;
+}
+@media (prefers-color-scheme: dark) {
+  .cartao-leito {
+    background: #1a212b;
+    border-color: #2b3542;
+    color: inherit;
+  }
+}
+.cartao-leito:hover {
+  border-color: #0b3d66;
+}
+.cartao-leito h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+.cartao-leito__linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.4rem;
+  gap: 0.5rem;
+}
+
+.controle-demonstracao {
+  border: 1px dashed #9aa5b1;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  margin: 1rem 0;
+  font-size: 0.85rem;
+}
+.controle-demonstracao summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.controle-demonstracao__opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.bloco-estado-tela {
+  padding: 2rem 1rem;
+  text-align: center;
+  border: 1px solid #d7dce2;
+  border-radius: 0.6rem;
+  margin: 1rem 0;
+}
+
+.contribuicao-parametro {
+  border: 1px solid #d7dce2;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.6rem;
+}
+@media (prefers-color-scheme: dark) {
+  .contribuicao-parametro,
+  .bloco-estado-tela,
+  .controle-demonstracao {
+    border-color: #2b3542;
+  }
+}
+.contribuicao-parametro__cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.contribuicao-parametro p {
+  margin: 0.35rem 0 0;
+}
+
+.insumos-declarados {
+  border-left: 4px solid #6b4400;
+  padding: 0.5rem 1rem;
+  background: #fff9ef;
+  margin: 1rem 0;
+}
+@media (prefers-color-scheme: dark) {
+  .insumos-declarados {
+    background: #241d0f;
+  }
+}
+
+.botao {
+  border: 1px solid #0b3d66;
+  background: #0b3d66;
+  color: #ffffff;
+  border-radius: 0.4rem;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+}
+.botao--secundario {
+  background: #ffffff;
+  color: #0b3d66;
+}
+@media (prefers-color-scheme: dark) {
+  .botao--secundario {
+    background: transparent;
+    color: #9cc4ea;
+  }
+}

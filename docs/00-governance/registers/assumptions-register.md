@@ -120,7 +120,7 @@ assumption in this register may be silently treated as fact — see
   461-499, 564-602, 729-737, 850-887, 889-940, 993-1029 — see
   `INTENSICARE_V2_ORCHESTRATOR_PROMPT.md:74-85`). This register assumes those
   citations accurately reflect the current content of the legacy file at
-  `/Users/familia/intensicare/INTENSICARE_TECHNICAL_ASSESSMENT.md`
+  `INTENSICARE_TECHNICAL_ASSESSMENT.md`
   (`EVID-0003`). **This has not been independently re-verified line-by-line by
   this steward.**
 - **Why it matters:** The legacy assessment is explicitly "a risk-informed
@@ -135,7 +135,7 @@ assumption in this register may be silently treated as fact — see
   the requirement/hazard/decision built on the citation)
 - **Provenance:**
   - `source_repo`: `intensicare` (legacy)
-  - `path_or_url`: `/Users/familia/intensicare/INTENSICARE_TECHNICAL_ASSESSMENT.md`
+  - `path_or_url`: `INTENSICARE_TECHNICAL_ASSESSMENT.md` (árvore de trabalho do repositório legado `Omni-Saude/intensicare`; **ausente do controle de versão** — sem URL; citar por SHA-256 do conteúdo)
   - `commit_sha_or_version`: not recorded — legacy repo has no pinned commit cited in the orchestrator prompt for this file
   - `section_or_lines`: multiple, see statement above
   - `date_collected`: 2026-08-14

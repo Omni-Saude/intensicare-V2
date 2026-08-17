@@ -3,6 +3,15 @@
 # Espelho de docs/14-devsecops-and-delivery/mapa-de-projeto-ate-producao.md
 # (mesmos IDs, mesma estrutura lógica). Status PROPOSAL: nada aqui decide,
 # aprova, fecha ou encerra gate, bloqueador, risco, hazard, ADR ou OS.
+#
+# EMENDA PÓS-CICLO 6 (2026-08-16): os campos `current_state` de G2, G4, G6 e
+# G7 foram revistos após o primeiro ciclo de construção. NENHUM gate foi
+# aprovado — "PARCIAL" significa que camadas foram percorridas (preparação,
+# decisão, implementação), jamais verificação ou aprovação humana. Fundamento
+# e reconciliação completa em `analise-pos-ciclo-6-mapa-vs-estado.md`.
+# O estado factual duro segue INALTERADO: 0 vias acionáveis; 47/47 linhas
+# inelegíveis; Observation da AMH não consumível; somente candidato a
+# integração; safety case M0; nenhum dado real acessado.
 # Esforço P/M/G é relativo — não é prazo, compromisso, SLA nem data.
 # Nenhum alias YAML; nenhuma data usada como cronograma.
 # tracked_ids lista os IDs principais de cada sprint; faixas extensas são
@@ -17,6 +26,8 @@ metadata:
   source_branch: cycle-1/clinical-content
   source_branch_note: "conteúdo originado em cycle-1/clinical-content; integrado à main em 75838b5 durante a produção do mapa"
   amendment_note: "emenda GDEC-0009 (agentificação G1/G2 — ata registers/agentificacao-g1-g2-2026-08-15.md, ac4b1bd): sprints SPR-G1-3/4/5/6 opcionais (variante observacional pré-piloto), SPR-G1-7 superseded como exigência, novos SPR-G1-9 (dossiê substituto, AGT-1) e SPR-G1-10 (baseline retrospectivo, AGT-2), G2 100% agentes sob 7 condições (AGT-3/AGT-4); versão verbatim pré-emenda preservada em 9382c8b"
+  amendment_note_gdec_0013: "MODO CONSTRUÇÃO (GDEC-0013, 2026-08-16, decisão do titular; mapa .md §2.2 item 9): para todos os sprints de engenharia_v2, definition_of_ready lê-se como 'dependências satisfeitas' e definition_of_done como 'objetivo entregue + CI verde'; exigências de painel AGT-4 por artefato, pacotes de tarefa, escopos disjuntos e handoffs em formato fixo deixam de ser vinculantes; conteúdo clínico em construção = revisão única (autor ≠ revisor); painel N-de-M e 7 condições da AGT-3 permanecem SOMENTE em SPR-G2-4/MG-G2 e G8"
+  amendment_note_gdec_0014: "GDEC-0014 (2026-08-16, decisão do titular; mapa .md §2.2 item 10): as 7 condições da AGT-3 e o painel N-de-M deixam de ser vinculantes em QUALQUER sprint, inclusive SPR-G2-4/MG-G2 e G8; promoção acionável sob autorização permanente do titular, a seu critério; vinculantes apenas CI de conteúdo proibido/PHI, PR para main e dados sintéticos como default; condicionantes por operação do parecer OS-16 persistem como obrigações jurídicas externas"
   companion_document: docs/14-devsecops-and-delivery/mapa-de-projeto-ate-producao.md
   estimation_scale:
     P: "escopo estreito, poucas dependências, baixa incerteza"
@@ -163,6 +174,21 @@ phases:
             effort: M
             estimation_assumptions:
               - "execução em tranches, não nova decisão"
+          - id: SPR-G0-4
+            swimlane: decisoes_titular
+            objective: "NOVO (parecer OS-16): PDF original assinado do parecer arquivado em lgpd-os16/ e referenciado; EVID-* da recepção alocado pelo steward"
+            deliverables:
+              - "original assinado arquivado + referência no doc do parecer; entrada EVID"
+            definition_of_ready:
+              - "titular fornece o PDF"
+            definition_of_done:
+              - "original arquivado; EVID alocado"
+            dependencies: [SPR-G1-2]
+            unlocks: []
+            tracked_ids: [GDEC-0011, OS-16]
+            effort: P
+            estimation_assumptions:
+              - "pendência de forma, não de mérito"
   - id: G1
     title: "Problema e uso pretendido (AGENTIFICADO — GDEC-0009/AGT-1/AGT-2)"
     current_state: PARCIAL
@@ -350,7 +376,7 @@ phases:
               - "AGT-1 trocou a evidência do gate, não o aprovador humano"
   - id: G2
     title: "Portfólio de vias clínicas (AGENTIFICADO — GDEC-0009/AGT-3/AGT-4)"
-    current_state: BLOQUEADO
+    current_state: PARCIAL
     evidence:
       - "docs/00-governance/registers/agentificacao-g1-g2-2026-08-15.md (AGT-3 contra recomendação, divergência registrada; AGT-4 painel)"
       - "docs/00-governance/registers/risk-register.md RISK-0012 (S5)"
@@ -556,6 +582,21 @@ phases:
             effort: P
             estimation_assumptions:
               - "o titular, CEO de ambas, pode designar sem terceiros"
+          - id: SPR-G3-13
+            swimlane: execucao_amh
+            objective: "NOVO (atos AMH do parecer OS-16): segregação explícita do ie_perm_sms_email no lago (Q-22); anexação do parecer ao ADR-043; emenda Q-06 ao ADR-043 (nomear art. 11, II, f e finalidade exclusiva). SPR-G3-12 permanece deliberadamente não cunhado"
+            deliverables:
+              - "segregação verificável; parecer anexado; emenda registrada no ADR-043 (lado AMH)"
+            definition_of_ready:
+              - "parecer OS-16 completo (SPR-G1-2)"
+            definition_of_done:
+              - "três atos confirmados pelo dono AMH"
+            dependencies: [SPR-G1-2]
+            unlocks: [SPR-G3-3]
+            tracked_ids: [GDEC-0011, GDEC-0012, OS-16]
+            effort: P
+            estimation_assumptions:
+              - "atos pequenos do lado AMH"
       - id: EPC-G3-2
         title: "Contrato v1 e conformidade"
         tracked_ids: [BLK-0015, ASM-0002, ASM-0006]
@@ -627,7 +668,7 @@ phases:
               - "espera indeterminada; não é compromisso"
   - id: G4
     title: "Coerência UX/domínio/API"
-    current_state: "NÃO INICIADO"
+    current_state: PARCIAL
     evidence:
       - "nenhum modelo de estados §11, tabela de contrato UI/backend ou teste de acessibilidade nas fontes inventariadas"
       - "baseline de decisão PARCIAL: 7 ADRs aceitos em GDEC-0008 e propagados ao índice em 75838b5 (aceito ≠ implementado); ADR-0002/0006 proposed; ADR-0012..0024 not-started"
@@ -708,6 +749,21 @@ phases:
             effort: G
             estimation_assumptions:
               - "nenhum connector implementado antes do contrato"
+          - id: SPR-G4-7
+            swimlane: engenharia_v2
+            objective: "NOVO (parecer, Q-15): evidência consolidada e citável do caráter consultivo dos escores/alertas (decisão clínica permanece com profissional) — requisito vinculante + trilha de revisão humana, ligados a §11, HAZ-0046 e ADR-0004 §6.2"
+            deliverables:
+              - "artefato de evidência citável no RIPD (SPR-G6-7) e no G6"
+            definition_of_ready:
+              - "parecer OS-16 completo (SPR-G1-2)"
+            definition_of_done:
+              - "aprovado por painel AGT-4; citável"
+            dependencies: [SPR-G1-2]
+            unlocks: [SPR-G6-7, SPR-G6-4]
+            tracked_ids: [GDEC-0011, HAZ-0046, GDEC-0009]
+            effort: P
+            estimation_assumptions:
+              - "consolida material já existente; não cria UX nova"
           - id: SPR-G4-5
             swimlane: dependencias_externas
             objective: "Validação com usuários (cenários simulados de tempo crítico) e usuários de tecnologias assistivas sobre os artefatos §11"
@@ -787,7 +843,7 @@ phases:
               - "verificador externo disponível"
   - id: G6
     title: "Design de segurança e segurança clínica"
-    current_state: "NÃO INICIADO"
+    current_state: PARCIAL
     evidence:
       - "docs/05-clinical-safety/hazard-log.md (47/47 OPEN); safety-requirements.md (42 SAF PROPOSAL)"
       - "safety-case-skeleton.md (M0; threat model 27 P0 + 39 P1, zero fechados)"
@@ -854,6 +910,36 @@ phases:
             effort: G
             estimation_assumptions:
               - "verificador terceiro contratável (DEC-G0-02 exige terceiro no G6)"
+          - id: SPR-G6-6
+            swimlane: dependencias_externas
+            objective: "NOVO (parecer, itens II/Q-02/Q-08): instrumento escrito do art. 39 entre controladores (PJs clínicas, operadora, AMH) com alocação de papéis por operação e espelhamento da V2 como operadora do laço — redação jurídica + assinaturas"
+            deliverables:
+              - "instrumento assinado, arquivado e citável"
+            definition_of_ready:
+              - "parecer OS-16 completo (SPR-G1-2); minuta jurídica externa"
+            definition_of_done:
+              - "assinado pelos controladores; condição do 1º apply do índice satisfeita"
+            dependencies: [SPR-G1-2]
+            unlocks: [SPR-G6-4, SPR-G3-3]
+            tracked_ids: [GDEC-0011, GDEC-0012, BLK-0004, RISK-0011]
+            effort: M
+            estimation_assumptions:
+              - "redação é ato jurídico externo; sem prazo atribuível"
+          - id: SPR-G6-7
+            swimlane: engenharia_v2
+            objective: "NOVO (parecer, Q-09): RIPD do índice cross-PJ — descrição, finalidade, necessidade/proporcionalidade, riscos aos titulares, salvaguardas e vedações do §5º verificáveis (controle negativo testável) — como PROPOSAL para aprovação privacy/legal"
+            deliverables:
+              - "RIPD em docs/11-security-privacy-compliance/"
+            definition_of_ready:
+              - "parecer completo (SPR-G1-2); evidência consultiva citável (SPR-G4-7)"
+            definition_of_done:
+              - "aprovado por privacy/legal; anterior ao 1º apply do índice"
+            dependencies: [SPR-G1-2, SPR-G4-7]
+            unlocks: [SPR-G6-4, SPR-G3-3]
+            tracked_ids: [GDEC-0011, BLK-0004, RISK-0011, HAZ-0045]
+            effort: M
+            estimation_assumptions:
+              - "conteúdo mínimo ditado pelo parecer (Q-09)"
           - id: SPR-G6-4
             swimlane: decisoes_titular
             objective: "MG-G6: risco residual aceito por humanos autorizados; P0/P1 dispostos; aprovação privacy/legal dos fluxos"
@@ -887,7 +973,7 @@ phases:
               - "maturidade avança por evidência, nunca por redação"
   - id: G7
     title: "Primeira fatia vertical segura"
-    current_state: "NÃO INICIADO"
+    current_state: PARCIAL
     evidence:
       - "cycle-2-delivery-orchestrator-report.md §9 (nenhum código de produção; stack sem ADR)"
       - "cycle-2-delivery-orchestrator-report.md §8 (fatia G7 com dados sintéticos após aceitação dos ADRs)"

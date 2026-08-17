@@ -68,9 +68,9 @@ Companheiro de [`matrix.yaml`](./matrix.yaml) e
 | **L-1** Exclusão estrutural não-laboratorial | contrato (camada 1) | **C-1 aberta** — a única das quatro contradições de camada 1 que as resoluções AQ-1..AQ-6 não tocaram | titular decide; AMH executa |
 | **L-2** Laboratório bloqueado com fonte vazia | povoamento (camada 3) | **OS-20** | AMH |
 | **L-3** Caminho de desbloqueio não conforme (C-4) | conformidade (camadas 1+3) | **OS-20** encaminha; a **condição de aceitação** não existe | AMH executa; V2 escreve a condição de aceitação |
-| **L-4** Sem `MedicationAdministration` | contrato (camada 1) | **NENHUMA — sem ordem, sem pergunta aberta, sem item de caminho crítico** | titular precisa nomear |
+| **L-4** Sem `MedicationAdministration` | contrato (camada 1) | **OS-23** (aberta por GDEC-0008 item 6; carrega BLK-0012) | AMH executa; dono/resposta pendentes |
 | **L-5** Sem fonte de dispositivo/ventilador | contrato (camada 1) | parcial, dependente do escopo de C-1 se a via direta for escolhida | titular decide o escopo |
-| **L-6** Sem fonte de ordem clínica (escala de SpO2, limitação terapêutica) | contrato (camada 1) | **NENHUMA** | titular precisa nomear |
+| **L-6** Sem fonte de ordem clínica (escala de SpO2, limitação terapêutica) | contrato (camada 1) | **OS-24** (aberta por GDEC-0008 item 6; carrega BLK-0016) | AMH executa; dono/resposta pendentes |
 | **L-7** Sem pin de terminologia | contrato (camada 1) | **ADR-0029** define o processo; o pin em si não foi feito | V2 (arquiteto de terminologia) + AMH |
 | **L-8** Sem semântica de tempo | contrato (camada 1) | não coberta por nenhuma OS; item de reconhecimento §7.1 incompleto | AMH declara; V2 exige no contrato |
 | **L-9** Sem semântica de correção/duplicata/cancelamento | contrato (camada 1) | **ADR-0005** `proposed`; nenhuma OS cobre o lado AMH | AMH declara; V2 ratifica ADR-0005 |
@@ -199,6 +199,12 @@ de decisão que C-1 — sem isso não há a quem atribuir. Depois, AMH.
 classe. E dentro desta matriz, ela é a única lacuna que sozinha impede **duas** regras
 (SOFA-CV e GCS) mesmo que tudo o mais fosse entregue.
 
+> **Atualização (2026-08-15 — GDEC-0008 item 6):** esta lacuna **agora tem ordem de
+> serviço**: OS-23 (profile `MedicationAdministration` + fonte povoada; BLK-0012),
+> comissionada ao lado AMH, Status: ABERTA (`../ordens-de-servico-amh-2026-08-15.md`
+> §11). O bloqueador permanece **OPEN** até execução e aceitação da evidência de camada
+> 2/3 pela AMH; nada nesta atualização fecha a lacuna.
+
 ---
 
 ### L-5 — Não existe fonte de dispositivo/ventilador
@@ -246,6 +252,12 @@ dono nomeado.
 publicada. Mas um sistema que nunca recebe uma ordem de escala 2 pontua pacientes
 hipercápnicos na escala errada, silenciosamente. Isso é consequência de L-6, não defeito da
 regra.
+
+> **Atualização (2026-08-15 — GDEC-0008 item 6):** esta lacuna **agora tem ordem de
+> serviço**: OS-24 (contrato de ordem clínica com semântica de revogação; BLK-0016),
+> comissionada ao lado AMH, Status: ABERTA (`../ordens-de-servico-amh-2026-08-15.md`
+> §11). O bloqueador permanece **OPEN** até execução e aceitação da evidência de camada
+> 2/3 pela AMH; nada nesta atualização fecha a lacuna.
 
 ---
 

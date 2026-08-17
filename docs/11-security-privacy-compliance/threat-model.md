@@ -73,7 +73,7 @@ superseded_by: null
 
 | Token | Resolves to |
 |---|---|
-| `PROMPT:n-m` | `/Users/familia/code/intensicare-V2/INTENSICARE_V2_ORCHESTRATOR_PROMPT.md` lines n–m |
+| `PROMPT:n-m` | `https://github.com/Omni-Saude/intensicare-V2/blob/main/INTENSICARE_V2_ORCHESTRATOR_PROMPT.md` lines n–m |
 | `HAZLOG` | `docs/05-clinical-safety/hazard-log.md` (read 2026-08-14, working tree at cb35521) |
 | `SAFREQ` | `docs/05-clinical-safety/safety-requirements.md` |
 | `DOSSIER` | `docs/08-interoperability/amh-data/four-layer-dossier.md` |

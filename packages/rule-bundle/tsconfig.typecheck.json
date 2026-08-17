@@ -1,0 +1,15 @@
+{
+  // Configuração SÓ de verificação de tipos. Existe separada da de build
+  // porque os testes deste pacote contêm asserções `@ts-expect-error` que
+  // provam a barreira de tipo "autor != aprovador" (ADR-0007 A7-1): se
+  // essas linhas não fossem verificadas por `tsc`, a barreira estaria
+  // documentada mas não testada — e um dia deixaria de existir sem que
+  // nada falhasse.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "exclude": ["dist"]
+}

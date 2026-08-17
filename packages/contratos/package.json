@@ -1,0 +1,26 @@
+{
+  "name": "@intensicare/contratos",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Contratos de API do IntensiCare V2 (OpenAPI 3.1, contract-first).",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "openapi.yaml"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

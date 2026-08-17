@@ -14,7 +14,7 @@ statement: >
   rodaquino-OMNI).
 provenance:
   source_repo: intensicare-V2 (consolidador) + intensicare (legado V1, READ-ONLY, referenciado)
-  path_or_url: docs/05-clinical-safety/legacy-review/**, docs/05-clinical-safety/rule-releases/{sofa,news2,gcs}/migration-notes.md, docs/05-clinical-safety/pathway-portfolio/clinical-kpi-review.md, docs/06-architecture/adrs/ADR-0007,0008,0025,0026,0027,0028,0029, docs/archive/legacy-provenance/legacy-pin-cycle-1.md, /Users/familia/intensicare/LICENSE, /Users/familia/intensicare/pyproject.toml
+  path_or_url: docs/05-clinical-safety/legacy-review/**, docs/05-clinical-safety/rule-releases/{sofa,news2,gcs}/migration-notes.md, docs/05-clinical-safety/pathway-portfolio/clinical-kpi-review.md, docs/06-architecture/adrs/ADR-0007,0008,0025,0026,0027,0028,0029, docs/archive/legacy-provenance/legacy-pin-cycle-1.md, https://github.com/Omni-Saude/intensicare/blob/1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79/LICENSE, https://github.com/Omni-Saude/intensicare/blob/1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79/pyproject.toml
   commit_sha_or_version: legado 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (pin ciclo 1); V2 sem commit ainda (working tree, branch cycle-1/clinical-content)
   section_or_lines: ver citações por linha dentro de cada seção
   date_collected: 2026-08-15
@@ -713,7 +713,7 @@ acima.
 
 ## 5. Baseline de status de licença (OBSERVED)
 
-**OBSERVED** (`/Users/familia/intensicare/LICENSE`, lido integralmente
+**OBSERVED** (`https://github.com/Omni-Saude/intensicare/blob/1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79/LICENSE`, lido integralmente
 2026-08-15): o arquivo é o texto integral, genérico, da **GNU Affero General
 Public License, versão 3, 19 de novembro de 2007** (copyleft de rede). O
 cabeçalho de copyright é o boilerplate padrão da FSF ("Copyright (C) 2007 Free
@@ -723,7 +723,7 @@ Terms to Your New Programs" contém o placeholder padrão não preenchido
 `Copyright (C) <year> <name of author>` — **o arquivo LICENSE, por si só, não
 nomeia um titular de direitos autorais para o código deste repositório**.
 
-**OBSERVED** (`/Users/familia/intensicare/pyproject.toml` linha 10): o campo de
+**OBSERVED** (`https://github.com/Omni-Saude/intensicare/blob/1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79/pyproject.toml` linha 10): o campo de
 metadado do pacote declara `license = {text = "Proprietary"}` — **em contradição
 direta** com o arquivo LICENSE (AGPLv3) na raiz do mesmo repositório.
 

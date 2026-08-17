@@ -84,7 +84,14 @@ any vector may progress toward `RATIFIED`.
 - **Reason-taxonomy note:** the CRV standard routes source-`quarantined` under
   `invalid_data`; `specification.md` §5.2 routes quarantined inputs to `not_evaluated`
   (`quarantined_input`). CRV-NEWS2-0118 records this tension; resolution belongs to the
-  status-semantics ratification, not to this file.
+  status-semantics ratification, not to this file. The same ratification item also
+  covers two implementation-introduced reasons OUTSIDE the spec §5.2 vocabulary, used
+  by the RULE-NEWS2 0.2.0 implementation (`packages/kernel-clinico`):
+  `missing_clinical_time:<param>` (input present but with no usable clinical time —
+  DOM-0009/ADR-0008 N5) and `unspecified_condition` (defensive catch-all for
+  unclassifiable evaluation-time failures); vectors and verdicts in this file are
+  unchanged by this note (registrado na integração SPR-G7-2, correção 2 da revisão
+  única).
 
 ## 2. Vector catalog
 

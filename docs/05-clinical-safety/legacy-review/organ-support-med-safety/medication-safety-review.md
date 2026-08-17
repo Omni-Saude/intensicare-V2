@@ -1,26 +1,28 @@
 ---
 id: LEGREV-OSMS-MEDSAFE
-title: Legacy review — medication safety (antimicrobial stewardship, prophylaxis, prescription, efficiency/transfusion, drug safety/interactions, ADR-0026/0027)
+title: Revisão legada — segurança medicamentosa (stewardship antimicrobiano, profilaxia, prescrição, eficiência/transfusão, segurança/interação de fármacos, ADR-0026/0027)
 label: PROPOSAL
 status: PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)
 statement: >
-  Forensic review of the legacy V1 medication-safety clinical content:
+  Revisão forense do conteúdo clínico de segurança medicamentosa legado da V1:
   domain_antimicrobiano.py, domain_profilaxia.py, domain_prescricao.py,
   domain_eficiencia.py, drug_safety.py, drug_interactions.py,
-  anvisa_drug_database.py, the antimicrobial/medication/prescricao/
-  prophylaxis models+schemas+APIs, pathways antimicrobiano.yaml and
-  profilaxia.yaml, the pharmaco-interaction catalog+spec, and ADRs 0026 and
-  0027. All verdicts are PROPOSALS; nothing is imported.
+  anvisa_drug_database.py, os models+schemas+APIs de antimicrobial/medication/
+  prescricao/prophylaxis, os pathways antimicrobiano.yaml e profilaxia.yaml,
+  o catálogo+spec de pharmaco-interaction, e os ADRs 0026 e 0027. Todos os
+  vereditos são PROPOSALS; nada é importado.
 provenance:
-  source_repo: intensicare (legacy V1, READ-ONLY)
-  path_or_url: /Users/familia/intensicare
-  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD at pin; per-file SHA-256 below)
-  section_or_lines: cited per finding
+  source_repo: intensicare (legado V1, READ-ONLY)
+  path_or_url: https://github.com/Omni-Saude/intensicare
+  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD no pin; SHA-256 por arquivo abaixo)
+  section_or_lines: citado por achado
   date_collected: 2026-08-15
   last_updated: 2026-08-15
-  collector: legacy organ-support and medication-safety forensics reviewer (cycle 1, Task 1, wave 1b)
-  transformation: read from source; summarized and analyzed; no content imported
-  confidence: high (mechanical citations) / medium (clinical assessments)
+  collector: revisor forense de suporte-de-órgão e segurança-medicamentosa legados (ciclo 1, Tarefa 1, wave 1b)
+  transformation: >
+    traduzido EN→pt-BR, tranche 4, GDEC-0008 item 8 (lido da fonte; resumido e
+    analisado; nenhum conteúdo importado)
+  confidence: alta (citações mecânicas) / média (avaliações clínicas)
   owner: UNASSIGNED — VALIDATION REQUIRED
   validation_status: VALIDATION REQUIRED
 links:
@@ -31,19 +33,21 @@ supersedes: null
 superseded_by: null
 ---
 
-# Legacy review — medication safety
+> Traduzido EN→pt-BR em 2026-08-16 (GDEC-0008 item 8, tranche 4); original EN preservado no histórico git.
+
+# Revisão legada — segurança medicamentosa
 
 > **PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).**
-> Pharmacology comparisons rely on trained knowledge of standard references
-> (IDSA/SHEA ASP 2016; ASHP stress-ulcer prophylaxis guidance; TRICC/AABB
-> restrictive transfusion; NICE-SUGAR glycemic targets; product labeling for
-> renal dosing) — none re-fetched; every such statement is VALIDATION
-> REQUIRED. A clinical pharmacist must be a named co-reviewer for this
-> record's dispositions.
+> As comparações farmacológicas se apoiam em conhecimento treinado de
+> referências padrão (IDSA/SHEA ASP 2016; orientação ASHP de profilaxia de
+> úlcera de estresse; transfusão restritiva TRICC/AABB; alvos glicêmicos
+> NICE-SUGAR; bula de produto para dosagem renal) — nenhuma rebuscada; toda
+> declaração desse tipo é VALIDATION REQUIRED. Um farmacêutico clínico deve
+> ser co-revisor nomeado para as disposições deste registro.
 
-## 0. Artifacts and integrity (OBSERVED 2026-08-15; all hashes match inventory)
+## 0. Artefatos e integridade (OBSERVED 2026-08-15; todos os hashes correspondem ao inventário)
 
-| Artifact | SHA-256 |
+| Artefato | SHA-256 |
 |---|---|
 | `src/intensicare/services/domain_antimicrobiano.py` | `d6d0e02f42a8a0bd412adffcaa3f4d13fb6688f3c1092ef114c445a5cab1e858` |
 | `src/intensicare/services/domain_profilaxia.py` | `de349e49f84dedf68a08cdaef4ec7fc488ad9e69184149dc7e24bb3816eaf921` |
@@ -70,20 +74,20 @@ superseded_by: null
 | `docs/adr/0026-prescricao-drug-interaction-safety.md` | `3d95b144f2a199594bf2cb7116ce7e08a4952a81a70f953e30159c16e45957e0` (rt) |
 | `docs/adr/0027-prescricao-lifecycle-state-machine.md` | `7385d8c3b5b1a5b76f77401268218cd8eaa8083ec0c5d3d48c9c304ebd55a00e` (rt) |
 
-## 1. Antimicrobial stewardship (`domain_antimicrobiano.py`)
+## 1. Stewardship antimicrobiano (`domain_antimicrobiano.py`)
 
-12 criteria (crit-001..012: duration >7 d; over-broad spectrum; dose out of
-range for weight/renal function; CVC >7 d; candidemia without de-escalation
-≤72 h; cultures pending >72 h; CAP without severity criteria; double
-gram-negative coverage; vancomycin >72 h without MRSA; surgical prophylaxis
->24 h; vancomycin/aminoglycoside >72 h without levels; CVC without dressing
-documentation). Criteria are clinically plausible IDSA/SHEA-style
-stewardship items (uncited in code).
+12 critérios (crit-001..012: duração >7d; espectro excessivamente amplo; dose
+fora da faixa para peso/função renal; CVC >7d; candidemia sem
+desescalonamento ≤72h; culturas pendentes >72h; PAC sem critérios de
+gravidade; cobertura dupla para gram-negativo; vancomicina >72h sem MRSA;
+profilaxia cirúrgica >24h; vancomicina/aminoglicosídeo >72h sem níveis; CVC
+sem documentação de curativo). Os critérios são itens de stewardship
+clinicamente plausíveis, estilo IDSA/SHEA (não citados no código).
 
-**Defects (verbatim-anchored):**
+**Defeitos (ancorados verbatim):**
 
-1. **Broken predicate — every criterion marks met when inputs supplied.**
-   `domain_antimicrobiano.py:212-215`:
+1. **Predicado quebrado — todo critério marca cumprido quando entradas são
+   fornecidas.** `domain_antimicrobiano.py:212-215`:
 
    ```python
    is_met = crit_def["id"] in criteria_met_set or (
@@ -92,144 +96,157 @@ stewardship items (uncited in code).
    )
    ```
 
-   `evaluate_criterion` always returns a result object (never None), so any
-   inputs-driven assessment sets all 12 criteria met → score 12 → VERMELHO
-   for every patient. The rule engine itself is a placeholder that always
-   returns `met=False` (lines 155-186) — the automated path is both wired
-   wrong and empty.
-2. **Count-as-severity with a reassuring floor**: score ≤3 → NEUTRO with
-   recommendation "Prescrição antimicrobiana dentro dos parâmetros
-   adequados" (230-263). A patient whose single non-conformity is
-   crit-005 (candidemia without de-escalation) is rendered NEUTRO/adequate —
-   severity by count, not by criterion criticality (HAZ-0005-adjacent false
-   reassurance).
-3. Legacy color vocabulary NEUTRO/AMARELO/VERMELHO, not the canonical
-   severity model.
+   `evaluate_criterion` sempre retorna um objeto de resultado (nunca None),
+   de modo que qualquer avaliação dirigida-por-entrada marca todos os 12
+   critérios como cumpridos → escore 12 → VERMELHO para todo paciente. O
+   próprio motor de regra é um placeholder que sempre retorna `met=False`
+   (linhas 155-186) — o caminho automatizado está tanto conectado errado
+   quanto vazio.
+2. **Contagem-como-gravidade com um piso tranquilizador**: escore ≤3 →
+   NEUTRO com recomendação "Prescrição antimicrobiana dentro dos parâmetros
+   adequados" (230-263). Um paciente cuja única não-conformidade é crit-005
+   (candidemia sem desescalonamento) é renderizado NEUTRO/adequado —
+   gravidade por contagem, não por criticidade do critério (falsa
+   tranquilização adjacente ao HAZ-0005).
+3. Vocabulário de cor legado NEUTRO/AMARELO/VERMELHO, não o modelo de
+   gravidade canônico.
 
-## 2. Prophylaxis bundles (`domain_profilaxia.py`)
+## 2. Bundles de profilaxia (`domain_profilaxia.py`)
 
-Five checklists (stress ulcer/LAMGD, VTE, glycemic control, early
-mobilization, invasive devices); score = %criteria met of applicable;
-no automated triggers. Values embedded: glycemic target 140-180 mg/dL
-(NICE-SUGAR-consistent), monitoring q4-6h, cuff 20-30 cmH2O, HOB 30-45°,
-CVC dressing 7 d, hydrocortisone >300 mg/d as steroid risk factor
-(literature commonly uses >250 mg hydrocortisone-equivalent —
-VALIDATE), coagulopathy INR >1.5 or platelets <50k, MV >48 h (classic
-Cook-era SUP risk factors).
+Cinco checklists (úlcera de estresse/LAMGD, TEV, controle glicêmico,
+mobilização precoce, dispositivos invasivos); escore = %critérios cumpridos
+dos aplicáveis; sem gatilhos automatizados. Valores embutidos: alvo
+glicêmico 140-180 mg/dL (consistente com NICE-SUGAR), monitoramento a cada
+4-6h, manguito 20-30 cmH2O, cabeceira 30-45°, curativo de CVC 7d,
+hidrocortisona >300 mg/d como fator de risco de esteroide (a literatura
+comumente usa >250 mg equivalente-hidrocortisona — VALIDATE), coagulopatia
+INR >1,5 ou plaquetas <50 mil, VM >48h (fatores de risco clássicos da era
+Cook para profilaxia de úlcera de estresse).
 
-**Semantic incoherence**: the LAMGD bundle's four "criteria" are risk-factor
-*indications* (MV >48 h, coagulopathy, shock, steroids) while TEV/glycemia
-bundles list *adherence* items — marking all four LAMGD indications met
-yields "complete (100%)" as if compliant, and **no criterion anywhere checks
-that stress-ulcer prophylaxis is actually prescribed**. The bundle cannot
-detect its own headline failure (indicated-but-absent prophylaxis; that
-signal lives only in RULE-PROFILAXIA-005's legacy predicate and nowhere in
-this service).
+**Incoerência semântica**: os quatro "critérios" do bundle LAMGD são
+*indicações* de fator de risco (VM >48h, coagulopatia, choque, esteroides)
+enquanto os bundles de TEV/glicemia listam itens de *adesão* — marcar as
+quatro indicações do LAMGD como cumpridas produz "completo (100%)" como se
+fosse conforme, e **nenhum critério em lugar algum checa se a profilaxia de
+úlcera de estresse está de fato prescrita**. O bundle não consegue detectar
+sua própria falha principal (profilaxia indicada-mas-ausente; esse sinal
+vive apenas no predicado legado da RULE-PROFILAXIA-005 e em lugar algum
+deste serviço).
 
-## 3. Prescription domain (`domain_prescricao.py`, plus ADR-0026/0027)
+## 3. Domínio de prescrição (`domain_prescricao.py`, mais ADR-0026/0027)
 
-- State machine (160-380): draft→active→{completed, discontinued,
-  suspended}; suspended→{active, discontinued}; terminal states locked;
-  reasons required on discontinue/suspend; end_time auto-set;
-  optimistic-locking `version` on the model — consistent with ADR-0027 and
-  a genuine improvement over the legacy dose-level flags (HAZ-0023-aware).
-- `_parse_dosage` (75-90): unparseable dosage strings → `(0.0, "mg")`.
-  A Brazilian comma-decimal dosage ("2,5mg") fails the regex and the float
-  fallback and is **silently zeroed** — the SYS-09 comma-decimal defect
-  family recurring on medication doses. New prescriptions are protected by
-  R03 (dose must be positive), but *stored* records surface through
-  `_model_to_record` with dose 0.0 in interaction/display paths.
-- Validators: V03 "allergy check" (1202-1224) **never consults the
-  patient's allergy list** — it emits a generic "verify allergy history"
-  warning whenever the drug belongs to any group and always passes. The
-  advertised drug-allergy interaction type is not implemented against
-  patient data. V04 blocks only `contraindicated`; `severe` interactions
-  (e.g., fentanyl+midazolam apnea risk) warn only — a deliberate policy that
-  must be re-decided by V2 governance, not inherited.
-- R15 hard cap 15 active prescriptions; R16 polypharmacy warn ≥8 —
-  operational values, UNCITED.
+- Máquina de estados (160-380): rascunho→ativa→{concluída, descontinuada,
+  suspensa}; suspensa→{ativa, descontinuada}; estados terminais travados;
+  motivos exigidos ao descontinuar/suspender; end_time auto-definido;
+  `version` de bloqueio otimista (optimistic-locking) no model —
+  consistente com o ADR-0027 e uma melhoria genuína sobre as flags legadas
+  em nível de dose (consciente do HAZ-0023).
+- `_parse_dosage` (75-90): strings de dosagem não-parseáveis →
+  `(0.0, "mg")`. Uma dosagem brasileira com vírgula decimal ("2,5mg") falha
+  na regex e no fallback de float e é **silenciosamente zerada** — a
+  família de defeito de vírgula-decimal do SYS-09 recorrendo em doses de
+  medicação. Novas prescrições são protegidas pela R03 (dose deve ser
+  positiva), mas registros *armazenados* aparecem através de
+  `_model_to_record` com dose 0.0 em caminhos de interação/exibição.
+- Validadores: V03 "checagem de alergia" (1202-1224) **nunca consulta a
+  lista de alergias do paciente** — emite um aviso genérico "verificar
+  histórico de alergia" sempre que o fármaco pertence a qualquer grupo e
+  sempre passa. O tipo de interação fármaco-alergia anunciado não está
+  implementado contra dados do paciente. V04 bloqueia apenas
+  `contraindicated`; interações `severe` (p. ex., risco de apneia por
+  fentanil+midazolam) apenas avisam — uma política deliberada que deve ser
+  re-decidida pela governança da V2, não herdada.
+- R15 teto rígido de 15 prescrições ativas; R16 aviso de polifarmácia ≥8 —
+  valores operacionais, NÃO CITADOS.
 
-## 4. Dose safety (`drug_safety.py`)
+## 4. Segurança de dose (`drug_safety.py`)
 
-21-drug table (min/max single dose, max daily, infusion caps, weight-based
-doses, renal multipliers for 7 drugs, elderly −50% advisories for
-midazolam/morphine, pediatric fraction-of-adult factors).
+Tabela de 21 fármacos (dose única mín/máx, máximo diário, tetos de infusão,
+doses por peso, multiplicadores renais para 7 fármacos, avisos de −50% para
+idosos em midazolam/morfina, fatores de fração-do-adulto pediátricos).
 
-**Defects (verbatim-anchored):**
+**Defeitos (ancorados verbatim):**
 
-1. **Non-mg drugs are never dose-checked.** `_validate_dose` reads only
-   `max_single_mg`/`min_single_mg` (606-617), but insulin/heparin define
+1. **Fármacos não-mg nunca têm a dose checada.** `_validate_dose` lê apenas
+   `max_single_mg`/`min_single_mg` (606-617), mas insulina/heparina definem
    `max_single_ui`, KCl `max_single_mEq`, NaCl 3% `max_single_mL`,
-   norepinephrine/dobutamine `max_single_mcg_kg_min`, fentanyl
-   `max_single_mcg`. For every one of these high-alert drugs the single-dose
-   check silently no-ops — insulin 500 UI or KCl 200 mEq passes with no
-   warning. R34's infusion check reads `infusion_rate_max_mg_h` (defined
-   only for vancomycin), so `max_infusion_ui_h` (insulin, heparin) is dead
-   too. **The safety net has holes exactly over the highest-risk drugs.**
-2. `_mass_to_mg` maps mL→1.0 ("assume 1 mg/mL"), UI→1.0, mEq→1.0
-   (442-453) — dimensionally invalid equivalences that make any cross-unit
-   comparison meaningless (a mL-written dipirona dose is off 500×).
-3. R33 pediatric dosing = fixed fraction of adult dose per age bracket
-   (neonate 5% … adolescent 75%, 410-416) — not a recognized pediatric
-   dosing method for these drugs; dangerous as advisory text in an adult
-   ICU product that may see boundary ages.
-4. `_validate_dose` always returns `valid=True` (695-697) — every breach is
-   advisory; no hard stop exists even for the KCl >20 mEq/h arrhythmia
-   warning (R35, which also conflates a q6h dose with an hourly rate).
-5. Table values (meropenem 500-2000 mg, max 6 g/d; vancomycin 15 mg/kg,
-   infusion ≤1 g/h; propofol ≤4 mg/kg/h; KCl ≤40 mEq single, ≤20 mEq/h;
-   NaCl 3% ≤100 mL/h; enoxaparin renal multipliers; meropenem full dose at
-   GFR 26-50 — label-discordant, most references reduce at CrCl ≤50) are a
-   plausible-but-UNCITED pharmacopeia; several rows need pharmacist
-   re-derivation (VALIDATION REQUIRED as a set).
+   noradrenalina/dobutamina `max_single_mcg_kg_min`, fentanil
+   `max_single_mcg`. Para cada um desses fármacos de alto-alerta a checagem
+   de dose única silenciosamente vira no-op — insulina 500 UI ou KCl 200
+   mEq passa sem aviso algum. A checagem de infusão da R34 lê
+   `infusion_rate_max_mg_h` (definido apenas para vancomicina), de modo que
+   `max_infusion_ui_h` (insulina, heparina) também está morto. **A rede de
+   segurança tem buracos exatamente sobre os fármacos de maior risco.**
+2. `_mass_to_mg` mapeia mL→1,0 ("assumir 1 mg/mL"), UI→1,0, mEq→1,0
+   (442-453) — equivalências dimensionalmente inválidas que tornam
+   qualquer comparação cross-unidade sem sentido (uma dose de dipirona
+   escrita em mL fica errada por 500×).
+3. R33 dosagem pediátrica = fração fixa da dose de adulto por faixa etária
+   (neonato 5% … adolescente 75%, 410-416) — não é um método de dosagem
+   pediátrica reconhecido para esses fármacos; perigoso como texto
+   consultivo em um produto de UTI adulta que pode ver idades limítrofes.
+4. `_validate_dose` sempre retorna `valid=True` (695-697) — toda violação é
+   consultiva; nenhuma parada rígida existe mesmo para o aviso de
+   arritmia por KCl >20 mEq/h (R35, que também confunde uma dose a cada
+   6h com uma taxa horária).
+5. Os valores da tabela (meropeném 500-2000 mg, máx 6 g/d; vancomicina 15
+   mg/kg, infusão ≤1 g/h; propofol ≤4 mg/kg/h; KCl ≤40 mEq dose única, ≤20
+   mEq/h; NaCl 3% ≤100 mL/h; multiplicadores renais de enoxaparina;
+   meropeném dose plena em TFG 26-50 — discordante da bula, a maioria das
+   referências reduz em ClCr ≤50) são uma farmacopeia plausível-mas-NÃO-CITADA;
+   várias linhas precisam de re-derivação por farmacêutico (VALIDATION
+   REQUIRED como conjunto).
 
-## 5. Interaction knowledge base (`drug_interactions.py`, `anvisa_drug_database.py`)
+## 5. Base de conhecimento de interação (`drug_interactions.py`, `anvisa_drug_database.py`)
 
-Hardcoded pairwise KB over the same 21 drugs + class groupings + allergy
-cross-reactivity groups + stacking rules (R21 ≥2 opioids severe; R22 ≥3
-sedatives severe; R23 ≥2 anticoagulants contraindicated; R24 ≥8 drugs
-polypharmacy).
+KB pareado hard-coded sobre os mesmos 21 fármacos + agrupamentos de classe +
+grupos de reatividade-cruzada de alergia + regras de empilhamento (R21 ≥2
+opioides severe; R22 ≥3 sedativos severe; R23 ≥2 anticoagulantes
+contraindicated; R24 ≥8 fármacos polifarmácia).
 
-**Content audit (clinically dubious or wrong entries):**
+**Auditoria de conteúdo (entradas clinicamente duvidosas ou erradas):**
 
-| Entry | Claim | Assessment |
+| Entrada | Alegação | Avaliação |
 |---|---|---|
-| vancomicina × amiodarona (`drug_interactions.py:67-76`) | "severe — QT prolongation/Torsades" | vancomycin is not a recognized QT-prolonging agent; pair absent from standard DDI references — **UNVERIFIED/likely fabricated** |
-| noradrenalina × dobutamina (127-136) | "physical incompatibility same line — crystallization risk" | the agents are commonly co-infused and standard compatibility references list them Y-site compatible — **UNVERIFIED/likely fabricated** |
-| ceftriaxona × cloreto_de_sodio_3% (167-176, and R26 411-421) | "contraindicated — calcium-containing solutions (including NaCl 3%)" | ceftriaxone-calcium precipitation applies to calcium-containing solutions; **hypertonic saline contains no calcium** — factually wrong contraindication |
-| meropenem × vancomicina (147-156) | "minor — expected synergism" | a non-interaction editorialized into the KB; noise |
-| heparina × enoxaparina (97-106) | "absolute contraindication" | duplicate therapeutic anticoagulation is a genuine severe flag; "absolute contraindication" phrasing overstates transition scenarios — REFINE wording |
+| vancomicina × amiodarona (`drug_interactions.py:67-76`) | "severe — prolongamento de QT/Torsades" | vancomicina não é um agente reconhecido como prolongador de QT; o par está ausente das referências padrão de DDI — **NÃO VERIFICADO/provavelmente fabricado** |
+| noradrenalina × dobutamina (127-136) | "incompatibilidade física na mesma linha — risco de cristalização" | os agentes são comumente co-infundidos e referências de compatibilidade padrão os listam como compatíveis em Y-site — **NÃO VERIFICADO/provavelmente fabricado** |
+| ceftriaxona × cloreto_de_sodio_3% (167-176, e R26 411-421) | "contraindicated — soluções contendo cálcio (incluindo NaCl 3%)" | a precipitação ceftriaxona-cálcio se aplica a soluções contendo cálcio; **soro fisiológico hipertônico não contém cálcio** — contraindicação factualmente errada |
+| meropeném × vancomicina (147-156) | "minor — sinergismo esperado" | uma não-interação editorializada na KB; ruído |
+| heparina × enoxaparina (97-106) | "contraindicação absoluta" | anticoagulação terapêutica duplicada é um alerta severe genuíno; a frase "contraindicação absoluta" exagera cenários de transição — REFINE na redação |
 
-R18 "drug-allergy" check (293-304) tests whether two *prescribed* drugs
-share an allergy group — that is duplication detection mislabeled as allergy
-checking; patient allergies are never read (matches the V03 finding).
-Coverage is arbitrary: known pairs among the same 21 drugs are missing
-(e.g., amiodarone×fentanyl, omeprazole×enoxaparin-class effects), so the KB
-is simultaneously over- and under-inclusive. `anvisa_drug_database.py` is an
-explicit stub ("Future endpoint (speculative)") whose in-memory records
-present themselves as ANVISA Bulário content — fabricated-registry risk if
-ever surfaced as authoritative.
+A checagem R18 "fármaco-alergia" (293-304) testa se dois fármacos
+*prescritos* compartilham um grupo de alergia — isso é detecção de
+duplicação rotulada erroneamente como checagem de alergia; as alergias do
+paciente nunca são lidas (combina com o achado do V03). A cobertura é
+arbitrária: pares conhecidos entre os mesmos 21 fármacos estão ausentes
+(p. ex., amiodarona×fentanil, efeitos amiodarona×enoxaparina-classe), de
+modo que a KB é simultaneamente sobre- e sub-inclusiva.
+`anvisa_drug_database.py` é um stub explícito ("Future endpoint
+(speculative)") cujos registros em memória se apresentam como conteúdo do
+Bulário ANVISA — risco de registro-fabricado se algum dia exposto como
+autoritativo.
 
-Contrast: the **pharmaco-interaction catalog**
-(`docs/plan/_work/alerts/pharmaco-interaction.yaml`, 8 alerts / 34 vectors /
-17 citations) anchors its QTc alert to CredibleMeds Known-Risk + Tisdale
-2013, serotonin syndrome to Boyer & Shannon NEJM 2005 + Hunter criteria,
-CNS-depression to Overdyk 2016, with symptom gates and controlled-ventilation
-suppression — a materially higher evidence standard than the hardcoded KB.
-The two surfaces are **parallel and divergent**; V2 must have exactly one
-interaction source of truth. (Its runtime loader `domain_pharmaco_delirium.py`
-is reviewed by neuro-sedation-scores; catalog content is owned here —
-cross-check note, no double assignment.)
+Contraste: o **catálogo pharmaco-interaction**
+(`docs/plan/_work/alerts/pharmaco-interaction.yaml`, 8 alertas / 34 vetores
+/ 17 citações) ancora seu alerta de QTc em CredibleMeds Known-Risk +
+Tisdale 2013, síndrome serotoninérgica em Boyer & Shannon NEJM 2005 +
+critérios de Hunter, depressão de SNC em Overdyk 2016, com gates de sintoma
+e supressão por ventilação-controlada — um padrão de evidência
+materialmente mais alto que a KB hard-coded. As duas superfícies são
+**paralelas e divergentes**; a V2 deve ter exatamente uma fonte de verdade
+para interação. (Seu carregador em runtime `domain_pharmaco_delirium.py` é
+revisado por neuro-sedation-scores; o conteúdo do catálogo é de
+responsabilidade daqui — nota de cross-check, sem atribuição dupla.)
 
-## 6. Efficiency / transfusion appropriateness (`domain_eficiencia.py`)
+## 6. Adequação de eficiência / transfusão (`domain_eficiencia.py`)
 
-12 transfusion criteria (TF-001..012), restraint (>4 h reassessment),
-frailty (CFS 1-9, Rockwood-consistent categories), LOS outlier (>1.5×
-expected or >14 d).
+12 critérios de transfusão (TF-001..012), contenção (reavaliação >4h),
+fragilidade (CFS 1-9, categorias consistentes com Rockwood), outlier de LOS
+(>1,5× esperado ou >14d).
 
-**Defects (verbatim-anchored):**
+**Defeitos (ancorados verbatim):**
 
-1. **TF-002 inverted against the restrictive strategy.**
+1. **TF-002 invertido contra a estratégia restritiva.**
    `domain_eficiencia.py:290-307`:
 
    ```python
@@ -237,83 +254,87 @@ expected or >14 d).
    tf002_met = hb_pre is not None and hb_pre >= 7.0
    ```
 
-   The criterion catalog says transfusion at Hb ≥7 "requer justificativa"
-   (the detail string for the met case even says so), yet `met` **adds a
-   point toward appropriateness** exactly when the transfusion violates the
-   restrictive trigger (TRICC/AABB direction). A liberal transfusion scores
-   as more appropriate.
-2. **Count-based appropriateness**: `appropriate = met_count >= 8` of 12
-   (479) — a transfusion with unconfirmed ABO compatibility, no consent and
-   a transfusion reaction can still be "appropriate" on documentation
-   points. Never-event-class criteria must be individually blocking, not
-   poolable.
-3. CFS/restraint/LOS components are plausible (CFS ≥5 frail; >4 h restraint
-   reassessment) — UNCITED in code.
+   O catálogo de critério diz que transfusão em Hb ≥7 "requer
+   justificativa" (a string de detalhe do caso cumprido até diz isso), mas
+   `met` **soma um ponto em direção à adequação** exatamente quando a
+   transfusão viola o gatilho restritivo (direção TRICC/AABB). Uma
+   transfusão liberal pontua como mais adequada.
+2. **Adequação baseada em contagem**: `appropriate = met_count >= 8` de 12
+   (479) — uma transfusão com compatibilidade ABO não confirmada, sem
+   consentimento e com uma reação transfusional ainda pode ser "adequada"
+   por pontos de documentação. Critérios de classe never-event devem ser
+   individualmente bloqueadores, não agrupáveis.
+3. Os componentes CFS/contenção/LOS são plausíveis (CFS ≥5 frágil;
+   reavaliação de contenção >4h) — NÃO CITADOS no código.
 
-## 7. Pathway content (`antimicrobiano.yaml`, `profilaxia.yaml`)
+## 7. Conteúdo de pathway (`antimicrobiano.yaml`, `profilaxia.yaml`)
 
-- ATB duration bands 0-3/3-7/7-10/≥10 d → normal/watch/urgent/critical;
-  IDSA/SHEA 2016 cited (`doi 10.1093/cid/ciw118` — consistent with the
-  implementation guideline; not re-fetched). Duration alone reaching
-  "critical" overloads the emergency tier (stewardship-priority semantics).
-- PCT bands 0-0.25/0.25-0.5/0.5-2.0/≥2.0 → normal→critical: the catalog
-  narrative (de-escalate when PCT <0.5 or −80% from peak) is
-  evidence-consistent; banding *high* PCT as critical converts a
-  de-escalation guide into a severity alarm — needs deliberate clinical
-  decision.
-- **Boolean criterion polarity ambiguity (blocking):** `profilaxia.yaml`
-  criteria fire on `tev_profilaxia == true` / `ugb_profilaxia == true` /
-  `mobilizacao_status == true`; `antimicrobiano.yaml` on
-  `culturas_resultado == true` and `descalonamento_status == true`. If the
-  trilhas engine raises alerts when predicates match, these alert on
-  prophylaxis *given* and de-escalation *done* — inverted signals. Whether
-  criterion-match means "alert" or "milestone achieved" is an engine
-  semantic owned by the pathways workstream — **cross-workstream flag
-  raised; verdict on these booleans is blocked pending that engine ruling.**
-- Head-of-bed bands (<20° critical / 20-30 watch / ≥30 normal)
-  direction-correct for VAP prevention.
+- Faixas de duração de ATB 0-3/3-7/7-10/≥10d → normal/watch/urgent/critical;
+  IDSA/SHEA 2016 citado (`doi 10.1093/cid/ciw118` — consistente com a
+  diretriz de implementação; não rebuscado). Duração sozinha alcançando
+  "critical" sobrecarrega o nível de emergência (semântica de prioridade de
+  stewardship).
+- Faixas de PCT 0-0,25/0,25-0,5/0,5-2,0/≥2,0 → normal→critical: a narrativa
+  do catálogo (desescalonar quando PCT <0,5 ou −80% do pico) é consistente
+  com a evidência; bandear PCT *alta* como critical converte um guia de
+  desescalonamento em um alarme de gravidade — precisa de decisão clínica
+  deliberada.
+- **Ambiguidade de polaridade de critério booleano (bloqueadora):**
+  critérios de `profilaxia.yaml` disparam em `tev_profilaxia == true` /
+  `ugb_profilaxia == true` / `mobilizacao_status == true`;
+  `antimicrobiano.yaml` em `culturas_resultado == true` e
+  `descalonamento_status == true`. Se o motor de trilhas levanta alertas
+  quando predicados correspondem, esses alertam sobre profilaxia *dada* e
+  desescalonamento *feito* — sinais invertidos. Se correspondência de
+  critério significa "alerta" ou "marco alcançado" é uma semântica de motor
+  de responsabilidade do workstream de pathways — **flag entre workstreams
+  levantada; o veredito sobre esses booleanos está bloqueado pendente essa
+  decisão de motor.**
+- Faixas de cabeceira elevada (<20° critical / 20-30 watch / ≥30 normal)
+  direção-correta para prevenção de VAP.
 
-## 8. HAZ-0005 zero-coercion assessment
+## 8. Avaliação de coerção-zero do HAZ-0005
 
-| Path | Behavior | Assessment |
+| Caminho | Comportamento | Avaliação |
 |---|---|---|
-| Antimicrobial score | ≤3 non-conformities → NEUTRO "adequate" | count floor renders real findings as adequacy — false reassurance |
-| Antimicrobial inputs path | all criteria met on any inputs (defect §1.1) | inverse failure: fabricated positives (alarm-integrity, HAZ-0036) |
-| Prophylaxis bundles | unmarked criteria = pending, not risk | acceptable checklist semantics; no coercion |
-| `_parse_dosage` | unparseable/comma-decimal → 0.0 mg | zero-coercion on stored medication doses |
-| Dose validation | non-mg drugs skip checks silently | absence of validation indistinguishable from validated-safe (HAZ-0021 analogue) |
-| V03 allergy validator | no patient allergy data → always passes | absent data = no risk, by construction |
-| TF-002 | missing Hb → criterion unmet, but TF-001 already flags undocumented Hb | partial mitigation; inversion defect dominates |
+| Escore antimicrobiano | ≤3 não-conformidades → NEUTRO "adequado" | piso de contagem renderiza achados reais como adequação — falsa tranquilização |
+| Caminho de entradas antimicrobianas | todos os critérios cumpridos com qualquer entrada (defeito §1.1) | falha inversa: positivos fabricados (integridade de alarme, HAZ-0036) |
+| Bundles de profilaxia | critérios não marcados = pendente, não risco | semântica de checklist aceitável; sem coerção |
+| `_parse_dosage` | não-parseável/vírgula-decimal → 0,0 mg | coerção-zero em doses de medicação armazenadas |
+| Validação de dose | fármacos não-mg pulam checagens silenciosamente | ausência de validação indistinguível de validado-seguro (análogo ao HAZ-0021) |
+| Validador de alergia V03 | nenhum dado de alergia do paciente → sempre passa | dado ausente = sem risco, por construção |
+| TF-002 | Hb ausente → critério não cumprido, mas TF-001 já sinaliza Hb não documentada | mitigação parcial; o defeito de inversão domina |
 
-## 9. Verdicts (all PROPOSAL)
+## 9. Vereditos (todos PROPOSAL)
 
-| Artifact / path | Verdict | Rationale |
+| Artefato / caminho | Veredito | Justificativa |
 |---|---|---|
-| `domain_antimicrobiano.py` evaluate path | REJECT | always-true met predicate; count-as-severity; placeholder engine |
-| 12 stewardship criteria (content) | VALIDATE | IDSA/SHEA-plausible checklist items worth carrying as *criteria*, with per-criterion severity, under pharmacist/ID review |
-| `domain_profilaxia.py` | REFINE | checklist mechanics fine; LAMGD bundle must gain a prophylaxis-prescribed member and separate indication from adherence semantics |
-| Prescription state machine (+ADR-0027) | REFINE | sound design, optimistic locking; carry concept with V2 acceptance tests |
-| `_parse_dosage` | REJECT | silent zeroing incl. comma-decimal — the documented legacy locale-parse hazard class |
-| Validators V03/V04 | REJECT (V03) / VALIDATE-with-policy-decision (V04) | allergy check is not an allergy check; severe-warn-only needs an explicit V2 decision |
-| `drug_safety.py` validation logic | REJECT as implemented | unit-key mismatches disable checks for the highest-alert drugs; mL/UI/mEq→mg equivalences invalid; advisory-only everywhere |
-| `drug_safety.py` table values | VALIDATE | plausible uncited pharmacopeia; per-row pharmacist re-derivation required (meropenem renal row discordant) |
-| Pediatric fraction dosing (R33) | REJECT | not a recognized dosing method; out of adult-ICU intended use |
-| `drug_interactions.py` KB | REJECT (content) / TRANSFORM (mechanism) | fabricated/wrong entries (vanco-amio QT, NaCl-3% calcium, nora-dobuta incompatibility); rebuild from an authoritative source per the pharmaco spec |
-| Stacking rules R21-R24 | VALIDATE | blunt but defensible class-level guards |
-| `anvisa_drug_database.py` | ARCHIVE | explicit stub; never surface stub data as registry content |
-| `pharmaco-interaction.yaml` + `domains/pharmaco-interaction.md` | VALIDATE | best-cited artifact in the OSMS scope (CredibleMeds/Tisdale/Boyer-Shannon/Hunter/Overdyk); make it the single interaction source |
-| `domain_eficiencia.py` transfusion score | REJECT | TF-002 inversion + count-based appropriateness masking never-event criteria |
-| CFS / restraint / LOS components | VALIDATE | Rockwood-consistent; uncited |
-| `antimicrobiano.yaml` pathway | VALIDATE (duration/PCT values) with severity-tier note | boolean-polarity items blocked on engine semantics |
-| `profilaxia.yaml` pathway | VALIDATE (HOB bands) / BLOCKED (boolean polarity) | potential inverted alerts pending pathways-engine ruling |
-| Models/schemas/APIs (antimicrobial, medication, prescricao, prophylaxis, efficiency) | ARCHIVE/REFINE | persistence and transport; prescricao model default status "active" (not draft) noted; schemas bake count contracts (0-12, 0-100) that fall with the count-severity rejections |
-| ADR-0026 | ARCHIVE (reference) | hybrid local-KB decision context; its 4-severity vocabulary survives, its KB content does not |
+| Caminho de avaliação de `domain_antimicrobiano.py` | REJECT | predicado sempre-verdadeiro de cumprido; contagem-como-gravidade; motor placeholder |
+| 12 critérios de stewardship (conteúdo) | VALIDATE | itens de checklist plausíveis-IDSA/SHEA que valem a pena carregar como *critérios*, com gravidade por critério, sob revisão de farmacêutico/infectologia |
+| `domain_profilaxia.py` | REFINE | mecânica de checklist boa; o bundle LAMGD deve ganhar um membro profilaxia-prescrita e separar indicação da semântica de adesão |
+| Máquina de estados de prescrição (+ADR-0027) | REFINE | design sólido, bloqueio otimista; carregar o conceito com testes de aceitação da V2 |
+| `_parse_dosage` | REJECT | zeragem silenciosa incl. vírgula-decimal — a classe de hazard de parse-de-locale legado documentada |
+| Validadores V03/V04 | REJECT (V03) / VALIDATE-com-decisão-de-política (V04) | a checagem de alergia não é uma checagem de alergia; apenas-avisar-em-severe precisa de uma decisão explícita da V2 |
+| Lógica de validação de `drug_safety.py` | REJECT como implementada | descompassos de chave de unidade desabilitam checagens para os fármacos de maior alerta; equivalências mL/UI/mEq→mg inválidas; apenas-consultivo em todo lugar |
+| Valores de tabela de `drug_safety.py` | VALIDATE | farmacopeia plausível-não-citada; re-derivação por farmacêutico linha-a-linha exigida (linha renal de meropeném discordante) |
+| Dosagem por fração pediátrica (R33) | REJECT | não é um método de dosagem reconhecido; fora do uso pretendido de UTI adulta |
+| KB de `drug_interactions.py` | REJECT (conteúdo) / TRANSFORM (mecanismo) | entradas fabricadas/erradas (QT vanco-amio, cálcio NaCl-3%, incompatibilidade nora-dobuta); reconstruir a partir de uma fonte autoritativa conforme a spec de pharmaco |
+| Regras de empilhamento R21-R24 | VALIDATE | guardas em nível de classe rombas mas defensáveis |
+| `anvisa_drug_database.py` | ARCHIVE | stub explícito; nunca expor dado de stub como conteúdo de registro |
+| `pharmaco-interaction.yaml` + `domains/pharmaco-interaction.md` | VALIDATE | artefato melhor-citado no escopo OSMS (CredibleMeds/Tisdale/Boyer-Shannon/Hunter/Overdyk); torná-lo a fonte única de interação |
+| Escore de transfusão de `domain_eficiencia.py` | REJECT | inversão do TF-002 + adequação baseada em contagem mascarando critérios never-event |
+| Componentes CFS / contenção / LOS | VALIDATE | consistentes com Rockwood; não citados |
+| Pathway `antimicrobiano.yaml` | VALIDATE (valores de duração/PCT) com nota de nível-de-gravidade | itens de polaridade booleana bloqueados na semântica de motor |
+| Pathway `profilaxia.yaml` | VALIDATE (faixas de cabeceira) / BLOCKED (polaridade booleana) | possíveis alertas invertidos pendentes de decisão do motor de pathways |
+| Models/schemas/APIs (antimicrobial, medication, prescricao, prophylaxis, efficiency) | ARCHIVE/REFINE | persistência e transporte; status padrão "active" (não rascunho) do model de prescricao anotado; schemas embutem contratos de contagem (0-12, 0-100) que caem com as rejeições de contagem-gravidade |
+| ADR-0026 | ARCHIVE (referência) | contexto de decisão de KB local híbrida; seu vocabulário de 4 gravidades sobrevive, seu conteúdo de KB não |
 
-**Worst finding:** the medication-safety layer's protective checks are
-structurally hollow at the highest-risk points — the antimicrobial evaluator
-marks every criterion met (or none, via the placeholder), the dose validator
-silently skips insulin/heparin/KCl/vasopressor/fentanyl limits through
-unit-key mismatches, the allergy check never reads patient allergies, and
-the interaction KB contains fabricated entries — while presenting itself as
-an active safety net (HAZ-0021/HAZ-0036 class: the appearance of checking
-without the checking).
+**Pior achado:** as checagens protetoras da camada de segurança
+medicamentosa estão estruturalmente ocas nos pontos de maior risco — o
+avaliador antimicrobiano marca todo critério como cumprido (ou nenhum, via
+o placeholder), o validador de dose silenciosamente pula os limites de
+insulina/heparina/KCl/vasopressor/fentanil por descompassos de chave de
+unidade, a checagem de alergia nunca lê as alergias do paciente, e a KB de
+interação contém entradas fabricadas — enquanto se apresenta como uma rede
+de segurança ativa (classe HAZ-0021/HAZ-0036: a aparência de checar sem a
+checagem).

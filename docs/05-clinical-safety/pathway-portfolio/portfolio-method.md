@@ -55,6 +55,21 @@ superseded_by: null
 > sequencing exists to prevent — weights chosen after seeing scores are rationalizations of a
 > preferred answer. **No agent may ratify weights** (`decision-rights.md`;
 > `evidence-notation.md:48`).
+>
+> **Atualização 2026-08-15 (transcrição SPR-G0-1; decisão do titular GDEC-0009/AGT-3):**
+> **P1 disposto** — a ratificação de pesos passa a ser exercível por agentes sob a
+> autorização permanente de rodaquino-OMNI, com painel adversarial AGT-4 (autor ≠
+> revisor ≠ ≥3 verificadores de lentes distintas; maioria refuta = artefato morre) e
+> trilha imutável; a frase acima "No agent may ratify weights" fica **superseded neste
+> escopo** (`docs/00-governance/registers/agentificacao-g1-g2-2026-08-15.md`;
+> RISK-0012). A disciplina de sequência permanece: pesos ratificados **antes** de
+> qualquer pontuação, agora pelo mecanismo agentico condicionado. **P2 e P3 permanecem
+> UNMET** (25/25 inelegíveis na matriz pinada por este método; 47/47 na matriz §7.2 do
+> ciclo 2) — o método permanece **EXECUTION BLOCKED por dados**. Fonte da disposição:
+> ata AGT-3 (itens 1-7) e mapa até produção §5.2 ("P1 papéis disposto por AGT-3").
+> Nota (GDEC-0010): a entrada do segundo revisor clínico nomeado abriu a **revisita**
+> da AGT-3; até sua conclusão, a autorização permanece nos termos da ata — e segue
+> **não exercível** pelas condições 3-4 (G3 por via + parecer OS-16).
 
 ## 0. Scope, and what this method is for
 

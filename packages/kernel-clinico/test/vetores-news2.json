@@ -1,0 +1,1944 @@
+{
+  "provenance": {
+    "source_path": "docs/05-clinical-safety/rule-releases/news2/reference-vectors.md",
+    "source_title": "RULE-NEWS2 reference vectors (CRV set) — 0.2.0",
+    "sections_transcribed": [
+      "§1 Conventions (baseline profile)",
+      "§2.1 Typical",
+      "§2.2 Missing data, staleness, integrity, population",
+      "§2.3 SpO2 scale governance",
+      "§2.4 SpO2 Scale 2 band boundaries",
+      "§2.5 Scale 1 and remaining parameter band boundaries",
+      "§2.6 Aggregate thresholds and tiers",
+      "§2.7 Decision-driven vectors (GDEC-0007)"
+    ],
+    "rule": "RULE-NEWS2 0.2.0 (precursor — não assinado; NOT ACTIONABLE)",
+    "data_provenance": "synthetic-only — todos os valores sintéticos; nenhum dado real de paciente",
+    "note": "Transcrição para execução red/green (TDD) conforme a própria disciplina do conjunto CRV (§0): a aprovação destes vetores NÃO é evidência clínica; autoria independente segue pendente. Os rótulos de razão agregada do documento-fonte (insufficient_data/stale_data/invalid_data/criteria_not_met) são representados aqui pelos tokens por parâmetro da spec §5.2 (missing_required_input:*, stale_input:*, expired_input:*, implausible_value:*, unmappable_code:*, conflicting_sources:*, quarantined_input:*, unknown_age, out_of_population_scope), que o documento-fonte lista entre parênteses em cada linha.",
+    "baseline": "adulto sintético, 45 anos; FR 16 /min; SpO2 97 %; O2 suplementar: ar (documentado); PAS 120 mm[Hg]; FC 70 /min; consciência A; T 37,0 Cel; sem spo2_scale_assignment (⇒ Escala 1 default); toda observação 10 min antes da avaliação (dentro da janela); qualidade de fonte valid; gate populacional aprovado. Total 0, tier low, status valid."
+  },
+  "vectors": [
+    {
+      "id": "CRV-NEWS2-0101",
+      "source_section": "§2.1 Typical",
+      "description": "baseline íntegro — todos os parâmetros 0; Total 0; risco baixo",
+      "delta": {},
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 0,
+          "spo2": 0,
+          "o2_status": 0,
+          "sbp": 0,
+          "pulse": 0,
+          "consciousness": 0,
+          "temperature": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0102",
+      "source_section": "§2.2 / §3 (vetor expandido)",
+      "description": "TODOS os sete insumos ausentes — nenhum total, NUNCA 0 (vetor de regressão permanente HAZ-0005; o legado retornava total 0 / risco baixo)",
+      "delta": {
+        "absent": ["rr", "spo2", "o2_status", "sbp", "pulse", "consciousness", "temperature"]
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": [
+          "missing_required_input:rr",
+          "missing_required_input:spo2",
+          "missing_required_input:o2_status",
+          "missing_required_input:sbp",
+          "missing_required_input:pulse",
+          "missing_required_input:consciousness",
+          "missing_required_input:temperature"
+        ]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0103",
+      "source_section": "§2.2 Missing data",
+      "description": "FR ausente — sem total",
+      "delta": {
+        "absent": ["rr"]
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["missing_required_input:rr"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0104",
+      "source_section": "§2.2 Missing data",
+      "description": "SpO2 ausente — sem total",
+      "delta": {
+        "absent": ["spo2"]
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["missing_required_input:spo2"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0105",
+      "source_section": "§2.2 Missing data",
+      "description": "estado de O2 suplementar ausente (SpO2 presente) — desconhecido NUNCA é 'ar' — sem total",
+      "delta": {
+        "absent": ["o2_status"]
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["missing_required_input:o2_status"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0106",
+      "source_section": "§2.2 Missing data",
+      "description": "PAS ausente — sem total",
+      "delta": {
+        "absent": ["sbp"]
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["missing_required_input:sbp"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0107",
+      "source_section": "§2.2 Missing data",
+      "description": "FC ausente — sem total",
+      "delta": {
+        "absent": ["pulse"]
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["missing_required_input:pulse"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0108",
+      "source_section": "§2.2 Missing data",
+      "description": "consciência ausente — ACVPU ausente nunca vale 0 pontos — sem total",
+      "delta": {
+        "absent": ["consciousness"]
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["missing_required_input:consciousness"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0109",
+      "source_section": "§2.2 Missing data",
+      "description": "temperatura ausente — sem total",
+      "delta": {
+        "absent": ["temperature"]
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["missing_required_input:temperature"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0110",
+      "source_section": "§2.2 Missing data (freshness-window-edge)",
+      "description": "FR observada 90 min antes da avaliação (janela 60 min, expiração 8 h) — nenhum total novo",
+      "delta": {
+        "observedMinutesBefore": {
+          "rr": 90
+        }
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["stale_input:rr"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0111",
+      "source_section": "§2.2 Missing data (freshness-window-edge)",
+      "description": "FR observada EXATAMENTE 60 min antes (borda da janela, inclusiva) — Total 0; risco baixo",
+      "delta": {
+        "observedMinutesBefore": {
+          "rr": 60
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0112",
+      "source_section": "§2.2 Missing data (freshness-window-edge)",
+      "description": "FR observada 9 h antes (além da expiração de 8 h) — nenhum total",
+      "delta": {
+        "observedMinutesBefore": {
+          "rr": 540
+        }
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["expired_input:rr"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0113",
+      "source_section": "§2.2 Missing data (conflicting-sources)",
+      "description": "duas PAS simultâneas, 80 e 150, mesmo tempo clínico, sem resolução — diferença 70 mmHg excede a tolerância PAS ±10 (GDEC-0007 N-10): conflito real, nunca resolvido às cegas",
+      "delta": {
+        "conflictValues": {
+          "sbp": [80, 150]
+        }
+      },
+      "expected": {
+        "status": "invalid",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["conflicting_sources:sbp"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0114",
+      "source_section": "§2.2 Missing data (population-exclusion-boundary)",
+      "description": "idade/data de nascimento ausente — NUNCA presumir adulto (VAL-0006/0007)",
+      "delta": {
+        "age": "unknown"
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["unknown_age"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0115",
+      "source_section": "§2.2 Missing data (population-exclusion-boundary)",
+      "description": "idade 17 (verificada) — sem total sob o gate ≥18; banda permitida pela RCP porém excluída (DECIDIDO N-1 (a), GDEC-0007)",
+      "delta": {
+        "age": 17
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["out_of_population_scope"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0116",
+      "source_section": "§2.2 / §3 (vetor expandido)",
+      "description": "token de consciência 'SEDATED' (fora do schema) — inválido, NUNCA 0 (legado D-7) e NUNCA 3 (legado D-8)",
+      "delta": {
+        "consciousness": "SEDATED"
+      },
+      "expected": {
+        "status": "invalid",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["unmappable_code:consciousness"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0117",
+      "source_section": "§2.2 Missing data (plausibility bound)",
+      "description": "SpO2 = 150 % — fora da faixa plausível 40–100",
+      "delta": {
+        "values": {
+          "spo2": 150
+        }
+      },
+      "expected": {
+        "status": "invalid",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["implausible_value:spo2"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0118",
+      "source_section": "§2.2 Missing data (two-dimension rule)",
+      "description": "FR presente e dentro da janela porém com source_data_quality: quarantined — insumo quarentenado nunca contribui",
+      "delta": {
+        "quarantined": ["rr"]
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["quarantined_input:rr"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0119",
+      "source_section": "§2.3 / §3 (vetor expandido)",
+      "description": "ordem scale2 documentada; SpO2 70 % EM oxigênio — SpO2 = 3 (bandas baixas da Escala 2 valem independentemente do O2; legado D-1 pontuava 0); O2 = 2; Total 5; médio + parâmetro vermelho",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 70
+        },
+        "o2": "oxygen"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 5,
+        "tier": "medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 3,
+          "o2_status": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0120",
+      "source_section": "§2.3 SpO2 scale governance",
+      "description": "ordem scale2; SpO2 90 % em oxigênio (alvo BTS 88–92) — SpO2 = 0 (legado D-2 pontuava 1; via Scale-1 legada pontuava 2–3); O2 = 2; Total 2; baixo",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 90
+        },
+        "o2": "oxygen"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 0,
+          "o2_status": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0121",
+      "source_section": "§2.3 SpO2 scale governance",
+      "description": "SEM ordem scale2; SpO2 91 % em oxigênio — Escala 1 permanece (O2 suplementar NUNCA troca a escala — regressão D-3/D-4): SpO2 = 3; O2 = 2; Total 5; médio + vermelho",
+      "delta": {
+        "values": {
+          "spo2": 91
+        },
+        "o2": "oxygen"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 5,
+        "tier": "medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 3,
+          "o2_status": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0122",
+      "source_section": "§2.3 SpO2 scale governance",
+      "description": "sem ordem scale2 (insumo governado ausente); SpO2 95 % em ar — default Escala 1 per RCP Rec 27: SpO2 = 1; Total 1; baixo",
+      "delta": {
+        "values": {
+          "spo2": 95
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0123",
+      "source_section": "§2.3 SpO2 scale governance",
+      "description": "ordem scale2; SpO2 94 %; estado de O2 suplementar AUSENTE — a região ≥93 precisa de ar/oxigênio para pontuar; O2 é insumo obrigatório em todos os casos",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 94
+        },
+        "absent": ["o2_status"]
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["missing_required_input:o2_status"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0124",
+      "source_section": "§2.4 SpO2 Scale 2 band boundaries",
+      "description": "Escala 2 (ordem documentada): SpO2 83 %, ar → SpO2 = 3; Total 3; low_medium",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 83
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "tier": "low_medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 3
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0125",
+      "source_section": "§2.4 SpO2 Scale 2 band boundaries",
+      "description": "Escala 2 (ordem documentada): SpO2 84 %, ar → SpO2 = 2; Total 2; low",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 84
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0126",
+      "source_section": "§2.4 SpO2 Scale 2 band boundaries",
+      "description": "Escala 2 (ordem documentada): SpO2 85 %, ar → SpO2 = 2; Total 2; low",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 85
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0127",
+      "source_section": "§2.4 SpO2 Scale 2 band boundaries",
+      "description": "Escala 2 (ordem documentada): SpO2 86 %, ar → SpO2 = 1; Total 1; low",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 86
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0128",
+      "source_section": "§2.4 SpO2 Scale 2 band boundaries",
+      "description": "Escala 2 (ordem documentada): SpO2 87 %, ar → SpO2 = 1; Total 1; low",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 87
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0129",
+      "source_section": "§2.4 SpO2 Scale 2 band boundaries",
+      "description": "Escala 2 (ordem documentada): SpO2 88 %, ar → SpO2 = 0; Total 0; low",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 88
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0130",
+      "source_section": "§2.4 SpO2 Scale 2 band boundaries",
+      "description": "Escala 2 (ordem documentada): SpO2 92 %, ar → SpO2 = 0; Total 0; low",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 92
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0131",
+      "source_section": "§2.4 SpO2 Scale 2 band boundaries",
+      "description": "Escala 2 (ordem documentada): SpO2 93 %, ar → SpO2 = 0; Total 0; low",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 93
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0132",
+      "source_section": "§2.4 SpO2 Scale 2 band boundaries",
+      "description": "Escala 2 (ordem documentada): SpO2 92 %, oxigênio → SpO2 = 0; Total 2; low",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 92
+        },
+        "o2": "oxygen"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 0,
+          "o2_status": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0133",
+      "source_section": "§2.4 SpO2 Scale 2 band boundaries",
+      "description": "Escala 2 (ordem documentada): SpO2 93 %, oxigênio → SpO2 = 1; Total 3; low",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 93
+        },
+        "o2": "oxygen"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 1,
+          "o2_status": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0134",
+      "source_section": "§2.4 SpO2 Scale 2 band boundaries",
+      "description": "Escala 2 (ordem documentada): SpO2 94 %, oxigênio → SpO2 = 1; Total 3; low",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 94
+        },
+        "o2": "oxygen"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 1,
+          "o2_status": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0135",
+      "source_section": "§2.4 SpO2 Scale 2 band boundaries",
+      "description": "Escala 2 (ordem documentada): SpO2 95 %, oxigênio → SpO2 = 2; Total 4; low",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 95
+        },
+        "o2": "oxygen"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 4,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 2,
+          "o2_status": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0136",
+      "source_section": "§2.4 SpO2 Scale 2 band boundaries",
+      "description": "Escala 2 (ordem documentada): SpO2 96 %, oxigênio → SpO2 = 2; Total 4; low",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 96
+        },
+        "o2": "oxygen"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 4,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 2,
+          "o2_status": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0137",
+      "source_section": "§2.4 SpO2 Scale 2 band boundaries",
+      "description": "Escala 2 (ordem documentada): SpO2 97 %, oxigênio → SpO2 = 3; Total 5; medium",
+      "delta": {
+        "scale2Order": true,
+        "values": {
+          "spo2": 97
+        },
+        "o2": "oxygen"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 5,
+        "tier": "medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 3,
+          "o2_status": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0138",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FR 8 → 3 (vermelho); Total 3; low_medium",
+      "delta": {
+        "values": {
+          "rr": 8
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "tier": "low_medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "rr": 3
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0139",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FR 9 → 1; Total 1; low",
+      "delta": {
+        "values": {
+          "rr": 9
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0140",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FR 11 → 1; Total 1; low",
+      "delta": {
+        "values": {
+          "rr": 11
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0141",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FR 12 → 0; Total 0; low",
+      "delta": {
+        "values": {
+          "rr": 12
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0142",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FR 20 → 0; Total 0; low",
+      "delta": {
+        "values": {
+          "rr": 20
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0143",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FR 21 → 2; Total 2; low",
+      "delta": {
+        "values": {
+          "rr": 21
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0144",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FR 24 → 2; Total 2; low",
+      "delta": {
+        "values": {
+          "rr": 24
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0145",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FR 25 → 3 (vermelho); Total 3; low_medium",
+      "delta": {
+        "values": {
+          "rr": 25
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "tier": "low_medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "rr": 3
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0146",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "SpO2 Escala 1 91 → 3 (vermelho); Total 3; low_medium",
+      "delta": {
+        "values": {
+          "spo2": 91
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "tier": "low_medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 3
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0147",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "SpO2 Escala 1 92 → 2; Total 2; low",
+      "delta": {
+        "values": {
+          "spo2": 92
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0148",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "SpO2 Escala 1 93 → 2; Total 2; low",
+      "delta": {
+        "values": {
+          "spo2": 93
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0149",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "SpO2 Escala 1 94 → 1; Total 1; low",
+      "delta": {
+        "values": {
+          "spo2": 94
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0150",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "SpO2 Escala 1 95 → 1; Total 1; low",
+      "delta": {
+        "values": {
+          "spo2": 95
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0151",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "SpO2 Escala 1 96 → 0; Total 0; low",
+      "delta": {
+        "values": {
+          "spo2": 96
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "spo2": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0152",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "estado de O2: oxigênio (SpO2 97, Escala 1 → 0) → O2 = 2; Total 2; baixo",
+      "delta": {
+        "o2": "oxygen"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "o2_status": 2,
+          "spo2": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0153",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "estado de O2: ar (documentado) → O2 = 0; Total 0 (estado documentado, não coerção)",
+      "delta": {
+        "o2": "air"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "o2_status": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0154",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "PAS 90 → 3 (vermelho); Total 3; low_medium",
+      "delta": {
+        "values": {
+          "sbp": 90
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "tier": "low_medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "sbp": 3
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0155",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "PAS 91 → 2; Total 2; low",
+      "delta": {
+        "values": {
+          "sbp": 91
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "sbp": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0156",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "PAS 100 → 2; Total 2; low",
+      "delta": {
+        "values": {
+          "sbp": 100
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "sbp": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0157",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "PAS 101 → 1; Total 1; low",
+      "delta": {
+        "values": {
+          "sbp": 101
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "sbp": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0158",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "PAS 110 → 1; Total 1; low",
+      "delta": {
+        "values": {
+          "sbp": 110
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "sbp": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0159",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "PAS 111 → 0; Total 0; low",
+      "delta": {
+        "values": {
+          "sbp": 111
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "sbp": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0160",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "PAS 219 → 0; Total 0; low",
+      "delta": {
+        "values": {
+          "sbp": 219
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "sbp": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0161",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "PAS 220 → 3 (vermelho); Total 3; low_medium",
+      "delta": {
+        "values": {
+          "sbp": 220
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "tier": "low_medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "sbp": 3
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0162",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FC 40 → 3 (vermelho); Total 3; low_medium",
+      "delta": {
+        "values": {
+          "pulse": 40
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "tier": "low_medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "pulse": 3
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0163",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FC 41 → 1; Total 1; low",
+      "delta": {
+        "values": {
+          "pulse": 41
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "pulse": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0164",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FC 50 → 1; Total 1; low",
+      "delta": {
+        "values": {
+          "pulse": 50
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "pulse": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0165",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FC 51 → 0; Total 0; low",
+      "delta": {
+        "values": {
+          "pulse": 51
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "pulse": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0166",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FC 90 → 0; Total 0; low",
+      "delta": {
+        "values": {
+          "pulse": 90
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "pulse": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0167",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FC 91 → 1; Total 1; low",
+      "delta": {
+        "values": {
+          "pulse": 91
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "pulse": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0168",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FC 110 → 1; Total 1; low",
+      "delta": {
+        "values": {
+          "pulse": 110
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "pulse": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0169",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FC 111 → 2; Total 2; low",
+      "delta": {
+        "values": {
+          "pulse": 111
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "pulse": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0170",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FC 130 → 2; Total 2; low",
+      "delta": {
+        "values": {
+          "pulse": 130
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "pulse": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0171",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "FC 131 → 3 (vermelho); Total 3; low_medium",
+      "delta": {
+        "values": {
+          "pulse": 131
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "tier": "low_medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "pulse": 3
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0172",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "Consciência A (alerta) → 0; Total 0; baixo",
+      "delta": {
+        "consciousness": "A"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "consciousness": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0173",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "Consciência C (nova confusão — RCP Recs 29–30) → 3 (vermelho); Total 3; low_medium",
+      "delta": {
+        "consciousness": "C"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "tier": "low_medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "consciousness": 3
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0174",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "Consciência V → 3 (vermelho); Total 3; low_medium",
+      "delta": {
+        "consciousness": "V"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "tier": "low_medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "consciousness": 3
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0175",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "Consciência P → 3 (vermelho); Total 3; low_medium",
+      "delta": {
+        "consciousness": "P"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "tier": "low_medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "consciousness": 3
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0176",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "Consciência U → 3 (vermelho); Total 3; low_medium",
+      "delta": {
+        "consciousness": "U"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "tier": "low_medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "consciousness": 3
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0177",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "Temperatura 35 → 3 (vermelho); Total 3; low_medium",
+      "delta": {
+        "values": {
+          "temperature": 35
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "tier": "low_medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "temperature": 3
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0178",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "Temperatura 35.1 → 1; Total 1; low",
+      "delta": {
+        "values": {
+          "temperature": 35.1
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "temperature": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0179",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "Temperatura 36 → 1; Total 1; low",
+      "delta": {
+        "values": {
+          "temperature": 36
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "temperature": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0180",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "Temperatura 36.1 → 0; Total 0; low",
+      "delta": {
+        "values": {
+          "temperature": 36.1
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "temperature": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0181",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "Temperatura 38 → 0; Total 0; low",
+      "delta": {
+        "values": {
+          "temperature": 38
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "temperature": 0
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0182",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "Temperatura 38.1 → 1; Total 1; low",
+      "delta": {
+        "values": {
+          "temperature": 38.1
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "temperature": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0183",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "Temperatura 39 → 1; Total 1; low",
+      "delta": {
+        "values": {
+          "temperature": 39
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "temperature": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0184",
+      "source_section": "§2.5 Scale 1 + remaining parameter band boundaries",
+      "description": "Temperatura 39.1 → 2; Total 2; low",
+      "delta": {
+        "values": {
+          "temperature": 39.1
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "temperature": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0185",
+      "source_section": "§2.6 Aggregate thresholds and tiers",
+      "description": "FR 21; FC 111 → 2 + 2, nenhum 3 isolado; Total 4; baixo (fronteira 4/5, abaixo)",
+      "delta": {
+        "values": {
+          "rr": 21,
+          "pulse": 111
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 4,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 2,
+          "pulse": 2
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0186",
+      "source_section": "§2.6 Aggregate thresholds and tiers",
+      "description": "FR 21; FC 111; T 35,6 → 2 + 2 + 1; Total 5; médio (fronteira 4/5, em cima)",
+      "delta": {
+        "values": {
+          "rr": 21,
+          "pulse": 111,
+          "temperature": 35.6
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 5,
+        "tier": "medium",
+        "fires": true,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 2,
+          "pulse": 2,
+          "temperature": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0187",
+      "source_section": "§2.6 Aggregate thresholds and tiers",
+      "description": "FR 21; FC 111; T 35,6; PAS 105 → 2 + 2 + 1 + 1; Total 6; médio (fronteira 6/7, abaixo)",
+      "delta": {
+        "values": {
+          "rr": 21,
+          "pulse": 111,
+          "temperature": 35.6,
+          "sbp": 105
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 6,
+        "tier": "medium",
+        "fires": true,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 2,
+          "pulse": 2,
+          "temperature": 1,
+          "sbp": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0188",
+      "source_section": "§2.6 Aggregate thresholds and tiers",
+      "description": "em oxigênio (SpO2 96, Escala 1 = 0); FR 21; FC 111; T 35,6 → 2 + 2 + 2 + 1; Total 7; alto (fronteira 6/7, em cima)",
+      "delta": {
+        "o2": "oxygen",
+        "values": {
+          "spo2": 96,
+          "rr": 21,
+          "pulse": 111,
+          "temperature": 35.6
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 7,
+        "tier": "high",
+        "fires": true,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "o2_status": 2,
+          "spo2": 0,
+          "rr": 2,
+          "pulse": 2,
+          "temperature": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0189",
+      "source_section": "§2.6 Aggregate thresholds and tiers",
+      "description": "apenas T 35,0 → um único 3, agregado 3; low_medium (vermelho) — tier Low–medium do Chart 2 da RCP",
+      "delta": {
+        "values": {
+          "temperature": 35
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "tier": "low_medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "temperature": 3
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0190",
+      "source_section": "§2.7 Decision-driven vectors (GDEC-0007)",
+      "description": "gravidez DOCUMENTADA — sem total; instrumento inadequado (RCP Rec 2); instrumento obstétrico indicado (DECIDIDO N-2 (a), GDEC-0007)",
+      "delta": {
+        "pregnancy": "documented"
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "tier": null,
+        "fires": false,
+        "redParameter": false,
+        "reasons": ["out_of_population_scope"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0191",
+      "source_section": "§2.7 Decision-driven vectors (GDEC-0007)",
+      "description": "SEM documentação de gravidez (explícito; parâmetros baseline) — Total 0; baixo; anotação visível obrigatória 'gravidez não verificada' (DECIDIDO N-2 (a), GDEC-0007)",
+      "delta": {
+        "pregnancy": "not_documented"
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "annotations": ["gravidez não verificada"]
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0192",
+      "source_section": "§2.7 Decision-driven vectors (GDEC-0007)",
+      "description": "temperatura fonte 38,05 °C (precisão mais fina que 0,1 °C; meio-passo exato entre 38,0 → 0 e 38,1 → 1) — arredonda PARA A BANDA MAIS ANORMAL → 38,1 → T = 1; Total 1; baixo (DECIDIDO N-7 (a), GDEC-0007)",
+      "delta": {
+        "values": {
+          "temperature": 38.05
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "temperature": 1
+        }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0193",
+      "source_section": "§2.7 Decision-driven vectors (GDEC-0007)",
+      "description": "duas PAS simultâneas, 108 e 112, mesmo tempo clínico, sem resolução (diferença 4 mmHg ≤ tolerância PAS ±10) — dentro da tolerância o PIOR valor pontua: PAS 108 → 1 ponto (banda 101–110; 112 daria 0); resolução registrada; Total 1; baixo (DECIDIDO N-10 (a), GDEC-0007)",
+      "delta": {
+        "conflictValues": {
+          "sbp": [108, 112]
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "tier": "low",
+        "fires": false,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "sbp": 1
+        }
+      }
+    }
+  ]
+}

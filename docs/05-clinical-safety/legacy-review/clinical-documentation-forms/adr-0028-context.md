@@ -50,7 +50,7 @@ status "accepted" (**within the legacy repository's own, separate governance
 — this status has no standing in IntensiCare V2**), is an Architecture
 Decision Record authored as part of a **prior planning effort that already
 called itself "V2"**, conducted entirely inside the legacy repository
-(`/Users/familia/intensicare`). That prior effort has its own ADR sequence
+(`https://github.com/Omni-Saude/intensicare`). That prior effort has its own ADR sequence
 (the document cites ADR-0005, ADR-0007, ADR-0008, ADR-0015, ADR-0020,
 ADR-0025, ADR-0029 as siblings, plus the legacy-internal `ADR-001-amh-data-
 platform-consumer.md`) which is **entirely separate from, and has no

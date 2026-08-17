@@ -1,0 +1,28 @@
+{
+  "name": "@intensicare/persistencia",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Camada de persistência do IntensiCare V2 (classe PostgreSQL — PGlite em dev/teste).",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && mkdir -p dist/migrations && cp -f src/migrations/*.sql dist/migrations/",
+    "test": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.5",
+    "@intensicare/dominio": "workspace:*"
+  },
+  "devDependencies": {}
+}

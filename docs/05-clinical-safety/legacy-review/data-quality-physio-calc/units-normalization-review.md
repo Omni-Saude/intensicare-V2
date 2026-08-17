@@ -1,33 +1,35 @@
 ---
 id: LEGREV-DQPC-UNITS
-title: Legacy review — V1 units normalizer, verify_units.py, and the units-registry.md design corpus
+title: Revisão legada — normalizador de unidades da V1, verify_units.py, e o corpus de design units-registry.md
 label: PROPOSAL
 status: PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI)
 statement: >
-  Source-verified forensic review of the V1 canonical-units runtime
-  (`services/units_normalizer.py`), the build-time unit-verification script
-  (`scripts/verify_units.py`), and the legacy team's own forward-looking
-  units-registry design document (`docs/plan/clinical/units-registry.md`),
-  with a conversion-factor-by-conversion-factor UCUM/published-source audit
-  and an explicit gap analysis between what the design document specifies
-  and what the runtime service actually implements. The FiO2 (~100x) and
-  bilirubin (~17x) unit-conversion risks named in the task packet are
-  answered directly in §3.
+  Revisão forense source-verified do runtime de unidades canônicas da V1
+  (`services/units_normalizer.py`), do script de verificação de unidade em
+  tempo de build (`scripts/verify_units.py`), e do documento de design de
+  registro de unidades voltado para o futuro da própria equipe legada
+  (`docs/plan/clinical/units-registry.md`), com uma auditoria
+  fator-de-conversão-por-fator-de-conversão contra UCUM/fontes publicadas e
+  uma análise de lacuna explícita entre o que o documento de design
+  especifica e o que o serviço em runtime de fato implementa. Os riscos de
+  conversão de unidade FiO2 (~100x) e bilirrubina (~17x) nomeados no pacote
+  de tarefa são respondidos diretamente em §3.
 provenance:
-  source_repo: intensicare (legacy V1, READ-ONLY)
+  source_repo: intensicare (legado V1, READ-ONLY)
   path_or_url: src/intensicare/services/units_normalizer.py; scripts/verify_units.py; docs/plan/clinical/units-registry.md
-  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD at pin; per-file SHA-256 in §0)
-  section_or_lines: cited per finding as path:lines
+  commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD no pin; SHA-256 por arquivo em §0)
+  section_or_lines: citado por achado como path:linhas
   date_collected: 2026-08-15
   last_updated: 2026-08-15
-  collector: rodaquino-OMNI (legacy data-quality/physiological-calculation forensics reviewer, cycle 1 Task 1, wave 1b)
+  collector: rodaquino-OMNI (revisor forense de qualidade-de-dados/cálculo-fisiológico legado, ciclo 1 Tarefa 1, wave 1b)
   transformation: >
-    read from source; conversion factors independently checked against this
-    reviewer's knowledge of UCUM and standard clinical-chemistry reference
-    conversions — external documents were NOT re-fetched in this
-    environment, so every published comparison below carries VALIDATION
-    REQUIRED for re-verification against the printed source before reliance.
-  confidence: high (code citations, arithmetic checks) / medium (clinical-source comparisons)
+    traduzido EN→pt-BR, tranche 3, GDEC-0008 item 8 (lido a partir da fonte;
+    fatores de conversão checados independentemente contra o conhecimento
+    deste revisor sobre UCUM e conversões de referência padrão de química
+    clínica — documentos externos NÃO foram reobtidos neste ambiente, então
+    toda comparação publicada abaixo carrega VALIDATION REQUIRED para
+    re-verificação contra a fonte impressa antes do uso)
+  confidence: alta (citações de código, checagens aritméticas) / média (comparações com fonte clínica)
   owner: UNASSIGNED — VALIDATION REQUIRED
   validation_status: VALIDATION REQUIRED
 links:
@@ -38,350 +40,376 @@ supersedes: null
 superseded_by: null
 ---
 
-# V1 units-normalization surface — forensic review
+> Traduzido EN→pt-BR em 2026-08-16 (GDEC-0008 item 8, tranche 3); original EN preservado no histórico git.
+
+# Superfície de normalização de unidades da V1 — revisão forense
 
 > **PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).**
-> Nothing here is an import decision. Per
-> `docs/00-governance/legacy-import-policy.md` §1 the default is **do not
-> copy**; every verdict below is a classification proposal under §4 only.
+> Nada aqui é uma decisão de importação. Conforme
+> `docs/00-governance/legacy-import-policy.md` §1, o padrão é **não
+> copiar**; todo veredito abaixo é apenas uma proposta de classificação sob
+> §4.
 
-## 0. Sources and integrity
+## 0. Fontes e integridade
 
-Paths relative to `/Users/familia/intensicare/`. OBSERVED 2026-08-15 (this
-reviewer re-hashed each file with `shasum -a 256` and compared against
-`docs/archive/legacy-provenance/legacy-pin-cycle-1.md` / the cycle-1
-`inventory.md`): all three match.
+Caminhos relativos a `https://github.com/Omni-Saude/intensicare`. OBSERVED 2026-08-15
+(este revisor re-hasheou cada arquivo com `shasum -a 256` e comparou contra
+`docs/archive/legacy-provenance/legacy-pin-cycle-1.md` / o `inventory.md`
+do ciclo-1): todos os três correspondem.
 
 ```text
 1f95ec99c03f4d1e17548fb33e2f4d08431f1801b050765d77d6fa3bcc0f80c4  src/intensicare/services/units_normalizer.py
 80513917eaf841f139aa8859b8f42f6f0fc2ce6a3e51a0b37154b4a6ebce4c7d  scripts/verify_units.py (rt)
 c8e4fccbb04e003763ade67fba0ba753b05a1e56ee97747cb98b8981efb6d8a7  docs/plan/clinical/units-registry.md (rt)
-345583406893937287376f34c6e7d71a32091130af7e8918c5ee891dc092b863  tests/test_units_normalizer.py (rt) — LISTED per task packet, not reviewed
+345583406893937287376f34c6e7d71a32091130af7e8918c5ee891dc092b863  tests/test_units_normalizer.py (rt) — LISTADO conforme o pacote de tarefa, não revisado
 ```
 
-`(rt)` = hash-and-note, computed at read time 2026-08-15; matches
-`inventory.md`'s own `(rt)` values for these paths.
+`(rt)` = hash-and-note, computado no momento da leitura em 2026-08-15;
+corresponde aos próprios valores `(rt)` do `inventory.md` para esses
+caminhos.
 
 ---
 
-## 1. `services/units_normalizer.py` — what it is
+## 1. `services/units_normalizer.py` — o que é
 
-OBSERVED (`units_normalizer.py:1-14`): a small module providing (a) a single
-guard function, `validate_fio2_fraction`, and (b) a registry-based
-normalizer, `normalize_value`, "used at the Gold-layer read boundary
-(`services.gold_reader`) to convert whatever unit a source system reports
-into each parameter's canonical unit." The module's own docstring states
-its scope precisely: fixed multiplicative factors only; affine conversions
-(Fahrenheit→Celsius) are deliberately unsupported and rejected loudly
-rather than silently mis-converted — a genuinely good HAZ-0005-aware design
-choice (`:9-13`, `:88-93`), reviewed further in §4.
+OBSERVED (`units_normalizer.py:1-14`): um módulo pequeno que fornece (a)
+uma única função de guarda, `validate_fio2_fraction`, e (b) um
+normalizador baseado em registro, `normalize_value`, "used at the
+Gold-layer read boundary (`services.gold_reader`) to convert whatever unit
+a source system reports into each parameter's canonical unit." (citação
+mantida em inglês, texto literal da docstring). A própria docstring do
+módulo declara seu escopo com precisão: apenas fatores multiplicativos
+fixos; conversões afins (Fahrenheit→Celsius) são deliberadamente não
+suportadas e rejeitadas alto em vez de convertidas incorretamente em
+silêncio — uma escolha de design genuinamente boa e consciente do HAZ-0005
+(`:9-13`, `:88-93`), revisada mais adiante em §4.
 
-### 1.1 `validate_fio2_fraction` — defined, never wired in
+### 1.1 `validate_fio2_fraction` — definida, nunca conectada
 
-OBSERVED (`:25-39`): raises `ValueError` if `value > 1.0`. OBSERVED
-(repo-wide `grep`): this function is **imported and called nowhere else in
-`src/`** — no scorer, no domain service, no API route references it. It is
-dead code: a correct guard that protects nothing in the live system.
-**Verdict: REJECT** the current (unwired) state; **TRANSFORM** the concept
-— an FiO2 fraction guard is exactly the right idea, but it must be called
-at every FiO2 ingestion/consumption boundary, not merely exist.
+OBSERVED (`:25-39`): dispara `ValueError` se `value > 1.0`. OBSERVED (grep
+em todo o repositório): esta função **não é importada nem chamada em
+nenhum outro lugar em `src/`** — nenhum scorer, nenhum serviço de domínio,
+nenhuma rota de API a referencia. É código morto: uma guarda correta que
+não protege nada no sistema em produção. **Veredito: REJECT** o estado
+atual (não conectado); **TRANSFORM** o conceito — uma guarda de fração de
+FiO2 é exatamente a ideia certa, mas precisa ser chamada em toda fronteira
+de ingestão/consumo de FiO2, não meramente existir.
 
-### 1.2 `normalize_value` and the canonical-unit registry
+### 1.2 `normalize_value` e o registro de unidade canônica
 
-OBSERVED (`:54-94`): `_PARAMETER_REGISTRY` holds **exactly five**
-parameters: `creatinina`, `fio2`, `lactato_arterial`, `pao2`,
-`temperatura`. Each maps a `canonical_unit` and a `units` dict of
-`{unit_name: factor}`, with `factor: None` reserved for recognized-but
-unsupported affine conversions (used only for `degf`, `:91`).
+OBSERVED (`:54-94`): `_PARAMETER_REGISTRY` contém **exatamente cinco**
+parâmetros: `creatinina`, `fio2`, `lactato_arterial`, `pao2`,
+`temperatura`. Cada um mapeia uma `canonical_unit` e um dict `units` de
+`{unit_name: factor}`, com `factor: None` reservado para conversões afins
+reconhecidas-mas-não-suportadas (usado apenas para `degf`, `:91`).
 
-OBSERVED (`:108-125`): unknown parameter, unrecognized unit, and
-`factor is None` all raise `UnitNormalizationError` (a `ValueError`
-subclass) — the function never silently returns a wrong number for those
-three cases. This is the correct failure mode *for the function itself*;
-whether the **caller** treats that exception as "not evaluated" rather
-than passing the original value through is a `gold_reader.py` question,
-answered in `gold-pipeline-review.md` §2 (short answer: the row survives
-with its original, unconverted value and a `_normalization_error` flag —
-not dropped, not blocked).
+OBSERVED (`:108-125`): parâmetro desconhecido, unidade não reconhecida, e
+`factor is None` todos disparam `UnitNormalizationError` (uma subclasse de
+`ValueError`) — a função nunca retorna silenciosamente um número errado
+para esses três casos. Este é o modo de falha correto *para a própria
+função*; se o **chamador** trata essa exceção como "não avaliado" em vez de
+passar adiante o valor original é uma questão do `gold_reader.py`,
+respondida em `gold-pipeline-review.md` §2 (resposta curta: a linha
+sobrevive com seu valor original, não convertido, e uma flag
+`_normalization_error` — não descartada, não bloqueada).
 
-OBSERVED (repo-wide `grep`): `normalize_value` has **exactly one caller**
-in `src/`: `gold_reader.py:320` (`AthenaPoller._normalize_rows`). No
-domain scorer (`sofa.py`, `qsofa.py`, the `domain_*.py` services) and no
-API route calls into this registry directly. Its reach is therefore
-limited to whatever flows through the Athena/Gold batch-poll path; values
-entering by the direct OLTP/API path that the `sinais-vitais` rule cluster
-governs (see `sinais-vitais-cluster-review.md`) receive **no unit
-conversion or unit-awareness at all** — those validators check numeric
-plausibility only (§1.3 below and the cluster record cross this wire in
-both directions).
+OBSERVED (grep em todo o repositório): `normalize_value` tem **exatamente
+um chamador** em `src/`: `gold_reader.py:320`
+(`AthenaPoller._normalize_rows`). Nenhum scorer de domínio (`sofa.py`,
+`qsofa.py`, os serviços `domain_*.py`) e nenhuma rota de API chama esse
+registro diretamente. Seu alcance, portanto, se limita ao que flui pelo
+caminho de batch-poll Athena/Gold; valores que entram pelo caminho direto
+OLTP/API que o cluster de regras `sinais-vitais` governa (ver
+`sinais-vitais-cluster-review.md`) recebem **nenhuma conversão de unidade
+ou consciência de unidade de forma alguma** — esses validadores checam
+apenas plausibilidade numérica (§1.3 abaixo e o registro de cluster
+cruzam esse fio em ambas as direções).
 
 ---
 
-## 2. Conversion-factor audit (all five implemented parameters)
+## 2. Auditoria de fator de conversão (todos os cinco parâmetros implementados)
 
-Method: each factor is checked as `value_in_from_unit × factor ==
-value_in_canonical_unit`, against this reviewer's knowledge of UCUM and
-standard clinical-chemistry conversions (VALIDATION REQUIRED — re-verify
-against a printed reference before reliance, per the front-matter above).
+Método: cada fator é checado como `valor_na_unidade_de_origem × fator ==
+valor_na_unidade_canônica`, contra o conhecimento deste revisor sobre UCUM e
+conversões padrão de química clínica (VALIDATION REQUIRED — re-verificar
+contra uma referência impressa antes do uso, conforme o front matter
+acima).
 
-| # | Parameter | Canonical | Edge unit → factor | Arithmetic check | Published comparison | Result |
+| # | Parâmetro | Canônico | Unidade de borda → fator | Checagem aritmética | Comparação publicada | Resultado |
 |---|---|---|---|---|---|---|
-| 1 | `fio2` | `fraction` | `percent`/`%` → ×0.01 | 40 % × 0.01 = 0.40 fraction — correct direction and magnitude | Matches `units-registry.md` §2.1 (`LAW`, SYS-01) and standard FiO2 percent↔fraction convention | **VERIFIED** (arithmetic + design-doc agreement) |
-| 2 | `creatinina` | `mg/dL` | `umol/l` → ×0.0113 | 88.4 µmol/L × 0.0113 = 0.999 mg/dL, vs. the textbook 1 mg/dL ≈ 88.4 µmol/L identity | Matches `units-registry.md` §2.5 (`÷88.42`, i.e. ×0.011310 — a 4th-significant-figure rounding difference, clinically immaterial) | **VERIFIED**, precision note below |
-| 3 | `lactato_arterial` | `mmol/L` | `mg/dl` → ×0.111 | 9.008 mg/dL × 0.111 = 1.0000 mmol/L, vs. lactate MW 90.08 g/mol ⇒ 1 mmol/L = 9.008 mg/dL (1/9.008 = 0.11101) | Matches `units-registry.md` §2.1 (`×0.111 (÷9.01)`, SYS-03, "~9x legacy chaos") | **VERIFIED** |
-| 4 | `pao2` | `mmHg` | `kpa` → ×7.50062 | Standard SI identity 1 kPa = 7.50062 mmHg (1/0.133322) | Matches `units-registry.md` §2.1 | **VERIFIED** |
-| 5 | `temperatura` | `°C` | `degc`/`°c` → ×1.0; `degf` → `None` (rejected, not converted) | Fahrenheit needs `(F−32)×5/9`, not a multiplier — correctly refused rather than mis-applied | Matches `units-registry.md` §2.7 ("`°F` → (°F−32)×5/9 (affine, null)") | **VERIFIED** — the one row where "no conversion" is the *correct* behavior |
+| 1 | `fio2` | `fraction` | `percent`/`%` → ×0,01 | 40 % × 0,01 = 0,40 fração — direção e magnitude corretas | Corresponde a `units-registry.md` §2.1 (`LAW`, SYS-01) e à convenção padrão percentual↔fração de FiO2 | **VERIFICADO** (aritmética + concordância com o documento de design) |
+| 2 | `creatinina` | `mg/dL` | `umol/l` → ×0,0113 | 88,4 µmol/L × 0,0113 = 0,999 mg/dL, vs. a identidade de livro-texto 1 mg/dL ≈ 88,4 µmol/L | Corresponde a `units-registry.md` §2.5 (`÷88,42`, ou seja ×0,011310 — uma diferença de arredondamento na 4ª casa significativa, clinicamente irrelevante) | **VERIFICADO**, nota de precisão abaixo |
+| 3 | `lactato_arterial` | `mmol/L` | `mg/dl` → ×0,111 | 9,008 mg/dL × 0,111 = 1,0000 mmol/L, vs. PM do lactato 90,08 g/mol ⇒ 1 mmol/L = 9,008 mg/dL (1/9,008 = 0,11101) | Corresponde a `units-registry.md` §2.1 (`×0,111 (÷9,01)`, SYS-03, "~9x legacy chaos") | **VERIFICADO** |
+| 4 | `pao2` | `mmHg` | `kpa` → ×7,50062 | Identidade SI padrão 1 kPa = 7,50062 mmHg (1/0,133322) | Corresponde a `units-registry.md` §2.1 | **VERIFICADO** |
+| 5 | `temperatura` | `°C` | `degc`/`°c` → ×1,0; `degf` → `None` (rejeitado, não convertido) | Fahrenheit precisa de `(F−32)×5/9`, não um multiplicador — corretamente recusado em vez de aplicado incorretamente | Corresponde a `units-registry.md` §2.7 ("`°F` → (°F−32)×5/9 (afim, null)") | **VERIFICADO** — a única linha onde "sem conversão" é o comportamento *correto* |
 
-**Precision note (row 2):** `units-registry.md` cites `÷88.42` (⇒
-×0.011307...); the implemented `0.0113` differs at the 4th significant
-figure (≈0.06 % lower magnitude). Clinically immaterial at any creatinine
-value in the validated plausibility range (0–20 mg/dL per
-`RULE-SINAIS-VITAIS-025`), but no rounding/precision policy is documented
-anywhere in the module — `normalize_value` returns the raw
-floating-point product with no explicit `round()` — **VALIDATION
-REQUIRED**: a named precision/storage policy (the design doc calls for
-`DECIMAL(4,1)` storage for temperature, `:155` of `units-registry.md`, but
-`units_normalizer.py` enforces no comparable precision contract for any
-parameter it converts).
+**Nota de precisão (linha 2):** `units-registry.md` cita `÷88,42` (⇒
+×0,011307...); o `0,0113` implementado difere na 4ª casa significativa
+(≈0,06 % de magnitude menor). Clinicamente irrelevante em qualquer valor de
+creatinina dentro da faixa de plausibilidade validada (0–20 mg/dL conforme
+`RULE-SINAIS-VITAIS-025`), mas nenhuma política de arredondamento/precisão
+está documentada em lugar nenhum do módulo — `normalize_value` retorna o
+produto de ponto flutuante bruto sem nenhum `round()` explícito —
+**VALIDATION REQUIRED**: uma política de precisão/armazenamento nomeada (o
+documento de design pede armazenamento `DECIMAL(4,1)` para temperatura,
+`:155` de `units-registry.md`, mas `units_normalizer.py` não aplica
+nenhum contrato de precisão comparável para nenhum parâmetro que converte).
 
-**Conversion-factor audit result for this record: 5 of 5 implemented
-factors independently VERIFIED** against UCUM/standard clinical-chemistry
-identities and against the legacy team's own design citations. **Zero
-implemented factors found to be numerically wrong.** The defect in this
-module is not an incorrect factor — it is **near-total absence of
-coverage**, detailed in §3–§4.
+**Resultado da auditoria de fator de conversão para este registro: 5 de 5
+fatores implementados VERIFICADOS** independentemente contra identidades
+UCUM/química clínica padrão e contra as próprias citações de design da
+equipe legada. **Zero fatores implementados encontrados numericamente
+errados.** O defeito deste módulo não é um fator incorreto — é a
+**ausência quase-total de cobertura**, detalhada em §3–§4.
 
 ---
 
-## 3. The two named risks from the task packet, answered directly
+## 3. Os dois riscos nomeados do pacote de tarefa, respondidos diretamente
 
-### 3.1 FiO2 percent-vs-fraction (~100x risk, `units-registry.md` SYS-01)
+### 3.1 FiO2 percentual-vs-fração (risco ~100x, `units-registry.md` SYS-01)
 
-**Correctly implemented.** `fio2` is registered with `fraction` as
-canonical and both `percent` and `%` map to ×0.01 (`:65-68`). Fed a value
-tagged `unit_canonical="percent"`, `normalize_value` returns the correct
-fraction. This is the one parameter in the runtime registry that fully
-matches its `units-registry.md` design entry (`fraction`, LAW, SYS-01).
-**Residual risk is not in the arithmetic but in coverage**: this
-conversion only fires for rows that pass through
-`gold_reader._normalize_rows` **and** already carry a correct
-`unit_canonical` tag of `"percent"`/`"%"`/`"fraction"`. Nothing in this
-module's file set enforces that every FiO2-bearing row on every ingestion
-path carries a unit tag at all — `validate_fio2_fraction` (§1.1) is the
-dead guard that was presumably meant to backstop exactly this case and
-does not. **Verdict: VALIDATE** the factor itself (arithmetically and
-citation-verified); **REJECT** the coverage gap (single-path enforcement,
-dead secondary guard) as insufficient to retire the hazard class.
+**Corretamente implementado.** `fio2` é registrado com `fraction` como
+canônico e ambos `percent` e `%` mapeiam para ×0,01 (`:65-68`). Alimentado
+com um valor marcado `unit_canonical="percent"`, `normalize_value` retorna
+a fração correta. Este é o único parâmetro no registro em runtime que
+corresponde totalmente à sua entrada de design em `units-registry.md`
+(`fraction`, LAW, SYS-01). **O risco residual não está na aritmética, mas
+na cobertura**: essa conversão só dispara para linhas que passam por
+`gold_reader._normalize_rows` **e** já carregam uma tag `unit_canonical`
+correta de `"percent"`/`"%"`/`"fraction"`. Nada no conjunto de arquivos
+deste módulo garante que toda linha portando FiO2 em todo caminho de
+ingestão carregue uma tag de unidade de forma alguma —
+`validate_fio2_fraction` (§1.1) é a guarda morta que presumivelmente foi
+pensada para reforçar exatamente esse caso e não o faz. **Veredito:
+VALIDATE** o fator em si (verificado aritmética e por citação); **REJECT**
+a lacuna de cobertura (aplicação em caminho único, guarda secundária
+morta) como insuficiente para aposentar a classe de hazard.
 
-### 3.2 Bilirubin mg/dL-vs-µmol/L (~17x risk, sofa-review.md D-06)
+### 3.2 Bilirrubina mg/dL-vs-µmol/L (risco ~17x, sofa-review.md D-06)
 
-**Not implemented at all.** `bilirrubinas` (or any bilirubin spelling)
-does **not appear** in `_PARAMETER_REGISTRY` (`:54-94`, confirmed by
-direct read — the five keys are exhaustive). This is despite:
+**Não implementado de forma alguma.** `bilirrubinas` (ou qualquer grafia
+de bilirrubina) **não aparece** em `_PARAMETER_REGISTRY` (`:54-94`,
+confirmado por leitura direta — as cinco chaves são exaustivas). Isso
+apesar de:
 
-- `units-registry.md` §2.5 (part of **this same workstream's item list**)
-  explicitly specifying the needed conversion: `bilirubina | total
-  bilirubin | mg/dL | µmol/L ×0.05848 (÷17.1) | SOFA-liver bands; SYS-07
-  boundary gaps are threshold bugs` (`units-registry.md:131`) — the
-  legacy team's own design document already named the correct factor and
-  cited the hazard class, and the runtime service never implemented it.
-- The sepsis-scores workstream's independent review
+- `units-registry.md` §2.5 (parte da **lista de itens deste mesmo
+  workstream**) especificar explicitamente a conversão necessária:
+  `bilirubina | total bilirubin | mg/dL | µmol/L ×0,05848 (÷17,1) |
+  SOFA-liver bands; SYS-07 boundary gaps are threshold bugs`
+  (`units-registry.md:131`) — o próprio documento de design da equipe
+  legada já nomeou o fator correto e citou a classe de hazard, e o serviço
+  em runtime nunca o implementou.
+- A revisão independente do workstream de sepsis-scores
   (`docs/05-clinical-safety/legacy-review/sepsis-scores/sofa-review.md`,
-  finding D-06) found the identical hazard from the *scoring-function*
-  side: `sofa.py`'s bilirubin bands are `mg/dL`-only despite a docstring
-  inviting `µmol/L` input, and "a µmol/L value passed as-is over-scores by
-  ~17× (normal 10 µmol/L reads as 10 'mg/dL' → 3 points)." **This record
-  confirms, from the units-normalization side, that no layer of the
-  pipeline catches that error before it reaches the scorer** — there is
-  no unit-tagged edge conversion anywhere upstream for bilirubin, so a
-  µmol/L value entering via the Gold/Athena path would raise
-  `UnitNormalizationError: Parâmetro desconhecido` in `gold_reader.py`
-  (caught, logged, row kept unconverted — see `gold-pipeline-review.md`
-  §2) rather than being converted or blocked, and a value entering via the
-  direct OLTP path (`RULE-SINAIS-VITAIS-022`, `0–30 mg/dL` plausibility
-  bound) is not unit-tagged at all and a normal-range µmol/L value (≈5–21)
-  passes that bound undetected as if it were `mg/dL` — see
-  `sinais-vitais-cluster-review.md` rule 022.
+  achado D-06) encontrou o hazard idêntico pelo lado da *função de
+  scoring*: as faixas de bilirrubina do `sofa.py` são apenas-`mg/dL`
+  apesar de uma docstring convidando entrada em `µmol/L`, e "a µmol/L
+  value passed as-is over-scores by ~17× (normal 10 µmol/L reads as 10
+  'mg/dL' → 3 points)." (citação mantida em inglês, texto literal do
+  achado original). **Este registro confirma, do lado da
+  normalização-de-unidades, que nenhuma camada do pipeline captura esse
+  erro antes que ele alcance o scorer** — não existe nenhuma conversão de
+  borda com tag de unidade em nenhum ponto upstream para bilirrubina,
+  então um valor em µmol/L entrando pelo caminho Gold/Athena dispararia
+  `UnitNormalizationError: Parâmetro desconhecido` em `gold_reader.py`
+  (capturado, logado, linha mantida não convertida — ver
+  `gold-pipeline-review.md` §2) em vez de ser convertido ou bloqueado, e
+  um valor entrando pelo caminho OLTP direto (`RULE-SINAIS-VITAIS-022`,
+  limite de plausibilidade `0–30 mg/dL`) não é marcado com unidade de
+  forma alguma, e um valor em µmol/L de faixa normal (≈5–21) passa por
+  esse limite sem ser detectado como se fosse `mg/dL` — ver
+  `sinais-vitais-cluster-review.md` regra 022.
 
-**Verdict: REJECT** the current state as clinically unsafe by omission —
-this is the single most severe finding in this workstream. **TRANSFORM**
-required: implement the `bilirrubinas`/`bilirubina` entry using the exact
-factor `units-registry.md` already specifies (×0.05848, VALIDATION
-REQUIRED for independent re-verification against a clinical-chemistry
-reference before any import), wired into every ingestion path that can
-carry a bilirubin value, not only the Gold/Athena poller.
+**Veredito: REJECT** o estado atual como clinicamente inseguro por omissão
+— este é o achado único mais severo deste workstream. **TRANSFORM**
+exigido: implementar a entrada `bilirrubinas`/`bilirubina` usando o fator
+exato que `units-registry.md` já especifica (×0,05848, VALIDATION
+REQUIRED para re-verificação independente contra uma referência de química
+clínica antes de qualquer importação), conectada em todo caminho de
+ingestão que possa carregar um valor de bilirrubina, não apenas o poller
+Gold/Athena.
 
 ---
 
-## 4. Coverage gap: the runtime registry vs. its own design document
+## 4. Lacuna de cobertura: o registro em runtime vs. seu próprio documento de design
 
-`units-registry.md` §2 catalogs **≈35 parameters** with named canonical
-units, cited edge conversions, and explicit hazard-class provenance
-(`SYS-01` through `SYS-09` plus several "related unit mislabels", §3).
-`units_normalizer.py` implements **5**. The following table lists every
-`units-registry.md` parameter that is clinically load-bearing in this
-workstream's own item set (the `sinais-vitais` cluster, §1.3) or named as
-a systemic hazard in `units-registry.md` §3, cross-referenced against its
-implementation status in the runtime registry.
+`units-registry.md` §2 cataloga **≈35 parâmetros** com unidades canônicas
+nomeadas, conversões de borda citadas, e proveniência de classe de hazard
+explícita (`SYS-01` a `SYS-09` mais vários "related unit mislabels", §3).
+`units_normalizer.py` implementa **5**. A tabela a seguir lista todo
+parâmetro de `units-registry.md` que é clinicamente load-bearing no
+próprio conjunto de itens deste workstream (o cluster `sinais-vitais`,
+§1.3) ou nomeado como hazard sistêmico em `units-registry.md` §3, cruzado
+contra seu status de implementação no registro em runtime.
 
-| Parameter (`units-registry.md`) | Design canonical + edge factor | Hazard class named | Implemented in `units_normalizer.py`? |
+| Parâmetro (`units-registry.md`) | Canônico de design + fator de borda | Classe de hazard nomeada | Implementado em `units_normalizer.py`? |
 |---|---|---|---|
-| `bilirubina` | `mg/dL`; µmol/L ×0.05848 | 17× (D-06, this record §3.2) | **No** |
-| `dose_vasopressor` | `mcg/kg/min`; `mL/h` needs a **service**, not a factor | SYS-02, ~60× | **No** (no fixed-factor entries, no service) |
-| `potassio` | `mmol/L`; `mg/dL` ×0.2558 (design doc itself flags "suspected mislabel") | RULE-EQUILIBRIO-004 mislabel | **No** |
-| `sodio` | `mmol/L`; `mg/dL` ×0.435 (design doc: "suspected mislabel") | Δ-Na correction safety (CON-0061) | **No** |
-| `hemoglobina` | `g/dL`; legacy `mg/dl` label flagged **1000×** error | audit-named 1000× | **No** |
-| `glicemia` | `mg/dL`; `mmol/L` ×18.016 | none named, but an 18× class by construction | **No** |
-| `plaquetas` | `10^3/uL` (== `10^9/L`); `/uL`/`/mm^3` ÷1000 | scale mismatch vs. `RULE-SINAIS-VITAIS-028`'s raw `/mm3` bound | **No** |
-| `leucocitos` | `10^3/uL`; `/uL`/`/mm^3` ÷1000 | scale mismatch vs. `RULE-SINAIS-VITAIS-026`'s raw `/mm3` bound | **No** |
-| `proteina_c_reativa` (CRP) | `mg/L`; `mg/dL` ×10 | "frequent silent 10x error" | **No** |
-| `paco2` | `mmHg`; `kPa` ×7.50062 | drives NEWS2 Scale 2 | **No** (only its sibling `pao2` is registered) |
-| `peep`, `pressao_plato`, `pressao_inspiratoria` | `cmH2O`; `mbar` ×1.01972 | design doc itself flags bounds-disagreement needing ratification | **No** |
-| `peso` (weight) | `kg`; comma/dot decimal-parse hazard | SYS-09, ~10× (a **parsing**, not conversion-factor, bug) | **No** (out of this module's scope entirely — no weight parameter exists here) |
+| `bilirubina` | `mg/dL`; µmol/L ×0,05848 | 17× (D-06, este registro §3.2) | **Não** |
+| `dose_vasopressor` | `mcg/kg/min`; `mL/h` precisa de um **serviço**, não um fator | SYS-02, ~60× | **Não** (nenhuma entrada de fator fixo, nenhum serviço) |
+| `potassio` | `mmol/L`; `mg/dL` ×0,2558 (o próprio documento de design sinaliza "suspected mislabel") | mislabel da RULE-EQUILIBRIO-004 | **Não** |
+| `sodio` | `mmol/L`; `mg/dL` ×0,435 (documento de design: "suspected mislabel") | segurança de correção de Δ-Na (CON-0061) | **Não** |
+| `hemoglobina` | `g/dL`; rótulo legado `mg/dl` sinalizado como erro de **1000×** | 1000× nomeado em auditoria | **Não** |
+| `glicemia` | `mg/dL`; `mmol/L` ×18,016 | nenhum nomeado, mas uma classe de 18× por construção | **Não** |
+| `plaquetas` | `10^3/uL` (== `10^9/L`); `/uL`/`/mm^3` ÷1000 | descasamento de escala vs. o limite bruto `/mm3` da `RULE-SINAIS-VITAIS-028` | **Não** |
+| `leucocitos` | `10^3/uL`; `/uL`/`/mm^3` ÷1000 | descasamento de escala vs. o limite bruto `/mm3` da `RULE-SINAIS-VITAIS-026` | **Não** |
+| `proteina_c_reativa` (PCR) | `mg/L`; `mg/dL` ×10 | "frequent silent 10x error" | **Não** |
+| `paco2` | `mmHg`; `kPa` ×7,50062 | direciona a Escala 2 do NEWS2 | **Não** (apenas seu irmão `pao2` está registrado) |
+| `peep`, `pressao_plato`, `pressao_inspiratoria` | `cmH2O`; `mbar` ×1,01972 | o próprio documento de design sinaliza desacordo de limites que precisa de ratificação | **Não** |
+| `peso` (peso) | `kg`; hazard de parse decimal vírgula/ponto | SYS-09, ~10× (um bug de **parsing**, não de fator de conversão) | **Não** (totalmente fora do escopo deste módulo — nenhum parâmetro de peso existe aqui) |
 
-**Verdict on the runtime registry as a whole: REJECT completeness.** The
-five implemented conversions are individually sound (§2), but the module
-cannot be relied upon as "the" canonical-units enforcer its own docstring
-and `units-registry.md`'s principle 1 ("Canonical at every computation and
-API boundary") require — it enforces that boundary for one in seven
-clinical domains and for roughly one in seven cataloged parameters.
-**TRANSFORM**: extend `_PARAMETER_REGISTRY` to the full `units-registry.md`
-catalog (or a named, ratified subset) before any consumer is allowed to
-assume unit safety from this module's presence alone.
-
----
-
-## 5. `scripts/verify_units.py` — orphaned, stale, and internally divergent from its own claimed role
-
-OBSERVED (`:1-7`): the script's own docstring calls it "a skeleton —
-extend as the canonical unit registry grows" and states its purpose is to
-validate YAML-declared threshold units against a `CANONICAL_UNITS`
-dict (`:15-29`) by naive regex extraction of `unit:` keys (`:40-55`,
-explicitly "naive").
-
-**Not wired into anything.** OBSERVED (repo-wide `grep` for
-`verify_units`): the only two hits outside the file itself are a
-narrative mention in `INTENSICARE_TECHNICAL_ASSESSMENT.md` and an
-**inconsistent claim** inside `scripts/validate_alerts.py` (see next
-paragraph) — no CI workflow, `Makefile` target, or pre-commit hook
-invokes `scripts/verify_units.py`. `inventory.md` describes it as "source
-of Gate A" (`docs/05-clinical-safety/legacy-review/00-inventory/
-inventory.md:508`); this is **not what the code does**.
-
-**The claim is contradicted by the actual Gate A implementation.**
-`scripts/validate_alerts.py` (owned by the **pathways** workstream per
-`coverage-map.md` — not reviewed in depth here, cited only for the
-cross-check) states in its own comment "Canonical unit registry (source:
-scripts/verify_units.py)" (`validate_alerts.py:59-60`) but **does not
-import `verify_units.py`** — `grep` for `import` in that file shows no
-such import; it carries its **own, separately-maintained**
-`CANONICAL_UNITS` dict (`validate_alerts.py:61-83`) that has **diverged**
-from `verify_units.py`'s: it adds `irpm` to `respiratory_rate`,
-`mL/kg/h` to `volume`, `dias`/`stage`/`dimensionless`/`ciclos/min/L` to
-several categories, and three entirely new categories
-(`events`, `dose_rate`, `position`) absent from `verify_units.py`. Two
-independently-maintained copies of "the" canonical registry, forked and
-drifting, is precisely the failure mode `units-registry.md` principle 1
-exists to prevent ("There is no 'it depends on the site'... resolved
-*before* the value enters the system") — and it has already happened
-between two files in the *same* legacy repository.
-
-**Category-based, not parameter-based — a design mismatch with
-`units-registry.md`.** `verify_units.py`'s `CANONICAL_UNITS["lab"]`
-accepts `{"mg/dL", "mmol/L", "mEq/L", "g/dL", "U/L", "ng/mL", "pg/mL"}` as
-*all* canonical for the single bucket `"lab"` (`:23`) — meaning a lactate
-value declared `unit: mg/dL` and one declared `unit: mmol/L` would **both
-pass** this checker, even though `units-registry.md` §2.1 designates
-exactly one of those as canonical for `lactato_arterial` (SYS-03, ~9×
-class) and treats the other as an edge input requiring conversion. A
-category-level "is this unit spelled correctly" checker is a materially
-weaker guarantee than a parameter-level "is this the one canonical unit"
-checker, and would not have caught any of the SYS-01/02/03 defects
-`units-registry.md` §3 documents.
-
-**Verdict: REJECT** the current script as neither wired-in nor structurally
-capable of the single-canonical-unit-per-parameter guarantee the
-workstream's own design document requires. **TRANSFORM** the *intent*
-(build-time unit verification against a canonical registry, per
-`units-registry.md` principle 4, "unit mismatch is a BUILD-TIME error, not
-a runtime surprise") — this is exactly the right idea and should survive
-into V2, rebuilt parameter-keyed against the single registry, actually
-wired into CI, and de-duplicated against whatever gate the pathways
-workstream's `validate_alerts.py` Gate A becomes.
+**Veredito sobre o registro em runtime como um todo: REJECT completude.**
+As cinco conversões implementadas são individualmente sólidas (§2), mas o
+módulo não pode ser confiado como "o" aplicador de unidades canônicas que
+sua própria docstring e o princípio 1 de `units-registry.md` ("Canonical
+at every computation and API boundary") exigem — ele aplica essa fronteira
+para um em cada sete domínios clínicos e para aproximadamente um em cada
+sete parâmetros catalogados. **TRANSFORM**: estender
+`_PARAMETER_REGISTRY` para o catálogo completo de `units-registry.md` (ou
+um subconjunto nomeado e ratificado) antes que qualquer consumidor tenha
+permissão de presumir segurança de unidade apenas pela presença deste
+módulo.
 
 ---
 
-## 6. `docs/plan/clinical/units-registry.md` — design corpus, not implemented code
+## 5. `scripts/verify_units.py` — órfão, obsoleto, e internamente divergente do próprio papel que alega
 
-This document (item in this workstream's own list) is the legacy team's
-**own forward-looking design proposal** for a V2 units registry — it is
-**not** running code, and per
-`docs/00-governance/legacy-import-policy.md` §1/§2 it is "risk-informed
-input, not authority": informative, unratified under V2 governance, and
-independently reviewed here rather than trusted at face value.
+OBSERVED (`:1-7`): a própria docstring do script o chama de "a skeleton —
+extend as the canonical unit registry grows" e declara que seu propósito é
+validar unidades de limiar declaradas em YAML contra um dict
+`CANONICAL_UNITS` (`:15-29`) por extração de regex ingênua de chaves
+`unit:` (`:40-55`, explicitamente "naive").
 
-**What it gets right (OBSERVED, read in full — §2.1-2.9, §3):**
-- A genuinely single-canonical-unit-per-parameter design (principle 1),
-  edge-conversion vs. 1:1-alias distinction (principle 2), and a named
-  build-time-error requirement (principle 4) — directly addressing the
-  exact failure class (§5 above) found live in this repository.
-- Every factor carries a citation or a named provenance ("provenance
-  duty," principle 5): molecular-weight-derived factors name the analyte,
-  systemic hazard classes (SYS-01/02/03/09) each cite the specific legacy
-  rule IDs and an approximate magnitude of the defect they close.
-- It independently corroborates this record's §3 findings for FiO2
-  (SYS-01, "~100x too small") and names the bilirubin factor this record's
-  §3.2 shows is unimplemented, plus several risks not yet checked
-  anywhere in this workstream's runtime-code file set (hemoglobin 1000×,
-  vasopressor dosing ~60×, weight-parsing ~10×) — see §4 above.
+**Não conectado a nada.** OBSERVED (grep em todo o repositório por
+`verify_units`): os únicos dois hits fora do próprio arquivo são uma
+menção narrativa em `INTENSICARE_TECHNICAL_ASSESSMENT.md` e uma **alegação
+inconsistente** dentro de `scripts/validate_alerts.py` (ver próximo
+parágrafo) — nenhum workflow de CI, alvo de `Makefile`, ou hook de
+pre-commit invoca `scripts/verify_units.py`. O `inventory.md` o descreve
+como "source of Gate A"
+(`docs/05-clinical-safety/legacy-review/00-inventory/inventory.md:508`);
+isso **não é o que o código faz**.
 
-**What requires independent validation before any reliance:**
-- Every conversion factor is **VALIDATION REQUIRED** against a printed
-  clinical-chemistry/UCUM reference regardless of how well-cited it reads
-  here — this reviewer did not re-fetch external sources (front matter
-  above), and the document is the legacy team's own unratified output,
-  not a primary source itself.
-- Two factors are flagged by the document's own authors as "⚠ suspected
-  mislabel" (potassium `mg/dL` ×0.2558, sodium `mg/dL` ×0.435,
-  `units-registry.md:113-114`) — these are explicitly **not** ready for
-  any use, including as a citation, without independent clinical
-  re-derivation.
-- §4's "machine registry pointer" names
-  `docs/plan/_work/units/registry.yaml` as the authoritative
-  machine-readable source ("this markdown never overrides it"). That file
-  is **outside this workstream's assigned item list** (not present in
-  `coverage-map.md`'s WAVE-1B data-quality-and-physiological-calculation
-  row); it is noted here only as a pointer for whichever workstream
-  ultimately owns it, not reviewed.
+**A alegação é contradita pela implementação real do Gate A.**
+`scripts/validate_alerts.py` (de propriedade do workstream de **pathways**
+conforme `coverage-map.md` — não revisado em profundidade aqui, citado
+apenas para a checagem cruzada) declara em seu próprio comentário
+"Canonical unit registry (source: scripts/verify_units.py)"
+(`validate_alerts.py:59-60`), mas **não importa `verify_units.py`** — grep
+por `import` naquele arquivo não mostra tal importação; ele carrega seu
+**próprio** dict `CANONICAL_UNITS`, mantido **separadamente**
+(`validate_alerts.py:61-83`), que **divergiu** do de `verify_units.py`:
+ele adiciona `irpm` a `respiratory_rate`, `mL/kg/h` a `volume`,
+`dias`/`stage`/`dimensionless`/`ciclos/min/L` a várias categorias, e três
+categorias inteiramente novas (`events`, `dose_rate`, `position`) ausentes
+de `verify_units.py`. Duas cópias mantidas independentemente de "o"
+registro canônico, bifurcadas e divergindo, é precisamente o modo de falha
+que o princípio 1 de `units-registry.md` existe para prevenir ("There is
+no 'it depends on the site'... resolved *before* the value enters the
+system") — e isso já aconteceu entre dois arquivos do *mesmo* repositório
+legado.
 
-**Verdict: VALIDATE** the document's content as a well-evidenced PROPOSAL
-input to V2's actual units registry (ceiling per import policy — no
-legacy artifact, however well-cited, may enter V2 without independent
-clinical/empirical validation and named approval); **REJECT** treating it
-as already true of the runtime system — §4 above shows the gap is large.
+**Baseado em categoria, não em parâmetro — um descasamento de design com
+`units-registry.md`.** O `CANONICAL_UNITS["lab"]` de `verify_units.py`
+aceita `{"mg/dL", "mmol/L", "mEq/L", "g/dL", "U/L", "ng/mL", "pg/mL"}` como
+*todos* canônicos para o único balde `"lab"` (`:23`) — significando que um
+valor de lactato declarado `unit: mg/dL` e um declarado `unit: mmol/L`
+**ambos passariam** por esse checker, mesmo que `units-registry.md` §2.1
+designe exatamente um deles como canônico para `lactato_arterial` (SYS-03,
+classe ~9×) e trate o outro como uma entrada de borda que exige conversão.
+Um checker em nível de categoria de "esta unidade está escrita
+corretamente" é uma garantia materialmente mais fraca que um checker em
+nível de parâmetro de "esta é a única unidade canônica", e não teria
+capturado nenhum dos defeitos SYS-01/02/03 que `units-registry.md` §3
+documenta.
+
+**Veredito: REJECT** o script atual como nem conectado nem estruturalmente
+capaz da garantia de unidade-canônica-única-por-parâmetro que o próprio
+documento de design do workstream exige. **TRANSFORM** a *intenção*
+(verificação de unidade em tempo de build contra um registro canônico,
+conforme o princípio 4 de `units-registry.md`, "unit mismatch is a
+BUILD-TIME error, not a runtime surprise") — esta é exatamente a ideia
+certa e deve sobreviver na V2, reconstruída com chave por parâmetro contra
+o registro único, de fato conectada à CI, e deduplicada contra o que quer
+que o Gate A do `validate_alerts.py` do workstream de pathways venha a
+ser.
 
 ---
 
-## 7. HAZ-0005 lens summary for this record
+## 6. `docs/plan/clinical/units-registry.md` — corpus de design, não código implementado
 
-| Question | Answer |
+Este documento (item na própria lista deste workstream) é a **própria
+proposta de design voltada para o futuro** da equipe legada para um
+registro de unidades V2 — ele **não é** código em produção, e conforme
+`docs/00-governance/legacy-import-policy.md` §1/§2 é "risk-informed input,
+not authority": informativo, não ratificado sob a governança da V2, e
+revisado independentemente aqui em vez de confiado ao pé da letra.
+
+**O que ele acerta (OBSERVED, lido por completo — §2.1-2.9, §3):**
+- Um design genuinamente de unidade-canônica-única-por-parâmetro
+  (princípio 1), distinção conversão-de-borda vs. alias-1:1 (princípio 2),
+  e uma exigência de erro-em-tempo-de-build nomeada (princípio 4) —
+  endereçando diretamente a classe de falha exata (§5 acima) encontrada ao
+  vivo neste repositório.
+- Todo fator carrega uma citação ou uma proveniência nomeada ("provenance
+  duty", princípio 5): fatores derivados de peso molecular nomeiam o
+  analito, classes de hazard sistêmico (SYS-01/02/03/09) cada uma cita os
+  IDs de regra legados específicos e uma magnitude aproximada do defeito
+  que fecham.
+- Ele corrobora independentemente os achados de §3 deste registro para
+  FiO2 (SYS-01, "~100x too small") e nomeia o fator de bilirrubina que a
+  §3.2 deste registro mostra não estar implementado, mais vários riscos
+  ainda não checados em nenhum lugar do conjunto de arquivos de código em
+  runtime deste workstream (hemoglobina 1000×, dosagem de vasopressor
+  ~60×, parsing de peso ~10×) — ver §4 acima.
+
+**O que exige validação independente antes de qualquer uso:**
+- Todo fator de conversão é **VALIDATION REQUIRED** contra uma referência
+  impressa de química clínica/UCUM independentemente de quão bem citado
+  pareça aqui — este revisor não reobteve fontes externas (front matter
+  acima), e o documento é a própria saída não ratificada da equipe legada,
+  não uma fonte primária em si.
+- Dois fatores são sinalizados pelos próprios autores do documento como
+  "⚠ suspected mislabel" (potássio `mg/dL` ×0,2558, sódio `mg/dL` ×0,435,
+  `units-registry.md:113-114`) — esses explicitamente **não** estão
+  prontos para nenhum uso, incluindo como citação, sem re-derivação
+  clínica independente.
+- O "ponteiro de registro de máquina" de §4 nomeia
+  `docs/plan/_work/units/registry.yaml` como a fonte machine-readable
+  autoritativa ("this markdown never overrides it"). Esse arquivo está
+  **fora da lista de itens designados deste workstream** (não presente na
+  linha WAVE-1B data-quality-and-physiological-calculation do
+  `coverage-map.md`); é anotado aqui apenas como um ponteiro para quem
+  quer que venha a ser o dono, não revisado.
+
+**Veredito: VALIDATE** o conteúdo do documento como um PROPOSAL de insumo
+bem evidenciado para o registro de unidades real da V2 (teto conforme a
+política de importação — nenhum artefato legado, por mais bem citado que
+seja, pode entrar na V2 sem validação clínica/empírica independente e
+aprovação nomeada); **REJECT** tratá-lo como já verdadeiro do sistema em
+runtime — §4 acima mostra que a lacuna é grande.
+
+---
+
+## 7. Resumo sob a lente do HAZ-0005 para este registro
+
+| Pergunta | Resposta |
 |---|---|
-| Unparseable/unrecognized unit | `UnitNormalizationError` raised (loud), not silently coerced — correct for the function itself (`:114-117`). |
-| Out-of-range value | Not this module's job — plausibility bounds live in the `sinais-vitais` rule cluster (separate record); `normalize_value` only converts units, does not range-check. |
-| Failed conversion (affine, e.g. °F) | Raised loud, not silently applied as if multiplicative (`:120-124`) — the one unambiguously HAZ-0005-safe design choice in this module. |
-| Missing parameter entirely (e.g. bilirubin) | Raised loud from `normalize_value`'s perspective — but because the parameter was never registered, this is indistinguishable at the call site from "this system doesn't know bilirubin needs conversion at all," and (per `gold-pipeline-review.md` §2) the caller does not drop the row — it flows on with its original, unconverted value. **This is the residual HAZ-0005 exposure**: the guard is loud at the unit-registry layer but silent-by-omission one layer up. |
+| Unidade não parseável/não reconhecida | `UnitNormalizationError` disparado (alto), não coagido silenciosamente — correto para a própria função (`:114-117`). |
+| Valor fora da faixa | Não é trabalho deste módulo — limites de plausibilidade vivem no cluster de regras `sinais-vitais` (registro separado); `normalize_value` só converte unidades, não checa faixa. |
+| Conversão falhada (afim, p.ex. °F) | Disparado alto, não silenciosamente aplicado como se fosse multiplicativo (`:120-124`) — a única escolha de design inequivocamente segura sob o HAZ-0005 neste módulo. |
+| Parâmetro inteiramente ausente (p.ex. bilirrubina) | Disparado alto do ponto de vista de `normalize_value` — mas porque o parâmetro nunca foi registrado, isso é indistinguível, no ponto de chamada, de "este sistema não sabe que a bilirrubina precisa de conversão de forma alguma", e (conforme `gold-pipeline-review.md` §2) o chamador não descarta a linha — ela flui adiante com seu valor original, não convertido. **Esta é a exposição residual ao HAZ-0005**: a guarda é alta na camada de registro de unidade, mas silenciosa-por-omissão uma camada acima. |
 
 ---
 
-## 8. Verdict summary (this record)
+## 8. Resumo de vereditos (este registro)
 
-| Artifact | Verdict |
+| Artefato | Veredito |
 |---|---|
-| `units_normalizer.py` — 5 implemented conversion factors | **VALIDATE** (arithmetically and citation-verified; VALIDATION REQUIRED for external re-verification and named clinical approval before any import) |
-| `units_normalizer.py` — registry completeness / coverage | **REJECT** (5 of ~35 design-cataloged parameters; bilirubin, the workstream's own headline risk, entirely absent) |
-| `validate_fio2_fraction` | **REJECT** current (dead, unwired) state; **TRANSFORM** the concept |
-| `scripts/verify_units.py` | **REJECT** (orphaned, stale, category- not parameter-keyed, diverged from `validate_alerts.py`'s copy, misdescribed as "source of Gate A" when it is not); **TRANSFORM** the intent |
-| `docs/plan/clinical/units-registry.md` | **VALIDATE** the content as design input; **REJECT** any assumption it is already implemented |
+| `units_normalizer.py` — 5 fatores de conversão implementados | **VALIDATE** (verificado aritmética e por citação; VALIDATION REQUIRED para re-verificação externa e aprovação clínica nomeada antes de qualquer importação) |
+| `units_normalizer.py` — completude/cobertura do registro | **REJECT** (5 de ~35 parâmetros catalogados no design; bilirrubina, o risco de destaque do próprio workstream, totalmente ausente) |
+| `validate_fio2_fraction` | **REJECT** o estado atual (morta, não conectada); **TRANSFORM** o conceito |
+| `scripts/verify_units.py` | **REJECT** (órfão, obsoleto, com chave por categoria e não por parâmetro, divergido da cópia de `validate_alerts.py`, descrito incorretamente como "source of Gate A" quando não é); **TRANSFORM** a intenção |
+| `docs/plan/clinical/units-registry.md` | **VALIDATE** o conteúdo como insumo de design; **REJECT** qualquer presunção de que já está implementado |
 
-All verdicts: PROPOSAL — AWAITING NAMED CLINICAL REVIEW
+Todos os vereditos: PROPOSAL — AWAITING NAMED CLINICAL REVIEW
 (reviewer: rodaquino-OMNI).

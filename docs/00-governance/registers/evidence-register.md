@@ -18,7 +18,7 @@ task's `decisions_prohibited`.
 
 - **Label:** OBSERVED
 - **Statement:** The IntensiCare V2 repository exists at
-  `/Users/familia/code/intensicare-V2` with independent git history — a single
+  `https://github.com/Omni-Saude/intensicare-V2` with independent git history — a single
   initial commit `cb35521` on `main`. Work proceeds on branch
   `cycle-0/spark-foundation`.
 - **Provenance:**
@@ -56,13 +56,13 @@ task's `decisions_prohibited`.
 
 - **Label:** OBSERVED
 - **Statement:** The legacy repository is present read-only at
-  `/Users/familia/intensicare/`, including
+  `https://github.com/Omni-Saude/intensicare`, including
   `INTENSICARE_TECHNICAL_ASSESSMENT.md` (118,287 bytes). Treated as
   risk-informed input, not authority, per
   `INTENSICARE_V2_ORCHESTRATOR_PROMPT.md:72`.
 - **Provenance:**
   - `source_repo`: `intensicare` (legacy)
-  - `path_or_url`: `/Users/familia/intensicare/INTENSICARE_TECHNICAL_ASSESSMENT.md`
+  - `path_or_url`: `INTENSICARE_TECHNICAL_ASSESSMENT.md` (árvore de trabalho do repositório legado `Omni-Saude/intensicare`; **ausente do controle de versão** — sem URL; citar por SHA-256 do conteúdo)
   - `commit_sha_or_version`: not recorded by orchestrator at collection time — VALIDATION REQUIRED
   - `section_or_lines`: whole file (118,287 bytes)
   - `date_collected`: 2026-08-14
@@ -81,7 +81,7 @@ task's `decisions_prohibited`.
   read-only.
 - **Provenance:**
   - `source_repo`: `intensicare` (legacy)
-  - `path_or_url`: `/Users/familia/intensicare/INTENSICARE_DOCS_INTELLIGENCE_AUDIT.md`
+  - `path_or_url`: `INTENSICARE_DOCS_INTELLIGENCE_AUDIT.md` (árvore de trabalho do repositório legado `Omni-Saude/intensicare`; **ausente do controle de versão** — sem URL; citar por SHA-256 do conteúdo)
   - `commit_sha_or_version`: not recorded by orchestrator at collection time — VALIDATION REQUIRED
   - `section_or_lines`: whole file (2,351,029 bytes)
   - `date_collected`: 2026-08-14

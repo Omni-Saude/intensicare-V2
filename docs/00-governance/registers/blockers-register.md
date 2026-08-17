@@ -92,6 +92,17 @@ second reviewer is required for any content rodaquino-OMNI personally authors
 (author ≠ approver applies to humans too). See
 `decision-register.md` GDEC-0003.
 
+**Atualização 2026-08-15 (GDEC-0010):** segundo revisor clínico **NOMEADO** —
+Dr. Marcelo Villaca Lima (Cardiologia e Terapia Intensiva, CRM-SP 112678).
+Permanece **OPEN** até: aceite formal por escrito do nomeado; verificação
+independente da credencial; registro da linha de reporte. A nomeação dispara
+o gatilho de revisita da AGT-3 (GDEC-0009) — revisita ABERTA.
+
+**Atualização 2026-08-15 (GDEC-0011 item 2):** o nomeado **exerceu o papel**
+na revisita da AGT-3 (aprovada), conforme atestado por escrito pelo titular.
+Aceite formal por escrito do próprio nomeado, verificação independente da
+credencial e linha de reporte seguem pendentes — o bloqueador permanece OPEN.
+
 ## BLK-0003 — No named security decision owner
 
 ```yaml
@@ -153,6 +164,25 @@ qualquer teste de conformidade com dados reais, operação sombra ou piloto
 (Gates G6/G8). Este bloqueador deixa de impedir o fechamento do Gate G0 e
 passa a ser rastreado como pré-condição dos Gates G6/G8. Ver
 `decision-register.md` `GDEC-0004`.
+
+**Atualização 2026-08-15 (recepção do parecer OS-16):** parecer **RECEBIDO**
+do Dr. Lucas Alves de Sousa (OAB/GO 45.457), **favorável** nos 4 pontos e na
+extensão de escopo (transcrição fiel + análise de conformidade em
+`../../11-security-privacy-compliance/lgpd-os16/parecer-os16-2026-08-15-recebido.md`).
+Critérios OS-16 (iii) e (iv) **ausentes** (seções VII/VIII não vieram) —
+complementação solicitada. Disposição fail-closed: este bloqueador permanece
+no estado atual e DEC-G0-03 permanece integral (só dados sintéticos) até a
+complementação; a designação plena de AUTH-PRIVACY-LEGAL segue aberta.
+
+**Atualização 2026-08-16 (complementação recebida):** seções VII/VIII
+recebidas — critérios OS-16 de conteúdo **satisfeitos** (análise atualizada
+no arquivo do parecer). O gatilho de parecer de DEC-G0-03 está **atendido**;
+dado real permanece condicionado **por operação** às condicionantes do
+próprio parecer (índice: instrumento+RIPD+tombamento+segregação; laço:
+caráter consultivo documentado; baseline: corte+minimização). A designação
+plena de AUTH-PRIVACY-LEGAL segue aberta (o parecerista emitiu o parecer;
+assunção do papel não foi decidida). Pendências de forma: PDF original;
+anexação ao ADR-043 (ato AMH).
 
 ## BLK-0005 — No named data-platform decision owner
 
@@ -269,6 +299,12 @@ The blocker stays **OPEN**: the intended-use statement itself
 approved by the named reviewer, and permanent role acceptance with verified
 credential and reporting line is outstanding. See `decision-register.md`
 GDEC-0003.
+
+**Atualização 2026-08-15 (GDEC-0010):** segundo revisor clínico nomeado
+(Dr. Marcelo Villaca Lima, CRM-SP 112678) — destrava a leitura estrita de
+autor ≠ aprovador para a aprovação do uso pretendido (MG-G1), cujo conteúdo
+carrega hipóteses autoradas pelo titular. Fechamento pleno segue exigindo a
+aprovação formal do uso pretendido (SPR-G1-8) e o aceite do nomeado.
 
 ## BLK-0009 — GitHub App installation access not revalidated
 
@@ -538,6 +574,23 @@ permanece **gateado** até a cobertura ética/jurídica ser efetivamente
 entregue via o mesmo engajamento da OS-16 (BLK-0014). Bloqueador permanece
 **OPEN** até essa entrega.
 
+**Atualização 2026-08-15 (recepção do parecer OS-16):** o parecer recebido
+(item V) **define a rota** desta cobertura: baseline retrospectivo pela
+alínea "f" (avaliação de qualidade com retorno ao cuidado), sem rota
+CEP/CONEP enquanto não houver finalidade de publicação; variante
+observacional de campo = pesquisa com seres humanos → **CEP/CONEP + TCLE
+antes de qualquer campo** (este bloqueador só se dispõe, para campo, com a
+aprovação ética). Eficácia pendente da complementação de forma dos
+critérios OS-16 (iii)/(iv) — ver análise no arquivo do parecer recebido.
+
+**Atualização 2026-08-16 (complementação recebida):** com o parecer
+completo, a via **retrospectiva** (baseline AGT-2) está **juridicamente
+coberta** — alínea "f", condicionantes do item V.1 (corte documentado,
+acesso mínimo, sem transferência; reclassificação obrigatória se a
+finalidade mudar para publicação). A via de **campo** permanece bloqueada
+até aprovação **CEP/CONEP + TCLE** (item V.2) — este bloqueador segue OPEN
+para campo, coberto para retrospectivo.
+
 ## BLK-0014 — OS-16 — pedido de parecer redigido, NÃO ENVIADO; destinatário jurídico não definido (pt-BR — conteúdo novo, 2026-08-15)
 
 ```yaml
@@ -586,6 +639,13 @@ titular**. Status permanece **OPEN**, agora qualificado como
 **parcialmente resolvido**: destinatário institucional decidido; envio e
 nome individual ainda não ocorreram — o prazo externo ainda não começou a
 contar.
+
+**Atualização 2026-08-15 (GDEC-0011 item 3) — EXECUTADO:** o pedido de
+parecer foi **fisicamente enviado** ao conselho jurídico interno; jurista
+responsável nomeado: **Dr. Lucas Alves de Sousa — OAB/GO nº 45.457**. O ato
+que este bloqueador exigia (envio + destinatário individual) está completo;
+o relógio externo do parecer (SPR-G1-2) inicia. BLK-0013 e BLK-0004
+permanecem OPEN até o parecer dispô-los; DEC-G0-03 permanece integral.
 
 ## BLK-0015 — Contrato v1 — dono AMH não nomeado (critério 6 da OS-19 insatisfazível pela minuta) (pt-BR — conteúdo novo, 2026-08-15)
 
@@ -719,27 +779,37 @@ logo HAZ-0045 está com defeito de análise declarado e aberto até que o
 requisito exista") e §4 ("Pendência aberta gerada por esta disposição").
 Escrito por escriba de governança; nenhum mérito decidido aqui.
 
+**Verificação OBSERVADA (2026-08-15, ciclo 5 — transcrição, sem fechamento):**
+`docs/05-clinical-safety/safety-requirements.md` **contém SAF-0042** ("Telemetria de
+anomalia de identidade: detecção compensatória, explicitamente insuficiente" —
+§SAF-0042), acrescentado em 2026-08-15 pela sessão paralela; a tabela de mapeamento
+daquele arquivo vincula HAZ-0045 → SAF-0042 (`DET`, compensatório). A condição
+habilitante deste bloqueador ("SAF-0042 ausente") **não é mais verdadeira**. O status
+permanece **OPEN** porque a disposição (aceitar SAF-0042 como resposta ao defeito de
+análise declarado, ou determinar disposição alternativa) cabe a AUTH-CLINSAFETY —
+humano nomeado; nenhum agente fecha bloqueador.
+
 ## Index
 
 | ID | Title | Gate | Who must act | Status (2026-08-15) |
 |---|---|---|---|---|
 | BLK-0001 | No named product decision owner | G0 | AUTH-PRODUCT | RESOLVIDO (interino) |
-| BLK-0002 | No named clinical safety decision owner | G0 | AUTH-CLINSAFETY | OPEN — resolução parcial (GDEC-0003) |
+| BLK-0002 | No named clinical safety decision owner | G0 | AUTH-CLINSAFETY | OPEN — parcial (GDEC-0003); 2º revisor nomeado (GDEC-0010), aceite+credencial pendentes |
 | BLK-0003 | No named security decision owner | G0 | AUTH-SECURITY | RESOLVIDO COM ESCOPO |
-| BLK-0004 | No named privacy/legal decision owner | G0 → G6/G8 | AUTH-PRIVACY-LEGAL | RECLASSIFICADO |
+| BLK-0004 | No named privacy/legal decision owner | G0 → G6/G8 | AUTH-PRIVACY-LEGAL | RECLASSIFICADO — parecer OS-16 COMPLETO (2026-08-16); gatilho DEC-G0-03 atendido; dado real condicionado por operação; designação do papel aberta |
 | BLK-0005 | No named data-platform decision owner | G0 | AUTH-DATA-PLATFORM | RESOLVIDO |
 | BLK-0006 | No named UX decision owner | G0 | AUTH-UX | RESOLVIDO COM RESTRIÇÃO |
 | BLK-0007 | No named operations decision owner | G0 | AUTH-OPERATIONS | RESOLVIDO |
-| BLK-0008 | No named intended-use approver | G0 | AUTH-INTENDED-USE | OPEN — resolução parcial (GDEC-0003) |
+| BLK-0008 | No named intended-use approver | G0 | AUTH-INTENDED-USE | OPEN — parcial (GDEC-0003); 2º revisor nomeado (GDEC-0010) |
 | BLK-0009 | GitHub App installation access not revalidated | G0 | AUTH-DATA-PLATFORM + AUTH-SECURITY | RESOLVIDO POR RATIFICAÇÃO |
 | BLK-0010 | AMH license/ownership authority unestablished | G0 | AUTH-DATA-PLATFORM + AUTH-AMH-OWNER | RESOLVIDO POR CONCESSÃO ESCRITA |
 | BLK-0011 | Branch protection for `main` not configured | G0 | AUTH-SECURITY + repo admin | EXECUTADO |
 | BLK-0012 | Classe D — ausência de profile `MedicationAdministration` na IG AMH | G2 | AUTH-DATA-PLATFORM | OPEN |
-| BLK-0013 | Cobertura jurídica/ética de pesquisa com participantes humanos não coberta por `DEC-G0-03` | G1 → G8 (GDEC-0009) | rodaquino-OMNI | OPEN — reclassificado pré-piloto |
-| BLK-0014 | OS-16 — pedido de parecer redigido, NÃO ENVIADO; destinatário jurídico não definido | G6, G8 | rodaquino-OMNI | OPEN — parcialmente resolvido (GDEC-0008 item 1) |
+| BLK-0013 | Cobertura jurídica/ética de pesquisa com participantes humanos não coberta por `DEC-G0-03` | G1 → G8 (GDEC-0009) | rodaquino-OMNI | OPEN p/ campo (CEP/CONEP+TCLE); via retrospectiva COBERTA pelo parecer completo (2026-08-16, item V.1) |
+| BLK-0014 | OS-16 — pedido de parecer ENVIADO ao jurista nomeado (Dr. Lucas Alves de Sousa, OAB/GO 45.457) | G6, G8 | rodaquino-OMNI | EXECUTADO (2026-08-15, GDEC-0011); parecer pendente — BLK-0013/BLK-0004 seguem OPEN |
 | BLK-0015 | Contrato v1 — dono AMH não nomeado (critério 6 da OS-19 insatisfazível pela minuta) | G3 | rodaquino-OMNI (lado AMH) | OPEN |
 | BLK-0016 | Contrato de ordem clínica sem dono | G2 | AUTH-DATA-PLATFORM / titular | OPEN |
-| BLK-0017 | SAF-0042 ausente — defeito de análise declarado de HAZ-0045 | G6 | AUTH-CLINSAFETY | OPEN — verificar hazard-log/safety-requirements (em resolução paralela) |
+| BLK-0017 | SAF-0042 ausente — defeito de análise declarado de HAZ-0045 | G6 | AUTH-CLINSAFETY | OPEN — SAF-0042 OBSERVADO existente em `safety-requirements.md`; disposição humana pendente |
 
 **Nota do steward (2026-08-15, segunda integração, pt-BR — conteúdo novo):**
 `BLK-0012`..`BLK-0015` não são bloqueadores do Gate G0 — são bloqueadores de

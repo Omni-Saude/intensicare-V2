@@ -135,3 +135,68 @@ artefato. Tier econômico jamais participa de conteúdo clínico (§0.5).
    ata trata apenas de G1 e G2.
 5. Recomenda-se contra-assinatura do titular sobre esta ata (mesmo padrão da
    ata AQ-1..6), pois as decisões chegaram ao escriba por sessão interativa.
+
+---
+
+> **Nota do escriba (2026-08-15, posterior à ata — GDEC-0010):** o gatilho de
+> revisita da AGT-3 — "entrada de qualquer segundo revisor clínico humano" —
+> foi **DISPARADO** pela nomeação registrada em GDEC-0010 (Dr. Marcelo
+> Villaca Lima, CRM-SP 112678). A revisita da AGT-3 está **ABERTA**, a
+> conduzir pelo titular com o revisor nomeado; até sua conclusão, a
+> autorização permanece nos termos desta ata — e segue **não exercível** de
+> todo modo (condições 3-4). A contra-assinatura recomendada no item 5
+> permanece **pendente**.
+
+---
+
+> **Contra-assinatura registrada em 2026-08-15 por decisão escrita do titular
+> (GDEC-0011 item 1).** Eu, rodaquino-OMNI (autoridade constituída —
+> GDEC-0004; revisor clínico — GDEC-0003), contra-assino as decisões
+> AGT-1..AGT-4 desta ata como minhas, incluindo, com ciência expressa, a
+> AGT-3 decidida **contra a recomendação do orquestrador** (RISK-0012, S5),
+> sob as 7 condições cumulativas e os gatilhos de revisita nela nomeados.
+> Regra de supersessão: os próprios gatilhos da ata. — *Transcrito pelo
+> escriba por instrução escrita do titular.*
+>
+> **Revisita da AGT-3 (aberta por GDEC-0010) — CONCLUÍDA em 2026-08-15
+> (GDEC-0011 item 2):** AGT-3 **APROVADA** pelo segundo revisor clínico
+> nomeado, Dr. Marcelo Villaca Lima (CRM-SP 112678), conforme atestado por
+> escrito pelo titular em sessão. A autorização permanece nos termos desta
+> ata, agora ratificada também por segundo revisor clínico. Gatilhos
+> remanescentes: **primeiro parecer jurídico** (OS-16 — pedido já enviado,
+> GDEC-0011 item 3) e **primeiro evento adverso** em sombra/piloto.
+
+---
+
+> **Nota do escriba (2026-08-15, recepção do parecer):** o gatilho de
+> revisita **"primeiro parecer jurídico"** foi **DISPARADO** — parecer OS-16
+> recebido do Dr. Lucas Alves de Sousa (OAB/GO 45.457), favorável, com
+> complementação de forma pendente (critérios OS-16 iii/iv; ver
+> `../../11-security-privacy-compliance/lgpd-os16/parecer-os16-2026-08-15-recebido.md`).
+> A revisita da AGT-3 está **ABERTA** (segunda revisita, gatilho distinto da
+> anterior). Fail-closed até a revisita e a complementação: **a condição 4
+> permanece NÃO satisfeita** e DEC-G0-03 permanece integral. Gatilho
+> remanescente após esta: primeiro evento adverso em sombra/piloto.
+
+> **Nota do escriba (2026-08-16, complementação recebida):** seções VII/VIII
+> do parecer recebidas — critérios de conteúdo da OS-16 **satisfeitos**.
+> A **condição 4 está satisfeita no plano jurídico**, sob as condicionantes
+> por operação do próprio parecer; a exercibilidade prática segue barrada
+> pela **condição 3** (G3 aprovado por via — hoje 0 vias). A **2ª revisita
+> desta autorização segue ABERTA**, a conduzir pelo titular (com o 2º
+> revisor), tendo o parecer completo como insumo.
+
+> **Nota do escriba (2026-08-16 — GDEC-0012):** a **2ª revisita foi
+> CONDUZIDA e a AGT-3 APROVADA** pelo titular em conjunto com o 2º revisor
+> clínico (Dr. Marcelo Villaca Lima, CRM-SP 112678), tendo o parecer OS-16
+> completo como insumo — autorização mantida nos termos desta ata e das
+> condicionantes por operação do parecer. **Gatilho de revisita
+> remanescente: primeiro evento adverso em sombra/piloto.** Exercício
+> prático segue barrado pela condição 3 (G3 por via) e pelas condições 5-7.
+
+> **Nota do escriba (2026-08-16 — GDEC-0014):** por decisão do titular, as
+> **7 condições do AGT-3 e o painel N-de-M do AGT-4 deixam de ser
+> vinculantes**; a autorização permanente permanece e é exercida a critério
+> do titular. Vinculantes apenas: CI de conteúdo proibido/PHI, PR para
+> `main`, dados sintéticos como default. Ver `decision-register.md`
+> GDEC-0013/GDEC-0014.

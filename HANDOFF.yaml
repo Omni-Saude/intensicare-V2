@@ -36,7 +36,7 @@ pinned_evidence:               # re-verify before relying on any of it
   maezo_manifest_producer_commit: 09a0a282e69f49aa9c6944b25afb35eee65fcc9c
   contracts_lock_draft: docs/08-interoperability/amh-data/contracts.lock.draft.yaml  # DRAFT — NOT ACCEPTED
   access_method: gh CLI OAuth as rodaquino-OMNI (read-only)   # NOT the GitHub App the prompt names -> BLK-0009
-  legacy_repository: /Users/familia/intensicare (READ-ONLY, never modify)
+  legacy_repository: https://github.com/Omni-Saude/intensicare (READ-ONLY, never modify)
   legacy_assessment_caution: >-
     INTENSICARE_TECHNICAL_ASSESSMENT.md is an UNTRACKED working-tree file —
     not commit-pinned; hash before citing; line numbers drift silently.
@@ -226,6 +226,145 @@ sessao_de_decisao_gdec_0008_2026_08_15:
     - "Tranches 2+ da tradução retroativa (corpus forense; ADR-0001/0002; adr-index)"
     - "ADR-0006 (fonte de verdade operacional×analítica) — decisão pendente"
     - "Atualização de traceability-policy.md §1.1 com prefixos ratificados (GDEC-0002)"
+
+# --- Atualização 2026-08-16 (ciclos 3-5; pt-BR conforme DEC-G0-10) ---
+ciclos_3_a_5_2026_08_15_16:
+  aviso: >-
+    As seções acima (repository_state, gates_status, next_actions) refletem o
+    fechamento do ciclo 2 e estão DEFASADAS; o estado vivo é o desta seção.
+  branch_atual: cycle-5/execucao-agentificada (a partir de origin/main pós-PR #2)
+  prs: "PR #1 (ciclos 0-2) e PR #2 (ciclo 4: GDEC-0009 + mapa) MERGED em main"
+  mapa_ate_producao: docs/14-devsecops-and-delivery/{mapa-de-projeto-ate-producao.md, mapa-de-projeto-backlog.yaml}  # 57 sprints pós-emenda GDEC-0012
+  decisoes_do_titular_novas: >-
+    GDEC-0009 (agentificação G1/G2, AGT-1..4); GDEC-0010 (2º revisor clínico:
+    Dr. Marcelo Villaca Lima, CRM-SP 112678 — aceite formal/credencial/linha
+    de reporte PENDENTES); GDEC-0011 (contra-assinatura da ata; 1ª revisita
+    AGT-3 aprovada; OS-16 ENVIADA a Dr. Lucas Alves de Sousa OAB/GO 45.457 e
+    parecer RECEBIDO favorável); GDEC-0012 (2ª revisita aprovada; condição 4
+    satisfeita NO PLANO JURÍDICO; condicionantes POR OPERAÇÃO em 5 sprints:
+    SPR-G6-6/G6-7/G4-7/G3-13/G0-4); GDEC-0013 (MODO CONSTRUÇÃO — prompt §0
+    banner e mapa §2.2 item 9); GDEC-0014 (7 condições da AGT-3 e painéis
+    REMOVIDOS como vinculantes em qualquer fase; vinculantes apenas CI de
+    conteúdo proibido/PHI, PR para main e dados sintéticos como default;
+    promoção acionável a critério do titular; condicionantes do parecer
+    OS-16 persistem como obrigações jurídicas externas).
+    GDEC-0015 (travas residuais removidas: aceite de ADR não é mais
+    pré-condição — construção sobre opção recomendada como premissa
+    reversível; N-8 = 6 tipos da minuta; ADR-0006 = Opção A).
+    GDEC-0016 (aceite em lote: ADR-0002/0006 aceitos Opção A; direções dos
+    13 not-started aceitas com 3 modificações — 0014 mantém MCP; 0021
+    frontend melhora comunicação/ajusta termos, UX/UI de 1ª classe; 0024
+    mantém IA/ML com conector para agentes clínicos no workflow).
+    Próximo GDEC livre: GDEC-0017.
+  ciclo_5_execucao:
+    relatorio: docs/15-release-evidence/cycle-5-execution-report.md  # leitura obrigatória na retomada
+    painel_agt4: >-
+      OPERACIONAL e demonstrado: definição 0.1.1-draft VIVE 4/4 (após MORRE
+      3/4 da 0.1.0); dossiê substituto G1 0.1.1-draft VIVE 4/4 (após dissenso
+      verificado e corrigido); 4 trilhas imutáveis em
+      docs/15-release-evidence/painel-agt4/trilha/ + handoffs integrais.
+      Vigência da definição e MG-G1 aguardam ratificação HUMANA.
+    sprints_fechados: [SPR-G0-1, SPR-G2-1, SPR-G1-9, SPR-G0-3-tranche-2]
+    g2_val_0001: disposto em parte (perna dos papéis por AGT-3; perna do dono clínico OPEN)
+  estado_duro_inalterado: "0 vias acionáveis; 47/47 inelegíveis; Observation não consumível; candidato a integração; safety case M0; NENHUM dado real acessado (condicionantes por operação pendentes)"
+  proximos_executaveis_sem_humano: [SPR-G6-7 RIPD, SPR-G4-7 evidencia-consultiva, SPR-G0-3-tranche-3]
+  fila_do_titular: "relatório do ciclo 5 §6 (ratificações do painel e MG-G1 + SPR-G0-2 residual; lacuna da ata sobre reabertura por evento adverso; residuais de forma OS-16; N-8; ADR-0006; BLK-0015)"
+  sessoes_concorrentes: >-
+    Ciclo 5 rodou em paralelo com a sessão escriba do titular NA MESMA
+    ÁRVORE (anti-padrão 14): gerido com git status/mtimes antes de cada
+    escrita, commits por caminho explícito e descarte de duplicatas.
+    Qualquer sessão futura DEVE repetir esse protocolo.
+
+ciclo_6_construcao_2026_08_16:
+  aviso: >-
+    ESTADO VIVO. As seções anteriores refletem ciclos 0-5. O ciclo 6 é o
+    PRIMEIRO ciclo de construção de software: existe código executável no
+    repositório pela primeira vez.
+  branch_atual: cycle-6/construcao-g7 (a partir de cycle-5/execucao-agentificada @ a6e7c0c)
+  relatorio: docs/15-release-evidence/cycle-6-construction-report.md  # leitura obrigatória na retomada
+  decisao_nova_do_titular: >-
+    GDEC-0017 (2026-08-16): construção integral desbloqueada; autonomia
+    decisória delegada ao orquestrador, com decisões materiais registradas
+    como premissas reversíveis de uma linha. Vinculantes seguem apenas os
+    três de GDEC-0014 (CI de conteúdo proibido/PHI + convenções, PR para
+    main, dados sintéticos como default). Próximo GDEC livre: GDEC-0018.
+  regime_vigente: >-
+    MODO CONSTRUÇÃO (GDEC-0013..0017). Painel AGT-4 e as 7 condições da
+    AGT-3 NÃO são vinculantes em nenhuma fase. Revisão única (revisor
+    distinto do autor) é a prática adotada. Aceite formal de ADR não é
+    pré-condição de implementação.
+  o_que_existe_agora_de_codigo:
+    monorepo: pnpm workspaces — packages/{kernel-clinico,dominio,persistencia,contratos,fixtures-sinteticas} + apps/{api,web}
+    fatia_g7: >-
+      Fatia vertical sintética ponta-a-ponta (SPR-G7-2, commit 87798af):
+      ingestão -> avaliação NEWS2 determinística -> status explícito ->
+      alerta durável + outbox na mesma transação -> projeção de grade de
+      leitos -> reconhecimento com concorrência otimista -> auditoria
+      append-only. Caminhos degradados demonstrados (insumo ausente
+      fail-closed HAZ-0005; tenant errado; If-Match errado; replay).
+    verificacao: "pnpm verify verde de ponta a ponta (exit 0) sobre 11 pacotes: typecheck, lint, fronteira de modulos, build, testes e os dois gates de docs. 1.026 testes verdes, incl. 93/93 vetores CRV-NEWS2 red/green e mutacao do kernel em 93,07%"
+    dados: "100% sintéticos (SYNTH-); NENHUM dado real acessado"
+  sprints_fechados_ciclo_6: [SPR-G4-1, SPR-G4-7, SPR-G6-7, SPR-G0-3-tranche-3, SPR-G0-3-tranche-4, SPR-G7-1, SPR-G4-3, "SPR-G4-4 (parcial)", SPR-G7-2, "SPR-G6-2 (parcial)", SPR-G2-3, "SPR-G3-10 (parcial)", "SPR-G5-1 (parcial)", "SPR-G8-1 (parcial)", "SPR-OC-1 (parcial)"]
+  onda_4_fases_destravadas: >-
+    Correção de classificação registrada em
+    docs/14-devsecops-and-delivery/analise-pos-ciclo-6-mapa-vs-estado.md §3:
+    partes das fases 2, 3, 5, 7, 8 e 10 do §17 eram executáveis assim que a
+    fatia G7 criou runtime. Entregues: pacote de release assinável
+    (packages/rule-bundle, ADR-0007, autor!=aprovador inexprimível no tipo);
+    harness §7.6 executável (packages/conformidade, 22 cenários contra
+    fixtures pinadas — NENHUM contra a AMH); segunda via clínica RULE-GCS
+    0.2.0 no kernel (gate sedativo ADR-0028 fail-closed); instrumentação e
+    runbooks (packages/observabilidade + docs/13-operations-and-reliability,
+    redação de PHI como tipo); vigilância (packages/vigilancia, K-8 com as
+    figuras companheiras obrigatórias por tipo).
+  estados_de_fase_emendados: >-
+    Mapa e backlog emendados: G2 BLOQUEADO->PARCIAL; G4, G6 e G7 NÃO
+    INICIADO->PARCIAL. NENHUM gate foi aprovado — PARCIAL = camadas
+    percorridas, jamais verificação ou aprovação humana.
+  saidas_spark_novas: "árvore de outcomes (§5 saída 6), exclusões e capacidades adiadas (saída 15), índice priorizado de famílias (saída 7, substituto honesto do catálogo PRD/USR)"
+  adrs: >-
+    30 ADRs no índice. ADR-0012..ADR-0024 redigidos neste ciclo
+    materializando as direções aceitas em GDEC-0016 (com as 3 modificações
+    do titular: MCP mantido no MVP; frontend dono da linguagem com estado
+    clínico originado no backend; IA/ML governado com conector para agentes
+    clínicos). "accepted" continua não significando "implemented".
+  estado_duro_INALTERADO: >-
+    0 vias acionáveis; 47/47 inelegíveis; Observation AMH não consumível;
+    somente candidato a integração; safety case M0; nenhum dado real
+    acessado. A fatia G7 NÃO altera nenhum destes — usa fixtures sintéticas
+    pinadas e não consome a AMH.
+  marcos_humanos_pendentes: [MG-G1, MG-G3, MG-G4, MG-G5, MG-G6, MG-G7, MG-G8-PILOTO, MG-G8-PROD]
+  fila_do_titular:
+    - "PR de cycle-6/construcao-g7 para main (vinculante GDEC-0014)"
+    - "MG-G7: aceitação da fatia como fundação (revisor independente da regra != autor)"
+    - "Aceite formal, credencial e linha de reporte do 2º revisor clínico (GDEC-0010; BLK-0002/0008)"
+    - "PDF original assinado do parecer OS-16 (SPR-G0-4)"
+    - "BLK-0015: dono AMH do contrato (producer.owner)"
+    - "Ratificação clínica: janela de sobreposição temporal por parâmetro (proposta em packages/kernel-clinico/README.md) e taxonomia de razões de status (reference-vectors.md §1)"
+    - "Ratificação de prefixos documento-locais em traceability-policy.md §1.1 (MD/MG/EPC/SPR/SR/OC/AO)"
+    - >-
+      DECISÃO DE GOVERNANÇA PENDENTE — checks obrigatórios da proteção da main.
+      Hoje só doc-conventions e forbidden-content são obrigatórios; o CI de
+      plataforma (build-and-test: build, typecheck, lint, fronteira de módulos
+      e 1.026 testes) e o gate de metadados NÃO são. Na prática isso os torna
+      advisory, o que o anti-padrão 11 do próprio prompt proíbe. O orquestrador
+      NÃO alterou a proteção por conta própria: GDEC-0014 enumera de forma
+      exaustiva o que é vinculante ("os gates de CI existentes", e só havia
+      docs-gates quando foi escrita), e como enforce_admins=true um check
+      obrigatório bloqueia também o titular. Ampliar o conjunto vinculante é
+      decisão dele, não de agente. Comando, se aprovar:
+      gh api -X PATCH repos/Omni-Saude/intensicare-V2/branches/main/protection/required_status_checks
+      -f 'contexts[]=doc-conventions' -f 'contexts[]=forbidden-content'
+      -f 'contexts[]=build-and-test'  (acrescentar change-metadata se quiser o
+      gate de rastreabilidade também vinculante). Reversível pelo mesmo comando
+      sem o contexto extra.
+  proximos_executaveis_sem_humano: ["integrar RULE-GCS + rule-bundle + observabilidade na rota da API (pacotes existem e sao testados; fiacao parcial)", "SOFA como terceira via", "AsyncAPI formal", "SPR-G0-3 tranche 5", "ampliar estados §11 no frontend", "estado de erro de UI para rejeicao de rede (gap real registrado)"]
+  advertencia_de_sequencia: >-
+    INFERENCE do orquestrador, ponto de decisao do titular: percorrido o
+    MG-G7, a V2 deixa de ter caminho critico proprio — todo avanco de gate
+    passa a depender da AMH, de terceiros ou do titular. Aprofundar
+    capacidade sem gate a vista acumula trabalho que o dado real pode
+    contradizer (SR-3 aplicado ao produto inteiro).
 
 rules_for_any_resuming_agent:
   - Read docs/00-governance/evidence-notation.md before writing anything; front-matter is CI-enforced

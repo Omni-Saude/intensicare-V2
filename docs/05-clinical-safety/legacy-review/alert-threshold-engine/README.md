@@ -10,7 +10,7 @@ statement: >
   is a PROPOSAL; nothing is imported, selected, or ratified.
 provenance:
   source_repo: intensicare (legacy V1, READ-ONLY)
-  path_or_url: /Users/familia/intensicare
+  path_or_url: https://github.com/Omni-Saude/intensicare
   commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD at pin time; per-file SHA-256 below)
   section_or_lines: see per-record citations
   date_collected: 2026-08-15
@@ -59,7 +59,7 @@ superseded_by: null
 ### Hash-and-note (absent from the cycle-1 manifest)
 
 SHA-256 computed 2026-08-15 over the working tree at the pinned HEAD; paths
-relative to `/Users/familia/intensicare/`:
+relative to `https://github.com/Omni-Saude/intensicare`:
 
 ```text
 0e748e0fb19a1aeee884f270f228367bff9663f9135cf50ee43ade7d82d81044  docs/adr/0014-no-abnormal-value-threshold-flagging.md

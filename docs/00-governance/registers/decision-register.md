@@ -581,6 +581,432 @@ provenance:
   validation_status: "N/A — decisão do titular; contra-assinatura recomendada; reserva jurídica de AGT-3 permanece com AUTH-PRIVACY-LEGAL em G6/G8"
 ```
 
+## GDEC-0010 — Nomeação do segundo revisor clínico (SPR-G0-2) — dispara revisita da AGT-3
+
+Transcrição de decisão tomada **por escrito, em sessão**, pelo titular
+(rodaquino-OMNI). O orquestrador do mapa é escriba, não decisor.
+
+```yaml
+id: GDEC-0010
+title: Segundo revisor clínico nomeado — Dr. Marcelo Villaca Lima (CRM-SP 112678)
+status: DECIDED
+statement: >
+  O titular nomeia Dr. Marcelo Villaca Lima — Cardiologia e Terapia
+  Intensiva — CRM-SP 112678 — como SEGUNDO REVISOR CLÍNICO da V2
+  (SPR-G0-2 do mapa até produção): revisor de conteúdo clínico autorado
+  materialmente pelo titular (regra autor ≠ aprovador — ADR-0007/GDEC-0007)
+  e candidato a co-titular de AUTH-CLINSAFETY. Esta nomeação NÃO fecha, por
+  si: (1) o aceite formal por escrito do nomeado; (2) a verificação
+  independente da credencial (CRM-SP 112678); (3) o registro da linha de
+  reporte. EFEITO VINCULANTE: a entrada de um segundo revisor clínico
+  humano é gatilho nomeado de revisita da AGT-3 (ata GDEC-0009) — a
+  revisita fica ABERTA por esta nomeação, a ser conduzida pelo titular com
+  o revisor; até sua conclusão a AGT-3 permanece nos termos da ata (e segue
+  não exercível de todo modo, condições 3-4: G3 por via + parecer OS-16).
+decided_by: rodaquino-OMNI (titular; papéis interinos GDEC-0004; revisor clínico GDEC-0003)
+decided_date: "2026-08-15"
+rationale: >
+  Fecha a perna de nomeação de BLK-0002/BLK-0008; mitiga RISK-0007
+  (concentração de autoridade); remove a ambiguidade de autoaprovação no
+  MG-G1 (dossiê SPR-G1-9 contém hipóteses do titular); a revisita da AGT-3
+  ocorreria de qualquer forma no primeiro parecer OS-16, antes de a
+  autorização ser exercível — adiar a nomeação não preservava nada
+  (análise registrada na sessão do mapa).
+supersession_rule: >
+  Aceite formal + verificação de credencial + linha de reporte registrados
+  atualizam BLK-0002/0008; recusa do nomeado ou falha na verificação da
+  credencial reabre esta decisão. A revisita da AGT-3 aberta por esta
+  entrada segue os gatilhos da própria ata GDEC-0009.
+links:
+  requirements: []
+  hazards: []
+  adrs: [ADR-0007]
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-15), item 3 (SPR-G0-2)
+  commit_sha_or_version: 3f21429 (estado ao decidir)
+  section_or_lines: "instrução: 'SPR-G0-2 (segundo revisor) - Dr. Marcelo Villaca Lima — Cardiologia e Terapia Intensiva — CRM-SP 112678'"
+  date_collected: "2026-08-15"
+  collector: orquestrador do mapa até produção — escriba
+  transformation: "transcrita; pendências e efeito de gatilho explicitados pelo escriba"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "VALIDATION REQUIRED — aceite do nomeado e verificação independente da credencial pendentes"
+```
+
+## GDEC-0011 — Sessão de fechamento do G0 residual: contra-assinatura da ata GDEC-0009; revisita AGT-3 aprovada; MD-1 residual executado
+
+Transcrição de decisões e atos tomados **por escrito, em sessão**, pelo
+titular (rodaquino-OMNI). O orquestrador do mapa é escriba, não decisor.
+
+```yaml
+id: GDEC-0011
+title: Contra-assinatura GDEC-0009 + revisita AGT-3 aprovada pelo 2º revisor + OS-16 enviada (jurista Dr. Lucas Alves de Sousa, OAB/GO 45.457)
+status: DECIDED
+statement: >
+  (1) CONTRA-ASSINATURA: o titular contra-assina a ata AGT-1..AGT-4
+  (GDEC-0009) como decisão própria, incluindo, com ciência expressa, a
+  AGT-3 decidida contra a recomendação do orquestrador (RISK-0012, S5),
+  sob as 7 condições cumulativas e os gatilhos de revisita nela nomeados
+  (bloco apenso à ata). (2) REVISITA AGT-3, aberta por GDEC-0010,
+  CONCLUÍDA: AGT-3 APROVADA pelo segundo revisor clínico nomeado,
+  Dr. Marcelo Villaca Lima (CRM-SP 112678), conforme atestado por escrito
+  pelo titular; a autorização permanente segue nos termos da ata, agora
+  ratificada também por segundo revisor clínico; gatilhos remanescentes:
+  primeiro parecer jurídico e primeiro evento adverso. A participação na
+  revisita constitui exercício do papel; o aceite formal por escrito do
+  próprio nomeado e a verificação independente da credencial permanecem
+  pendências de forma (GDEC-0010). (3) MD-1 RESIDUAL EXECUTADO: o pedido
+  de parecer OS-16 foi FISICAMENTE ENVIADO ao conselho jurídico interno;
+  jurista responsável nomeado: Dr. Lucas Alves de Sousa — OAB/GO nº
+  45.457. BLK-0014 fica EXECUTADO; o relógio externo do parecer
+  (SPR-G1-2) inicia a contar; BLK-0013 e BLK-0004 permanecem OPEN até o
+  parecer dispô-los; DEC-G0-03 (somente dados sintéticos até o parecer)
+  permanece integral.
+decided_by: rodaquino-OMNI (titular; papéis interinos GDEC-0004; revisor clínico GDEC-0003)
+decided_date: "2026-08-15"
+rationale: >
+  Fecha o residual de MD-1 — o único prazo externo do programa, que
+  concentra o dado real, o baseline retrospectivo (SPR-G1-10) e a
+  exercibilidade da promoção acionável (AGT-3 condição 4) — e consolida a
+  agentificação de G1/G2 com contra-assinatura e ratificação por segundo
+  revisor clínico, na sequência recomendada pela análise da sessão do mapa
+  (a revisita ocorreria de qualquer forma no primeiro parecer).
+supersession_rule: >
+  Item 2: os gatilhos remanescentes da ata GDEC-0009 reabrem a AGT-3 —
+  incluindo o recebimento do próprio parecer OS-16. Item 3: o recebimento
+  do parecer dispõe BLK-0013/BLK-0004 e destrava dado real, baseline
+  retrospectivo e exercibilidade (condição 4).
+links:
+  requirements: []
+  hazards: [HAZ-0045, HAZ-0047]
+  adrs: []
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-15), itens 1-3
+  commit_sha_or_version: f2c918b (estado ao decidir)
+  section_or_lines: "instruções: 'contra-assino a ata GDEC-0009'; 'AGT-3 aprovada pelo Dr. Marcelo'; 'MD-1 residual — envio físico do pedido OS-16 executado + jurista é o Dr Lucas Alves de Sousa OAB/GO nº 45.457'"
+  date_collected: "2026-08-15"
+  collector: orquestrador do mapa até produção — escriba
+  transformation: "transcrita; pendências de forma e efeitos sobre bloqueadores explicitados pelo escriba"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisões do titular; exceção: aprovação do 2º revisor atestada pelo titular, registro assinado pelo próprio nomeado recomendado"
+```
+
+## GDEC-0012 — 2ª revisita da AGT-3 conduzida e APROVADA (titular + 2º revisor); condicionantes do parecer decompostas em sprints
+
+Transcrição de decisão tomada **por escrito, em sessão**, pelo titular
+(rodaquino-OMNI). O orquestrador do mapa é escriba, não decisor.
+
+```yaml
+id: GDEC-0012
+title: 2ª revisita AGT-3 aprovada (gatilho "primeiro parecer"); emenda do mapa com os sprints das condicionantes do parecer OS-16
+status: DECIDED
+statement: >
+  (1) A 2ª revisita da autorização AGT-3 (aberta pelo gatilho "primeiro
+  parecer jurídico") foi CONDUZIDA e a autorização APROVADA pelo titular
+  em conjunto com o segundo revisor clínico nomeado (Dr. Marcelo Villaca
+  Lima, CRM-SP 112678), tendo como insumo o parecer OS-16 completo
+  (2026-08-16). A autorização permanece nos termos da ata GDEC-0009 e das
+  condicionantes POR OPERAÇÃO do parecer; gatilho de revisita
+  remanescente: primeiro evento adverso em sombra/piloto. O exercício
+  prático segue barrado pela condição 3 (G3 aprovado por via — hoje 0
+  vias) e pelas condições 5-7. (2) As condicionantes do parecer ficam
+  decompostas em sprints do mapa até produção (emenda desta sessão):
+  SPR-G6-6 (instrumento art. 39 entre controladores), SPR-G6-7 (RIPD do
+  índice cross-PJ), SPR-G4-7 (evidência do caráter consultivo),
+  SPR-G3-13 (atos AMH: segregação do ie_perm_sms_email; anexação do
+  parecer ao ADR-043; emenda Q-06) e SPR-G0-4 (arquivo do PDF original +
+  alocação de EVID-*).
+decided_by: rodaquino-OMNI (titular) com aprovação do 2º revisor clínico (GDEC-0010)
+decided_date: "2026-08-16"
+rationale: >
+  O parecer completo satisfez a condição 4 no plano jurídico; a revisita
+  com o segundo revisor consolida a autorização sob as duas lentes
+  humanas disponíveis. A decomposição em sprints torna as condicionantes
+  rastreáveis e impede que "parecer recebido" seja lido como "dado real
+  liberado em bloco".
+supersession_rule: >
+  Primeiro evento adverso em sombra/piloto reabre a AGT-3; as condições
+  de revisão do próprio parecer (seção VIII, 5 condições, 24 meses)
+  aplicam-se ao parecer e, por arrasto, a esta aprovação.
+links:
+  requirements: []
+  hazards: []
+  adrs: []
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-16)
+  commit_sha_or_version: 4fba956 (estado ao decidir)
+  section_or_lines: "instruções: '2ª revisita da AGT-3 — feita e aprovada (eu + Dr. Marcelo)'; 'decompor os demais em sprints e emendar o mapa'"
+  date_collected: "2026-08-16"
+  collector: orquestrador do mapa até produção — escriba
+  transformation: "transcrita; efeitos e decomposição explicitados pelo escriba"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisão do titular com aprovação do 2º revisor, atestada por escrito"
+```
+
+## GDEC-0013 — Modo construção ágil: remoção dos excessos de verificação durante o desenvolvimento
+
+Transcrição de decisão tomada **por escrito, em sessão**, pelo titular
+(rodaquino-OMNI — dono do repositório, CEO de OMNI e AMH, médico
+intensivista). O orquestrador de execução é escriba, não decisor.
+
+```yaml
+id: GDEC-0013
+title: Modo construção ágil — revisão única substitui painéis e duplas/triplas checagens durante o desenvolvimento
+status: DECIDED
+statement: >
+  A plataforma está em CONSTRUÇÃO — não em uso clínico nem em produção — e
+  o excesso de cautela estava impedindo o desenvolvimento. Ficam removidos
+  do caminho de desenvolvimento: (1) o painel adversarial N-de-M por
+  artefato (AGT-4) — durante a construção, revisão única (humana ou por
+  agente distinto do autor) basta; o aval do segundo revisor clínico
+  (Dr. Marcelo Villaca Lima, GDEC-0010..0012) e o parecer jurídico
+  favorável (OS-16, Dr. Lucas Alves de Sousa) são lastro suficiente;
+  (2) pacotes de tarefa formais, escopos de escrita disjuntos obrigatórios,
+  handoffs em formato fixo e relatórios cerimoniais — viram prática a
+  critério do executor; (3) documentos por escrito como pré-condição de
+  trabalho — decisão material registra-se em uma linha, não em dossiê.
+  PERMANECEM (custo zero de agilidade, mantidos pelo escriba salvo ordem em
+  contrário): gates de CI (convenções + conteúdo proibido/PHI), PR para
+  main, dados sintéticos como default de desenvolvimento, e o painel
+  N-de-M com as 7 condições da AGT-3 exclusivamente na promoção de via a
+  modo ACIONÁVEL (SPR-G2-4/MG-G2) e nos gates de piloto/produção (G8).
+decided_by: rodaquino-OMNI
+decided_date: "2026-08-16"
+rationale: >
+  Desenvolvimento ágil exige construir; cautela integral fica reservada aos
+  pontos de exposição clínica real (acionável, piloto, produção), onde já
+  existe mecanismo próprio (AGT-3 condições 1-7), e não à construção da
+  plataforma.
+supersession_rule: >
+  Supersede, no escopo do desenvolvimento: prompt §4 (orquestração por
+  especialistas com pacotes), a disciplina de despacho do §0.5, a exigência
+  de painel AGT-4 por artefato (GDEC-0009/AGT-4 permanece para promoção
+  acionável e release) e as DoR/DoD cerimoniais do mapa para sprints de
+  engenharia (mapa §2.2 item 9). Primeira exposição de conteúdo clínico a
+  usuário real ou primeiro tratamento de dado real reabre esta decisão para
+  recalibração.
+links:
+  requirements: []
+  hazards: []
+  adrs: []
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-16)
+  commit_sha_or_version: fc7acd8 (estado ao decidir)
+  section_or_lines: "instrução: 'desbloqueie o desenvolvimento... retirados os excessos como essa exigência de duplas e triplas checagens, múltiplas verificações e documentos por escrito... já temos aval de outro médico e de um advogado, isso é o suficiente'"
+  date_collected: "2026-08-16"
+  collector: orquestrador de execução (ciclo 5) — escriba
+  transformation: "transcrita; itens mantidos (CI/PR/sintético/gate acionável) explicitados pelo escriba como fora do alcance da remoção, sujeitos a ordem em contrário do titular"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisão do titular"
+```
+
+## GDEC-0014 — Remoção das condições da AGT-3; permanecem vinculantes apenas CI, PR para main e dados sintéticos
+
+Transcrição de decisão tomada **por escrito, em sessão**, pelo titular
+(rodaquino-OMNI). Escriba: orquestrador de execução.
+
+```yaml
+id: GDEC-0014
+title: Remoção das 7 condições da AGT-3 — vinculantes apenas CI (conteúdo proibido/PHI + convenções), PR para main e dados sintéticos como default
+status: DECIDED
+statement: >
+  Complementando GDEC-0013: ficam removidas TAMBÉM as 7 condições
+  cumulativas da AGT-3 (ata GDEC-0009) e toda exigência de painel/revisão
+  como pré-condição vinculante, em qualquer fase. Permanecem vinculantes
+  APENAS: (1) os gates de CI existentes (conteúdo proibido/PHI e
+  convenções); (2) PR para main; (3) dados sintéticos como default de
+  desenvolvimento. A promoção de vias a modo acionável passa a ocorrer sob
+  a autorização permanente do titular (GDEC-0009/AGT-3, mantida como
+  autorização), a seu critério, sem conjunto fixo de condições de processo.
+decided_by: rodaquino-OMNI
+decided_date: "2026-08-16"
+rationale: >
+  Plataforma em construção; aval de segundo médico e parecer jurídico
+  favorável já existem; o excesso de condições impedia desenvolvimento
+  ágil.
+supersession_rule: >
+  Supersede os itens 1-7 do bloco AGT-3 da ata GDEC-0009 como CONDIÇÕES
+  vinculantes (a autorização permanente em si permanece), o resíduo de
+  revisão única do GDEC-0013 e as referências às 7 condições no prompt
+  (§0/§3/§6.4/Gate G2) e no mapa. Registro de posição divergente do
+  escriba (INFERENCE, não bloqueia): recomenda-se recriar um gate mínimo
+  de promoção acionável (período de sombra + kill switch) quando houver
+  runtime. Observação factual: as condicionantes por operação do parecer
+  OS-16 são obrigações jurídicas externas apontadas pelo parecerista e
+  persistem por força própria, fora do alcance desta decisão de processo.
+links:
+  requirements: []
+  hazards: []
+  adrs: []
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-16)
+  commit_sha_or_version: 8927248 (estado ao decidir)
+  section_or_lines: "instrução: 'remova também as condições da AGT-3, mantenha intactos apenas CI de conteúdo proibido/PHI, PR para main, dados sintéticos como default'"
+  date_collected: "2026-08-16"
+  collector: orquestrador de execução (ciclo 5) — escriba
+  transformation: "transcrita; posição divergente do escriba e observação sobre obrigações jurídicas externas registradas na supersession_rule"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisão do titular"
+```
+
+## GDEC-0015 — Remoção das travas residuais ao desenvolvimento (ADRs, N-8, ADR-0006)
+
+Transcrição de decisão tomada **por escrito, em sessão**, pelo titular
+(rodaquino-OMNI): "garanta que todas as travas ao desenvolvimento sejam
+removidas, incluindo as residuais". Escriba: orquestrador de execução.
+
+```yaml
+id: GDEC-0015
+title: Aceite formal de ADR deixa de ser pré-condição de implementação; N-8 e ADR-0006 viram premissas reversíveis de construção
+status: DECIDED
+statement: >
+  (1) O aceite formal de ADR DEIXA DE SER pré-condição de implementação:
+  a construção prossegue sobre a opção recomendada de cada ADR proposto ou
+  not-started como PREMISSA REVERSÍVEL, documentada em uma linha; os
+  aceites formais são feitos em lote pelo titular quando lhe convier
+  (lista de recomendações apresentada pelo orquestrador em sessão).
+  (2) N-8 (5×6 tipos de evento de identidade): a construção segue os SEIS
+  tipos da OS-17/minuta do contrato v1, incluindo reassignment — remover
+  depois é emenda compatível. (3) ADR-0006: a construção segue a Opção A
+  (lane operacional V2 como fonte de verdade do laço clínico; lane
+  analítica AMH para reconciliação, backfill, desfechos e vigilância) como
+  premissa reversível. Permanecem vinculantes apenas os três itens de
+  GDEC-0014 (CI de conteúdo proibido/PHI, PR para main, dados sintéticos
+  como default).
+decided_by: rodaquino-OMNI
+decided_date: "2026-08-16"
+rationale: >
+  Nenhuma decisão pendente deve travar a construção; premissas reversíveis
+  com registro de uma linha preservam a rastreabilidade sem cerimônia.
+supersession_rule: >
+  O aceite formal (ou rejeição) de cada ADR pelo titular substitui a
+  premissa correspondente; reverter uma premissa implementada gera custo de
+  retrabalho assumido conscientemente pelo regime ágil.
+links:
+  requirements: []
+  hazards: []
+  adrs: [ADR-0002, ADR-0006]
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-16)
+  commit_sha_or_version: d05ccc3 (estado ao decidir)
+  section_or_lines: "instrução: 'garanta que todas as travas ao desenvolvimento sejam removidas, incluindo as residuais que acabou de mencionar'"
+  date_collected: "2026-08-16"
+  collector: orquestrador de execução (ciclo 5) — escriba
+  transformation: "transcrita; a materialização das premissas (N-8 = 6 tipos; ADR-0006 = Opção A) segue as recomendações apresentadas na mesma sessão"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisão do titular"
+```
+
+## GDEC-0016 — Aceite em lote dos ADRs pendentes, com três modificações do titular
+
+Transcrição de decisão tomada **por escrito, em sessão**, pelo titular
+(rodaquino-OMNI): "aceito todos exceto estes detalhados a seguir".
+Escriba: orquestrador de execução.
+
+```yaml
+id: GDEC-0016
+title: Aceite em lote — ADR-0002/0006 (Opção A) + direções dos 13 not-started, com modificações em ADR-0014/0021/0024
+status: DECIDED
+statement: >
+  (1) ADR-0002 ACEITO — Opção A (monolito modular com fronteiras impostas).
+  (2) ADR-0006 ACEITO — Opção A (lane operacional V2 autoritativa no laço
+  clínico; lane analítica AMH para reconciliação/backfill/desfechos/
+  vigilância). (3) Direções dos treze not-started (ADR-0012..0024) ACEITAS
+  conforme a lista apresentada em sessão, com TRÊS modificações do titular:
+  ADR-0014 — MANTER MCP no MVP (superfície de ferramentas incluída, não
+  excluída); ADR-0021 — o frontend deve melhorar a comunicação e ajustar
+  termos quando necessário, não somente exibir o texto do backend; UX e UI
+  são muito importantes (de primeira classe); ADR-0024 — MANTER IA/ML:
+  inclusão governada com possibilidade e conector para agentes clínicos
+  serem incluídos no workflow. As minutas formais dos treze são trabalho de
+  implementação, com registro de uma linha ao redigir (GDEC-0013/0015).
+decided_by: rodaquino-OMNI
+decided_date: "2026-08-16"
+rationale: >
+  Fecha de uma vez o backlog decisório de arquitetura para a construção;
+  as modificações refletem prioridades de produto do titular (integração
+  por MCP, excelência de UX/UI, agentes clínicos no workflow).
+supersession_rule: >
+  Cada minuta formal redigida na implementação materializa a direção aceita;
+  divergência material entre minuta e direção volta ao titular em uma linha.
+  Nota do escriba (não bloqueia): recomenda-se que a saída de agentes
+  clínicos (ADR-0024) seja sempre atribuída e registrada ao lado do registro
+  determinístico de avaliação, e que os ajustes de termos do frontend
+  (ADR-0021) preservem o estado clínico originado no backend — condições de
+  auditabilidade, não de processo.
+links:
+  requirements: []
+  hazards: []
+  adrs: [ADR-0002, ADR-0006, ADR-0012, ADR-0013, ADR-0014, ADR-0015, ADR-0016, ADR-0017, ADR-0018, ADR-0019, ADR-0020, ADR-0021, ADR-0022, ADR-0023, ADR-0024]
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-16)
+  commit_sha_or_version: 25faa46 (estado ao decidir)
+  section_or_lines: "instrução: 'aceito todos exceto estes detalhados a seguir: ADR-0014 manter MCP; ADR-0021 Frontend deve melhorar a comunicação e ajustar termos quando necessário...; ADR-0024 manter IA/ML com possibilidade e conector para agentes clínicos serem incluídos no workflow'"
+  date_collected: "2026-08-16"
+  collector: orquestrador de execução (ciclo 5) — escriba
+  transformation: "transcrita; recomendações de auditabilidade do escriba anotadas na supersession_rule"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisão do titular"
+```
+
+## GDEC-0017 — Construção integral desbloqueada; autonomia decisória delegada ao orquestrador durante a construção
+
+Transcrição de decisão tomada **por escrito, em sessão**, pelo titular
+(rodaquino-OMNI). Escriba: orquestrador de execução (ciclo 6).
+
+```yaml
+id: GDEC-0017
+title: Tudo desbloqueado para construção; decisões de construção delegadas ao orquestrador como premissas reversíveis
+status: DECIDED
+statement: >
+  (1) TUDO fica considerado desbloqueado para construção. (2) O orquestrador
+  atua de maneira autônoma e toma as próprias decisões de construção
+  (com análise aprofundada quando necessário), registrando cada decisão
+  material como premissa reversível de uma linha (regime GDEC-0013/0015).
+  Permanecem vinculantes os três itens de GDEC-0014: CI de conteúdo
+  proibido/PHI, PR para main, dados sintéticos como default. As
+  condicionantes por operação do parecer OS-16 persistem como obrigações
+  jurídicas externas; atos que exigem terceiros (AMH, jurista, revisores
+  externos) continuam fora do alcance da V2.
+decided_by: rodaquino-OMNI
+decided_date: "2026-08-16"
+rationale: >
+  Continuidade de GDEC-0013..0016: velocidade de construção com
+  rastreabilidade mínima (uma linha por premissa) e reversibilidade.
+supersession_rule: >
+  Decisão do titular sobre qualquer premissa registrada substitui a
+  premissa; primeira exposição a usuário real ou dado real reabre a
+  calibração (herdada de GDEC-0013).
+links:
+  requirements: []
+  hazards: []
+  adrs: []
+provenance:
+  source_repo: intensicare-V2
+  path_or_url: mensagem escrita do titular em sessão (2026-08-16)
+  commit_sha_or_version: a6e7c0c (estado ao decidir)
+  section_or_lines: "instrução: 'considere tudo como desbloqueado para construção. Atue de maneira autônoma (skip permission) e tome suas decisões usando deep think quando necessário'"
+  date_collected: "2026-08-16"
+  collector: orquestrador de execução (ciclo 6) — escriba
+  transformation: "transcrita; limites mantidos (CI/PR/sintético; obrigações externas do parecer; atos de terceiros) explicitados pelo escriba"
+  confidence: high
+  owner: rodaquino-OMNI
+  validation_status: "N/A — decisão do titular"
+```
+
 ## Index
 
 | ID | Title | Status | Decided by | Decided date |
@@ -594,6 +1020,14 @@ provenance:
 | GDEC-0007 | Revisão clínica do ciclo 1 — 98 pontos (97 aceitos; K-8 modificado: vidas_salvas mantido como altas vivas da UTI) | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0008 | Fila de decisão pós-ciclo-2 — OS-16, C-1=O3, G1 comissionado, ADRs aceitos, N-11..14, OS novas, housekeeping, tradução | DECIDED | rodaquino-OMNI | 2026-08-15 |
 | GDEC-0009 | Agentificação dos Gates G1 e G2 (AGT-1..AGT-4; AGT-3 contra recomendação do orquestrador) | DECIDED | rodaquino-OMNI | 2026-08-15 |
+| GDEC-0010 | Segundo revisor clínico nomeado — Dr. Marcelo Villaca Lima, CRM-SP 112678 (aceite + verificação pendentes; dispara revisita AGT-3) | DECIDED | rodaquino-OMNI | 2026-08-15 |
+| GDEC-0011 | Contra-assinatura GDEC-0009; revisita AGT-3 aprovada pelo 2º revisor; OS-16 ENVIADA (jurista Dr. Lucas Alves de Sousa, OAB/GO 45.457) | DECIDED | rodaquino-OMNI | 2026-08-15 |
+| GDEC-0012 | 2ª revisita AGT-3 APROVADA (titular + 2º revisor, com parecer completo); condicionantes do parecer decompostas em sprints (emenda do mapa) | DECIDED | rodaquino-OMNI | 2026-08-16 |
+| GDEC-0013 | Modo construção ágil — revisão única no desenvolvimento; painel/7 condições só na promoção acionável e G8 | DECIDED | rodaquino-OMNI | 2026-08-16 |
+| GDEC-0014 | Remoção das 7 condições da AGT-3; vinculantes apenas CI de conteúdo proibido/PHI, PR para main e dados sintéticos como default | DECIDED | rodaquino-OMNI | 2026-08-16 |
+| GDEC-0015 | Travas residuais removidas: aceite de ADR deixa de ser pré-condição de implementação (construção sobre opção recomendada como premissa reversível); N-8 = 6 tipos da minuta; ADR-0006 = Opção A como premissa | DECIDED | rodaquino-OMNI | 2026-08-16 |
+| GDEC-0016 | Aceite em lote: ADR-0002 e ADR-0006 aceitos (Opção A); direções dos 13 not-started aceitas com 3 modificações (0014 mantém MCP; 0021 frontend melhora comunicação/ajusta termos, UX/UI de 1ª classe; 0024 mantém IA/ML com conector para agentes clínicos) | DECIDED | rodaquino-OMNI | 2026-08-16 |
+| GDEC-0017 | Construção integral desbloqueada; decisões de construção delegadas ao orquestrador como premissas reversíveis de uma linha (CI/PR/sintético permanecem; obrigações externas do parecer persistem) | DECIDED | rodaquino-OMNI | 2026-08-16 |
 
 ## Notes
 
@@ -619,3 +1053,28 @@ provenance:
   (agentificação G1/G2); linha de Index do `GDEC-0008`, ausente na
   integração anterior, acrescentada nesta passada (housekeeping de escriba).
   Próximo ID disponível: `GDEC-0010`.
+- **Nota (2026-08-15, sessão do mapa — SPR-G0-2):** `GDEC-0010` alocado
+  (nomeação do segundo revisor clínico; gatilho de revisita da AGT-3
+  disparado e registrado). Próximo ID disponível: `GDEC-0011`.
+- **Nota (2026-08-15, fechamento do G0 residual):** `GDEC-0011` alocado
+  (contra-assinatura; revisita AGT-3 concluída; OS-16 enviada). Próximo ID
+  disponível: `GDEC-0012`.
+- **Nota (2026-08-16, fechamento da sessão do mapa):** `GDEC-0012` alocado
+  (2ª revisita AGT-3 aprovada; decomposição das condicionantes em sprints).
+  Próximo ID disponível: `GDEC-0013`.
+- **Nota (2026-08-16, modo construção):** `GDEC-0013` alocado (transcrição
+  da decisão do titular removendo os excessos de verificação do caminho de
+  desenvolvimento; prompt §0 banner MODO CONSTRUÇÃO + mapa §2.2 item 9).
+  Próximo ID disponível: `GDEC-0014`.
+- **Nota (2026-08-16, mesma sessão):** `GDEC-0014` alocado (remoção das 7
+  condições da AGT-3; só CI/PR/sintético permanecem vinculantes). Próximo
+  ID disponível: `GDEC-0015`.
+- **Nota (2026-08-16, mesma sessão):** `GDEC-0015` e `GDEC-0016` alocados
+  (travas residuais removidas; aceite em lote dos ADRs). As notas de
+  alocação destes dois não haviam sido acrescentadas na integração
+  anterior — housekeeping de escriba nesta passada. Próximo ID disponível:
+  `GDEC-0017`.
+- **Nota (2026-08-16, ciclo 6 — construção):** `GDEC-0017` alocado
+  (construção integral desbloqueada; autonomia decisória delegada ao
+  orquestrador com premissas reversíveis de uma linha). Próximo ID
+  disponível: `GDEC-0018`.

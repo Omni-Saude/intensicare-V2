@@ -440,6 +440,15 @@ through V2 engineering").
 > `candidate-inventory.md` §8.0), the three rule-release precursors
 > (`../rule-releases/{news2,sofa,gcs}/`, shorthand `RR:`), and the ADR drafts cited by ID.
 >
+
+> **[DECISÃO REGISTRADA 2026-08-15 — GDEC-0007, item P-1]** Os movimentos de gate desta
+> seção (G3/G6/G7/G8 FAIL→PARTIAL; G4 FAIL; contagem acionável 0) foram **ratificados
+> como revisados** pelo revisor clínico nomeado (rodaquino-OMNI, GDEC-0003), conforme
+> `../cycle-1-review-decision-sheet.md` §12 P-1 e
+> `../../00-governance/registers/decision-register.md` GDEC-0007. PARTIAL continua **não
+> contando** para admissão; a contagem acionável permanece **0**. O front matter permanece
+> PROPOSAL por convenção (evidence-notation §2 regra 3); o registro mestre é o
+> decision-register.
 > **Language-policy note (DEC-G0-10 / GDEC-0006):** written in English for coherence with
 > the cycle-0 file it extends; the tension is recorded here once (see
 > `candidate-inventory.md` §8 header).
