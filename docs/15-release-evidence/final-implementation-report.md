@@ -10,7 +10,7 @@ source: >-
   ecd32d555291a6ab75e6bb2c3227ad557d87a368 (main);
   execuções reais de pnpm verify, pnpm --filter … test, test:fronteira e
   test:e2e registradas neste documento;
-  quatro revisões adversariais independentes sobre as fronteiras P0
+  cinco revisões adversariais independentes sobre as fronteiras P0
 date_collected: "2026-08-17"
 collector: orquestrador técnico de consolidação; construção por 12 especialistas estreitos de escopo disjunto
 last_updated: "2026-08-17"
@@ -32,7 +32,7 @@ risco, hazard, ADR ou ordem de serviço.
 | Branch de trabalho | `codex/finalizacao-plataforma-v2` |
 | `main` alterada? | **Não.** Nenhum commit foi feito na `main` |
 | Branches históricas | `cycle-4/*` e `cycle-5/*` **não** foram mescladas nem usadas como fonte |
-| Escopo | os nove achados do §6 do encargo, mais o que quatro revisões adversariais independentes acrescentaram |
+| Escopo | os nove achados do §6 do encargo, mais o que cinco revisões adversariais independentes acrescentaram |
 
 Método (§9): doze especialistas estreitos com fronteira de domínio, escopo de
 escrita **disjunto** e critério de aceitação explícitos; nenhum agente genérico.
@@ -67,7 +67,7 @@ tenant deixou de ser assegurada por um simulador embarcado** e passou a ser
 exercitada contra PostgreSQL 16.14 real, e que a falha P0 que vivia como
 `expected fail` dentro de um gate verde foi **eliminada**, não renomeada.
 
-**Quatro** revisões adversariais independentes foram conduzidas por agentes que
+**Cinco** revisões adversariais independentes foram conduzidas por agentes que
 não escreveram o código, e a taxa de achado **não convergiu**:
 
 | Rodada | Veredito | Achados | Corrigidos | Registrados |
@@ -75,12 +75,18 @@ não escreveram o código, e a taxa de achado **não convergiu**:
 | 1ª | **`REFUTADO`** | 8 (3 P1) | 7 | 1 (aceito como imprecisão) |
 | 2ª — sobre as correções | **`CONFIRMADO_COM_RESSALVAS`** | 6 (P2/P3) | 6 | 0 |
 | 3ª — sobre as correções da 2ª | **`REFUTADO`** | 9 (2 P1) | 8 | 1 |
-| 4ª — sobre as correções da 3ª | **`REFUTADO`** | 12 (P2/P3) | em correção | — |
+| 4ª — sobre as correções da 3ª | **`REFUTADO`** | 12 (P2/P3) | 9 | 3 |
+| 5ª — sobre as correções da 4ª | **`REFUTADO`** | 12 (**5 P1**) | em correção | — |
 
 Somam-se **dois** defeitos achados fora das revisões: um por execução de
 navegador real e um pelo orquestrador ao validar as migrações contra PostgreSQL
-real. **Total: 37 achados**, dos quais 5 P1 com leitura e escrita cross-tenant
+real. **Total: 49 achados**, sete deles P1 com leitura e escrita cross-tenant
 reproduzidas contra banco real.
+
+A quinta rodada também apanhou **um erro do orquestrador**: a justificativa de
+que `nextval` atribui id de transação — repassada por ele a um especialista e
+gravada na migração `0004` como fato medido — é **falsa** contra PostgreSQL
+16.14, porque sequência é não-transacional. Foi relatada sem verificação.
 
 Uma versão anterior deste parágrafo dizia "ao todo nove cláusulas caíram" e
 "todos foram corrigidos". As duas afirmações eram falsas contra a própria tabela
@@ -88,10 +94,12 @@ acima — "nove" era o total da **primeira** rodada apresentado como agregado, e
 dois achados permanecem **registrados, não corrigidos**. Corrigido após a quarta
 revisão, que apanhou exatamente isso.
 
-A leitura honesta do conjunto é a inversa da tranquilizadora: **quatro rodadas
-não bastaram para convergir**. A terceira achou mais que a segunda e a quarta
-mais que a terceira. Nenhuma delas substitui o verificador terceiro independente
-que `DEC-G0-02` exige — e o padrão sugere que ele encontrará mais.
+A leitura honesta do conjunto é a inversa da tranquilizadora: **cinco rodadas
+não bastaram para convergir**, e a quinta reabriu uma classe que a quarta
+declarava fechada — o pivô de tenant dentro da transação em voo, agora por view
+auto-atualizável sobre a âncora. Nenhuma delas substitui o verificador terceiro
+independente que `DEC-G0-02` exige, e o padrão observado é que ele **encontrará
+mais**. Contar rodadas não é medir robustez.
 
 **Nada nesta entrega altera o estado factual duro.** Continuam valendo: **0 vias
 clínicas acionáveis**; matriz **47/47 inelegíveis**; `Observation` da AMH **não
@@ -290,7 +298,7 @@ disponível:
 | `packages/fixtures-sinteticas` | 13 |
 | **Total** | **1.457 verdes · 0 falhas · 0 pulados · 0 `expected fail`** |
 
-A suíte de fronteira **não soma** ao total acima — ela é subconjunto dos 75 já
+A suíte de fronteira **não soma** ao total acima — ela é subconjunto dos 79 já
 contados para `packages/persistencia`. Executada isoladamente em modo
 bloqueante, `pnpm --filter @intensicare/persistencia test:fronteira` →
 **44 verdes** contra PostgreSQL 16.14 efêmero real;
@@ -358,9 +366,13 @@ funcionar. Investigados um a um, **nenhum era defeito do produto**:
 - **Bloqueio de comandos em offline contra alerta vindo da API**: verificado
   contra alerta fornecido por rota, porque a API não produz alerta sem bundle
   de regra assinado. Reexecutar sem a rota quando houver bundle.
-- **`supply-chain.yml`**: **nunca executou**. Não há como rodar GitHub Actions
-  localmente. Os 5 jobs são YAML válido e passam no verificador de higiene, mas
-  nenhum foi observado rodando.
+- **`supply-chain.yml`**: **executou** no PR #5 — a afirmação anterior de que
+  "nunca executou" valia quando foi escrita e ficou obsoleta ao abrir o PR. Na
+  primeira execução real, `artefato-web` **reprovou** no passo Trivy com 10 CVE
+  HIGH na base Alpine 3.23.4; corrigido por repin de base por digest, sem tocar
+  no limiar. Detalhe em
+  `docs/14-devsecops-and-delivery/politica-de-supply-chain.md`. O que **não**
+  executou continua sendo assinatura, proveniência e promoção — abaixo.
 - **Assinatura, proveniência e promoção de artefato**: `NÃO EXECUTADAS`.
   Dependem de registry, chave sob custódia e OIDC de CI — provisionamento humano.
 - **AsyncAPI contra o JSON Schema oficial 3.0**: não validado. A verificação é
@@ -416,8 +428,10 @@ por funções `SECURITY DEFINER` com `search_path` fixo e chave
    independente (`DEC-G0-02`) e aceite humano nominal (`MG-G6`). Os **32** P0 do
    threat model seguem `OPEN` (27 do corpo original mais 5 acrescentados;
    o modelo declara 83 ameaças, todas `OPEN`). Teste escrito por agente não é a independência
-   que `SEC-0009`/`SAF-0037` exigem — e esta rodada mostra por quê: **nove**
-   cláusulas caíram ao longo de três revisões adversariais independentes.
+   que `SEC-0009`/`SAF-0037` exigem — e esta rodada mostra por quê: **cinco
+   revisões adversariais independentes produziram 47 achados, sete deles P1**,
+   e a quinta ainda reproduziu leitura cross-tenant e forja do selo pela API do
+   próprio produto.
 2. **Troca de tenant entre transações distintas na mesma conexão continua
    possível** e **não é fechável pelo banco**: é assim que um pool multi-tenant
    funciona. Escolher o tenant ao **abrir** é matéria de identidade autenticada
@@ -631,10 +645,14 @@ seria violar §2, §11 e §14.
    armazenamento agora protege contra SQL arbitrário em voo; **não** protege
    contra um chamador que peça o tenant errado. Isso é `SEC-0001`, e depende de
    IdP real. É o risco P0 remanescente.
-2. **Nove cláusulas caíram ao longo de três revisões adversariais.** É razoável presumir
-   que um terceiro par de olhos ainda tenha trabalho. Uma segunda revisão foi
-   conduzida sobre as correções; ela **não** substitui o verificador terceiro
-   independente que `DEC-G0-02` exige.
+2. **Cinco revisões adversariais não convergiram.** Rodadas 1→5 produziram
+   8, 6, 9, 12 e 12 achados; a quinta ainda encontrou **dois P1 exploráveis
+   ponta a ponta** pela API do produto. Cada rodada corrigiu o que a anterior
+   apontou e a seguinte achou classe nova — matview em esquema permitido, view
+   auto-atualizável sobre a âncora, guarda de não-vacuidade circular. Nenhuma
+   delas substitui o verificador terceiro independente que `DEC-G0-02` exige, e
+   o padrão observado é que ele **encontrará mais**. Tratar a contagem de
+   rodadas como prova de robustez seria ler o inverso do que os dados dizem.
 3. **Ambiente de teste ≠ ambiente real, e o gate unitário não distingue os
    dois**: a suíte de unidade roda com `PERFIL` e `NODE_ENV` ambos definidos
    pelo runner. Foi assim que o HTTP 500 de `/v1/dev/sessao` sobreviveu a um
