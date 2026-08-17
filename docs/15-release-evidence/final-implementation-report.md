@@ -60,7 +60,7 @@ O resultado mensurável:
 | Testes pulados | 0 | **0** | preservado |
 | Suíte contra PostgreSQL real | inexistente | **40 testes bloqueantes** | nova |
 | Verificações de contrato | 0 (sem gate) | **148** | nova |
-| E2E de navegador autenticado | inexistente | **22/22 verdes**, determinístico | nova |
+| E2E de navegador autenticado | inexistente | **22/22 verdes** (4 execuções observadas) | nova |
 
 O ganho que mais importa não é a contagem. É que a **fronteira de isolamento de
 tenant deixou de ser assegurada por um simulador embarcado** e passou a ser
@@ -282,7 +282,9 @@ disponível:
 | `packages/fixtures-sinteticas` | 13 |
 | **Total** | **1.445 verdes · 0 falhas · 0 pulados · 0 `expected fail`** |
 
-Além disso: `pnpm --filter @intensicare/persistencia test:fronteira` →
+A suíte de fronteira **não soma** ao total acima — ela é subconjunto dos 75 já
+contados para `packages/persistencia`. Executada isoladamente em modo
+bloqueante, `pnpm --filter @intensicare/persistencia test:fronteira` →
 **40 verdes** contra PostgreSQL 16.14 efêmero real;
 `node scripts/check_contratos.mjs` → **148 verificações**;
 `python3 scripts/check_doc_conventions.py` → 249 arquivos, sem violação;
@@ -476,14 +478,19 @@ autoridade:
 
 **Contratos.** `asyncapi.yaml` 3.0.0 publicado e referenciado pelo índice; gate
 `check_contratos.mjs` com 148 verificações, provado nos dois sentidos —
-reprova 12 mutações distintas de contrato (enum divergente, evento inventado,
+reprova 12 mutações distintas de contrato — **medição relatada pelo autor do
+gate, não reproduzível a partir do repositório**, porque `check_contratos.mjs`
+não tem modo de autoteste (ao contrário de `verificar-artefato.mjs autoteste`,
+que tem e é reproduzível). As mutações foram (enum divergente, evento inventado,
 evento emitido e não declarado, YAML inválido, chave duplicada, `$ref` não
 resolvido, credencial em query…). OpenAPI atualizado: três superfícies de saúde,
 ticket de eventos, sessão de desenvolvimento, `bearerFormat` corrigido de
 `SYNTH-TOKEN.<tenantId>.<atorId>` para JWS.
 
 **Tempo real.** A entrega deixou de ser replay finito. Provado **por mutação**:
-restaurar o encerramento pós-catch-up fez exatamente 4 testes falharem. O fluxo
+restaurar o encerramento pós-catch-up fez exatamente 4 testes falharem —
+**experimento relatado pelo autor, não reproduzível a partir do repositório**,
+porque exigiria mutar o fonte. O fluxo
 permanece aberto, entrega evento produzido **depois** da conexão, emite pulsação,
 desconecta explicitamente o cliente lento com instrução de reconciliação
 (`ADR-0011` P5), retoma por cursor sem lacuna e reavalia autorização **por
@@ -546,9 +553,19 @@ Todas por **emenda datada**, preservando o texto anterior como registro:
   avaliação como "inteiramente local, inventado e ilustrativo". Corrigido pelo
   orquestrador.
 
-Estado por gate agora **idêntico** entre Markdown (corpo e tabela), YAML e
-Mermaid. Zero IDs órfãos, zero duplicatas — duas suspeitas levantadas por
-inventário mecânico foram verificadas e são falso-positivo: `THR-0005..0047`
+Estado por gate agora idêntico entre o **corpo** do mapa, a **tabela §12** e o
+**YAML**, com uma exceção conhecida e não resolvida: G6 lê `NÃO INICIADO`
+(aprovação) / `PARCIAL` (identificação) no corpo §5.6 e `PARCIAL` puro na tabela
+e no YAML — o corpo é mais granular, e unificá-lo exigiria decidir qual das duas
+leituras vale, que é ato do titular. **Mermaid não entra nessa afirmação**:
+nenhum diagrama do mapa ou do backlog codifica estado de gate (o `flowchart` da
+§11 é swimlane de dependência de sprint); o único Mermaid corrigido, em
+`adr-index.md` §4.2, codifica aceitação de ADR.
+
+Sobre IDs: **nenhum órfão e nenhuma duplicata foram encontrados** pelo inventário
+mecânico executado, mas esse inventário não foi versionado como artefato, então a
+afirmação é **relatada, não reproduzível**. As duas suspeitas que ele levantou
+foram verificadas pelo orquestrador e são falso-positivo: `THR-0005..0047`
 estão definidos em `threat-model.md`, e `ADR-0031/0035/0038/0039` são ADRs
 **legadas da V1**, de namespace distinto.
 
