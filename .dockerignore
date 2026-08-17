@@ -1,0 +1,92 @@
+# .dockerignore — contexto de construção dos artefatos de `apps/api` e
+# `apps/web` (ACH-08, §6.8; ADR-0022 §5.2 S3 "artefato final mínimo,
+# não-root"; D1 "reprodutibilidade").
+#
+# POR QUE ESTE ARQUIVO EXISTE. Duas razões distintas, e a segunda é a que
+# importa para segurança:
+#
+# 1. Tamanho/tempo. O contexto é serializado e enviado ao daemon a cada
+#    build; `docs/` sozinho carrega mapas de projeto de ~160 KB que nenhum
+#    estágio de build lê.
+#
+# 2. CONSTRUÇÃO A PARTIR DE FONTE, NÃO DE RESÍDUO DE MÁQUINA. `node_modules/`
+#    e `dist/` da máquina do desenvolvedor são excluídos DELIBERADAMENTE, não
+#    por economia. Se `node_modules/` da máquina entrasse no contexto, o
+#    artefato conteria binários resolvidos para a plataforma do desenvolvedor
+#    (aqui: darwin/arm64) em vez dos resolvidos pelo `pnpm-lock.yaml` dentro
+#    da imagem, e um `dist/` obsoleto poderia ser empacotado sem que nada
+#    recompilasse — o artefato deixaria de corresponder ao commit. Esse é
+#    exatamente o modo de falha que ADR-0022 D1 (reprodutibilidade) e
+#    THR-0054 (toolchain não pinado produzindo builds não reproduzíveis, de
+#    modo que substituição não é detectável por comparação) nomeiam.
+#    Excluir os dois força cada build a partir do lockfile congelado.
+#
+# 3. `.git/` fora do contexto: histórico completo do repositório não é
+#    entrada de build, e uma camada que o contivesse carregaria para dentro
+#    do artefato todo segredo já removido em commit posterior (THR-0053 —
+#    segredo "committado, logado, embutido em camada de imagem").
+
+# --- histórico e metadados de repositório ---
+.git
+.gitignore
+.gitattributes
+.github
+
+# --- resíduo de instalação/compilação da máquina local (ver razão 2 acima) ---
+node_modules
+**/node_modules
+dist
+**/dist
+*.tsbuildinfo
+**/*.tsbuildinfo
+.pnpm-store
+**/.pnpm-store
+.pglite
+**/.pglite
+
+# --- artefatos de teste/cobertura: não são entrada de build ---
+coverage
+**/coverage
+.nyc_output
+**/playwright-report
+**/test-results
+**/reports
+**/.vitest
+**/.stryker-tmp
+
+# --- documentação e governança: nenhum estágio de build lê ---
+docs
+*.md
+!apps/*/README.md
+HANDOFF.yaml
+.claude
+
+# --- configuração de ferramenta local, editor, SO ---
+.vscode
+.idea
+.DS_Store
+**/.DS_Store
+Thumbs.db
+.editorconfig
+
+# --- ambiente e segredo: nunca entram numa camada de imagem (THR-0053) ---
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+**/.npmrc
+**/.pnpmrc
+
+# --- os próprios artefatos de contêiner e evidência de supply chain ---
+Dockerfile
+**/Dockerfile
+.dockerignore
+sbom
+**/sbom-*.json
+evidencia-artefato

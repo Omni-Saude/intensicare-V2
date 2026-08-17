@@ -1,0 +1,392 @@
+{
+  "_doc": [
+    "politica-de-severidade.json — limiares que tornam BLOQUEANTES os gates de",
+    "cadeia de suprimentos executados por scripts/verificar-artefato.mjs e por",
+    ".github/workflows/supply-chain.yml (ACH-08, §6.8).",
+    "",
+    "POR QUE UM ARQUIVO DE DADOS E NAO CONSTANTES NO SCRIPT. Um limiar embutido",
+    "no codigo do verificador so pode ser mudado por quem edita o verificador, e",
+    "muda sem deixar rastro legivel para quem audita. Aqui, afrouxar um limiar e",
+    "um diff de uma linha num arquivo com CODEOWNERS proprio, revisavel por quem",
+    "nao le JavaScript. ADR-0022 D3 exige gate que nunca fica falso-verde; a",
+    "condicao pratica disso e que a definicao do que reprova seja legivel.",
+    "",
+    "ESTADO DOS LIMIARES. PROPOSAL. ADR-0022 §5.1 C4 (AUTH-OPERATIONS) esta",
+    "ABERTA: ninguem ratificou o que conta como 'minimo' num artefato nem que",
+    "severidade reprova. Os valores abaixo sao PREMISSA REVERSIVEL adotada para",
+    "que o gate exista e reprove desde o primeiro commit, em vez de esperar a",
+    "ratificacao com o gate desligado. Nenhum valor aqui foi ratificado por",
+    "humano nomeado; ver politica-de-supply-chain.md §3 e o handoff de ACH-08.",
+    "",
+    "REGRA QUE NAO SE NEGOCIA: nenhuma chave deste arquivo pode desligar um",
+    "gate. Nao existe 'continue_on_error', 'advisory', 'warn_only' nem",
+    "'skip'. Excecao so existe na forma de entrada nominal e datada em",
+    "'excecoes_registradas', com dono e razao — nunca como flag global",
+    "(contrato §6 anti-padrao 16; THR-0055)."
+  ],
+  "versao": "1.0.0",
+  "status": "PROPOSAL",
+  "owner": "UNASSIGNED — VALIDAÇÃO NECESSÁRIA",
+  "last_updated": "2026-08-17",
+  "rastreio": [
+    "ADR-0019 §5.2 P3 (artefato único promovido por digest)",
+    "ADR-0022 §5.2 S1, S2, S3, S5, S6, S7, S8",
+    "ADR-0022 §5.1 C2, C3, C4 (ABERTAS)",
+    "THR-0050 (dependência maliciosa no grafo de build)",
+    "THR-0051 (artefato implantado ≠ artefato construído)",
+    "THR-0052 (comprometimento do pipeline de CI/CD)",
+    "THR-0053 (perda ou exposição de segredo/chave)",
+    "THR-0054 (base/toolchain não pinado, build não reproduzível)",
+    "THR-0055 (gate consultivo ou falso-verde)",
+    "MG-G8-PILOTO, MG-G8-PROD (evidência de go/no-go)"
+  ],
+
+  "vulnerabilidades": {
+    "_doc": [
+      "Análise de composição (SCA) sobre o grafo de dependências de PRODUÇÃO.",
+      "Fonte: `pnpm audit --prod --json` — o mesmo registro de onde as",
+      "dependências já são instaladas; nenhum fornecedor novo é selecionado.",
+      "",
+      "FALHA FECHADA. Se o audit não puder ser executado (rede indisponível,",
+      "registro fora do ar, saída ilegível), o gate REPROVA. A alternativa —",
+      "'não consegui verificar, então passou' — é literalmente o gate que",
+      "valida zero casos e reporta verde de THR-0055."
+    ],
+    "bloqueia_a_partir_de": "high",
+    "ordem_de_severidade": ["info", "low", "moderate", "high", "critical"],
+    "falha_fechada_se_indisponivel": true,
+    "registra_sem_bloquear": ["info", "low", "moderate"],
+    "excecoes_registradas": []
+  },
+
+  "licencas": {
+    "_doc": [
+      "Conformidade de licença sobre o grafo de PRODUÇÃO (dependência de",
+      "desenvolvimento não é redistribuída no artefato e por isso não entra).",
+      "",
+      "A lista permitida foi montada a partir do que o repositório REALMENTE",
+      "usa, não de um catálogo genérico. OBSERVADO 2026-08-17 via",
+      "`pnpm --filter @intensicare/api licenses list --prod --json`: 48",
+      "pacotes de produção — MIT 41, BSD-3-Clause 3, ISC 3, Apache-2.0 1.",
+      "`apps/web`: 5 pacotes, todos MIT. As demais entradas permitidas são",
+      "folga deliberada para licenças permissivas equivalentes.",
+      "",
+      "LICENÇA AUSENTE OU NÃO RECONHECIDA REPROVA. Uma dependência sem licença",
+      "declarada não é 'provavelmente MIT': é risco jurídico não avaliado",
+      "entrando num produto de saúde. Quem quiser admiti-la registra exceção",
+      "nominal."
+    ],
+    "permitidas": [
+      "MIT",
+      "ISC",
+      "Apache-2.0",
+      "BSD-2-Clause",
+      "BSD-3-Clause",
+      "0BSD",
+      "Unlicense",
+      "CC0-1.0",
+      "BlueOak-1.0.0",
+      "Python-2.0",
+      "MIT-0"
+    ],
+    "proibidas": [
+      "AGPL-1.0",
+      "AGPL-3.0",
+      "GPL-2.0",
+      "GPL-3.0",
+      "LGPL-2.1",
+      "LGPL-3.0",
+      "SSPL-1.0",
+      "BUSL-1.1",
+      "CC-BY-NC-4.0",
+      "UNLICENSED",
+      "UNKNOWN"
+    ],
+    "desconhecida_bloqueia": true,
+    "excecoes_registradas": []
+  },
+
+  "segredos": {
+    "_doc": [
+      "Varredura de segredo sobre os arquivos RASTREADOS pelo git (ADR-0022 S6;",
+      "THR-0053). Complementa — não substitui — scripts/check_forbidden_content.py,",
+      "que cobre credencial/CPF/e-mail/PSR em docs, scripts, .github, apps e",
+      "packages. Este aqui olha o conjunto rastreado inteiro e procura formatos",
+      "de segredo que aquele não modela (JWT, URL de banco com senha, token de",
+      "registro npm, chave privada, atribuição genérica de senha/segredo).",
+      "",
+      "PADRÕES MONTADOS EM PARTES. Vários padrões vêm como lista de fragmentos",
+      "que o verificador concatena em tempo de execução. Não é estilo: é a",
+      "mesma técnica que check_forbidden_content.py usa no seu canário",
+      "(PHI + -REAL). Se o cabeçalho literal de uma chave privada PEM fosse",
+      "escrito de forma contígua neste arquivo, ele seria detectado pelo",
+      "próprio gate de conteúdo proibido — o arquivo que define a busca não",
+      "pode conter aquilo que busca.",
+      "",
+      "AUTO-EXCLUSÃO E O BURACO QUE ELA ABRE. Este arquivo e o verificador",
+      "contêm padrões de segredo por construção e se auto-denunciariam; ambos",
+      "estão em 'caminhos_excluidos'. Isso cria um ponto cego real — alguém",
+      "poderia esconder um segredo justamente neles. Controle compensatório:",
+      "os dois vivem sob scripts/, que check_forbidden_content.py varre com um",
+      "conjunto de padrões independente, e ambos têm CODEOWNERS. O ponto cego",
+      "está registrado, não escondido."
+    ],
+    "caminhos_excluidos": [
+      "scripts/politica-de-severidade.json",
+      "scripts/verificar-artefato.mjs",
+      "docs/14-devsecops-and-delivery/politica-de-supply-chain.md",
+      "pnpm-lock.yaml"
+    ],
+    "extensoes_binarias_ignoradas": [
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".gif",
+      ".webp",
+      ".ico",
+      ".pdf",
+      ".zip",
+      ".gz",
+      ".tgz",
+      ".woff",
+      ".woff2",
+      ".ttf",
+      ".eot",
+      ".wasm",
+      ".node"
+    ],
+    "bytes_maximos_por_arquivo": 2097152,
+    "padroes": [
+      {
+        "id": "SEG-01",
+        "nome": "token do GitHub (ghp_/gho_/ghu_/ghs_/ghr_)",
+        "regex": "\\bgh[pousr]_[A-Za-z0-9]{36,}\\b",
+        "severidade": "critical"
+      },
+      {
+        "id": "SEG-02",
+        "nome": "token de acesso pessoal fine-grained do GitHub",
+        "regex": "\\bgithub_pat_[A-Za-z0-9_]{40,}\\b",
+        "severidade": "critical"
+      },
+      {
+        "id": "SEG-03",
+        "nome": "identificador de chave de acesso AWS",
+        "regex": "\\b(?:AKIA|ASIA)[0-9A-Z]{16}\\b",
+        "severidade": "critical"
+      },
+      {
+        "id": "SEG-04",
+        "nome": "cabeçalho de chave privada PEM",
+        "regex_partes": ["-----BEGIN [A-Z0-9 ]*PRIVATE", " KEY-----"],
+        "severidade": "critical"
+      },
+      {
+        "id": "SEG-05",
+        "nome": "token de registro npm",
+        "regex": "\\bnpm_[A-Za-z0-9]{36}\\b",
+        "severidade": "critical"
+      },
+      {
+        "id": "SEG-06",
+        "nome": "JSON Web Token com três segmentos",
+        "regex": "\\beyJ[A-Za-z0-9_-]{8,}\\.eyJ[A-Za-z0-9_-]{8,}\\.[A-Za-z0-9_-]{8,}\\b",
+        "severidade": "high"
+      },
+      {
+        "id": "SEG-07",
+        "nome": "URL de banco de dados com senha embutida",
+        "_doc": [
+          "CALIBRAÇÃO (2026-08-17). A primeira versão deste padrão marcava",
+          "qualquer `esquema://usuario:algo@host`. Rodada contra o repositório",
+          "real, produziu 5 achados e TODOS eram falso positivo: JSDoc",
+          "documentando o formato da URL em packages/persistencia/src/postgres/",
+          "protocolo.ts, texto de ajuda em scripts/pg-efemero.mjs e uma",
+          "interpolação `${...}` no código que monta a URL em tempo de",
+          "execução.",
+          "",
+          "Isso importa mais do que parece. Um gate que grita em toda linha de",
+          "documentação é desligado na primeira sexta-feira — e aí não protege",
+          "de nada. As três exclusões abaixo são estreitas e nomeadas, não um",
+          "afrouxamento geral:",
+          "  1. a senha contém `${`, `<` ou `%s` → é interpolação ou marcador,",
+          "     não literal;",
+          "  2. a senha é exatamente uma palavra-marcador conhecida (SENHA,",
+          "     senha, password, changeme, exemplo...);",
+          "  3. a senha contém SYNTH → é dado sintético declarado, que é a",
+          "     convenção deste repositório para material não real.",
+          "Uma credencial de verdade não cai em nenhuma das três."
+        ],
+        "regex": "\\b(?:postgres|postgresql|mysql|mongodb|redis|amqp)(?:\\+srv)?://[^\\s:@/]+:(?![^\\s@/]*(?:\\$\\{|<|%s|SYNTH))(?!(?:SENHA|senha|PASSWORD|password|PASSWD|passwd|pass|SEGREDO|segredo|secret|changeme|placeholder|exemplo|example|xxx+|\\*+)@)[^\\s@/]{3,}@",
+        "severidade": "critical"
+      },
+      {
+        "id": "SEG-08",
+        "nome": "token de bot do Slack",
+        "regex": "\\bxox[abprs]-[A-Za-z0-9-]{20,}\\b",
+        "severidade": "critical"
+      },
+      {
+        "id": "SEG-09",
+        "nome": "atribuição literal de senha, segredo, token ou chave de API",
+        "_doc": [
+          "Exige um valor com 12+ caracteres entre aspas e proíbe os",
+          "marcadores de ausência usuais. Sem isso, cada",
+          "`senha: ''` de teste e cada `token: process.env.X` viraria achado,",
+          "o gate seria desligado por ruído — e um gate desligado por ruído",
+          "protege menos que um gate calibrado."
+        ],
+        "regex": "\\b(?:senha|password|passwd|secret|segredo|api[_-]?key|apikey|access[_-]?token|auth[_-]?token|client[_-]?secret|private[_-]?key)\\b\\s*[:=]\\s*[\"'`](?!\\s*$)(?![^\"'`\\n]*SYNTH)(?!process\\.env)(?!\\$\\{)(?!<)(?!redacted)(?!exemplo)(?!example)(?!placeholder)(?!changeme)(?!xxx)(?!\\*+[\"'`])[^\"'`\\n]{12,}[\"'`]",
+        "flags": "i",
+        "_flags_doc": "Flag de caixa vai no campo `flags`; `(?i)` inline não compila em JavaScript e derrubaria o gate inteiro.",
+        "severidade": "high"
+      },
+      {
+        "id": "SEG-10",
+        "nome": "chave privada PKCS#8/OpenSSH em uma linha",
+        "regex_partes": ["-----BEGIN OPENSSH PRIVATE", " KEY-----"],
+        "severidade": "critical"
+      }
+    ],
+    "bloqueia_a_partir_de": "high",
+    "excecoes_registradas": []
+  },
+
+  "artefato": {
+    "_doc": [
+      "Propriedades verificáveis por inspeção da imagem construída",
+      "(ADR-0022 §5.2 S3). Cada uma é uma pergunta com resposta binária",
+      "extraída da imagem real, não do Dockerfile: o que se audita é o",
+      "artefato, não a intenção declarada."
+    ],
+    "uid_proibido": 0,
+    "exige_usuario_declarado": true,
+    "dev_dependencies_maximo": 0,
+    "fonte_typescript_primeira_parte_maxima": 0,
+    "sourcemaps_maximos": 0,
+    "gerenciador_de_pacote_proibido": ["npm", "npx", "corepack", "yarn", "pnpm"],
+    "base_deve_ser_por_digest": true,
+    "tag_mutavel_proibida": ["latest", "main", "master", "stable", "edge"],
+    "medicoes_sem_limiar_ratificado": {
+      "_doc": [
+        "MEDIÇÕES, NÃO GATES. Registradas em todo relatório de artefato e",
+        "deliberadamente SEM valor de reprovação, porque o limiar é de",
+        "AUTH-OPERATIONS e ADR-0022 §5.1 C4 está ABERTA. Inventar um número",
+        "aqui seria violar o contrato §6 anti-padrão 19 ('inventar SLO,",
+        "limiar, banda aceitável'). Elas aparecem no relatório com o rótulo",
+        "VALIDAÇÃO NECESSÁRIA, nunca como PASSOU."
+      ],
+      "tamanho_da_imagem_bytes": "VALIDAÇÃO NECESSÁRIA",
+      "contagem_de_camadas": "VALIDAÇÃO NECESSÁRIA",
+      "arquivos_ts_de_terceiros": "VALIDAÇÃO NECESSÁRIA",
+      "pacotes_no_grafo_de_producao": "VALIDAÇÃO NECESSÁRIA"
+    }
+  },
+
+  "workflows": {
+    "_doc": [
+      "Higiene dos workflows de CI (ADR-0022 §5.2 S4 e S5; THR-0052 —",
+      "'comprometimento de pipeline É comprometimento de produção').",
+      "Verifica a convenção que este repositório JÁ pratica, para que ela",
+      "deixe de depender de revisor humano lembrar dela."
+    ],
+    "sha_de_action_caracteres": 40,
+    "chaves_proibidas": ["continue-on-error"],
+    "gatilhos_proibidos": ["pull_request_target", "workflow_run"],
+    "exige_permissions_no_topo": true,
+    "permissions_padrao_exigida": { "contents": "read" },
+    "permissoes_de_escrita_que_exigem_justificativa": [
+      "contents",
+      "packages",
+      "id-token",
+      "actions",
+      "deployments",
+      "pull-requests",
+      "issues",
+      "checks",
+      "statuses",
+      "security-events"
+    ],
+    "expressao_insegura_proibida": {
+      "_doc": [
+        "Interpolação de metadados controlados por quem abre o PR dentro de",
+        "um bloco `run:` é injeção de comando no runner — o corpo/título de",
+        "um PR vira shell. THR-0052 nomeia exatamente este vetor."
+      ],
+      "regex": "\\$\\{\\{\\s*github\\.event\\.(?:issue|pull_request|comment|review)\\.(?:title|body|head\\.ref|head\\.label)",
+      "severidade": "critical"
+    }
+  },
+
+  "promocao": {
+    "_doc": [
+      "ADR-0019 §5.2 P3 e ADR-0022 §5.2 S7: promoção referencia digest",
+      "imutável, nunca tag mutável, e o artefato promovido é o MESMO",
+      "construído — nunca reconstruído por ambiente.",
+      "",
+      "ADR-0022 §8.3 é a restrição dura: nenhum artefato desta V2 é promovido",
+      "a ambiente além de dev/CI efêmero enquanto S8 não fechar. O script",
+      "promover-por-digest.mjs implementa a MECÂNICA e recusa qualquer",
+      "referência que não seja por digest; ele não executa promoção real."
+    ],
+    "exige_digest": true,
+    "algoritmos_de_digest_aceitos": ["sha256"],
+    "comprimento_hex_do_digest": 64,
+    "proibe_referencia_por_tag": true,
+    "exige_assinatura_verificada": true,
+    "exige_proveniencia_verificada": true,
+    "ambientes_provisionados": [],
+    "ambientes_nomeados_nao_provisionados": [
+      "integracao",
+      "staging",
+      "shadow",
+      "piloto",
+      "producao"
+    ],
+    "_ambientes_doc": [
+      "'ambientes_provisionados' está VAZIO por fidelidade a ADR-0019 §5.2 P1:",
+      "só existem hoje desenvolvimento local e CI efêmero. Preencher esta",
+      "lista é decisão de plataforma (ADR-0019 §5.1 C1/C2/C3, ABERTAS) e não",
+      "cabe a nenhum agente."
+    ]
+  },
+
+  "dependencias_sensiveis": {
+    "_doc": [
+      "Dependências cuja presença no grafo de PRODUÇÃO precisa ser vista, não",
+      "descoberta em incidente. O contrato §6 anti-padrão 9 proíbe PGlite em",
+      "memória, fixture ou token sintético em perfil não-dev.",
+      "",
+      "DISTINÇÃO QUE ESTE GATE FAZ DE PROPÓSITO. Estar INSTALADA no artefato e",
+      "estar ALCANÇÁVEL sob um perfil não-dev são coisas diferentes. O que",
+      "impede o alcance é o código de apps/api/src (fora do escopo de escrita",
+      "de ACH-08). Por isso as entradas abaixo são ACHADO REGISTRADO com dono",
+      "nomeado: o verificador as imprime como achado aberto em toda execução e",
+      "REPROVA se aparecer uma dependência sensível FORA desta lista. O que",
+      "não se faz é reprovar o pipeline inteiro por um defeito que ACH-08 não",
+      "tem permissão de corrigir — isso seria transferir o custo sem",
+      "transferir a capacidade."
+    ],
+    "reprova_se_nao_registrada": true,
+    "registradas": [
+      {
+        "pacote": "@electric-sql/pglite",
+        "onde": "apps/api (dependência de produção)",
+        "achado": "banco em processo embarcado no artefato de execução",
+        "regra_tocada": "contrato §6 anti-padrão 9; PRE-03",
+        "dono_da_correcao": "responsável por apps/api/src e apps/api/package.json",
+        "estado": "ACHADO ABERTO",
+        "observado_em": "2026-08-17"
+      },
+      {
+        "pacote": "@intensicare/fixtures-sinteticas",
+        "onde": "apps/api (dependência de produção)",
+        "achado": "fixtures sintéticas embarcadas no artefato de execução",
+        "regra_tocada": "contrato §6 anti-padrão 9",
+        "dono_da_correcao": "responsável por apps/api/src e apps/api/package.json",
+        "estado": "ACHADO ABERTO",
+        "observado_em": "2026-08-17"
+      }
+    ]
+  }
+}
