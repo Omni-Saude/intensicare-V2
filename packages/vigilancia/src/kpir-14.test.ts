@@ -18,6 +18,22 @@ import { criarJanela } from "./tipos.js";
 
 const PERIODO = criarJanela(utcLocal("2026-08-01", 0), utcLocal("2026-09-01", 0));
 
+/**
+ * Executa e devolve o erro lançado; FALHA se nada for lançado.
+ *
+ * Existe para que classe E mensagem sejam asseridas sobre o MESMO erro. Duas
+ * chamadas `.toThrow(Classe)` + `.toThrow(/regex/)` invocam a função duas
+ * vezes e, a rigor, não provam que foi um único erro a satisfazer as duas.
+ */
+function capturarErro(executar: () => unknown): unknown {
+  try {
+    executar();
+  } catch (erro) {
+    return erro;
+  }
+  throw new Error("a chamada NÃO lançou — a recusa sob teste não foi exercida");
+}
+
 /** 4 altas vivas, 2 óbitos, 2 transferências, 1 disposição ausente, 1 âncora administrativa. */
 function coorteSintetica(): readonly EpisodioDeUti[] {
   return [
@@ -158,8 +174,27 @@ describe("KPIR-14 — as duas sub-decisões abertas NUNCA são escolhidas em sil
   });
 
   it("recusa janela de de-duplicação não positiva", () => {
-    expect(() => deduplicacaoPorJanela(0)).toThrow();
-    expect(() => deduplicacaoPorJanela(Number.POSITIVE_INFINITY)).toThrow();
+    // `.toThrow()` SEM tipo aceitava qualquer erro: um `TypeError` por argumento
+    // malformado, ou um erro incidental de outra camada, produzia exatamente o
+    // mesmo verde que a recusa sob teste. Aqui o conteúdo importa — KPIR-14 é o
+    // indicador K-8, e uma sub-decisão de de-duplicação aceita por engano
+    // falsifica o número que sai.
+    //
+    // `kpir-14.ts` (guarda `!(janelaHoras > 0) || !Number.isFinite(janelaHoras)`)
+    // lança `RangeError` com o valor recusado na mensagem. Asserir o VALOR é o
+    // que distingue os dois casos: eles exercitam cláusulas diferentes da
+    // guarda e, sem isso, as duas asserções seriam literalmente a mesma.
+    const naoPositiva = capturarErro(() => deduplicacaoPorJanela(0));
+    expect(naoPositiva).toBeInstanceOf(RangeError);
+    expect((naoPositiva as Error).message).toMatch(
+      /janela de de-duplicação deve ser > 0 horas: 0$/,
+    );
+
+    const naoFinita = capturarErro(() => deduplicacaoPorJanela(Number.POSITIVE_INFINITY));
+    expect(naoFinita).toBeInstanceOf(RangeError);
+    expect((naoFinita as Error).message).toMatch(
+      /janela de de-duplicação deve ser > 0 horas: Infinity$/,
+    );
   });
 });
 

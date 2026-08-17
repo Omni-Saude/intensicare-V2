@@ -18,6 +18,22 @@ import {
   turnoDe,
 } from "./tipos.js";
 
+/**
+ * Executa e devolve o erro lançado; FALHA se nada for lançado.
+ *
+ * Existe para que classe E mensagem sejam asseridas sobre o MESMO erro. Duas
+ * chamadas `.toThrow(Classe)` + `.toThrow(/regex/)` invocam a função duas
+ * vezes e, a rigor, não provam que foi um único erro a satisfazer as duas.
+ */
+function capturarErro(executar: () => unknown): unknown {
+  try {
+    executar();
+  } catch (erro) {
+    return erro;
+  }
+  throw new Error("a chamada NÃO lançou — a recusa sob teste não foi exercida");
+}
+
 const CONVENCAO_CIVIL = {
   fusoHorario: FUSO_SINTETICO,
   horaDeCorte: 0,
@@ -145,8 +161,33 @@ describe("janela e instantes declarados", () => {
   const janela = criarJanela("2026-08-10T00:00:00.000Z", "2026-08-11T00:00:00.000Z");
 
   it("recusa janela vazia ou invertida", () => {
-    expect(() => criarJanela("2026-08-11T00:00:00.000Z", "2026-08-10T00:00:00.000Z")).toThrow();
-    expect(() => criarJanela("2026-08-10T00:00:00.000Z", "2026-08-10T00:00:00.000Z")).toThrow();
+    // O NOME promete a regra de ORDENAÇÃO da janela, e `.toThrow()` sem tipo
+    // não verificava isso. `criarJanela` (`tipos.ts`) tem TRÊS saídas de erro:
+    // `TypeError` quando `Date.parse` falha no início, `TypeError` quando falha
+    // no fim, e `RangeError` só quando `fim <= inicio`. Um único caractere a
+    // mais num literal de data abaixo tornaria a data impassável, trocando a
+    // recusa medida por falha de parse — e o teste seguiria VERDE medindo outra
+    // coisa. `RangeError` é o discriminador: `TypeError` não é instância dele.
+    //
+    // Os instantes na mensagem distinguem os dois casos; sem eles, as duas
+    // asserções seriam idênticas e a "vazia" poderia ser satisfeita pelo
+    // caminho da "invertida". Os literais abaixo são cópia verbatim dos
+    // argumentos já usados no teste — nenhuma janela nova é declarada aqui.
+    const invertida = capturarErro(() =>
+      criarJanela("2026-08-11T00:00:00.000Z", "2026-08-10T00:00:00.000Z"),
+    );
+    expect(invertida).toBeInstanceOf(RangeError);
+    expect((invertida as Error).message).toMatch(
+      /janela vazia ou invertida: 2026-08-11T00:00:00\.000Z.*2026-08-10T00:00:00\.000Z/,
+    );
+
+    const vazia = capturarErro(() =>
+      criarJanela("2026-08-10T00:00:00.000Z", "2026-08-10T00:00:00.000Z"),
+    );
+    expect(vazia).toBeInstanceOf(RangeError);
+    expect((vazia as Error).message).toMatch(
+      /janela vazia ou invertida: 2026-08-10T00:00:00\.000Z.*2026-08-10T00:00:00\.000Z/,
+    );
   });
 
   it("fim é exclusivo e instante ausente NUNCA está dentro da janela", () => {
