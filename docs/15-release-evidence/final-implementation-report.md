@@ -221,6 +221,12 @@ Além disso: `pnpm --filter @intensicare/persistencia test:fronteira` →
 `python3 scripts/check_doc_conventions.py` → 248 arquivos, sem violação;
 `python3 scripts/check_forbidden_content.py` → 589 arquivos, sem achado.
 
+**Checkout limpo e hermético** (§12): clone fresco da branch em diretório
+separado, `pnpm install --frozen-lockfile` seguido de `pnpm verify` →
+**exit 0, os mesmos 1.441 testes em 11 pacotes, zero falhas e zero pulados**. O
+verde não depende de árvore aquecida — a armadilha que o ciclo 6 documentou
+(typecheck antes de build, verde local por acidente) não voltou.
+
 **Qualificação obrigatória da contagem** (achado 4 da primeira revisão): o
 número 1.441 vale para uma máquina **com PostgreSQL disponível**. Sem ele, a
 suíte de fronteira se pula com aviso ruidoso em desenvolvimento e **falha** sob
