@@ -61,13 +61,19 @@ const TIPOS_DE_EVENTO_DE_DOMINIO = [
   "alerta-atualizado",
 ] as const;
 
-/**
- * Âncora de fim de catch-up: o servidor só emite `event: estado-conexao`
- * depois de drenar o backlog. Parar por SILÊNCIO TEMPORAL tornaria toda
- * asserção de ausência abaixo vacuamente verdadeira quando o catch-up ficasse
- * mais lento que a janela (achado P2 de revisão adversarial, 2026-08-17).
- */
-const FIM_DO_CATCHUP = "event: estado-conexao";
+// `"estado":"online"` e NÃO `event: estado-conexao`: o servidor emite um quadro
+// `estado-conexao` com `replaying` ANTES de drenar o backlog
+// (`eventos/stream.ts`: `#emitirEstado("replaying")` na linha 194, `await
+// this.#bombear()` só na 202) e outro com `online` DEPOIS (linha 205). Ancorar
+// na substring nua do NOME do evento casava com o quadro de ABERTURA do
+// catch-up — a asserção de ausência voltava a ser vácua sob produtor lento,
+// backlog maior, TLS ou proxy, e só não falhava porque os dois quadros costumam
+// chegar no mesmo pedaço de TCP. Achado P2 de terceira revisão adversarial.
+//
+// `degraded` (linha 205, quando a fila não esvaziou) significa backlog NÃO
+// drenado e portanto NÃO conta como fim de catch-up — ancorar em `online`
+// exclui os dois casos errados de uma vez.
+const FIM_DO_CATCHUP = '"estado":"online"';
 
 /** Abre o fluxo, acumula o prefixo ATÉ O FIM DO CATCH-UP e encerra do lado do cliente. */
 async function lerPrefixoDoFluxo(

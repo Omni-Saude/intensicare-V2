@@ -928,7 +928,7 @@ function registrarSuite(urlSuperusuario: string): void {
               // Regex específico do caso savepoint: não pode passar pela
               // mensagem genérica de "escopo já instalado", que cobre outro
               // caminho e daria um verde por motivo errado.
-            ).rejects.toThrow(/já instalou um escopo e o selo foi desfeito/i);
+            ).rejects.toThrow(/já escreveu sem selo de escopo válido/i);
 
             await conexao.executar("rollback");
           } finally {
@@ -1301,13 +1301,30 @@ function registrarSuite(urlSuperusuario: string): void {
       );
 
       it(
-        "atualização: banco legado em 0002 (migrado por superusuário) é consertado pela 0003",
+        "ACHADO-10 — atualização de banco legado do SUPERUSUÁRIO não aborta em sequência owned (bigserial)",
         async () => {
+          // Achado do orquestrador. `ALTER SEQUENCE ... OWNER TO` é recusado
+          // incondicionalmente para sequência OWNED (ligada a coluna por
+          // `serial`/`bigserial`). O laço de reatribuição da 0003 enumerava
+          // relkind 'S' e disparava sobre `outbox_events_id_seq`.
+          //
+          // POR QUE O TESTE ANTERIOR NÃO PEGOU (investigado antes de corrigir):
+          // medido contra PostgreSQL 16.14, `alter sequence ... owner to
+          // <dono ATUAL>` é NO-OP e NÃO ergue erro — o PostgreSQL só entra no
+          // caminho que valida a ligação quando o dono muda de fato. Logo o
+          // erro só aparece se a sequência for visitada ANTES da sua tabela;
+          // se a tabela vier primeiro, ela já arrasta a sequência junto e a
+          // segunda troca vira no-op. Como o laço não tinha ORDER BY, o
+          // resultado dependia da ordem de varredura de `pg_class` — e o
+          // cenário anterior criava o banco com dono `intensicare_migrador`,
+          // caindo no lado sortudo. Este cenário usa `donoDoBanco:
+          // "superusuario"`, que é o estado legado REAL.
           const legado = await provisionarBanco({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_legado"),
             ateMigracao: "0002_g7_integration.sql",
             migrarComo: "superusuario",
+            donoDoBanco: "superusuario",
             recriarBanco: true,
           });
           expect(legado.migracoesAplicadas).toEqual(["0001_init.sql", "0002_g7_integration.sql"]);
@@ -1317,9 +1334,12 @@ function registrarSuite(urlSuperusuario: string): void {
           );
           try {
             const antes = await administrativa.consultar<{ dono: string }>(
+              // Inclui SEQUÊNCIAS ('S'), não só tabelas: era exatamente a
+              // sequência `outbox_events_id_seq` (bigserial) que abortava a
+              // migração, e uma asserção só sobre tabelas não a enxergava.
               `select distinct pg_get_userbyid(c.relowner)::text as dono
                  from pg_class c join pg_namespace n on n.oid = c.relnamespace
-                where n.nspname = 'public' and c.relkind = 'r'`,
+                where n.nspname = 'public' and c.relkind in ('r', 'S')`,
             );
             // Estado LEGADO real: tabelas do superusuário, não do migrador.
             expect(antes.rows.map((r) => r.dono)).toEqual(["postgres"]);
@@ -1328,9 +1348,12 @@ function registrarSuite(urlSuperusuario: string): void {
             await aplicarMigracao(legado.urlSuperusuarioNoBanco, "0004_escopo_selado.sql");
 
             const depois = await administrativa.consultar<{ dono: string }>(
+              // Inclui SEQUÊNCIAS ('S'), não só tabelas: era exatamente a
+              // sequência `outbox_events_id_seq` (bigserial) que abortava a
+              // migração, e uma asserção só sobre tabelas não a enxergava.
               `select distinct pg_get_userbyid(c.relowner)::text as dono
                  from pg_class c join pg_namespace n on n.oid = c.relnamespace
-                where n.nspname = 'public' and c.relkind = 'r'`,
+                where n.nspname = 'public' and c.relkind in ('r', 'S')`,
             );
             expect(depois.rows.map((r) => r.dono)).toEqual([PAPEL_MIGRADOR]);
 
@@ -1499,6 +1522,189 @@ function registrarSuite(urlSuperusuario: string): void {
           }
         },
         TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "ACHADO-07 — tabela PARTICIONADA em public não escapa da auditoria (3ª revisão, P1)",
+        async () => {
+          // O alargamento da rodada 2 mexeu só nos CONTADORES. As três peças
+          // que de fato isolam continuavam em relkind='r': o laço que cria
+          // política na 0003, a auditoria de isolamento, e o laço da 0004. E a
+          // verificação 6.1 da 0004 só inspecionava linhas JÁ existentes em
+          // pg_policy — uma tabela SEM política nenhuma passava por vacuidade.
+          // Resultado medido pelo revisor: leitura E escrita cross-tenant com
+          // as duas migrações em exit 0.
+          const alvo = await provisionarBanco({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_part"),
+            recriarBanco: true,
+          });
+          const administrativa = await ConexaoPostgres.conectar(
+            opcoesDaUrl(alvo.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            // Partições FORA de public: é assim que o vazamento atravessava as
+            // duas migrações em silêncio (com elas em public, os filhos 'r'
+            // eram pegos, mas o pai 'p' seguia sem política).
+            await administrativa.executar("create schema synth_parte");
+            await administrativa.executar(
+              `create table public.synth_part (tenant_id text not null, id text not null, dado text)
+                 partition by list (tenant_id)`,
+            );
+            await administrativa.executar(
+              "create table synth_parte.synth_part_a partition of public.synth_part for values in ('SYNTH-TENANT-PG-A')",
+            );
+            await administrativa.executar(
+              `grant select, insert, update, delete on public.synth_part to ${PAPEL_APLICACAO}`,
+            );
+
+            await expect(
+              aplicarMigracao(alvo.urlSuperusuarioNoBanco, "0003_fronteira_papeis.sql"),
+              "tabela particionada sem isolamento atravessou a auditoria da 0003",
+            ).rejects.toThrow(/sem isolamento completo/i);
+          } finally {
+            await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "ACHADO-07 — pai particionado corretamente formado RECEBE política e não vaza entre tenants",
+        async () => {
+          // Contraparte positiva do teste anterior, e refutação direta do
+          // vazamento medido pelo revisor (`SYNTH-A|1 E SYNTH-B|2` com escopo
+          // em A, e `UPDATE 1` sobre linha de B). Aqui a tabela particionada é
+          // formada corretamente e as migrações precisam POLICIÁ-LA — antes,
+          // os laços em relkind='r' a ignoravam e ela ficava aberta.
+          const alvo = await provisionarBanco({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_part_ok"),
+            recriarBanco: true,
+          });
+          const administrativa = await ConexaoPostgres.conectar(
+            opcoesDaUrl(alvo.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            await administrativa.executar(
+              `create table public.synth_part (tenant_id text not null, id text not null, dado text)
+                 partition by list (tenant_id)`,
+            );
+            await administrativa.executar(
+              "create table public.synth_part_a partition of public.synth_part for values in ('SYNTH-TENANT-PG-A')",
+            );
+            await administrativa.executar(
+              "create table public.synth_part_b partition of public.synth_part for values in ('SYNTH-TENANT-PG-B')",
+            );
+            for (const t of ["synth_part", "synth_part_a", "synth_part_b"]) {
+              await administrativa.executar(`alter table public.${t} enable row level security`);
+              await administrativa.executar(`alter table public.${t} force row level security`);
+            }
+            await administrativa.executar(
+              `grant select, insert, update, delete on public.synth_part to ${PAPEL_APLICACAO}`,
+            );
+            // Semeado pelo SUPERUSUÁRIO, que ignora RLS — os dois tenants ficam
+            // presentes de verdade, senão "não vejo nada" seria falso verde.
+            await administrativa.consultar(
+              "insert into public.synth_part (tenant_id, id, dado) values ($1,$2,$3), ($4,$5,$6)",
+              [TENANT_A, "A1", "de A", TENANT_B, "B1", "de B"],
+            );
+
+            await aplicarMigracao(alvo.urlSuperusuarioNoBanco, "0003_fronteira_papeis.sql");
+            await aplicarMigracao(alvo.urlSuperusuarioNoBanco, "0004_escopo_selado.sql");
+
+            const politica = await administrativa.consultar<{ n: number }>(
+              `select count(*)::int as n from pg_policy pol
+                 join pg_class c on c.oid = pol.polrelid
+                where c.relname = 'synth_part'
+                  and pg_get_expr(pol.polqual, pol.polrelid) ilike '%tenant_atual%'`,
+            );
+            expect(politica.rows[0]?.n, "o pai particionado ficou sem política").toBe(1);
+
+            const portaPart = await AdaptadorPostgres.abrir({ url: alvo.urlAplicacao });
+            try {
+              const vistoPorA = await portaPart.comTenant(TENANT_A, (tx) =>
+                tx.query<{ tenant_id: string }>(
+                  "select tenant_id from public.synth_part order by tenant_id",
+                ),
+              );
+              expect(
+                vistoPorA.rows.map((r) => r.tenant_id),
+                "leitura cross-tenant através do pai particionado",
+              ).toEqual([TENANT_A]);
+
+              const afetadas = await portaPart.comTenant(TENANT_A, async (tx) => {
+                const r = await tx.query(
+                  "update public.synth_part set dado = 'ESCRITO-POR-A' where tenant_id = $1",
+                  [TENANT_B],
+                );
+                return r.affectedRows;
+              });
+              expect(afetadas, "escrita cross-tenant através do pai particionado").toBe(0);
+            } finally {
+              await portaPart.encerrar();
+            }
+          } finally {
+            await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "ACHADO-08 — privilégio de COLUNA sobre a âncora é detectado (3ª revisão, P1)",
+        async () => {
+          // has_table_privilege responde só sobre privilégio de TABELA. Um
+          // GRANT UPDATE (tenant_id) não aparece nele, o detector devolvia
+          // false, o pool abria — e a aplicação reescrevia a coluna do selo.
+          // UPDATE sem WHERE não exige SELECT.
+          const alvo = await provisionarBanco({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_coluna"),
+            recriarBanco: true,
+          });
+          const administrativa = await ConexaoPostgres.conectar(
+            opcoesDaUrl(alvo.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            await administrativa.executar(
+              `grant update (tenant_id) on intensicare_escopo.selo to ${PAPEL_APLICACAO}`,
+            );
+            await expect(
+              AdaptadorPostgres.abrir({ url: alvo.urlAplicacao }),
+              "abrir() é cego a privilégio de coluna sobre a âncora do escopo",
+            ).rejects.toThrow(ErroIdentidadeInsegura);
+          } finally {
+            await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "ACHADO-09 — DISCARD SEQUENCES não devolve o direito de instalar outro tenant (3ª revisão, P2)",
+        async () => {
+          // `DISCARD SEQUENCES` é irrestrito, session-local e PERMITIDO dentro
+          // de bloco de transação. Ele apagava o estado de que `currval`
+          // dependia, e o caminho de exceção tratava "indefinido" como "nunca
+          // instalou" — fail-OPEN.
+          const conexao = await porta.pool.adquirir();
+          try {
+            await conexao.executar("begin");
+            await conexao.executar("savepoint sp");
+            await conexao.consultar("select intensicare_escopo.instalar($1)", [TENANT_A]);
+            await conexao.executar("rollback to savepoint sp");
+            await conexao.executar("discard sequences");
+            await expect(
+              conexao.consultar("select intensicare_escopo.instalar($1)", [TENANT_B]),
+              "DISCARD SEQUENCES devolveu o direito de instalar outro tenant",
+            ).rejects.toThrow(/escopo/i);
+            await conexao.executar("rollback");
+          } finally {
+            await porta.pool.liberar(conexao);
+          }
+        },
+        TEMPO_LIMITE_MS,
       );
 
       it(

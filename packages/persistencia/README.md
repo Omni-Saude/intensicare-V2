@@ -53,7 +53,13 @@ as migrações e exercita, de forma **bloqueante**:
   (`intensicare_escopo.selo`, que por construção não tem RLS) — a verificação
   é feita sobre todos os papéis alcançáveis por `SET ROLE`, e não só sobre o
   papel conectado, porque ele é `NOINHERIT` e um `pg_write_all_data` concedido
-  a ele só apareceria depois do `SET ROLE`;
+  a ele só apareceria depois do `SET ROLE`; e cobre privilégio de **coluna**,
+  porque `has_table_privilege` é cego a um `GRANT UPDATE (tenant_id)` e um
+  `UPDATE` sem `WHERE` não exige `SELECT`;
+- **tabela particionada** não escapa: os laços que criam política e a auditoria
+  de isolamento cobrem `relkind in ('r','p')`, e a auditoria **reprova ausência
+  de política** — antes ela partia de `pg_policy` e uma tabela sem política
+  nenhuma passava por vacuidade, deixando o pai particionado aberto;
 - nenhum objeto do schema `public` escapa da auditoria de isolamento:
   MATERIALIZED VIEW e FOREIGN TABLE são **recusadas** (não podem receber
   política de RLS) e VIEW exige `security_invoker=true` (sem isso roda com os
@@ -144,13 +150,20 @@ Uma transação que não chamou `instalar` não casa com linha nenhuma,
 
 O selo é uma linha, e `ROLLBACK TO SAVEPOINT` desfaz linhas — então um savepoint
 **anterior** ao `instalar` desfazia o selo e permitia instalar outro tenant na
-mesma transação. Por isso `instalar` também grava um **marcador
-não-transacional** numa sequência que a aplicação não alcança. Verificado contra
-PostgreSQL 16.14 real que **não** servem como âncora: linha de tabela (desfeita),
-advisory lock de transação (liberado no rollback da subtransação, inclusive por
-`EXCEPTION` em plpgsql) e parâmetro de sessão (transacional). `setval` sobrevive
-a `ROLLBACK TO SAVEPOINT`, a `ROLLBACK` completo e a aborto de subtransação, e
-`currval` é estado **de sessão** — verificado com duas sessões concorrentes.
+mesma transação. A âncora contra isso é a **atribuição do id de transação**:
+`pg_current_xact_id_if_assigned()` é `NULL` enquanto a transação não escreveu
+nada e passa a ser o id de topo assim que qualquer escrita ocorre — inclusive
+uma escrita dentro de subtransação depois revertida. Se a transação já escreveu
+e não há selo válido dela, `instalar` recusa.
+
+Medido contra PostgreSQL 16.14, **não** servem como âncora: linha de tabela
+(desfeita pelo savepoint); advisory lock de transação (liberado no rollback da
+subtransação, inclusive por `EXCEPTION` em plpgsql); parâmetro de sessão
+(transacional); e **sequência** — que foi usada numa versão anterior e removida,
+porque `DISCARD SEQUENCES` é irrestrito, session-local e, ao contrário de
+`DISCARD ALL`, **permitido dentro de bloco de transação**, apagando o estado de
+que `currval` dependia. O id de transação sobrevive a `ROLLBACK TO SAVEPOINT` e
+a `DISCARD SEQUENCES`, e a aplicação não pode lê-lo, forjá-lo nem apagá-lo.
 
 **Limites honestos (lista exaustiva conhecida):**
 

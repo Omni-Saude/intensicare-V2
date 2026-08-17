@@ -26,9 +26,10 @@
 -- privilégio. A aplicação só alcança duas funções `SECURITY DEFINER`:
 --
 --   `instalar(text)`      grava o escopo da transação corrente. RECUSA trocar
---                         um escopo já instalado nesta transação — inclusive
---                         quando o selo foi desfeito por `ROLLBACK TO
---                         SAVEPOINT`, graças ao marcador não-transacional.
+--                         um escopo já instalado nesta transação, e RECUSA
+--                         instalar qualquer escopo se a transação já escreveu
+--                         sem selo válido — que é o estado deixado por um
+--                         `ROLLBACK TO SAVEPOINT` sobre o selo.
 --   `tenant_atual()`      lê o escopo da transação corrente. É esta função —
 --                         e não mais `current_setting` — que as políticas de
 --                         RLS consultam.
@@ -50,9 +51,22 @@
 --    autenticada (SEC-0001 / THR-0001), que NÃO está fechada nesta fatia.
 -- 2. NÃO impede que um `ROLLBACK TO SAVEPOINT` anterior ao `instalar` DESTRUA
 --    o escopo. O que ela garante nesse caso é fail-closed: a transação fica
---    SEM escopo (nenhuma linha visível) e NÃO consegue instalar outro tenant
---    — o marcador não-transacional recusa. Perder o escopo é degradação
---    segura; trocá-lo seria vazamento.
+--    SEM escopo (nenhuma linha visível) e NÃO consegue instalar tenant nenhum
+--    — a atribuição do id de transação denuncia que já houve escrita. Perder o
+--    escopo é degradação segura; trocá-lo seria vazamento.
+--
+-- SUPERFÍCIE ATACADA E NÃO ATACADA (o verbo "verificado" vale só para a lista
+-- da esquerda). ATACADO e recusado, contra PostgreSQL 16.14 real: reescrita de
+-- `app.tenant_id`; `instalar` de outro tenant; `ROLLBACK TO SAVEPOINT` antes
+-- do `instalar`; `DISCARD SEQUENCES` dentro de transação após esse rollback;
+-- `DISCARD ALL` dentro de transação; acesso direto (SELECT/UPDATE/DELETE) à
+-- tabela de selo; privilégio de coluna sobre ela; `pg_write_all_data` e
+-- `pg_read_all_data`; `SET ROLE` para o papel dono; cadeia de papéis
+-- intermediários. NÃO ATACADO, e portanto NÃO verificado: encerramento da
+-- transação pela própria aplicação (item 1 acima, estrutural), extensões de
+-- terceiros carregadas no servidor, `COPY ... FROM PROGRAM` sob papel
+-- privilegiado, e qualquer caminho fora do protocolo SQL (acesso ao sistema de
+-- arquivos do servidor, réplica física, backup).
 -- 3. NÃO cobre quem já pode executar SQL arbitrário FORA do corpo da
 --    transação da aplicação (isto é, quem controla o próprio `comTenant`).
 --    Contra esse adversário nenhuma âncora de banco ajuda — é SEC-0001.
@@ -96,19 +110,14 @@ create unlogged table if not exists intensicare_escopo.selo (
   instalado_em timestamptz not null default clock_timestamp()
 );
 
--- Marcador NÃO-TRANSACIONAL de "esta transação já instalou um escopo".
--- POR QUE UMA SEQUÊNCIA: o selo é uma LINHA, e `ROLLBACK TO SAVEPOINT` desfaz
--- linhas. Com um savepoint ANTERIOR ao `instalar`, o selo era desfeito e outro
--- tenant podia ser instalado na MESMA transação (ACHADO-04, 2ª revisão
--- adversarial). Verificado contra PostgreSQL 16.14 real que NÃO servem como
--- âncora: linha de tabela (desfeita), advisory lock de transação (liberado no
--- rollback da subtransação, inclusive por `EXCEPTION` em plpgsql) e parâmetro
--- de sessão (transacional). Sequência serve: `setval` sobrevive a
--- `ROLLBACK TO SAVEPOINT`, a `ROLLBACK` completo e a aborto de subtransação,
--- e `currval` é estado DE SESSÃO (verificado com duas sessões concorrentes).
--- A aplicação não recebe nenhum privilégio sobre ela: só as funções
--- `SECURITY DEFINER` a tocam, logo o marcador não é forjável nem zerável.
-create sequence if not exists intensicare_escopo.marcador_txn as bigint minvalue 1;
+-- A versão anterior desta migração usava uma SEQUÊNCIA como marcador
+-- não-transacional. Ela foi REMOVIDA: `DISCARD SEQUENCES` é irrestrito,
+-- session-local e — ao contrário de `DISCARD ALL` — permitido dentro de bloco
+-- de transação, e apagava o estado de que `currval` dependia; o tratamento de
+-- "currval indefinido" era fail-OPEN (3ª revisão adversarial, ACHADO-09).
+-- A âncora atual é a ATRIBUIÇÃO DO ID DE TRANSAÇÃO (ver `instalar` adiante),
+-- que a aplicação não pode ler, forjar nem apagar.
+drop sequence if exists intensicare_escopo.marcador_txn;
 
 do $$
 begin
@@ -117,13 +126,9 @@ begin
       from pg_roles where rolname = current_user)
   then
     execute 'alter table intensicare_escopo.selo owner to intensicare_migrador';
-    execute 'alter sequence intensicare_escopo.marcador_txn owner to intensicare_migrador';
   end if;
 end
 $$;
-
-revoke all on sequence intensicare_escopo.marcador_txn from public;
-revoke all on sequence intensicare_escopo.marcador_txn from intensicare_app;
 
 -- A aplicação NÃO recebe nenhum privilégio sobre a tabela. Só `USAGE` no
 -- esquema (para poder chamar as funções) — nunca `CREATE`.
@@ -158,24 +163,49 @@ create or replace function intensicare_escopo.instalar(p_tenant text) returns te
 as $$
 declare
   v_txn        xid8;
+  v_ja_escreveu xid8;
   v_existente  text;
-  v_marcador   bigint;
 begin
   if p_tenant is null or btrim(p_tenant) = '' then
     raise exception 'escopo de tenant vazio recusado — escopo ausente jamais vira consulta sem predicado de tenant'
       using errcode = '22023';
   end if;
 
-  -- Força a atribuição do id de transação: é ele que amarra o selo a ESTA
-  -- transação e faz uma transação vizinha (ou futura) não casar com a linha.
-  v_txn := pg_catalog.pg_current_xact_id();
+  -- ÂNCORA CONTRA ROLLBACK DE SUBTRANSAÇÃO (ACHADO-04 e ACHADO-09).
+  -- `pg_current_xact_id_if_assigned()` é NULL enquanto a transação não
+  -- escreveu nada, e passa a ser o id de topo assim que qualquer escrita
+  -- ocorre — inclusive uma escrita feita dentro de uma subtransação que depois
+  -- foi revertida. Medido contra PostgreSQL 16.14: o id permanece atribuído
+  -- após `ROLLBACK TO SAVEPOINT` E após `DISCARD SEQUENCES`, e volta a NULL só
+  -- numa transação nova.
+  --
+  -- Isso substitui o marcador em sequência da versão anterior, que era
+  -- ZERÁVEL por `DISCARD SEQUENCES` (irrestrito, permitido dentro de
+  -- transação) — e cujo tratamento de "currval indefinido" era fail-OPEN.
+  -- Aqui não há estado de sessão a limpar: a atribuição do id de transação não
+  -- é acessível nem apagável pela aplicação.
+  v_ja_escreveu := pg_catalog.pg_current_xact_id_if_assigned();
 
-  select s.tenant_id into v_existente
-    from intensicare_escopo.selo s
-   where s.pid = pg_catalog.pg_backend_pid()
-     and s.inicio_txn = v_txn;
+  if v_ja_escreveu is not null then
+    select s.tenant_id into v_existente
+      from intensicare_escopo.selo s
+     where s.pid = pg_catalog.pg_backend_pid()
+       and s.inicio_txn = v_ja_escreveu;
 
-  if found then
+    if not found then
+      -- A transação já escreveu, mas não há selo dela. Ou o selo foi desfeito
+      -- por rollback de subtransação, ou o escopo não foi instalado como
+      -- primeira escrita. Nos dois casos a resposta é a mesma e é fechada.
+      raise exception
+        'a transação já escreveu sem selo de escopo válido — instalar % é recusado; o escopo deve ser a PRIMEIRA escrita da transação, e um rollback de savepoint que o desfaça exige transação nova',
+        p_tenant
+        using errcode = '42501';
+    end if;
+  end if;
+
+  v_txn := coalesce(v_ja_escreveu, pg_catalog.pg_current_xact_id());
+
+  if v_existente is not null then
     if v_existente is distinct from p_tenant then
       -- O pivô de tenant no meio de uma transação em voo é EXATAMENTE o
       -- ACHADO-02. Recusa alta, com código de privilégio insuficiente.
@@ -187,27 +217,8 @@ begin
     return v_existente;
   end if;
 
-  -- Não há selo para ESTA transação. Duas situações possíveis, e elas precisam
-  -- ser distinguidas: (a) a transação nunca instalou escopo — caminho normal;
-  -- (b) instalou e o selo foi DESFEITO por `ROLLBACK TO SAVEPOINT`. Só o
-  -- marcador não-transacional sabe diferenciar, porque só ele sobrevive ao
-  -- rollback da subtransação.
-  begin
-    v_marcador := pg_catalog.currval('intensicare_escopo.marcador_txn');
-  exception
-    when object_not_in_prerequisite_state then
-      v_marcador := null;  -- nenhuma instalação nesta conexão ainda
-  end;
-
-  if v_marcador is not null and v_marcador = v_txn::text::bigint then
-    raise exception
-      'esta transação já instalou um escopo e o selo foi desfeito (rollback de savepoint) — instalar % é recusado; abra uma transação nova',
-      p_tenant
-      using errcode = '42501';
-  end if;
-
-  perform pg_catalog.setval('intensicare_escopo.marcador_txn', v_txn::text::bigint, true);
-
+  -- Chegar aqui significa: a transação ainda não escreveu nada (nenhum id
+  -- atribuído), logo esta é a PRIMEIRA escrita e o selo é legítimo.
   insert into intensicare_escopo.selo (pid, inicio_txn, tenant_id)
        values (pg_catalog.pg_backend_pid(), v_txn, p_tenant)
   on conflict (pid) do update
@@ -248,7 +259,7 @@ begin
   for tabela in
     select c.oid::regclass as referencia, c.relname
       from pg_class c join pg_namespace n on n.oid = c.relnamespace
-     where n.nspname = 'public' and c.relkind = 'r'
+     where n.nspname = 'public' and c.relkind in ('r', 'p')
   loop
     nome_politica := tabela.relname || '_tenant_isolation';
     execute format('drop policy if exists %I on %s', nome_politica, tabela.referencia);
@@ -265,19 +276,39 @@ declare
   quantidade integer;
   pendentes text;
 begin
-  -- 6.1 nenhuma política pode ter ficado presa ao parâmetro de sessão
-  select string_agg(distinct c.relname, ', ') into pendentes
-    from pg_policy pol
-    join pg_class c on c.oid = pol.polrelid
+  -- 6.1 toda relação de `public` precisa TER política, e toda política precisa
+  -- estar ancorada na função selada.
+  --
+  -- CORRIGIDO (3ª revisão adversarial, ACHADO-04/P1): a versão anterior partia
+  -- de `pg_policy`, então uma tabela SEM POLÍTICA NENHUMA não aparecia no
+  -- resultado e a checagem passava POR VACUIDADE. Foi assim que um pai
+  -- particionado (`relkind='p'`) atravessou as duas migrações em exit 0 com
+  -- leitura e escrita cross-tenant. Agora a varredura parte de `pg_class`, e a
+  -- ausência de política é uma reprovação explícita.
+  select string_agg(c.relname || case
+                      when not exists (select 1 from pg_policy p2 where p2.polrelid = c.oid)
+                        then ' (sem política)'
+                      else ' (política não ancorada)'
+                    end, ', ' order by c.relname)
+    into pendentes
+    from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
    where n.nspname = 'public'
+     and c.relkind in ('r', 'p')
      and (
-       pg_get_expr(pol.polqual, pol.polrelid) not ilike '%tenant_atual%'
-       or coalesce(pg_get_expr(pol.polwithcheck, pol.polrelid), '') not ilike '%tenant_atual%'
+       not exists (select 1 from pg_policy p2 where p2.polrelid = c.oid)
+       or exists (
+         select 1 from pg_policy pol
+          where pol.polrelid = c.oid
+            and (
+              pg_get_expr(pol.polqual, pol.polrelid) not ilike '%tenant_atual%'
+              or coalesce(pg_get_expr(pol.polwithcheck, pol.polrelid), '') not ilike '%tenant_atual%'
+            )
+       )
      );
   if pendentes is not null then
     raise exception
-      'política(s) ainda ancoradas em parâmetro de sessão regravável pela aplicação: %', pendentes
+      'relação(ões) de public sem política ancorada na função selada: %', pendentes
       using errcode = '42501';
   end if;
 
@@ -289,11 +320,22 @@ begin
   -- não aparece em `information_schema` como concessão direta.
   -- Avaliado sobre TODOS os papéis alcançáveis: intensicare_app é NOINHERIT,
   -- então o privilégio de pg_write_all_data só aparece depois de um SET ROLE.
+  -- Cobre privilégio de TABELA e de COLUNA: um GRANT UPDATE (tenant_id) não
+  -- aparece em has_table_privilege, e bastaria para forjar o selo.
   select count(*) into quantidade
     from pg_roles alvo
    where pg_has_role('intensicare_app', alvo.oid, 'MEMBER')
-     and has_table_privilege(alvo.oid, 'intensicare_escopo.selo',
-           'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER');
+     and (
+       has_table_privilege(alvo.oid, 'intensicare_escopo.selo',
+         'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+       or exists (
+         select 1 from pg_attribute a
+          where a.attrelid = 'intensicare_escopo.selo'::regclass
+            and a.attnum > 0 and not a.attisdropped
+            and has_column_privilege(alvo.oid, a.attrelid, a.attnum,
+                  'SELECT, INSERT, UPDATE, REFERENCES')
+       )
+     );
   if quantidade > 0 then
     raise exception
       'intensicare_app alcança % papel(is) com privilégio sobre a âncora intensicare_escopo.selo (ex.: pg_write_all_data) — o selo ficaria forjável',
@@ -301,19 +343,6 @@ begin
       using errcode = '42501';
   end if;
 
-  -- 6.2b nem sobre o marcador não-transacional: poder chamar `setval` nele
-  -- devolveria ao atacante a capacidade de apagar a memória de "já instalei".
-  select count(*) into quantidade
-    from pg_roles alvo
-   where pg_has_role('intensicare_app', alvo.oid, 'MEMBER')
-     and has_sequence_privilege(alvo.oid, 'intensicare_escopo.marcador_txn',
-           'SELECT, UPDATE, USAGE');
-  if quantidade > 0 then
-    raise exception
-      'intensicare_app alcança % papel(is) com privilégio sobre intensicare_escopo.marcador_txn — o marcador anti-savepoint ficaria forjável',
-      quantidade
-      using errcode = '42501';
-  end if;
 
   -- 6.3 a aplicação não pode criar objeto no esquema da âncora
   if has_schema_privilege('intensicare_app', 'intensicare_escopo', 'CREATE') then
