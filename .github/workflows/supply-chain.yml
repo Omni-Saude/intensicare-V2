@@ -1,0 +1,306 @@
+# supply-chain.yml — gates de cadeia de suprimentos (ACH-08, §6.8).
+#
+# Rastreio: ADR-0022 §5.2 S1 (lockfile congelado), S2 (toolchain pinado),
+# S3 (artefato mínimo não-root), S4 (gates bloqueantes), S5 (action por SHA,
+# segredo com escopo mínimo), S6 (SCA e varredura de segredo desde o
+# primeiro commit), S7 (digest, nunca tag mutável), S8 (SBOM/proveniência/
+# assinatura como pendência nomeada de G8); ADR-0019 §5.2 P1/P3;
+# THR-0050..THR-0055.
+#
+# RELAÇÃO COM OS OUTROS TRÊS WORKFLOWS. Complementa — não substitui e não
+# altera — `ci-plataforma.yml` (qualidade/build/teste via `pnpm verify`),
+# `docs-gates.yml` e `metadados-gates.yml`. A separação é deliberada: uma
+# falha de cadeia de suprimentos precisa aparecer com nome próprio no resumo
+# do PR, não escondida atrás de "build-and-test falhou".
+#
+# TUDO AQUI É BLOQUEANTE. Nenhum passo usa `continue-on-error`, nenhum usa
+# `if: always()` para engolir falha, e nenhum gate pode validar zero casos e
+# reportar verde (§3 regra 13 do prompt; contrato §6 anti-padrão 16;
+# THR-0055). Onde uma ferramenta pode estar indisponível, o script chamado
+# falha FECHADO — "não consegui verificar" nunca vira "está limpo".
+#
+# ─────────────────────────────────────────────────────────────────────────
+# PINS — TODOS RESOLVIDOS CONTRA A FONTE REAL, NENHUM INVENTADO
+# ─────────────────────────────────────────────────────────────────────────
+# Actions de terceiro por SHA de commit de 40 caracteres, nunca por tag
+# mutável (ADR-0022 S5; THR-0052). Os dois primeiros já eram convenção
+# vigente do repositório e foram reconferidos; o terceiro foi resolvido
+# nesta tarefa. Verificados 2026-08-17 pela API REST do GitHub
+# (`git/refs/tags/<tag>` → objeto de commit → `commits/<sha>`):
+#
+#   actions/checkout        @ 3d3c42e5aac5ba805825da76410c181273ba90b1  (v7.0.1, commit 2026-07-17)
+#   actions/setup-node      @ 820762786026740c76f36085b0efc47a31fe5020  (v7.0.0, commit 2026-07-14)
+#   actions/upload-artifact @ 330a01c490aca151604b8cf639adc76d48f6c5d4  (v5,     commit 2025-10-24)
+#
+# Imagens de contêiner por digest (`docker buildx imagetools inspect`,
+# 2026-08-17):
+#
+#   aquasec/trivy    0.67.0      sha256:94711c60051c6cab848a292e3a67f62623fcee361b2bb661f43b17184f4afdac
+#   postgres         16-alpine   sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
+#
+# Re-verificar periodicamente, como já se faz com os pins de
+# `ci-plataforma.yml`, em vez de confiar neles indefinidamente.
+#
+# POR QUE TÃO POUCA ACTION DE TERCEIRO. Cada action é código executado no
+# runner com acesso ao workspace e ao token — é dependência de build com
+# privilégio (THR-0052). SBOM, licença, varredura de segredo e higiene de
+# workflow são calculados por `scripts/verificar-artefato.mjs`, que usa
+# apenas Node, pnpm e git, já exigidos pelo repositório. Menos fornecedor na
+# cadeia que produz a evidência de que a cadeia é confiável.
+
+name: Cadeia de Suprimentos
+
+# Quotado pelo mesmo motivo documentado em docs-gates.yml e
+# ci-plataforma.yml: uma chave `on:` sem aspas é lida como o booleano `true`
+# por parsers YAML 1.1 estritos.
+"on":
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+# Token de leitura, e nada além. `pull_request_target` NÃO é usado em lugar
+# nenhum deste arquivo: ele executaria com segredos do repositório num
+# contexto influenciável por fork — THR-0052.
+permissions:
+  contents: read
+
+jobs:
+  # ═══════════════════════════════════════════════════════════════════════
+  # 1. Higiene dos próprios gates — primeiro, e sem instalar nada
+  # ═══════════════════════════════════════════════════════════════════════
+  # Roda antes de tudo e sem dependências: se o verificador estiver
+  # quebrado, ou se algum workflow tiver perdido o pin de SHA, isso precisa
+  # aparecer antes de qualquer resultado "verde" mais caro.
+  higiene-de-gate:
+    name: higiene-de-gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Configurar Node.js 22 LTS
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+      # O verificador testando a si mesmo: cada gate é observado ACEITANDO
+      # uma entrada conforme e RECUSANDO uma não-conforme. Um gate que nunca
+      # foi visto reprovando não é gate, é linha de log.
+      - name: Autoteste do verificador (prova nos dois sentidos)
+        run: node scripts/verificar-artefato.mjs autoteste
+      - name: Higiene dos workflows de CI (SHA de 40 caracteres, sem continue-on-error)
+        run: node scripts/verificar-artefato.mjs workflows
+      - name: Varredura de segredo
+        run: node scripts/verificar-artefato.mjs segredos
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # 2. Inventário e análise do grafo de dependências
+  # ═══════════════════════════════════════════════════════════════════════
+  cadeia-de-dependencias:
+    name: cadeia-de-dependencias
+    runs-on: ubuntu-latest
+    needs: [higiene-de-gate]
+    strategy:
+      fail-fast: false
+      matrix:
+        pacote: ["@intensicare/api", "@intensicare/web"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Configurar Node.js 22 LTS
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+      - name: Ativar pnpm 9 via corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.0.0 --activate
+      - name: Instalar dependências (lockfile congelado)
+        run: pnpm install --frozen-lockfile
+      # SOURCE_DATE_EPOCH derivado do commit, não do relógio do runner: é o
+      # que torna o SBOM comparável entre duas execuções do mesmo commit
+      # (ADR-0022 D1; THR-0054).
+      - name: Fixar instante de build a partir do commit
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
+      - name: Gerar SBOM CycloneDX 1.6
+        run: |
+          node scripts/verificar-artefato.mjs sbom \
+            --filtro "${{ matrix.pacote }}" \
+            --saida "evidencia/sbom-$(echo "${{ matrix.pacote }}" | tr '/@' '--').json"
+      - name: Conformidade de licença
+        run: node scripts/verificar-artefato.mjs licencas --filtro "${{ matrix.pacote }}"
+      - name: Dependências sensíveis em perfil de produção
+        run: node scripts/verificar-artefato.mjs sensiveis --filtro "${{ matrix.pacote }}"
+      - name: Publicar SBOM como evidência
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: sbom-${{ strategy.job-index }}
+          path: evidencia/
+          if-no-files-found: error
+          retention-days: 90
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # 3. SCA — vulnerabilidade de dependência (UMA vez, não por pacote)
+  # ═══════════════════════════════════════════════════════════════════════
+  # Job separado, e não um passo da matriz acima, porque `pnpm audit` não
+  # aceita recorte por pacote: `--filter` implica `--recursive`, que `audit`
+  # rejeita (OBSERVADO 2026-08-17). O escopo real é o grafo de produção do
+  # workspace inteiro. Rodá-lo dentro da matriz duplicaria trabalho idêntico
+  # e, pior, duplicaria a MESMA falha em dois lugares — quem lê o resumo do
+  # PR passaria a procurar dois problemas onde há um.
+  vulnerabilidades-de-dependencia:
+    name: vulnerabilidades-de-dependencia
+    runs-on: ubuntu-latest
+    needs: [higiene-de-gate]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Configurar Node.js 22 LTS
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+      - name: Ativar pnpm 9 via corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.0.0 --activate
+      - name: Instalar dependências (lockfile congelado)
+        run: pnpm install --frozen-lockfile
+      # Falha FECHADA: se o registro de avisos estiver inalcançável, o gate
+      # reprova. "Não consegui verificar" não é "está limpo" (THR-0055).
+      - name: Vulnerabilidades do grafo de produção (SCA, falha fechada)
+        run: node scripts/verificar-artefato.mjs vulnerabilidades
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # 4. Artefato de execução: construir, inspecionar, varrer, identificar
+  # ═══════════════════════════════════════════════════════════════════════
+  artefato:
+    name: artefato-${{ matrix.nome }}
+    runs-on: ubuntu-latest
+    needs: [higiene-de-gate]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - nome: api
+            dockerfile: apps/api/Dockerfile
+          - nome: web
+            dockerfile: apps/web/Dockerfile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Configurar Node.js 22 LTS
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+
+      # Contexto é a RAIZ do repositório: os dois artefatos dependem de
+      # pacotes do workspace. `--pull=false` não é usado — as bases estão
+      # pinadas por digest no próprio Dockerfile, então buscar não pode
+      # trazer conteúdo diferente do declarado.
+      - name: Construir artefato (base pinada por digest no Dockerfile)
+        run: |
+          docker build \
+            -f "${{ matrix.dockerfile }}" \
+            --build-arg REVISAO_GIT="${GITHUB_SHA}" \
+            --build-arg CRIADO_EM="$(git log -1 --pretty=%cI)" \
+            -t "intensicare/${{ matrix.nome }}:${GITHUB_SHA}" \
+            .
+
+      # Auditoria do ARTEFATO, não do Dockerfile: UID lido do processo em
+      # execução, ausência de devDependencies e de fonte TypeScript de
+      # primeira parte, ausência de gerenciador de pacote.
+      - name: Inspecionar artefato (não-root, sem devDeps, sem fonte)
+        run: node scripts/verificar-artefato.mjs imagem "intensicare/${{ matrix.nome }}:${GITHUB_SHA}"
+
+      # Trivy roda a partir de um TARBALL, não do socket do daemon.
+      # Montar /var/run/docker.sock daria ao scanner controle total sobre o
+      # daemon do runner — privilégio desproporcional para quem só precisa
+      # ler camadas. `docker save` entrega exatamente o necessário.
+      - name: Varrer imagem por vulnerabilidade (Trivy pinado por digest)
+        run: |
+          docker save "intensicare/${{ matrix.nome }}:${GITHUB_SHA}" -o /tmp/artefato.tar
+          docker run --rm \
+            -v /tmp:/entrada:ro \
+            -v /tmp/cache-trivy:/root/.cache/trivy \
+            aquasec/trivy@sha256:94711c60051c6cab848a292e3a67f62623fcee361b2bb661f43b17184f4afdac \
+            image \
+            --input /entrada/artefato.tar \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            --exit-code 1 \
+            --no-progress
+
+      # O digest é a identidade do artefato. Registrá-lo aqui é o que torna
+      # possível, mais tarde, promover ESTE artefato e não uma reconstrução
+      # (ADR-0019 P3; THR-0051).
+      - name: Registrar digest do artefato e recusar referência por tag
+        run: |
+          DIGEST="$(docker image inspect "intensicare/${{ matrix.nome }}:${GITHUB_SHA}" --format '{{.Id}}')"
+          echo "Artefato ${{ matrix.nome }} identificado por digest: ${DIGEST}"
+          node scripts/promover-por-digest.mjs --verificar "intensicare/${{ matrix.nome }}@${DIGEST}"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # 5. Ensaio de migração e smoke contra PostgreSQL REAL
+  # ═══════════════════════════════════════════════════════════════════════
+  # `packages/persistencia` exercita migração sob PGlite em `pnpm verify`.
+  # PGlite é uma reimplementação: generalizar dele para PostgreSQL de
+  # produção é o anti-padrão 6 do contrato. Este job existe para que a
+  # migração seja exercitada ao menos uma vez contra um servidor de verdade.
+  ensaio-de-migracao:
+    name: ensaio-de-migracao
+    runs-on: ubuntu-latest
+    needs: [higiene-de-gate]
+    services:
+      postgres:
+        # Digest, nunca tag mutável — mesma regra do artefato (ADR-0022 S7).
+        image: postgres@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
+        env:
+          # Credencial efêmera de serviço de CI, destruída com o runner, sem
+          # nenhum dado real (100% sintético, prefixo SYNTH-). NÃO é segredo
+          # de nenhum ambiente: ADR-0019 §5.2 P5 proíbe segredo de ambiente
+          # superior ser alcançável de um inferior, e este não existe fora
+          # deste job.
+          POSTGRES_PASSWORD: postgres-efemero-de-ci-SYNTH
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        # Sem health check o job corre contra um servidor que ainda não
+        # aceita conexão e falha de forma intermitente — flake que depois se
+        # "resolve" com retry, escondendo falha real.
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Configurar Node.js 22 LTS
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+      - name: Ativar pnpm 9 via corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.0.0 --activate
+      - name: Instalar dependências (lockfile congelado)
+        run: pnpm install --frozen-lockfile
+
+      # `scripts/pg-efemero.mjs` (entregue por ic-fronteira-postgres-rls) é
+      # CONSUMIDO, não reimplementado. Com PG_TEST_URL definida ele não cria
+      # cluster nenhum: reusa o serviço acima e devolve `efemero: false` —
+      # é o caminho que a própria documentação do script indica para CI.
+      - name: Confirmar PostgreSQL utilizável (via scripts/pg-efemero.mjs)
+        env:
+          PG_TEST_URL: postgresql://postgres:postgres-efemero-de-ci-SYNTH@127.0.0.1:5432/postgres
+        run: |
+          node scripts/pg-efemero.mjs status --shell >> "$GITHUB_ENV"
+          node scripts/pg-efemero.mjs status
+
+      # Se a suíte não encontrar o servidor, ela precisa FALHAR — jamais
+      # cair para PGlite em silêncio e reportar verde. Um ensaio de migração
+      # que silenciosamente não usou PostgreSQL é evidência falsa
+      # (THR-0055; contrato §6 anti-padrão 6).
+      - name: Migração e smoke de persistência contra PostgreSQL real
+        env:
+          PG_TEST_URL: postgresql://postgres:postgres-efemero-de-ci-SYNTH@127.0.0.1:5432/postgres
+        run: pnpm --filter @intensicare/persistencia run test -- --run

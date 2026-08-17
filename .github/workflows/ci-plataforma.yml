@@ -72,6 +72,59 @@ jobs:
   build-and-test:
     name: build-and-test
     runs-on: ubuntu-latest
+    # PostgreSQL REAL disponível para este job — ACHADO P2 de revisão
+    # adversarial (2026-08-17).
+    #
+    # A suíte de fronteira de isolamento de tenant
+    # (`packages/persistencia/src/postgres/fronteira-postgres.test.ts`) é a
+    # única evidência de que a RLS por tenant vale no motor de produção, e não
+    # apenas no simulador embarcado. Ela se pula com aviso ruidoso em máquina de
+    # desenvolvimento sem PostgreSQL, e FALHA quando `CI=true` — desenho
+    # correto. A consequência era, porém, que `pnpm verify` neste workflow
+    # nunca podia terminar verde COM a verificação P0 executada: ou o runner
+    # não tinha PostgreSQL e o job falhava, ou alguém a tornaria opcional.
+    #
+    # Com o serviço abaixo e `PG_TEST_URL` definida no ambiente do job, a
+    # suíte roda de verdade dentro do `pnpm test` que o `pnpm verify` invoca.
+    # "verify verde" passa a significar "fronteira P0 exercitada contra
+    # PostgreSQL real" neste workflow — que é a equivalência que a revisão
+    # mostrou não existir antes.
+    #
+    # `test:fronteira` deliberadamente NÃO foi acrescentado à sequência de
+    # `pnpm verify` na raiz: isso quebraria a máquina de todo desenvolvedor
+    # que não tenha PostgreSQL instalado, trocando um problema de cobertura de
+    # CI por um de ergonomia local. O lugar de exigir a dependência é o
+    # ambiente que a fornece.
+    services:
+      postgres:
+        # Digest, nunca tag mutável — mesma regra dos pins de action acima e
+        # do artefato (ADR-0022 S7). Mesmo digest já OBSERVADO em
+        # `supply-chain.yml` (`docker buildx imagetools inspect`, 2026-08-17).
+        image: postgres@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
+        env:
+          # Credencial efêmera de serviço de CI, destruída com o runner, sem
+          # nenhum dado real (100% sintético). NÃO é segredo de ambiente algum:
+          # não existe fora deste job (ADR-0019 §5.2 P5).
+          POSTGRES_PASSWORD: postgres-efemero-de-ci-SYNTH
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        # Sem health check o job corre contra um servidor que ainda não aceita
+        # conexão e falha de forma intermitente — flake que depois se "resolve"
+        # com retry, escondendo falha real.
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      # Lida por `scripts/pg-efemero.mjs` e pela suíte de fronteira. Com ela
+      # definida, nenhum cluster efêmero é criado: o serviço acima é reusado.
+      PG_TEST_URL: postgresql://postgres:postgres-efemero-de-ci-SYNTH@127.0.0.1:5432/postgres
+      # Torna a ausência de PostgreSQL um ERRO explícito em vez de um pulo
+      # silencioso — se o serviço não subir, o job precisa falhar dizendo isso,
+      # nunca reportar verde com a verificação P0 ausente.
+      IC_FRONTEIRA_PG: obrigatoria
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -101,3 +154,48 @@ jobs:
       # qual etapa do `verify` quebrou.
       - name: Verificação completa (pnpm verify — mesma sequência do local)
         run: pnpm verify
+
+  # ---------------------------------------------------------------------------
+  # E2E de navegador e acessibilidade automatizada — BLOQUEANTE.
+  #
+  # Job separado de `build-and-test` porque baixa um navegador e sobe dois
+  # servidores; misturá-lo ao `verify` tornaria o gate principal dependente de
+  # rede e mais lento para todo mundo. Separado, mas NÃO opcional: sem
+  # `continue-on-error` e sem `if: always()`.
+  #
+  # POR QUE ELE PRECISA EXISTIR (achado P2 de segunda revisão adversarial,
+  # 2026-08-17). `apps/web/src/a11y/matrizAcessibilidade.ts` declara cinco
+  # critérios WCAG (1.4.3, 1.4.10, 1.4.11, 2.4.7, 2.5.8) com execução
+  # `executado`, e um teste de unidade assere essa declaração. Mas quem os
+  # exercita de fato é a suíte Playwright, e nenhum workflow a executava: a
+  # declaração validava a si mesma, sem artefato de execução — "tratar
+  # implementação como verificada", anti-padrão 24. Ou a suíte roda num gate,
+  # ou a declaração precisa ser rebaixada. Esta é a primeira opção.
+  #
+  # A suíte não exige PostgreSQL: o `webServer` do `playwright.config.ts` sobe a
+  # API em perfil `dev-synthetic`, que usa PGlite em memória com fixtures
+  # sintéticas — o mesmo caminho que o desenvolvedor roda localmente.
+  #
+  # LIMITE QUE ESTE JOB NÃO FECHA: automação WCAG não é validação com usuários
+  # de tecnologias assistivas. Os critérios marcados `manual_obrigatorio` na
+  # matriz continuam NÃO EXECUTADOS e dependem de ato humano (MG-G4).
+  e2e-navegador:
+    name: e2e-navegador
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Configurar Node.js 22 LTS
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+      - name: Ativar pnpm 9 via corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.0.0 --activate
+      - name: Instalar dependências (lockfile congelado)
+        run: pnpm install --frozen-lockfile
+      - name: Instalar navegador do Playwright
+        run: pnpm test:e2e:instalar
+      - name: E2E autenticado e acessibilidade automatizada
+        run: pnpm test:e2e
