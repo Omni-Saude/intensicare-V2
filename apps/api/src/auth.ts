@@ -1,97 +1,119 @@
 /**
- * apps/api/src/auth.ts — stub de autenticação bearer sintética.
+ * apps/api/src/auth.ts — FACHADA da porta de autenticação.
  *
- * PREMISSA (reversível, GDEC-0015/0017): ADR-0015 (autenticação/sessão/
- * identidade m2m) está `not-started`; este arquivo implementa apenas um
- * stub suficiente para exercitar, nesta fatia, a regra dura de escopo de
- * tenant obrigatório em toda consulta (prompt §3 regra 6; ADR-0011 P2/P3) —
- * **não é** um mecanismo de autenticação real. Não há verificação
- * criptográfica de token, não há emissão/expiração/revogação de sessão.
+ * O que mudou em relação à fatia SPR-G7-2 (ACHADO §6.2, P0)
+ * ---------------------------------------------------------
+ * Antes: `TOKEN_PATTERN = /^SYNTH-TOKEN\.([^.\s]+)\.([^.\s]+)$/` e o tenant era
+ * lido do TEXTO do token. Qualquer chamador escrevia qualquer tenant — não
+ * havia assinatura, emissor, audiência, expiração, `kid` nem rotação. O
+ * cabeçalho do arquivo declarava honestamente que não era autenticação.
  *
- * Formato do token sintético: `SYNTH-TOKEN.<tenantId>.<atorId>`, onde
- * `tenantId` e `atorId` seguem a convenção `SYNTH-` da política de dados
- * sintéticos (GDEC-0014;
- * `docs/14-devsecops-and-delivery/politica-dados-sinteticos.md`). Qualquer
- * outro formato é rejeitado.
+ * Agora: tenant e ator só existem se vierem de um JWS verificado pelo
+ * verificador único (`auth/verificador.ts`) contra uma fonte de chaves —
+ * remota (adaptador OIDC) ou em memória (emissor sintético local de dev/test).
+ * Forjar um tenant passa a exigir a chave privada do emissor.
  *
- * // INTEGRAÇÃO PENDENTE (fatia): substituir por verificação real de
- * // sessão/identidade quando ADR-0015 for redigido/aceito.
+ * O que continua verdadeiro e NÃO pode ser alegado de outra forma
+ * ---------------------------------------------------------------
+ * Nenhum IdP foi selecionado (ADR-0015 §1; `threat-model.md` §2.2 — a
+ * fronteira TB-06 não está decidida). O adaptador OIDC está verificado
+ * **contra um servidor de teste local**, nunca contra provedor real: o item
+ * "integração com IdP" permanece **BLOQUEADO**, não resolvido. Isto não é
+ * autenticação de produção operante e não fecha `MG-G6`, `SEC-0004` nem
+ * qualquer gate.
+ *
+ * Rastreio: ADR-0015 (autenticação/sessão/identidade m2m, direção aceita
+ * GDEC-0016, Opção A), ADR-0016 §4.1 (escopo de tenant e papéis mínimos),
+ * HAZ-0014 (o legado caía para JWT local em qualquer erro), SEC-0001,
+ * SEC-0004, THR-0021.
  */
 
-import type { ProblemDetails } from "@intensicare/contratos";
 import type { FastifyRequest } from "fastify";
-import { instanciaSegura } from "./problema.js";
+import { emitirTokenSintetico } from "./auth/adaptador-sintetico.js";
+import { type RequisicaoAutenticavel, recusar } from "./auth/porta.js";
+import {
+  lerResultadoDaRequisicao,
+  portaInstalada,
+  portaPadraoDeDesenvolvimentoSeHouver,
+} from "./auth/registro.js";
+import type { ResultadoAutenticacao } from "./auth/tipos.js";
 
-export interface ContextoAutenticado {
-  tenantId: string;
-  atorId: string;
-}
+// ---------------------------------------------------------------------------
+// Superfície consumida pelas rotas (forma preservada da fatia SPR-G7-2).
+// ---------------------------------------------------------------------------
 
-const TOKEN_PATTERN = /^SYNTH-TOKEN\.([^.\s]+)\.([^.\s]+)$/;
-
-/** Gera um token sintético válido para uso em testes e exemplos. */
-export function gerarTokenSintetico(tenantId: string, atorId: string): string {
-  return `SYNTH-TOKEN.${tenantId}.${atorId}`;
-}
-
-export type ResultadoAutenticacao =
-  | { ok: true; contexto: ContextoAutenticado }
-  | { ok: false; problema: ProblemDetails };
+export type {
+  ContextoAutenticado,
+  PapelClinico,
+  ResultadoAutenticacao,
+  TipoIdentidade,
+} from "./auth/tipos.js";
 
 /**
- * Extrai e "verifica" (no sentido de forma, não de criptografia — ver
- * aviso acima) o contexto de tenant/ator a partir do cabeçalho
- * `Authorization: Bearer <token>`. Nunca aceita tenant vindo de qualquer
- * outro lugar (query string, corpo, cabeçalho customizado) — regra dura
- * §3-6 do prompt: contexto de tenant jamais inferido de valor arbitrário
- * do chamador sem verificação centralizada nesta função.
+ * Emite um token sintético ASSINADO para `tenantId`/`atorId`.
+ *
+ * Assinatura preservada, semântica trocada: o retorno já não é
+ * `SYNTH-TOKEN.<tenant>.<ator>` (texto legível e forjável) e sim um JWS
+ * compacto assinado pelo emissor local. LANÇA fora de `dev`/`test`
+ * (ADR-0015 §4.1) — a contenção é do tipo "não compila em produção", não do
+ * tipo "não deveria acontecer".
+ */
+export function gerarTokenSintetico(tenantId: string, atorId: string): string {
+  return emitirTokenSintetico(tenantId, atorId);
+}
+
+/**
+ * Devolve o contexto verificado da requisição.
+ *
+ * Ordem de resolução — e por que ela é fail-closed:
+ *   1. resultado já computado pelo hook `onRequest` (`registrarAutenticacao`).
+ *      Este é o caminho de produção: se uma porta está instalada, o hook
+ *      SEMPRE anexa um resultado, inclusive quando a verificação falha. Logo,
+ *      com IdP fora do ar o retorno é a recusa do hook — nunca outra coisa.
+ *   2. sem hook: porta instalada no processo, se ela expuser caminho síncrono.
+ *      O adaptador OIDC deliberadamente NÃO expõe, então esta linha só
+ *      resolve para o adaptador sintético de `dev`/`test`.
+ *   3. sem hook e sem porta: adaptador sintético padrão, e SÓ sob `dev`/`test`.
+ *   4. qualquer outro caso (inclusive `homologacao`/`producao` sem fiação):
+ *      recusa 401 `porta-nao-instalada`.
+ *
+ * Nenhum passo lê tenant de header, query string, corpo ou URL — a única
+ * entrada é o cabeçalho `Authorization` e, dele, apenas o token assinado
+ * (anti-padrão §10.3 do prompt; ADR-0015 §4 item 2).
  */
 export function autenticar(request: FastifyRequest): ResultadoAutenticacao {
-  const cabecalho = request.headers.authorization;
-  const valor = Array.isArray(cabecalho) ? cabecalho[0] : cabecalho;
+  const requisicao = request as unknown as RequisicaoAutenticavel;
 
-  if (!valor?.startsWith("Bearer ")) {
-    return {
-      ok: false,
-      problema: {
-        type: "about:blank",
-        title: "Não autenticado",
-        status: 401,
-        detail: "Cabeçalho Authorization com token bearer sintético é obrigatório.",
-        instance: instanciaSegura(request),
-      },
-    };
-  }
+  const doHook = lerResultadoDaRequisicao(requisicao);
+  if (doHook !== undefined) return doHook;
 
-  const token = valor.slice("Bearer ".length).trim();
-  const match = TOKEN_PATTERN.exec(token);
-  if (!match) {
-    return {
-      ok: false,
-      problema: {
-        type: "about:blank",
-        title: "Token sintético malformado",
-        status: 401,
-        detail: "O token bearer não está no formato SYNTH-TOKEN.<tenantId>.<atorId>.",
-        instance: instanciaSegura(request),
-      },
-    };
-  }
-
-  const tenantId = match[1];
-  const atorId = match[2];
-  if (!tenantId || !atorId) {
-    return {
-      ok: false,
-      problema: {
-        type: "about:blank",
-        title: "Token sintético malformado",
-        status: 401,
-        detail: "O token bearer não está no formato SYNTH-TOKEN.<tenantId>.<atorId>.",
-        instance: instanciaSegura(request),
-      },
-    };
-  }
-
-  return { ok: true, contexto: { tenantId, atorId } };
+  const porta = portaInstalada() ?? portaPadraoDeDesenvolvimentoSeHouver();
+  const sincrono = porta?.autenticarSincrono;
+  if (sincrono === undefined) return recusar(requisicao, "porta-nao-instalada");
+  return sincrono(requisicao);
 }
+
+// ---------------------------------------------------------------------------
+// Superfície de FIAÇÃO — consumida por `index.ts` (fora do escopo deste
+// agente; ver o handoff para o trecho exato a aplicar).
+// ---------------------------------------------------------------------------
+
+export type {
+  ConfiguracaoAutenticacao,
+  ConfiguracaoOidc,
+  ConfiguracaoSintetica,
+  PerfilExecucao,
+} from "./auth/configuracao.js";
+export {
+  PERFIS,
+  PERFIS_DE_DESENVOLVIMENTO,
+  perfilDoAmbiente,
+  perfilPermiteSintetico,
+} from "./auth/configuracao.js";
+export { criarPortaDeAutenticacao } from "./auth/fabrica.js";
+export type { PortaDeAutenticacao, RequisicaoAutenticavel } from "./auth/porta.js";
+export {
+  instalarPorta,
+  registrarAutenticacao,
+  reiniciarRegistroDeAutenticacao,
+} from "./auth/registro.js";
