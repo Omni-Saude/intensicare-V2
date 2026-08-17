@@ -9,7 +9,9 @@ source: >
   docs/11-security-privacy-compliance/threat-model.md (TB-09, THR-0050..THR-0056);
   docs/14-devsecops-and-delivery/ci-policy.md; docs/14-devsecops-and-delivery/fluxo-cicd-promocao-evidencia.md;
   docs/06-architecture/premissas-de-construcao.md (PRE-01, PRE-03, PRE-11);
-  execução direta neste repositório em 2026-08-17 (docker 29.5.2, Node 22.23.0, pnpm 9.0.0)
+  execução direta neste repositório em 2026-08-17 (docker 29.5.2, Node 22.23.0, pnpm 9.0.0);
+  primeira execução real dos workflows em CI no PR #5 (codex/finalizacao-plataforma-v2 → main),
+  que produziu a reprovação de artefato-web no passo Trivy tratada em §2.5
 date_collected: 2026-08-17
 collector: especialista ic-supply-chain (ACH-08, consolidação final)
 last_updated: 2026-08-17
@@ -65,12 +67,27 @@ node scripts/verificar-artefato.mjs licencas --filtro @intensicare/api
   → OK — MIT=43 BSD-3-Clause=4 ISC=3 Apache-2.0=1, mais 5 de primeira parte
 node scripts/verificar-artefato.mjs vulnerabilidades → OK (0 avisos, 68 dependências)
 node scripts/verificar-artefato.mjs imagem intensicare/api:ensaio → OK (UID 1000)
+node scripts/verificar-artefato.mjs imagem intensicare/web:ensaio → OK (UID 101)
+
+trivy image --input <artefato>.tar --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1
+  → api: exit 0 | web: exit 0 (alpine 3.24.1, 21 pacotes, 0 achados)
 ```
 
-| Artefato | UID de execução | Tamanho | devDeps | Fonte TS de 1ª parte |
-|---|---|---|---|---|
-| `apps/api` | **1000** | 66,0 MiB | 0 | 0 |
-| `apps/web` (estágio de execução) | **101** | 22,1 MiB | 0 (sem `node_modules`) | 0 |
+Em CI (PR #5) passaram `higiene-de-gate`, `cadeia-de-dependencias` (api e
+web), `vulnerabilidades-de-dependencia`, `artefato-api` e
+**`ensaio-de-migracao` em 1m13s** — migrações e smoke de persistência
+executados contra **PostgreSQL real** no runner, com `services: postgres`
+pinado por digest e `scripts/pg-efemero.mjs` reusando o serviço via
+`PG_TEST_URL`. `artefato-web` reprovou no Trivy; ver §2.5.
+
+| Artefato | UID de execução | Tamanho | devDeps | Fonte TS de 1ª parte | Trivy HIGH/CRITICAL |
+|---|---|---|---|---|---|
+| `apps/api` | **1000** | 66,3 MiB | 0 | 0 | **0** |
+| `apps/web` | **101** | 5,9 MiB | 0 (sem `node_modules`) | 0 | **0** |
+
+Ambos construídos de ponta a ponta em 2026-08-17 e varridos com o mesmo
+Trivy pinado que roda no CI (`--severity HIGH,CRITICAL --ignore-unfixed`),
+saída **exit code 0** nos dois.
 
 ---
 
@@ -137,6 +154,59 @@ Ambos no `apps/web`, invisíveis na leitura do Dockerfile:
 
 Registrados aqui porque são a evidência de que inspecionar o artefato em
 execução encontra o que revisar o Dockerfile não encontra.
+
+### 2.5 Repin da base de `apps/web` — o gate reprovou e o artefato foi corrigido
+
+Na primeira execução real em CI (PR #5), o job `artefato-web` **reprovou** no
+passo Trivy: **10 HIGH / 0 CRITICAL**, todas em pacotes do sistema da base
+`nginx-unprivileged` sobre Alpine 3.23.4 — `c-ares` (CVE-2026-33630),
+`curl`/`libcurl` (CVE-2026-5773, CVE-2026-6276), `libcrypto3`/`libssl3`
+(CVE-2026-45447), `libexpat` (CVE-2026-45186, CVE-2026-56408). Nenhuma no
+código do produto; todas com correção disponível na origem.
+
+**Corrigiu-se o artefato, não o limiar.** Rebaixar a severidade em
+`politica-de-severidade.json` faria o gate passar destruindo exatamente a
+evidência que ele acabara de produzir — gate consultivo, contrato §6
+anti-padrão 16, THR-0055.
+
+Entre as duas correções legítimas, adotou-se **repin por digest de base mais
+nova**, e **não** `apk upgrade --no-cache` no estágio de execução. As duas
+fecham as CVEs; só uma preserva a propriedade que justifica o gate:
+
+- `apk upgrade` resolve pacotes contra o índice do Alpine **no instante do
+  build**. O mesmo Dockerfile, no mesmo commit, passaria a produzir conteúdo
+  diferente em dias diferentes, e comparar dois builds deixaria de distinguir
+  "substituíram o artefato" de "o espelho do Alpine avançou" — precisamente a
+  detectabilidade que ADR-0022 D1 exige e que THR-0054 nomeia.
+- Um **digest** nomeia um conjunto de bytes e só ele. A atualização passa a
+  ser um diff revisável, datado, no Dockerfile — não um efeito colateral
+  silencioso do relógio.
+
+Trocou-se também a variante completa pela **`-slim`**: servir bundle estático
+não usa njs, geoip nem os demais módulos. MEDIDO: **21 pacotes / 6.118.227
+bytes** contra **70 pacotes / 23.139.101 bytes**, mesmo nginx 1.31.3, mesmo
+Alpine 3.24.1, mesmo `USER=101`. Menos pacote instalado é menos CVE futura
+por construção, não só hoje.
+
+| Base | Alpine | Pacotes | Trivy HIGH/CRITICAL |
+|---|---|---|---|
+| `1.29-alpine` (pin anterior) | 3.23.4 | 70 | **10 / 0** |
+| `1.31.3-alpine3.24` | 3.24.1 | 70 | 0 / 0 |
+| `1.31.3-alpine3.24-slim` (**adotada**) | 3.24.1 | **21** | **0 / 0** |
+
+**Nenhuma propriedade regrediu.** Após o repin, VERIFICADO no artefato
+reconstruído: `id -u` → **101**; sem `node_modules`; **0** `.ts` e **0**
+`.map`; sob `--read-only --cap-drop=ALL --security-opt=no-new-privileges` o
+contêiner sobe e responde **200** em `/`, em `/assets/*` e no fallback de SPA;
+`Cache-Control: no-store` em `index.html`, `public, max-age=31536000,
+immutable` (uma única vez) em `/assets/`; `X-Content-Type-Options`,
+`X-Frame-Options` e `Referrer-Policy` presentes nas três rotas;
+`server_tokens off`. Tamanho caiu de 22,1 MiB para **5,9 MiB**.
+
+**Nenhuma CVE HIGH restou sem correção upstream** — não houve exceção a
+registrar nem aceitação de risco a pedir. Se um dia restar, o procedimento é
+o do §3: entrada nominal e datada em `excecoes_registradas`, com dono, levada
+ao titular — nunca um limiar rebaixado.
 
 ---
 
@@ -282,7 +352,7 @@ pipeline inteiro por um defeito que este agente não tem permissão de corrigir
 transferiria o custo sem transferir a capacidade. **Dono da correção:**
 responsável por `apps/api/package.json` e `apps/api/src/**`.
 
-### ACHADO ALTA — `apps/api` importa duas dependências que não declara
+### RESOLVIDO 2026-08-17 — `apps/api` importava duas dependências que não declarava
 
 **OBSERVADO 2026-08-17**, durante a reconstrução do artefato de `apps/api`
 sobre o estado concorrente da árvore de trabalho:
@@ -324,43 +394,32 @@ funcionando, não o gate atrapalhando.**
 `apps/api/package.json`):** acrescentar as duas entradas a `dependencies` e
 regravar o lockfile. Linhas exatas no handoff.
 
-**Enquanto não for corrigido, o artefato de `apps/api` NÃO é construível a
-partir de um fecho de dependências honesto.** A imagem descrita em §1.1
-(UID 1000, 66,0 MiB, 0 devDeps) foi construída e verificada em estado
-anterior da árvore de trabalho, antes de `src/regras/**` passar a importar os
-dois pacotes.
+**FECHADO em 2026-08-17** pelo responsável por `apps/api/package.json`: as
+duas entradas passaram a ser declaradas em `dependencies`. VERIFICADO — o
+artefato de `apps/api` volta a construir de ponta a ponta (`docker build -f
+apps/api/Dockerfile .` → exit 0), executa como UID 1000 e varre limpo no
+Trivy (0 HIGH/CRITICAL).
 
-Reprodução:
+Fica registrado, e não apagado, porque é a demonstração do que a instalação
+restrita compra: o defeito foi capturado como **falha de build**, alta e
+cedo, em vez de como `MODULE_NOT_FOUND` no start de um contêiner já
+promovido. Reprodução do diagnóstico, caso reapareça:
 
 ```bash
-docker build -f apps/api/Dockerfile -t intensicare/api:ensaio .
 pnpm --filter @intensicare/api --prod deploy /tmp/arvore && ls /tmp/arvore/node_modules/@intensicare/
 ```
 
-### BLOQUEADO — artefato de `apps/web` não construído de ponta a ponta
+### RESOLVIDO 2026-08-17 — artefato de `apps/web` agora constrói de ponta a ponta
 
-`docker build -f apps/web/Dockerfile .` **falha**, com três erros de
-TypeScript em arquivos de outro agente, em edição concorrente:
+Na primeira versão desta política o build falhava com três erros de
+TypeScript em `apps/web/src/**` (`TS2554` em `App.tsx`, `TS2304` e `TS2353`
+em `api/clienteHttp.ts`), idênticos no host — o que estabelecia que a causa
+não era o Dockerfile. Só o estágio de execução pôde ser verificado, em
+isolamento contra um `dist/` anterior.
 
-```
-src/App.tsx(26,42):            error TS2554: Expected 1 arguments, but got 0.
-src/api/clienteHttp.ts(245,52): error TS2304: Cannot find name 'EstadoCarregamento'.
-src/api/clienteHttp.ts(495,11): error TS2353: 'method' does not exist in type 'AbortSignal'.
-```
-
-Os mesmos três erros ocorrem no host (`pnpm --filter @intensicare/web run
-build`), o que estabelece que a causa **não** é o Dockerfile. O estágio de
-execução foi verificado em isolamento contra um `dist/` previamente
-construído: UID 101, sem `node_modules`, sem `.ts`, sem `.map`, HTTP 200 em
-`/` e no fallback de SPA, cabeçalhos corretos, sob `--read-only
---cap-drop=ALL`. **O build de ponta a ponta permanece NÃO EXECUTADO** até que
-`apps/web/src/**` compile.
-
-Reprodução:
-
-```bash
-docker build -f apps/web/Dockerfile -t intensicare/web:ensaio .
-```
+**FECHADO:** `apps/web` compila (`pnpm --filter "@intensicare/web..." run
+build` → 0 erros) e `docker build -f apps/web/Dockerfile .` conclui. Todas as
+propriedades foram remedidas no artefato completo — ver §2.5.
 
 ---
 
@@ -420,7 +479,7 @@ fonte real em 2026-08-17 e devem ser reconferidos periodicamente.
 | `actions/setup-node` v7.0.0 | `820762786026740c76f36085b0efc47a31fe5020` | idem; commit de 2026-07-14 (idem) |
 | `actions/upload-artifact` v5 | `330a01c490aca151604b8cf639adc76d48f6c5d4` | `git/refs/tags/v5` → commit; 2025-10-24 |
 | `node:22-alpine` | `sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32` | `docker pull` + `RepoDigests`; Node v22.23.2 |
-| `nginxinc/nginx-unprivileged:1.29-alpine` | `sha256:0c79d56aee561a1d81c63f00eee5fb5fe29279560cdc55e91425133104c7fbe6` | idem; `Config.User=101` |
+| `nginxinc/nginx-unprivileged:1.31.3-alpine3.24-slim` | `sha256:d61d7ef52430df468e74ed6ee6e914429b80e20ba988e3176278a73165f876cf` | idem; Alpine 3.24.1, nginx/1.31.3, `Config.User=101`, `id -u` → 101. **Substituiu** `1.29-alpine` (`sha256:0c79d56a…`, Alpine 3.23.4), que carregava 10 CVE HIGH — ver §2.5 |
 | `aquasec/trivy:0.67.0` | `sha256:94711c60051c6cab848a292e3a67f62623fcee361b2bb661f43b17184f4afdac` | `docker buildx imagetools inspect` |
 | `postgres:16-alpine` | `sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685` | idem |
 

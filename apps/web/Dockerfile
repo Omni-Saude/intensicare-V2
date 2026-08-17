@@ -64,9 +64,57 @@ RUN set -eux; \
 # capability alguma, escutando em porta alta (8080). A imagem `nginx`
 # padrão inicia como root para abrir a porta 80 e só então rebaixa os
 # workers — o processo mestre segue root, o que é justamente o que se quer
-# evitar. Digest OBSERVADO em 2026-08-17 (`nginxinc/nginx-unprivileged:1.29-alpine`,
-# `Config.User=101`, `id -u` → 101).
-FROM nginxinc/nginx-unprivileged@sha256:0c79d56aee561a1d81c63f00eee5fb5fe29279560cdc55e91425133104c7fbe6 AS execucao
+# evitar.
+#
+# ─────────────────────────────────────────────────────────────────────────
+# REPIN 2026-08-17 — 10 CVE HIGH na base anterior, corrigidos na origem
+# ─────────────────────────────────────────────────────────────────────────
+# O pin anterior era `1.29-alpine` (`sha256:0c79d56a…`, Alpine 3.23.4). O job
+# `artefato-web` do PR #5 reprovou no passo Trivy com **10 HIGH / 0 CRITICAL**,
+# todas em pacotes do sistema base e nenhuma no nosso código:
+#
+#   c-ares      CVE-2026-33630   1.34.6-r0 → 1.34.8-r0  (use-after-free / double-free)
+#   curl        CVE-2026-5773    8.17.0-r1 → 8.20.0-r0  (transferência por SMB incorreto)
+#   curl        CVE-2026-6276                           (vazamento de cookie)
+#   libcurl     CVE-2026-5773, CVE-2026-6276
+#   libcrypto3  CVE-2026-45447   3.5.6-r0  → 3.5.7-r0   (heap UAF em PKCS7_verify)
+#   libssl3     CVE-2026-45447
+#   libexpat    CVE-2026-45186   2.7.5-r0  → 2.8.1-r0   (DoS por XML malformado)
+#   libexpat    CVE-2026-56408             → 2.8.2-r0   (integer overflow em copyString)
+#
+# CORREÇÃO ESCOLHIDA: repin por digest de uma base mais nova que JÁ traz as
+# correções — não `apk upgrade` no estágio de execução. As duas fariam o gate
+# passar; só uma preserva a propriedade que justifica o gate existir.
+#
+# `apk upgrade --no-cache` resolveria os pacotes contra o índice do Alpine no
+# INSTANTE do build. O mesmo Dockerfile, no mesmo commit, produziria conteúdos
+# diferentes em dias diferentes — e a comparação entre dois builds deixaria de
+# distinguir "alguém substituiu o artefato" de "o espelho do Alpine avançou".
+# É exatamente a detectabilidade que ADR-0022 D1 exige e que THR-0054 nomeia
+# ("toolchain não pinado produzindo builds não reproduzíveis, de modo que
+# substituição não é detectável por comparação"). Um digest nomeia um conjunto
+# de bytes e só ele; a atualização passa a ser um diff revisável neste arquivo,
+# com data, em vez de um efeito colateral silencioso do relógio.
+#
+# Também se troca `-alpine` por `-alpine…-slim`. Servir um bundle estático não
+# usa njs, geoip nem os demais módulos da variante completa. MEDIDO
+# 2026-08-17: slim tem **21 pacotes e 6.118.227 bytes** contra **70 pacotes e
+# 23.139.101 bytes** da completa — mesmo nginx 1.31.3, mesmo Alpine 3.24.1,
+# mesmo `USER=101`, mesmo `/etc/nginx/conf.d`. Menos pacote instalado é menos
+# CVE futura por construção, não só hoje.
+#
+# VERIFICADO 2026-08-17 com o mesmo Trivy pinado que roda no CI
+# (`--severity HIGH,CRITICAL --ignore-unfixed`):
+#   nginx-unprivileged 1.29-alpine       (Alpine 3.23.4) → 10 HIGH
+#   nginx-unprivileged 1.31.3-alpine3.24 (Alpine 3.24.1) →  0
+#   nginx-unprivileged 1.31.3-alpine3.24-slim            →  0   ← adotada
+#
+# Digest OBSERVADO 2026-08-17 via `docker image inspect … RepoDigests`
+# (`nginxinc/nginx-unprivileged:1.31.3-alpine3.24-slim`, Alpine 3.24.1,
+# nginx/1.31.3, `Config.User=101`, `id -u` → 101). Re-verificar
+# periodicamente: um digest é imutável, e por isso mesmo envelhece — ele
+# congela também as CVEs descobertas depois desta data.
+FROM nginxinc/nginx-unprivileged@sha256:d61d7ef52430df468e74ed6ee6e914429b80e20ba988e3176278a73165f876cf AS execucao
 
 ARG REVISAO_GIT=desconhecida
 ARG CRIADO_EM=desconhecido
