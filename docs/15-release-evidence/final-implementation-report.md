@@ -606,9 +606,22 @@ do escopo de escrita desta rodada, listadas em
 | Pentest e verificador independente | `DEC-G0-02` | `MG-G6`; 32 P0 seguem `OPEN` | Terceiro externo |
 | Reconciliação de vocabulário de perfis | 6 perfis de runtime × 7 ambientes de `ADR-0019` | Coexistem três vocabulários não reconciliados | Ato do titular |
 | Execução AMH e ambientes `stg`/`prod` | OS-01..OS-24; IG 1.1.0 | G3, G8 | Fora do alcance da V2 |
+| **Réplica de leitura e transação somente-leitura** | Decisão de arquitetura: enquanto a âncora de escopo for o selo em tabela, `instalar` precisa escrever, e **nenhuma réplica de leitura pode servir a aplicação**. As três alternativas já foram MEDIDAS contra PostgreSQL 16.14 e não servem — linha, advisory lock e sequência não sobrevivem a `ROLLBACK TO SAVEPOINT` | Escalar leitura por réplica é impossível sem trocar a âncora; `default_transaction_read_only` é `PGC_USERSET`, então o próprio app pode inviabilizar-se | Ato do titular — só entra em jogo se réplica de leitura entrar no plano |
+| **`BLK-0003` é internamente contraditório** | O registro traz `status: RESOLVIDO COM ESCOPO` e, no mesmo bloco YAML, `who_must_act: AUTH-SECURITY — UNASSIGNED — VALIDATION REQUIRED`. As duas não podem valer juntas | Enquanto durar, qualquer citação do bloqueio é ambígua: este relatório o cita pelo `who_must_act`, e um leitor que olhe o `status` conclui o oposto | Reconciliação documental é engenharia; **nomear o papel é ato do titular** |
+| **Campo `execucao` da matriz de acessibilidade conflaciona duas coisas** | Quatro dos cinco critérios `manual_obrigatorio` estão com `execucao: "executado"`, registrando que a **cobertura automatizada** rodou — não que a validação manual ocorreu. Um único campo não expressa "automatizado feito, manual pendente" | Risco de leitura de que a acessibilidade está validada quando não está | Engenharia para separar os campos; a classificação WCAG em si é do titular |
 
 **Nenhum pedido foi enviado, nenhuma pessoa nomeada, nenhum risco aceito e
 nenhuma proteção de branch alterada.**
+
+Estas 17 entradas são a resposta do encargo para o que **não** é executável por
+engenharia. O §6.2 é explícito quanto ao padrão: "não invente fornecedor de
+identidade… entregue a porta, o adaptador verificável por servidor de teste, a
+configuração tipada e o **pedido exato de integração**, sem alegar operação
+real". O mesmo vale para autoria de bundle clínico (`ato humano clínico`, §2),
+validação com tecnologias assistivas (§6.7, "rotulada como não executada até
+ocorrer") e verificador terceiro (`DEC-G0-02`). Entregar a mecânica verificável
+mais o pedido preciso **é** o critério de conclusão para esses itens; executá-los
+seria violar §2, §11 e §14.
 
 ---
 
