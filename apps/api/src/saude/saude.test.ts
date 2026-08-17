@@ -314,21 +314,50 @@ describe("§6.6 — nenhuma das três superfícies emite sujeito, tenant bruto o
 
   it("rota não casada (404) não faz a telemetria carregar a URL crua", async () => {
     const { app, telemetria } = await appDeSaude();
-    await app.inject({ method: "GET", url: `/nao-existe/${SUJEITO}` });
-    expect(serializeSnapshot(telemetria.snapshot())).not.toContain(SUJEITO);
+    // O hook HTTP REAL é quem tem a tentação de cair para `request.url` quando
+    // `routeOptions.url` é `undefined` (rota não casada). Sem ele ligado, este
+    // teste varria uma telemetria que ninguém alimentava.
+    criarTelemetriaApi(telemetria).instrumentarHttp(app);
+
+    const naoCasada = await app.inject({ method: "GET", url: `/nao-existe/${SUJEITO}` });
+    // A rota tem MESMO de não casar: se alguém registrar um catch-all, o teste
+    // passa a medir outra coisa.
+    expect(naoCasada.statusCode, "a rota deixou de ser não casada").toBe(404);
+
+    // CONTROLE POSITIVO: sem ele, `not.toContain(...)` sobre um snapshot
+    // inteiramente vazio dá o mesmo verde que a redação correta. A prontidão
+    // emite métrica, log e trace — se NADA disso aparecer, a telemetria está
+    // inerte e este teste não prova redação nenhuma.
+    await app.inject({ method: "GET", url: CAMINHO_READINESS });
+    const snapshot = telemetria.snapshot();
+    expect(
+      snapshot.logs.some((l) => l.event === "readiness.evaluated"),
+      "telemetria inerte: nenhuma emissão chegou ao snapshot que este teste varre",
+    ).toBe(true);
+    expect(snapshot.spans.length + snapshot.counters.length).toBeGreaterThan(0);
+
+    const emitido = serializeSnapshot(snapshot);
+    expect(emitido).not.toContain(SUJEITO);
+    // O caminho cru inteiro também não pode viajar — não só o identificador.
+    expect(emitido).not.toContain("/nao-existe");
     await app.close();
   });
 
   it("um id de dependência endereçável ou com forma de identificador é RECUSADO", () => {
     expect(() => assertIdDeDependenciaSeguro("banco-de-dados")).not.toThrow();
-    expect(() => assertIdDeDependenciaSeguro("postgres://user:senha@host:5432/db")).toThrow();
+    // Tipada como as demais: `.toThrow()` sem classe aceitaria um TypeError por
+    // argumento malformado ou um erro de programação como se fosse a recusa de
+    // redação sob teste.
+    expect(() => assertIdDeDependenciaSeguro("postgres://user:senha@host:5432/db")).toThrow(
+      TelemetryRedactionError,
+    );
     // Montado em tempo de execução para que o TEXTO deste arquivo não contenha
     // o endereço contíguo que `scripts/check_forbidden_content.py` procura —
     // mesma técnica que o próprio scanner usa com o seu canário (`"PHI" +
     // "-REAL"`). Alargar a allowlist do gate para acomodar um literal de teste
     // seria exatamente o que o gate proíbe.
     const idComFormaDeEmail = ["suporte", "exemplo.com"].join("@");
-    expect(() => assertIdDeDependenciaSeguro(idComFormaDeEmail)).toThrow();
+    expect(() => assertIdDeDependenciaSeguro(idComFormaDeEmail)).toThrow(TelemetryRedactionError);
     expect(() => assertIdDeDependenciaSeguro("amh:psr:v1:SYNTH-0001")).toThrow(
       TelemetryRedactionError,
     );
@@ -355,8 +384,20 @@ describe("§6.6 — a telemetria de packages/observabilidade tem consumidor real
 
   it("liveness NÃO emite veredito de prontidão (as superfícies não se confundem)", async () => {
     const { app, telemetria } = await appDeSaude();
+
     await app.inject({ method: "GET", url: CAMINHO_LIVENESS });
     expect(metricTotal(telemetria.snapshot(), "intensicare.ops.readiness.verdict.total")).toBe(0);
+
+    // CONTROLE POSITIVO, na MESMA instância e no MESMO contador: sem ele,
+    // `toBe(0)` dá o mesmo verde com a telemetria inteiramente inerte — e o
+    // teste não distinguiria "liveness não emite veredito" de "nada emite
+    // nada". A prontidão emite; logo o zero acima é propriedade do liveness.
+    await app.inject({ method: "GET", url: CAMINHO_READINESS });
+    expect(
+      metricTotal(telemetria.snapshot(), "intensicare.ops.readiness.verdict.total"),
+      "o contador de veredito não subiu nem com a prontidão: telemetria inerte",
+    ).toBe(1);
+
     await app.close();
   });
 

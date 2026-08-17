@@ -66,10 +66,25 @@ describe("verificações de semântica", () => {
   });
 
   it("nenhuma verificação semântica passa por vacuidade (toda passagem tem evidência)", () => {
+    // O próprio teste passava por vacuidade: `results` VAZIO é um estado
+    // alcançável e documentado — `runner.test.ts` ("fixture adulterada em
+    // BYTES") assere `expect(tampered.semantics).toEqual([])`. Sem as guardas
+    // abaixo, uma execução que não produzisse nenhuma dimensão (ou uma
+    // dimensão sem nenhuma verificação) satisfaria o teste chamado
+    // "nenhuma verificação passa por vacuidade".
+    expect(results.length, "nenhuma dimensão semântica foi produzida").toBeGreaterThan(0);
+
+    let verificacoesInspecionadas = 0;
     for (const result of results) {
+      expect(
+        result.checks.length,
+        `a dimensão '${result.dimension}' não produziu nenhuma verificação`,
+      ).toBeGreaterThan(0);
       for (const check of result.checks) {
         expect(check.evidence.trim().length).toBeGreaterThan(20);
+        verificacoesInspecionadas += 1;
       }
     }
+    expect(verificacoesInspecionadas).toBeGreaterThanOrEqual(results.length);
   });
 });

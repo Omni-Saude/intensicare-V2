@@ -92,8 +92,20 @@ describe("apps/api (fundação executável — servidor sobre persistência real
         "rule_bundle_unavailable",
       );
       expect(corpo.perfil.somenteSintetico).toBe(true);
+      // Guarda de não-vacuidade, simétrica à de `razoes` acima: um laço sobre
+      // lista vazia prova o invariante M0 por AUSÊNCIA de dado, não por
+      // evidência. Sem esta linha, deixar de declarar qualquer limite deixa o
+      // teste verde afirmando "nenhum alvo de frescor decidido".
+      expect(
+        corpo.limitesDeFrescorDeclarados.length,
+        "nenhum limite de frescor foi declarado — o invariante M0 não foi exercido",
+      ).toBeGreaterThan(0);
       // Nenhum alvo numérico de frescor foi decidido — VALIDATION REQUIRED.
       for (const limite of corpo.limitesDeFrescorDeclarados) {
+        // A projeção precisa estar NOMEADA: `{}` satisfaria `limiteMs == null`
+        // por ausência de campo, não por declaração honesta.
+        expect(typeof limite.projecao).toBe("string");
+        expect(limite.projecao.length).toBeGreaterThan(0);
         expect(limite.limiteMs).toBeNull();
       }
       expect(r.headers["cache-control"]).toBe("no-store");

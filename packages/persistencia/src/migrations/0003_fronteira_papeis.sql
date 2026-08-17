@@ -314,22 +314,90 @@ begin
       using errcode = '42501';
   end if;
 
-  select string_agg(c.relname, ', ' order by c.relname) into tabelas_sem_isolamento
-    from pg_class c join pg_namespace n on n.oid = c.relnamespace
-   where n.nspname = 'public' and c.relkind in ('r', 'p')
-     and (
-       not c.relrowsecurity
-       or not c.relforcerowsecurity
-       or not exists (
-         select 1 from pg_attribute a
-          where a.attrelid = c.oid and a.attname = 'tenant_id'
-            and a.attnum > 0 and not a.attisdropped
+  -- CORRIGIDO (4ª revisão adversarial, ACHADO-11): esta auditoria partia de
+  -- `nspname = 'public'`. Uma PARTIÇÃO criada em OUTRO esquema, de uma tabela
+  -- particionada de `public`, nasce sem RLS, sem FORCE e sem política — e
+  -- nenhuma camada a via. O invariante que importa não é sobre um ESQUEMA: é
+  -- "nenhuma relação ALCANÇÁVEL pelo papel de aplicação guarda dado de tenant
+  -- sem isolamento completo". O conjunto abaixo é, portanto:
+  --   (a) tudo em `public`;
+  --   (b) todo descendente (partição ou herança) de algo em `public`, esteja
+  --       onde estiver;
+  --   (c) toda relação sobre a qual o papel de aplicação alcance qualquer
+  --       privilégio de tabela ou de coluna, em qualquer esquema.
+  -- O privilégio é avaliado sobre os papéis ALCANÇÁVEIS, porque
+  -- `intensicare_app` é NOINHERIT e um privilégio herdado só apareceria após
+  -- `SET ROLE`.
+  --
+  -- Este conjunto é DELIBERADAMENTE mais largo que o laço que cria política
+  -- (bloco 5, restrito a `public`): a migração não sai plantando política em
+  -- objeto que talvez nem pertença ao papel de migração — ela RECUSA e obriga
+  -- o operador a corrigir o esquema.
+  with recursive descendentes as (
+    select c.oid
+      from pg_class c join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public' and c.relkind in ('r', 'p')
+    union
+    select i.inhrelid from pg_inherits i join descendentes d on d.oid = i.inhparent
+  ),
+  auditadas as (
+    select c.oid, c.relname, n.nspname, c.relrowsecurity, c.relforcerowsecurity
+      from pg_class c join pg_namespace n on n.oid = c.relnamespace
+     where c.relkind in ('r', 'p')
+       and n.nspname <> 'information_schema'
+       and n.nspname not like 'pg\_%'
+       and (
+         n.nspname = 'public'
+         or c.oid in (select oid from descendentes)
+         or exists (
+           select 1 from pg_roles alvo
+            where pg_has_role('intensicare_app', alvo.oid, 'MEMBER')
+              and (
+                has_table_privilege(alvo.oid, c.oid,
+                  'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+                or exists (
+                  select 1 from pg_attribute a
+                   where a.attrelid = c.oid and a.attnum > 0 and not a.attisdropped
+                     and has_column_privilege(alvo.oid, c.oid, a.attnum,
+                           'SELECT, INSERT, UPDATE, REFERENCES')
+                )
+              )
+         )
        )
-       or not exists (select 1 from pg_policy pol where pol.polrelid = c.oid)
+  )
+  select string_agg(x.nspname || '.' || x.relname, ', ' order by x.nspname, x.relname)
+    into tabelas_sem_isolamento
+    from auditadas x
+   where not x.relrowsecurity
+      or not x.relforcerowsecurity
+      or not exists (
+        select 1 from pg_attribute a
+         where a.attrelid = x.oid and a.attname = 'tenant_id'
+           and a.attnum > 0 and not a.attisdropped
+      )
+      or not exists (select 1 from pg_policy pol where pol.polrelid = x.oid);
+  if tabelas_sem_isolamento is not null then
+    raise exception
+      'relação(ões) sem isolamento completo (tenant_id + RLS + FORCE + política): %',
+      tabelas_sem_isolamento
+      using errcode = '42501';
+  end if;
+
+  -- A aplicação não pode alcançar esquema fora da lista permitida. Sem isto, o
+  -- conjunto auditado acima poderia crescer indefinidamente por concessão
+  -- avulsa, e o operador não teria sinal nenhum de que isso aconteceu.
+  select string_agg(n.nspname, ', ' order by n.nspname) into tabelas_sem_isolamento
+    from pg_namespace n
+   where n.nspname not in ('public', 'intensicare_escopo', 'information_schema')
+     and n.nspname not like 'pg\_%'
+     and exists (
+       select 1 from pg_roles alvo
+        where pg_has_role('intensicare_app', alvo.oid, 'MEMBER')
+          and has_schema_privilege(alvo.oid, n.oid, 'USAGE')
      );
   if tabelas_sem_isolamento is not null then
     raise exception
-      'tabela(s) sem isolamento completo (tenant_id + RLS + FORCE + política): %',
+      'intensicare_app alcança esquema(s) fora da lista permitida (public, intensicare_escopo): %',
       tabelas_sem_isolamento
       using errcode = '42501';
   end if;

@@ -569,6 +569,13 @@ describe("RULE-GCS — reavaliação em tempo de leitura (spec §5.3; ADR-0008 N
 
     const expirado = reassessGcsAtReadTime(record, after(60 * 23));
     expect(expirado.status).toBe("not_evaluated");
+    // Guarda de não-vacuidade, simétrica à de `stale` acima: `[].every(...)` é
+    // `true`, e `not_evaluated` SEM razão é exatamente o que ADR-0008 N5/N3
+    // proíbe. Sem esta linha, perder as razões deixa o teste verde.
+    expect(
+      expirado.reasons.length,
+      "not_evaluated sem nenhuma razão — proibido por ADR-0008 N3",
+    ).toBeGreaterThan(0);
     expect(expirado.reasons.every((r) => r.startsWith("expired_input:"))).toBe(true);
   });
 

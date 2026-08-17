@@ -96,6 +96,29 @@ const TABELAS_APPEND_ONLY = [
   "audit_events",
 ] as const;
 
+/**
+ * `foreign_key_violation`. Erros do PGlite carregam `code`, `table` e
+ * `constraint` — verificado neste repositório antes de escrever a asserção.
+ */
+const SQLSTATE_VIOLACAO_DE_CHAVE_ESTRANGEIRA = "23503";
+
+/**
+ * Captura a rejeição e devolve o erro; falha se a promessa CUMPRIR.
+ *
+ * Existe porque `.rejects.toThrow()` **sem tipo** aceita qualquer rejeição:
+ * um erro de coluna inexistente, de tipo ou um `throw` do próprio repositório
+ * abortariam a transação do mesmo jeito e o teste seguiria verde sem nunca
+ * ter exercido a restrição que o seu nome promete.
+ */
+async function capturarRejeicao(promessa: Promise<unknown>, contexto: string): Promise<unknown> {
+  try {
+    await promessa;
+  } catch (erro) {
+    return erro;
+  }
+  throw new Error(`NÃO houve rejeição — ${contexto}`);
+}
+
 interface TenantSemeado extends SeededTenant {
   readonly observationId: string;
   readonly auditId: string;
@@ -747,7 +770,7 @@ describe("C. atomicidade do outbox: nunca fato sem evento, nunca evento órfão"
       try {
         const tenant = await seedMinimalTenant(db, "SYNTH-TENANT-SEG-G");
 
-        await expect(
+        const erro = await capturarRejeicao(
           withTenantTransaction(db, tenant.tenantId, async (tx) => {
             await insertClinicalObservationWithOutbox(
               tx,
@@ -787,7 +810,22 @@ describe("C. atomicidade do outbox: nunca fato sem evento, nunca evento órfão"
               reason: "SYNTH-REASON-ORFAO",
             });
           }),
-        ).rejects.toThrow();
+          "a transação com violação de integridade foi CONFIRMADA",
+        );
+        // O NOME deste teste promete "falha por VIOLAÇÃO DE RESTRIÇÃO ... não é
+        // um throw sintético". `.rejects.toThrow()` sem tipo não verificava
+        // nada disso. O SQLSTATE e a tabela verificam.
+        const pg = erro as { readonly code?: unknown; readonly table?: unknown };
+        expect(
+          pg.code,
+          `a transação abortou por SQLSTATE ${String(pg.code)} ` +
+            `("${(erro as Error).message}"), e não por violação de chave estrangeira`,
+        ).toBe(SQLSTATE_VIOLACAO_DE_CHAVE_ESTRANGEIRA);
+        expect(
+          pg.table,
+          "a violação não ocorreu no `insert` de `alerts` — o passo que referencia " +
+            "o encontro inexistente não foi o que abortou a transação",
+        ).toBe("alerts");
 
         const [observacoes, outbox] = await withTenantTransaction(
           db,

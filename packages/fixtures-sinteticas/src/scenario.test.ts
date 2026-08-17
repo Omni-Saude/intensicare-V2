@@ -5,6 +5,33 @@ import { SYNTHETIC_MARKER } from "./synthetic-identifiers.js";
 const REAL_PSR_PATTERN =
   /^amh:psr:v1:(?!SYNTH-)[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
+/**
+ * Mesmo corpo de `REAL_PSR_PATTERN`, SEM âncoras: `^...$` só casa quando a
+ * cadeia inteira é o PSR, então o padrão ancorado não serve para varrer um
+ * campo composto nem o cenário serializado.
+ */
+const REAL_PSR_EM_QUALQUER_POSICAO =
+  /amh:psr:v1:(?!SYNTH-)[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
+
+const CPF_FORMATADO = /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/;
+
+/**
+ * Coleta TODA cadeia do objeto, em qualquer profundidade, com o caminho até
+ * ela — para que a falha aponte o campo, não "algum lugar do JSON".
+ */
+function coletarCadeias(valor: unknown, caminho = "$"): readonly (readonly [string, string])[] {
+  if (typeof valor === "string") return [[caminho, valor] as const];
+  if (Array.isArray(valor)) {
+    return valor.flatMap((item, i) => coletarCadeias(item, `${caminho}[${i}]`));
+  }
+  if (valor !== null && typeof valor === "object") {
+    return Object.entries(valor).flatMap(([chave, item]) =>
+      coletarCadeias(item, `${caminho}.${chave}`),
+    );
+  }
+  return [];
+}
+
 describe("buildG7SyntheticScenario — cenário SYNTH completo da fatia G7", () => {
   it("produz 1 organização, 1 UTI e exatamente 4 leitos", () => {
     const scenario = buildG7SyntheticScenario();
@@ -106,12 +133,33 @@ describe("buildG7SyntheticScenario — cenário SYNTH completo da fatia G7", () 
 
   it("nenhum identificador do cenário se parece com um PSR real ou um CPF formatado", () => {
     const scenario = buildG7SyntheticScenario();
+
+    // O NOME promete "nenhum identificador do CENÁRIO"; a asserção cobria
+    // apenas `patients[].subjectRef`, e a varredura serializada testava CPF
+    // mas NÃO o padrão de PSR real. Um `subjectRef` real em
+    // `vitalSigns[]`, `missingInputCase` ou `encounters[]` passava.
     const allSubjectRefs = scenario.patients.map((p) => p.subjectRef);
+    expect(allSubjectRefs.length).toBeGreaterThan(0);
     for (const ref of allSubjectRefs) {
       expect(ref).not.toMatch(REAL_PSR_PATTERN);
     }
+
+    // Varredura de TODA cadeia do cenário, em qualquer profundidade.
+    const cadeias = coletarCadeias(scenario);
+    expect(
+      cadeias.length,
+      "nenhuma cadeia foi coletada do cenário — a varredura não olhou nada",
+    ).toBeGreaterThan(allSubjectRefs.length);
+    for (const [caminho, valor] of cadeias) {
+      expect(valor, `PSR com forma real em ${caminho}`).not.toMatch(REAL_PSR_EM_QUALQUER_POSICAO);
+      expect(valor, `CPF formatado em ${caminho}`).not.toMatch(CPF_FORMATADO);
+    }
+
     const serialized = JSON.stringify(scenario);
     expect(serialized).not.toMatch(/\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/);
+    // A varredura serializada agora cobre TAMBÉM o padrão de PSR real, que é
+    // o que o nome do teste promete e o que faltava.
+    expect(serialized).not.toMatch(REAL_PSR_EM_QUALQUER_POSICAO);
   });
 
   it("é determinístico: duas chamadas produzem exatamente o mesmo cenário", () => {

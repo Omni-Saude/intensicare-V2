@@ -285,16 +285,41 @@ begin
   -- particionado (`relkind='p'`) atravessou as duas migrações em exit 0 com
   -- leitura e escrita cross-tenant. Agora a varredura parte de `pg_class`, e a
   -- ausência de política é uma reprovação explícita.
-  select string_agg(c.relname || case
+  -- ALARGADO (4ª revisão, ACHADO-11 e ACHADO-08): o conjunto varrido aqui é
+  -- MAIOR que o do laço da §5 (restrito a `public`) — é isso que dá dentes ao
+  -- ramo "sem política". Enquanto os dois conjuntos eram idênticos, aquele
+  -- ramo era inalcançável, e quem de fato fechou o pai particionado foi
+  -- incluir 'p' no laço da §5 e na auditoria da 0003, não a troca da fonte da
+  -- varredura. Agora a §6.1 alcança descendentes fora de `public` e relações
+  -- que a aplicação alcance por privilégio — e a §5 não os cria.
+  with recursive descendentes as (
+    select c.oid
+      from pg_class c join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public' and c.relkind in ('r', 'p')
+    union
+    select i.inhrelid from pg_inherits i join descendentes d on d.oid = i.inhparent
+  )
+  select string_agg(n.nspname || '.' || c.relname || case
                       when not exists (select 1 from pg_policy p2 where p2.polrelid = c.oid)
                         then ' (sem política)'
                       else ' (política não ancorada)'
-                    end, ', ' order by c.relname)
+                    end, ', ' order by n.nspname, c.relname)
     into pendentes
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
-   where n.nspname = 'public'
-     and c.relkind in ('r', 'p')
+   where c.relkind in ('r', 'p')
+     and n.nspname <> 'information_schema'
+     and n.nspname not like 'pg\_%'
+     and (
+       n.nspname = 'public'
+       or c.oid in (select oid from descendentes)
+       or exists (
+         select 1 from pg_roles alvo
+          where pg_has_role('intensicare_app', alvo.oid, 'MEMBER')
+            and has_table_privilege(alvo.oid, c.oid,
+                  'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+       )
+     )
      and (
        not exists (select 1 from pg_policy p2 where p2.polrelid = c.oid)
        or exists (

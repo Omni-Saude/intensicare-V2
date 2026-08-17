@@ -111,13 +111,29 @@ test.describe("teclado e foco em navegador real", () => {
     const total = await botoes.count();
     expect(total).toBeGreaterThan(0);
 
+    // A guarda `total > 0` acima cobre o LAÇO, não o `continue`: com
+    // `boundingBox()` devolvendo `null` para todos, o conjunto MEDIDO era
+    // vazio e nenhuma asserção de tamanho executava — verde sem ter medido
+    // um único alvo. O que se conta aqui é o medido, não o iterado.
+    let medidos = 0;
+    const semCaixa: string[] = [];
+
     for (let i = 0; i < total; i += 1) {
-      const caixa = await botoes.nth(i).boundingBox();
-      if (caixa === null) continue;
       const rotulo = (await botoes.nth(i).textContent())?.slice(0, 40) ?? `botão ${i}`;
+      const caixa = await botoes.nth(i).boundingBox();
+      if (caixa === null) {
+        semCaixa.push(rotulo);
+        continue;
+      }
+      medidos += 1;
       expect(caixa.width, `largura do alvo "${rotulo}"`).toBeGreaterThanOrEqual(24);
       expect(caixa.height, `altura do alvo "${rotulo}"`).toBeGreaterThanOrEqual(24);
     }
+
+    // `button:visible` no Playwright significa caixa delimitadora NÃO vazia:
+    // um botão visível sem caixa é contradição, não caso a tolerar em silêncio.
+    expect(semCaixa, "botão visível sem caixa delimitadora — alvo NÃO medido").toEqual([]);
+    expect(medidos, "nenhum alvo de toque foi medido").toBe(total);
   });
 });
 
