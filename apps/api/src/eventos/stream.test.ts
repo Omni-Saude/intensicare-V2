@@ -191,6 +191,26 @@ interface Controle {
   falharLeitura: boolean;
   falharRevalidacao: boolean;
   falharAutorizacao: boolean;
+  /**
+   * ACHADO 9: observador `async` que REJEITA. O tipo declarado devolve
+   * `void`, e a assinabilidade do TypeScript aceita `async` sem erro — o
+   * compilador não protege, então o teste tem de proteger.
+   */
+  observadorAssincronoQueRejeita: boolean;
+  /**
+   * ACHADO 10: faz o escritor da N-ésima conexão (0-based) LANÇAR ao
+   * escrever — o caminho suportado `opcoes.criarEscritor`.
+   */
+  escritorQueLancaNaConexao: number | null;
+  /** Faz o mesmo escritor lançar também no `encerrar()`. */
+  escritorLancaNoEncerrar: boolean;
+  /**
+   * Momento em que o escritor hostil passa a lançar. Falso na abertura, a
+   * conexão nasce SAUDÁVEL e só adoece depois — é o que permite testar a
+   * falha durante `encerrarTodas`, em vez de a conexão se autoencerrar
+   * logo em `iniciar()` e nunca chegar viva ao laço.
+   */
+  escritorLancandoAgora: boolean;
 }
 
 interface Cenario {
@@ -221,6 +241,7 @@ async function montarCenario(
   const emissor = new EmissorDeTickets<ContextoVerificado>(ajustes.ttlTicketSegundos ?? 30);
   const linhasDeLog: string[] = [];
   const falhasObservadas: { origem: string; erro: unknown }[] = [];
+  let conexoesCriadas = 0;
   const controle: Controle = {
     revalidar: () => ({ permitido: true }),
     autorizar: () => ({ permitido: true }),
@@ -230,6 +251,10 @@ async function montarCenario(
     falharLeitura: false,
     falharRevalidacao: false,
     falharAutorizacao: false,
+    observadorAssincronoQueRejeita: false,
+    escritorQueLancaNaConexao: null,
+    escritorLancaNoEncerrar: false,
+    escritorLancandoAgora: false,
   };
   const abortadores: AbortController[] = [];
 
@@ -312,9 +337,38 @@ async function montarCenario(
     caminhoReconciliacao: "/v1/projecoes/grade-leitos",
     registrarFalha: (origem, erro) => {
       falhasObservadas.push({ origem, erro });
+      if (controle.observadorAssincronoQueRejeita) {
+        // Função `async` atribuída a um tipo que devolve `void`: legal em
+        // TypeScript, e o ponto exato do ACHADO 9.
+        return Promise.reject(new Error("SYNTH-FALHA: observador assíncrono rejeitou"));
+      }
+      return undefined;
     },
     criarEscritor: (resposta: RespostaBruta): EscritorSse => {
       const real = new EscritorSseHttp(resposta);
+      const indice = conexoesCriadas;
+      conexoesCriadas += 1;
+      if (controle.escritorQueLancaNaConexao === indice) {
+        // Escritor hostil pela costura SUPORTADA `opcoes.criarEscritor`.
+        return {
+          escrever: (quadro) => {
+            if (controle.escritorLancandoAgora) {
+              throw new Error("SYNTH-FALHA: escritor recusou a escrita");
+            }
+            real.escrever(quadro);
+          },
+          bytesPendentes: () => 0,
+          encerrar: () => {
+            if (controle.escritorLancandoAgora && controle.escritorLancaNoEncerrar) {
+              throw new Error("SYNTH-FALHA: escritor recusou o encerramento");
+            }
+            real.encerrar();
+          },
+          get encerrado() {
+            return real.encerrado;
+          },
+        };
+      }
       // Envoltório sempre ativo, mas TRANSPARENTE enquanto não saturado: a
       // saturação é avaliada a cada chamada, não congelada na criação. É o
       // que permite saturar, agendar o reexame de dreno e então dessaturar
@@ -768,7 +822,12 @@ describe("ACHADO 7 — bordas assíncronas que rejeitam", () => {
     expect(c.falhasObservadas.length).toBeGreaterThan(0);
     const primeira = c.falhasObservadas[0];
     if (primeira === undefined) throw new Error("nenhuma falha observada");
-    expect(primeira.origem).toMatch(/bombear|pulsar|drenar|iniciar/);
+    // ACHADO 7: a versão anterior usava `toMatch(/bombear|pulsar|drenar|
+    // iniciar/)` — alternância cobrindo os QUATRO membros de
+    // `OrigemDeFalha`, sem âncoras, de modo que nenhum valor emissível
+    // reprovava (nem uma supercadeia). O cenário é determinístico: a
+    // leitura falha já no catch-up, logo a origem é exatamente `iniciar`.
+    expect(primeira.origem).toBe("iniciar");
     // O erro BRUTO chega ao observador do servidor...
     expect((primeira.erro as Error).message).toContain("SYNTH-FALHA");
     // ...e NÃO chega ao cliente: nenhum quadro carrega o texto do erro.
@@ -785,6 +844,137 @@ describe("ACHADO 7 — bordas assíncronas que rejeitam", () => {
     await leitor.esperarQuadro((q) => q.evento === "pulsacao");
     const primeiro = leitor.quadros.find((q) => (q.dados ?? "").includes('"estado":"online"'));
     expect(primeiro?.evento).toBe("estado-conexao");
+  }, 30_000);
+});
+
+/**
+ * ACHADOS 9 e 10 (quinta revisão adversarial). A correção anterior alegava
+ * que `#encerrarPorFalha` "não pode rejeitar" e que a proteção pós-hijack
+ * estava fechada. As duas alegações eram falsas:
+ *
+ * - o observador é chamado SEM `await` dentro de um `try/catch` SÍNCRONO;
+ *   como o tipo devolve `void` e o TypeScript aceita `async` aí, um
+ *   observador que rejeita escapa de dentro da própria função que existe
+ *   para impedir escapes;
+ * - `encerrarCom` era `try/finally` sem `catch`, podia propagar, e era
+ *   aguardado sem proteção em dois sítios pós-`reply.hijack()` — inclusive
+ *   dentro de `encerrarTodas`, que limpava o `Set` ANTES do laço, de modo
+ *   que uma conexão que lançasse levava as demais junto: sem encerramento,
+ *   sem instrução e já invisíveis ao controle.
+ */
+describe("ACHADOS 9 e 10 — o tratamento de falha não pode ser a falha", () => {
+  async function comVigiaDeRejeicoes<T>(corpo: () => Promise<T>): Promise<T> {
+    const soltas: unknown[] = [];
+    const vigia = (motivo: unknown): void => {
+      soltas.push(motivo);
+    };
+    process.on("unhandledRejection", vigia);
+    try {
+      const resultado = await corpo();
+      await dormir(150);
+      expect(soltas.map((m) => (m instanceof Error ? m.message : String(m)))).toEqual([]);
+      return resultado;
+    } finally {
+      process.off("unhandledRejection", vigia);
+    }
+  }
+
+  it("ACHADO 9: observador ASSÍNCRONO que rejeita não escapa do tratamento de falha", async () => {
+    await comVigiaDeRejeicoes(async () => {
+      const c = await cenario();
+      c.controle.observadorAssincronoQueRejeita = true;
+      c.controle.falharLeitura = true;
+
+      const { leitor } = await c.abrir();
+
+      // Apesar de o observador rejeitar, o cliente ainda termina INSTRUÍDO.
+      const instrucao = await leitor.esperarQuadro((q) => q.evento === "instrucao-reconciliacao");
+      expect(JSON.parse(instrucao.dados!)).toMatchObject({ motivo: "falha-interna" });
+      await leitor.esperarFim();
+      expect(c.falhasObservadas.length).toBeGreaterThan(0);
+    });
+  }, 30_000);
+
+  it("ACHADO 10: `encerrarTodas` isola cada conexão — uma que falha não leva as outras", async () => {
+    await comVigiaDeRejeicoes(async () => {
+      const c = await cenario();
+      // A SEGUNDA conexão criada tem escritor hostil — mas ele só passa a
+      // lançar depois, para que as três nasçam vivas.
+      c.controle.escritorQueLancaNaConexao = 1;
+
+      const primeira = await c.abrir();
+      const segunda = await c.abrir();
+      const terceira = await c.abrir();
+      for (const l of [primeira.leitor, segunda.leitor, terceira.leitor]) {
+        await l.esperarQuadro((q) => q.evento === "estado-conexao");
+      }
+      expect(c.controleDoGateway.conexoesVivas()).toBe(3);
+
+      c.controle.escritorLancandoAgora = true;
+
+      // Não rejeita, apesar de a conexão do meio falhar.
+      const derrubadas = await c.controleDoGateway.encerrarTodas();
+      expect(derrubadas).toBe(3);
+
+      // As conexões SÃS receberam instrução e terminaram — a falha da
+      // segunda não abortou o laço nem as deixou órfãs no `Set`.
+      for (const leitor of [primeira.leitor, terceira.leitor]) {
+        const instrucao = await leitor.esperarQuadro((q) => q.evento === "instrucao-reconciliacao");
+        expect(JSON.parse(instrucao.dados!)).toMatchObject({ motivo: "desligamento-servidor" });
+        await leitor.esperarFim();
+      }
+      expect(c.controleDoGateway.conexoesVivas()).toBe(0);
+      // A falha da conexão hostil foi REPORTADA, não engolida.
+      expect(c.falhasObservadas.some((f) => f.origem === "encerrar")).toBe(true);
+      void segunda;
+    });
+  }, 30_000);
+
+  it("ACHADO 10: falha no encerramento preserva o erro ORIGINAL, não o do `encerrar()`", async () => {
+    await comVigiaDeRejeicoes(async () => {
+      const c = await cenario();
+      c.controle.escritorQueLancaNaConexao = 0;
+      c.controle.escritorLancaNoEncerrar = true;
+
+      const { leitor } = await c.abrir();
+      await leitor.esperarQuadro((q) => q.evento === "estado-conexao");
+
+      // A partir daqui a ESCRITA e o ENCERRAMENTO falham.
+      c.controle.escritorLancandoAgora = true;
+      await c.controleDoGateway.encerrarTodas();
+      await dormir(100);
+
+      const mensagens = c.falhasObservadas
+        .filter((f) => f.origem === "encerrar")
+        .map((f) => (f.erro as Error).message);
+      // Os DOIS erros foram reportados, e o ORIGINAL (da escrita) vem
+      // primeiro. Antes, o `finally` sem `catch` fazia o erro do
+      // `encerrar()` SUBSTITUIR o da escrita, que sumia.
+      expect(mensagens[0]).toContain("recusou a escrita");
+      expect(mensagens.some((m) => m.includes("recusou o encerramento"))).toBe(true);
+    });
+  }, 30_000);
+
+  it("ACHADO 10: região pós-hijack do cursor irretomável não deixa rejeição escapar", async () => {
+    await comVigiaDeRejeicoes(async () => {
+      const c = await cenario();
+      c.controle.cursorMinimoRetomavel = 100;
+      c.controle.escritorQueLancaNaConexao = 0;
+      c.controle.escritorLancandoAgora = true;
+
+      const resposta = await fetch(`${c.base}${CAMINHO_STREAM}`, {
+        headers: {
+          authorization: `Bearer SYNTH-TOKEN.${TENANT}.${ATOR}`,
+          "last-event-id": "3",
+        },
+      });
+      expect(resposta.status).toBe(200);
+      // O socket FECHA — não fica pendurado por uma rejeição sem destino.
+      await resposta.text();
+      await dormir(150);
+      expect(c.falhasObservadas.some((f) => f.origem === "encerrar")).toBe(true);
+      expect(c.controleDoGateway.conexoesVivas()).toBe(0);
+    });
   }, 30_000);
 });
 

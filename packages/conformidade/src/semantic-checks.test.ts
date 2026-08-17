@@ -16,6 +16,31 @@ function dimension(name: string) {
   return found;
 }
 
+/**
+ * Cardinalidade FIXADA das verificações semânticas, por dimensão, e o total.
+ *
+ * Em LITERAL de propósito. A asserção que existia no fim do teste de vacuidade
+ * (`expect(verificacoesInspecionadas).toBeGreaterThanOrEqual(results.length)`)
+ * era MORTA: o laço já assere `checks.length > 0` para CADA dimensão, portanto
+ * cada iteração soma ao menos 1 ao contador e a comparação não podia falhar.
+ * Uma asserção que não pode falhar, dentro do teste cujo propósito declarado é
+ * impedir vacuidade, é o próprio defeito que ele existe para pegar.
+ *
+ * Derivar o esperado de `results` — como `results.length` fazia — reintroduz a
+ * circularidade: o dado sob teste não pode ser a fonte da própria expectativa.
+ * Com o literal, perder uma verificação (ou uma dimensão inteira) fica VERMELHO.
+ */
+const VERIFICACOES_POR_DIMENSAO = {
+  identidade: 4,
+  encontro: 2,
+  timestamp: 4,
+  unidade: 2,
+  proveniencia: 6,
+  replay: 4,
+} as const;
+
+const TOTAL_DE_VERIFICACOES = 22;
+
 describe("verificações de semântica", () => {
   it("cobre as seis dimensões exigidas", () => {
     expect(results.map((r) => r.dimension)).toEqual([
@@ -85,6 +110,23 @@ describe("verificações de semântica", () => {
         verificacoesInspecionadas += 1;
       }
     }
-    expect(verificacoesInspecionadas).toBeGreaterThanOrEqual(results.length);
+    // O conjunto de verificações não pode encolher em silêncio: perder uma
+    // verificação É a vacuidade que este teste existe para impedir. A asserção
+    // que estava aqui era morta (ver nota em VERIFICACOES_POR_DIMENSAO).
+    expect(
+      Object.fromEntries(
+        results.map((result) => [result.dimension, result.checks.length] as const),
+      ),
+      "a distribuição de verificações semânticas por dimensão mudou",
+    ).toEqual(VERIFICACOES_POR_DIMENSAO);
+
+    // Distinto do anterior, e não redundante: o mapa acima lê `checks.length`,
+    // enquanto este contador só cresce DENTRO do laço interno. Ele prova que a
+    // asserção de evidência executou 22 vezes — que o corpo rodou, não apenas
+    // que o dado tinha o tamanho certo.
+    expect(
+      verificacoesInspecionadas,
+      "a asserção de evidência não executou uma vez por verificação",
+    ).toBe(TOTAL_DE_VERIFICACOES);
   });
 });

@@ -105,9 +105,9 @@ fatia sintética.
 
 ## Testes (estado real, SPR-G7-2 pós-integração)
 
-163 testes, 14 arquivos, todos verdes
+187 testes, 15 arquivos, todos verdes
 (`pnpm --filter @intensicare/web test -- --run`). A linha de base do ciclo 6
-era 77 em 7 arquivos; o ACH-07 acrescentou 86 sem remover nenhum. Além dos
+era 77 em 7 arquivos; o ACH-07 acrescentou 110 sem remover nenhum. Além dos
 listados abaixo, o ACH-07 acrescentou `perfil.test.ts`, `api/guardas.test.ts`,
 `estado/recursoRemoto.test.ts`, `estado/conectividade.test.ts`,
 `build/guardaArtefatoSintetico.test.ts`, `components/resiliencia.test.tsx` e

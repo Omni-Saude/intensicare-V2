@@ -9,11 +9,13 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  EscritorSseHttp,
   FilaLimitada,
   LIMITES_ILUSTRATIVOS,
   montarComentario,
   montarQuadro,
   montarQuadroDeRetry,
+  type RespostaBruta,
 } from "./fila.js";
 
 describe("FilaLimitada", () => {
@@ -35,12 +37,100 @@ describe("FilaLimitada", () => {
     expect(fila.desenfileirar()).toBeUndefined();
   });
 
-  it("não existe caminho de descarte silencioso na superfície pública", () => {
-    const fila = new FilaLimitada<number>(1);
-    const metodos = Object.getOwnPropertyNames(Object.getPrototypeOf(fila));
-    for (const proibido of ["evictar", "descartar", "sobrescrever", "podar"]) {
-      expect(metodos).not.toContain(proibido);
+  /**
+   * ACHADO 8a. A versão anterior deste teste conferia NOMES —
+   * `evictar/descartar/sobrescrever/podar` ausentes do protótipo. O revisor
+   * adversarial acrescentou um descarte silencioso público chamado
+   * `liberarEspaco()` e os 11 testes do arquivo passaram: verificar nome
+   * não é verificar comportamento, e a cláusula ADR-0011 P5 é sobre
+   * comportamento.
+   *
+   * A regra que este teste impõe agora, independente de nomenclatura:
+   * NENHUMA operação pública pode reduzir o tamanho da fila sem devolver o
+   * que removeu. `desenfileirar` é a única remoção sancionada, e ela
+   * entrega o item — quem chama fica sabendo. Um `liberarEspaco()` seria
+   * reprovado por encolher a fila devolvendo `undefined`.
+   */
+  it("nenhuma operação pública remove item sem devolvê-lo (ADR-0011 P5)", () => {
+    const prototipo = Object.getPrototypeOf(new FilaLimitada<number>(4)) as object;
+    const nomes = Object.getOwnPropertyNames(prototipo).filter((nome) => {
+      if (nome === "constructor") return false;
+      const descritor = Object.getOwnPropertyDescriptor(prototipo, nome);
+      // Acessores (`tamanho`, `maximo`) não são operações.
+      return typeof descritor?.value === "function";
+    });
+
+    // Garante que a varredura enxerga a superfície real — se algum dia o
+    // protótipo ficar vazio por refatoração, o teste não vira vácuo.
+    expect(nomes).toContain("enfileirar");
+    expect(nomes).toContain("desenfileirar");
+
+    for (const nome of nomes) {
+      const fila = new FilaLimitada<number>(4);
+      fila.enfileirar(1);
+      fila.enfileirar(2);
+      fila.enfileirar(3);
+      const antes = fila.tamanho;
+
+      const metodo = (prototipo as Record<string, ((...args: unknown[]) => unknown) | undefined>)[
+        nome
+      ];
+      if (metodo === undefined) continue;
+      let devolvido: unknown;
+      try {
+        // Invocada SEM argumentos: é assim que um descarte silencioso
+        // conveniente seria chamado. `enfileirar(undefined)` apenas cresce.
+        devolvido = metodo.call(fila);
+      } catch {
+        continue; // método que exige argumento não é caminho de descarte
+      }
+
+      const removidos = antes - fila.tamanho;
+      // `<= 0` cobre também o método que CRESCE a fila (`enfileirar()` sem
+      // argumento) — crescer não é descartar.
+      if (removidos <= 0) continue;
+      expect(
+        removidos,
+        `'${nome}' removeu ${String(removidos)} item(ns) de uma vez — remoção em lote é descarte, não entrega`,
+      ).toBe(1);
+      expect(
+        devolvido,
+        `'${nome}' encolheu a fila sem devolver o item removido — descarte silencioso proibido por ADR-0011 P5`,
+      ).not.toBeUndefined();
     }
+  });
+
+  it("desenfileirar devolve exatamente o item que removeu — remoção nunca é muda", () => {
+    const fila = new FilaLimitada<string>(3);
+    fila.enfileirar("a");
+    fila.enfileirar("b");
+    const antes = fila.tamanho;
+    const item = fila.desenfileirar();
+    expect(item).toBe("a");
+    expect(fila.tamanho).toBe(antes - 1);
+  });
+
+  it("conserva todo item aceito: nada some entre enfileirar e desenfileirar", () => {
+    // Propriedade de conservação sobre um entrelaçamento longo — o modo de
+    // falha "sumiu um delta no meio" apareceria aqui como divergência de
+    // sequência, sem depender de nome de método algum.
+    const fila = new FilaLimitada<number>(8);
+    const aceitos: number[] = [];
+    const retirados: number[] = [];
+    for (let i = 0; i < 200; i += 1) {
+      if (i % 3 !== 2) {
+        if (fila.enfileirar(i).aceito) aceitos.push(i);
+      } else {
+        const item = fila.desenfileirar();
+        if (item !== undefined) retirados.push(item);
+      }
+    }
+    for (;;) {
+      const item = fila.desenfileirar();
+      if (item === undefined) break;
+      retirados.push(item);
+    }
+    expect(retirados).toEqual(aceitos);
   });
 
   it("preserva ordem FIFO", () => {
@@ -76,6 +166,59 @@ describe("limites ilustrativos", () => {
     expect(LIMITES_ILUSTRATIVOS.intervaloPulsacaoMs).toBeGreaterThan(0);
     expect(LIMITES_ILUSTRATIVOS.loteMaximoLeitura).toBeGreaterThan(0);
     expect(LIMITES_ILUSTRATIVOS.intervaloReexameDrenoMs).toBeGreaterThan(0);
+  });
+});
+
+describe("EscritorSseHttp — vivacidade do socket", () => {
+  function respostaFalsa(estado: { writableEnded: boolean; destroyed: boolean }): RespostaBruta {
+    return {
+      write: () => true,
+      end: () => {
+        estado.writableEnded = true;
+      },
+      get writableLength() {
+        return 0;
+      },
+      get writableEnded() {
+        return estado.writableEnded;
+      },
+      get destroyed() {
+        return estado.destroyed;
+      },
+    };
+  }
+
+  it("considera encerrado o socket DESTRUÍDO, não só o encerrado por end()", () => {
+    // Aborto abrupto do cliente: `writableEnded` continua `false`. Sem
+    // verificar `destroyed`, o escritor se declararia vivo sobre um socket
+    // morto e seguiria "escrevendo" no vazio.
+    const estado = { writableEnded: false, destroyed: true };
+    const escritor = new EscritorSseHttp(respostaFalsa(estado));
+    expect(escritor.encerrado).toBe(true);
+  });
+
+  it("continua reconhecendo o encerramento ordenado por end()", () => {
+    const estado = { writableEnded: true, destroyed: false };
+    expect(new EscritorSseHttp(respostaFalsa(estado)).encerrado).toBe(true);
+  });
+
+  it("um socket vivo não se declara encerrado", () => {
+    const estado = { writableEnded: false, destroyed: false };
+    expect(new EscritorSseHttp(respostaFalsa(estado)).encerrado).toBe(false);
+  });
+
+  it("não escreve em socket destruído", () => {
+    const estado = { writableEnded: false, destroyed: true };
+    let escritas = 0;
+    const resposta: RespostaBruta = {
+      ...respostaFalsa(estado),
+      write: () => {
+        escritas += 1;
+        return true;
+      },
+    };
+    new EscritorSseHttp(resposta).escrever("event: x\ndata: {}\n\n");
+    expect(escritas).toBe(0);
   });
 });
 

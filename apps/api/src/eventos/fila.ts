@@ -121,6 +121,13 @@ export interface RespostaBruta {
   end(): void;
   readonly writableLength: number;
   readonly writableEnded: boolean;
+  /**
+   * `true` quando o fluxo subjacente foi DESTRUÍDO (aborto abrupto do
+   * cliente). Distinto de `writableEnded`, que só cobre o encerramento
+   * ordenado por `end()` — um socket destruído tem `writableEnded === false`
+   * e continuaria parecendo escrevível.
+   */
+  readonly destroyed?: boolean;
 }
 
 /** Escritor real sobre o socket HTTP. */
@@ -133,7 +140,10 @@ export class EscritorSseHttp implements EscritorSse {
   }
 
   get encerrado(): boolean {
-    return this.#encerrado || this.#resposta.writableEnded;
+    // `destroyed` cobre o aborto abrupto do cliente: nesse caso
+    // `writableEnded` continua `false` e, sem esta verificação, o escritor
+    // se declararia vivo sobre um socket morto.
+    return this.#encerrado || this.#resposta.writableEnded || this.#resposta.destroyed === true;
   }
 
   escrever(quadro: string): void {

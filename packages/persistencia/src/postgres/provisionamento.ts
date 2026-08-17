@@ -82,6 +82,33 @@ function gerarSenha(): string {
   return randomBytes(24).toString("base64url");
 }
 
+/**
+ * Senhas geradas UMA vez por processo e reusadas em todas as provisões dele.
+ *
+ * POR QUE MEMOIZAR: papel é objeto do CLUSTER, não do banco. Cada
+ * `provisionarBanco` fazia `alter role ... password <nova aleatória>`, o que
+ * INVALIDAVA silenciosamente a URL devolvida por qualquer provisão anterior no
+ * mesmo cluster — a conexão seguinte falhava com `28P01` (senha incorreta)
+ * ANTES de o controle sob teste ser exercido. Numa suíte isso vira um vermelho
+ * que parece P0 e não é; num cluster efêmero reusado entre execuções, idem.
+ *
+ * Com a memoização, reescrever a senha vira no-op e toda URL emitida por este
+ * processo continua válida. A aleatoriedade por processo é preservada — o que
+ * se elimina é a rotação DENTRO do processo, que não protegia nada e só
+ * quebrava credencial já emitida.
+ */
+const senhasDoProcesso = new Map<string, string>();
+
+function senhaEstavelDoProcesso(papel: string): string {
+  const existente = senhasDoProcesso.get(papel);
+  if (existente !== undefined) {
+    return existente;
+  }
+  const nova = gerarSenha();
+  senhasDoProcesso.set(papel, nova);
+  return nova;
+}
+
 const ALFABETO_SENHA = /^[A-Za-z0-9_-]{16,}$/;
 const IDENTIFICADOR = /^[a-z_][a-z0-9_]*$/;
 
@@ -107,8 +134,8 @@ function exigirIdentificador(valor: string, rotulo: string): void {
  */
 export async function provisionarBanco(opcoes: OpcoesProvisionamento): Promise<BancoProvisionado> {
   exigirIdentificador(opcoes.banco, "nome de banco");
-  const senhaMigrador = opcoes.senhaMigrador ?? gerarSenha();
-  const senhaAplicacao = opcoes.senhaAplicacao ?? gerarSenha();
+  const senhaMigrador = opcoes.senhaMigrador ?? senhaEstavelDoProcesso(PAPEL_MIGRADOR);
+  const senhaAplicacao = opcoes.senhaAplicacao ?? senhaEstavelDoProcesso(PAPEL_APLICACAO);
   exigirSenhaSegura(senhaMigrador, "migrador");
   exigirSenhaSegura(senhaAplicacao, "aplicação");
 

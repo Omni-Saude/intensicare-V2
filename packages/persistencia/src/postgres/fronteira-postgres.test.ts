@@ -428,6 +428,16 @@ async function recusaDe(
  * primeira e esconder as demais.
  */
 function exigirRecusaPorPrivilegio(recusas: readonly RecusaObservada[], esperadas: number): void {
+  // `esperadas` TEM de ser um literal no ponto de chamada. Passar
+  // `caminhos.length` — como esta função recebia — é uma IDENTIDADE: `recusas`
+  // é construído 1:1 a partir de `caminhos`, então a asserção era sempre
+  // verdadeira e a lista de caminhos podia ir a ZERO com o teste verde
+  // (5ª revisão adversarial, ACHADO-05/P1). O guarda abaixo torna a vacuidade
+  // impossível mesmo que alguém volte a derivar o número.
+  expect(
+    esperadas,
+    "cardinalidade esperada precisa ser um literal maior que zero — derivá-la do próprio array torna a asserção vazia",
+  ).toBeGreaterThan(0);
   expect(recusas).toHaveLength(esperadas);
   const forasDoControle = recusas.filter((r) => r.sqlstate !== SQLSTATE_PRIVILEGIO_INSUFICIENTE);
   expect(
@@ -532,6 +542,8 @@ function registrarSuite(urlSuperusuario: string): void {
             "select pg_read_file('/etc/hosts')",
             "truncate audit_events",
           ];
+          // LITERAL, nunca `caminhos.length`: encolher a lista tem de FALHAR.
+          expect(caminhos, "a lista de caminhos de escalada encolheu").toHaveLength(22);
           const recusas: RecusaObservada[] = [];
           for (const sql of caminhos) {
             recusas.push(await recusaDe(porta, TENANT_A, sql));
@@ -539,7 +551,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // Cada caminho tem de ser recusado POR PRIVILÉGIO (42501). Antes
           // isto era `.rejects.toThrow()` sem tipo: aceitava qualquer
           // rejeição, inclusive "objeto não existe" (42704).
-          exigirRecusaPorPrivilegio(recusas, caminhos.length);
+          exigirRecusaPorPrivilegio(recusas, 22);
         },
         TEMPO_LIMITE_MS,
       );
@@ -1165,6 +1177,8 @@ function registrarSuite(urlSuperusuario: string): void {
             "drop function intensicare_escopo.instalar(text)",
             "create table intensicare_escopo.forjada (id text)",
           ];
+          // LITERAL, nunca `caminhosDaAncora.length`.
+          expect(caminhosDaAncora, "a lista de caminhos à âncora encolheu").toHaveLength(7);
           const recusas: RecusaObservada[] = [];
           for (const sql of caminhosDaAncora) {
             recusas.push(await recusaDe(porta, TENANT_A, sql));
@@ -1172,7 +1186,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // A âncora acima prova que o objeto EXISTE; esta prova que a recusa
           // foi por PRIVILÉGIO. Sem as duas, "esquema não existe" e "acesso
           // negado" produzem o mesmo verde.
-          exigirRecusaPorPrivilegio(recusas, caminhosDaAncora.length);
+          exigirRecusaPorPrivilegio(recusas, 7);
         },
         TEMPO_LIMITE_MS,
       );
@@ -1559,15 +1573,37 @@ function registrarSuite(urlSuperusuario: string): void {
             // sessão regravável.
             await aplicarMigracao(legado.urlSuperusuarioNoBanco, "0003_fronteira_papeis.sql");
             await aplicarMigracao(legado.urlSuperusuarioNoBanco, "0004_escopo_selado.sql");
-            const politicas = await administrativa.consultar<{ n: number }>(
-              `select count(*)::int as n
-                 from pg_policy pol join pg_class c on c.oid = pol.polrelid
-                 join pg_namespace n on n.oid = c.relnamespace
-                where n.nspname = 'public'
-                  and pg_get_expr(pol.polqual, pol.polrelid) not ilike '%tenant_atual%'`,
+            // ACHADO-06 (5ª revisão): contar só as políticas NÃO ancoradas e
+            // exigir zero passa por vacuidade — banco sem tabela nenhuma, ou
+            // tabela sem política nenhuma, produz o mesmo zero. A regressão
+            // MÁXIMA gerava o verde correto. Agora conta-se dos dois lados e
+            // exige-se que a contagem ancorada bata com o número de relações.
+            const politicas = await administrativa.consultar<{
+              ancoradas: number;
+              frouxas: number;
+              relacoes: number;
+            }>(
+              `select
+                 count(*) filter (
+                   where pg_get_expr(pol.polqual, pol.polrelid) ilike '%tenant_atual%')::int as ancoradas,
+                 count(*) filter (
+                   where pg_get_expr(pol.polqual, pol.polrelid) not ilike '%tenant_atual%')::int as frouxas,
+                 (select count(*)::int from pg_class c2
+                    join pg_namespace n2 on n2.oid = c2.relnamespace
+                   where n2.nspname = 'public' and c2.relkind in ('r','p')) as relacoes
+               from pg_policy pol
+               join pg_class c on c.oid = pol.polrelid
+               join pg_namespace n on n.oid = c.relnamespace
+              where n.nspname = 'public'`,
             );
+            const contagem = politicas.rows[0];
+            expect(contagem?.relacoes, "o esquema ficou sem relação nenhuma").toBe(13);
             expect(
-              politicas.rows[0]?.n,
+              contagem?.ancoradas,
+              "há relação em public sem política ancorada na função selada",
+            ).toBe(13);
+            expect(
+              contagem?.frouxas,
               "reaplicar a 0003 rebaixou políticas já ancoradas na função selada",
             ).toBe(0);
           } finally {
@@ -1715,6 +1751,160 @@ function registrarSuite(urlSuperusuario: string): void {
             await administrativa.executar(`revoke synth_dono_mv from ${PAPEL_APLICACAO}`);
             await administrativa.executar("drop materialized view if exists public.synth_mv_dono");
             await administrativa.executar("drop role if exists synth_dono_mv");
+            await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "ACHADO-16 — `nextval` antes do escopo quebra o contrato de forma INTERMITENTE (medido, não suposto)",
+        async () => {
+          // Duas alegações circularam sobre isto e AS DUAS estavam erradas:
+          // "nextval sempre atribui xid" (minha, na 4ª rodada) e "nextval não
+          // atribui xid" (do orquestrador, na 5ª). O comportamento medido
+          // contra PostgreSQL 16.14 é condicional: `nextval` atribui id de
+          // transação de topo APENAS nas chamadas que precisam gravar a tupla
+          // da sequência em WAL — a primeira, e depois de um `setval`; entre
+          // elas (SEQ_LOG_VALS = 32 valores) NÃO atribui.
+          //
+          // A consequência é pior que qualquer das duas versões: um `nextval`
+          // antes do `instalar` derruba o contrato "escopo é a primeira
+          // escrita" de forma INTERMITENTE — cerca de uma vez a cada 32 —, que
+          // é o modo de falha mais caro de diagnosticar. Este teste fixa as
+          // duas metades do comportamento.
+          const administrativa = await ConexaoPostgres.conectar(
+            opcoesDaUrl(banco.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            const atual = await administrativa.consultar<{ v: string }>(
+              "select last_value::text as v from public.outbox_events_id_seq",
+            );
+            // `setval` força a próxima chamada a gravar (e portanto a atribuir).
+            await administrativa.consultar(
+              "select setval('public.outbox_events_id_seq', $1, true)",
+              [atual.rows[0]?.v ?? "1"],
+            );
+
+            const conexao = await porta.pool.adquirir();
+            try {
+              // (a) chamada que GRAVA: atribui xid, e o escopo passa a ser recusado.
+              await conexao.executar("begin");
+              await conexao.consultar("select nextval('public.outbox_events_id_seq')");
+              const comXid = await conexao.consultar<{ x: string | null }>(
+                "select pg_current_xact_id_if_assigned()::text as x",
+              );
+              expect(
+                comXid.rows[0]?.x,
+                "a chamada que grava a sequência deveria atribuir id de transação",
+              ).not.toBeNull();
+              await expect(
+                conexao.consultar("select intensicare_escopo.instalar($1)", [TENANT_A]),
+                "instalar após nextval que gravou deveria ser recusado",
+              ).rejects.toThrow(/já escreveu sem selo de escopo válido/i);
+              await conexao.executar("rollback");
+
+              // (b) chamada seguinte, dentro da janela de cache: NÃO atribui, e
+              //     o escopo instala normalmente.
+              await conexao.executar("begin");
+              await conexao.consultar("select nextval('public.outbox_events_id_seq')");
+              const semXid = await conexao.consultar<{ x: string | null }>(
+                "select pg_current_xact_id_if_assigned()::text as x",
+              );
+              expect(
+                semXid.rows[0]?.x,
+                "a chamada dentro da janela de cache não deveria atribuir id",
+              ).toBeNull();
+              const instalado = await conexao.consultar<{ v: string }>(
+                "select intensicare_escopo.instalar($1) as v",
+                [TENANT_A],
+              );
+              expect(instalado.rows[0]?.v).toBe(TENANT_A);
+              await conexao.executar("rollback");
+            } finally {
+              await porta.pool.liberar(conexao);
+            }
+          } finally {
+            await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_MS,
+      );
+
+      it(
+        "ACHADO-14 — matview no esquema intensicare_escopo é auditada como qualquer outra (5ª revisão, P1)",
+        async () => {
+          // O alargamento da 4ª rodada foi aplicado SÓ ao ramo relkind in
+          // ('r','p'). Os ramos 'm'/'v'/'f' continuaram presos a
+          // nspname='public' — e `intensicare_escopo` está na lista permitida
+          // porque o app precisa de USAGE nele para chamar `instalar`. Sobrava
+          // um esquema alcançável, permitido e NÃO auditado.
+          const alvo = await provisionarBanco({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_mvesc"),
+            recriarBanco: true,
+          });
+          const administrativa = await ConexaoPostgres.conectar(
+            opcoesDaUrl(alvo.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            await administrativa.executar(
+              `create materialized view intensicare_escopo.synth_vazamento
+                 as select id, tenant_id, name from public.organizations`,
+            );
+            await administrativa.executar(
+              `grant select on intensicare_escopo.synth_vazamento to ${PAPEL_APLICACAO}`,
+            );
+            await expect(
+              aplicarMigracao(alvo.urlSuperusuarioNoBanco, "0003_fronteira_papeis.sql"),
+              "matview em intensicare_escopo atravessou a auditoria",
+            ).rejects.toThrow(/synth_vazamento|não podem receber política/i);
+          } finally {
+            await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "ACHADO-15 — VIEW auto-atualizável sobre o selo não devolve o poder de forjar escopo (5ª revisão, P1)",
+        async () => {
+          // §6.2 avaliava has_table_privilege/has_column_privilege sobre a
+          // RELAÇÃO `selo`. Uma view simples sobre ela é AUTO-ATUALIZÁVEL e
+          // roda com os direitos do DONO (o migrador, dono do selo): o
+          // privilégio fica sobre a VIEW, invisível às duas funções. Com ela,
+          // o app reescrevia `tenant_id` do próprio selo e PIVOTAVA de tenant
+          // dentro de uma transação — reabrindo o ACHADO-02.
+          const alvo = await provisionarBanco({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_viewselo"),
+            recriarBanco: true,
+          });
+          const administrativa = await ConexaoPostgres.conectar(
+            opcoesDaUrl(alvo.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            // Guarda de não-vacuidade: sem a view, o pool TEM de abrir.
+            const antes = await AdaptadorPostgres.abrir({ url: alvo.urlAplicacao });
+            await antes.encerrar();
+
+            await administrativa.executar(
+              "create view intensicare_escopo.synth_selos as select * from intensicare_escopo.selo",
+            );
+            await administrativa.executar(
+              `grant select, insert, update, delete on intensicare_escopo.synth_selos to ${PAPEL_APLICACAO}`,
+            );
+
+            await expect(
+              AdaptadorPostgres.abrir({ url: alvo.urlAplicacao }),
+              "o pool aceitou identidade que alcança o selo por view auto-atualizável",
+            ).rejects.toThrow(ErroIdentidadeInsegura);
+
+            await expect(
+              aplicarMigracao(alvo.urlSuperusuarioNoBanco, "0004_escopo_selado.sql"),
+              "a 0004 aceitou um caminho de privilégio que alcança o selo",
+            ).rejects.toThrow(/selo|âncora/i);
+          } finally {
             await administrativa.fechar();
           }
         },

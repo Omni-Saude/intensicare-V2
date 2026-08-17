@@ -223,7 +223,46 @@ declare
   papel record;
   quantidade integer;
   tabelas_sem_isolamento text;
+  oids_auditados oid[];
 begin
+  -- CONJUNTO AUDITADO, calculado UMA vez e usado por TODOS os ramos abaixo.
+  -- CORRIGIDO (5ª revisão adversarial, ACHADO-14/P1): o alargamento anterior
+  -- foi aplicado só ao ramo relkind in ('r','p'); os ramos 'm'/'v'/'f'
+  -- continuavam presos a `nspname = 'public'`. Como `intensicare_escopo` está
+  -- na lista de esquemas permitidos (o app precisa de USAGE nele para chamar
+  -- `instalar`), havia um esquema ALCANÇÁVEL, PERMITIDO e NÃO AUDITADO — uma
+  -- matview criada ali devolvia linhas de outro tenant ao app.
+  with recursive descendentes as (
+    select c.oid
+      from pg_class c join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public' and c.relkind in ('r', 'p')
+    union
+    select i.inhrelid from pg_inherits i join descendentes d on d.oid = i.inhparent
+  )
+  select array_agg(c.oid) into oids_auditados
+    from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where c.relkind in ('r', 'p', 'm', 'v', 'f')
+     and n.nspname <> 'information_schema'
+     and n.nspname not like 'pg\_%'
+     and (
+       n.nspname in ('public', 'intensicare_escopo')
+       or c.oid in (select oid from descendentes)
+       or exists (
+         select 1 from pg_roles alvo
+          where pg_has_role('intensicare_app', alvo.oid, 'MEMBER')
+            and (
+              has_table_privilege(alvo.oid, c.oid,
+                'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+              or exists (
+                select 1 from pg_attribute a
+                 where a.attrelid = c.oid and a.attnum > 0 and not a.attisdropped
+                   and has_column_privilege(alvo.oid, c.oid, a.attnum,
+                         'SELECT, INSERT, UPDATE, REFERENCES')
+              )
+            )
+       )
+     );
+  oids_auditados := coalesce(oids_auditados, '{}'::oid[]);
   select * into papel from pg_roles where rolname = 'intensicare_app';
   if not found then
     raise exception 'papel de aplicação intensicare_app ausente' using errcode = '42501';
@@ -289,13 +328,14 @@ begin
   -- linhas de TODOS os tenants a uma conexão sem escopo.
   -- `relkind` é do tipo "char": o cast explícito para text evita o erro
   -- "operator is not unique" na concatenação.
-  select string_agg(c.relname || ' (relkind=' || c.relkind::text || ')', ', ' order by c.relname)
+  select string_agg(n.nspname || '.' || c.relname || ' (relkind=' || c.relkind::text || ')',
+                   ', ' order by n.nspname, c.relname)
     into tabelas_sem_isolamento
     from pg_class c join pg_namespace n on n.oid = c.relnamespace
-   where n.nspname = 'public' and c.relkind in ('m', 'f');
+   where c.oid = any(oids_auditados) and c.relkind in ('m', 'f');
   if tabelas_sem_isolamento is not null then
     raise exception
-      'objeto(s) no schema public que não podem receber política de RLS (matview / tabela estrangeira): % — mova-os para fora de public ou substitua por tabela com RLS',
+      'objeto(s) alcançáveis que não podem receber política de RLS (matview / tabela estrangeira): % — remova-os ou substitua por tabela com RLS',
       tabelas_sem_isolamento
       using errcode = '42501';
   end if;
@@ -303,13 +343,14 @@ begin
   -- Uma VIEW comum roda com os direitos do DONO e contorna a RLS de quem
   -- consulta. Com `security_invoker = true` (PostgreSQL 15+) ela passa a
   -- respeitar a RLS do chamador, que é o comportamento exigido aqui.
-  select string_agg(c.relname, ', ' order by c.relname) into tabelas_sem_isolamento
+  select string_agg(n.nspname || '.' || c.relname, ', ' order by n.nspname, c.relname)
+    into tabelas_sem_isolamento
     from pg_class c join pg_namespace n on n.oid = c.relnamespace
-   where n.nspname = 'public' and c.relkind = 'v'
+   where c.oid = any(oids_auditados) and c.relkind = 'v'
      and coalesce(array_to_string(c.reloptions, ','), '') !~* 'security_invoker\s*=\s*(true|on|1)';
   if tabelas_sem_isolamento is not null then
     raise exception
-      'view(s) no schema public sem security_invoker=true: % — sem isso a view roda com os direitos do DONO e contorna a RLS de quem consulta',
+      'view(s) alcançáveis sem security_invoker=true: % — sem isso a view roda com os direitos do DONO e contorna a RLS de quem consulta',
       tabelas_sem_isolamento
       using errcode = '42501';
   end if;
@@ -333,49 +374,26 @@ begin
   -- (bloco 5, restrito a `public`): a migração não sai plantando política em
   -- objeto que talvez nem pertença ao papel de migração — ela RECUSA e obriga
   -- o operador a corrigir o esquema.
-  with recursive descendentes as (
-    select c.oid
-      from pg_class c join pg_namespace n on n.oid = c.relnamespace
-     where n.nspname = 'public' and c.relkind in ('r', 'p')
-    union
-    select i.inhrelid from pg_inherits i join descendentes d on d.oid = i.inhparent
-  ),
-  auditadas as (
-    select c.oid, c.relname, n.nspname, c.relrowsecurity, c.relforcerowsecurity
-      from pg_class c join pg_namespace n on n.oid = c.relnamespace
-     where c.relkind in ('r', 'p')
-       and n.nspname <> 'information_schema'
-       and n.nspname not like 'pg\_%'
-       and (
-         n.nspname = 'public'
-         or c.oid in (select oid from descendentes)
-         or exists (
-           select 1 from pg_roles alvo
-            where pg_has_role('intensicare_app', alvo.oid, 'MEMBER')
-              and (
-                has_table_privilege(alvo.oid, c.oid,
-                  'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
-                or exists (
-                  select 1 from pg_attribute a
-                   where a.attrelid = c.oid and a.attnum > 0 and not a.attisdropped
-                     and has_column_privilege(alvo.oid, c.oid, a.attnum,
-                           'SELECT, INSERT, UPDATE, REFERENCES')
-                )
-              )
-         )
-       )
-  )
-  select string_agg(x.nspname || '.' || x.relname, ', ' order by x.nspname, x.relname)
+  select string_agg(n.nspname || '.' || c.relname, ', ' order by n.nspname, c.relname)
     into tabelas_sem_isolamento
-    from auditadas x
-   where not x.relrowsecurity
-      or not x.relforcerowsecurity
-      or not exists (
-        select 1 from pg_attribute a
-         where a.attrelid = x.oid and a.attname = 'tenant_id'
-           and a.attnum > 0 and not a.attisdropped
-      )
-      or not exists (select 1 from pg_policy pol where pol.polrelid = x.oid);
+    from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where c.oid = any(oids_auditados) and c.relkind in ('r', 'p')
+     -- A ÂNCORA do escopo é a única exceção legítima: ela não guarda dado de
+     -- tenant (guarda pid + id de transação + o tenant corrente da conexão) e
+     -- por isso não tem `tenant_id` nem política. O que a protege é não ter
+     -- privilégio NENHUM concedido à aplicação — verificado na `0004` §6.2,
+     -- inclusive contra caminhos indiretos (view sobre ela).
+     and c.oid is distinct from to_regclass('intensicare_escopo.selo')
+     and (
+       not c.relrowsecurity
+       or not c.relforcerowsecurity
+       or not exists (
+         select 1 from pg_attribute a
+          where a.attrelid = c.oid and a.attname = 'tenant_id'
+            and a.attnum > 0 and not a.attisdropped
+       )
+       or not exists (select 1 from pg_policy pol where pol.polrelid = c.oid)
+     );
   if tabelas_sem_isolamento is not null then
     raise exception
       'relação(ões) sem isolamento completo (tenant_id + RLS + FORCE + política): %',

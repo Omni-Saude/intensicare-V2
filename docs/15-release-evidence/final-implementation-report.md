@@ -55,10 +55,10 @@ O resultado mensurável:
 | Métrica | Baseline (`ecd32d5`) | Agora | Δ |
 |---|---|---|---|
 | `pnpm verify` | exit 0 | **exit 0** | preservado |
-| Testes verdes | 1.026 | **1.457** | +431 |
+| Testes verdes | 1.026 | **1.476** | +450 |
 | `expected fail` | **1 (P0)** | **0** | eliminado |
 | Testes pulados | 0 | **0** | preservado |
-| Suíte contra PostgreSQL real | inexistente | **44 testes bloqueantes** | nova |
+| Suíte contra PostgreSQL real | inexistente | **47 testes bloqueantes** | nova |
 | Verificações de contrato | 0 (sem gate) | **148** | nova |
 | E2E de navegador autenticado | inexistente | **22/22 verdes** (4 execuções observadas) | nova |
 
@@ -76,7 +76,7 @@ não escreveram o código, e a taxa de achado **não convergiu**:
 | 2ª — sobre as correções | **`CONFIRMADO_COM_RESSALVAS`** | 6 (P2/P3) | 6 | 0 |
 | 3ª — sobre as correções da 2ª | **`REFUTADO`** | 9 (2 P1) | 8 | 1 |
 | 4ª — sobre as correções da 3ª | **`REFUTADO`** | 12 (P2/P3) | 9 | 3 |
-| 5ª — sobre as correções da 4ª | **`REFUTADO`** | 12 (**5 P1**) | em correção | — |
+| 5ª — sobre as correções da 4ª | **`REFUTADO`** | 12 (**5 P1**) | 10 | 2 |
 
 Somam-se **dois** defeitos achados fora das revisões: um por execução de
 navegador real e um pelo orquestrador ao validar as migrações contra PostgreSQL
@@ -285,35 +285,35 @@ disponível:
 
 | Pacote | Testes |
 |---|---|
-| `apps/api` | 326 |
+| `apps/api` | 336 |
 | `packages/kernel-clinico` | 305 |
 | `packages/rule-bundle` | 302 |
-| `apps/web` | 182 |
+| `apps/web` | 187 |
 | `packages/vigilancia` | 77 |
-| `packages/persistencia` | 79 |
+| `packages/persistencia` | 83 |
 | `packages/conformidade` | 62 |
 | `packages/observabilidade` | 55 |
 | `packages/contratos` | 38 |
 | `packages/dominio` | 18 |
 | `packages/fixtures-sinteticas` | 13 |
-| **Total** | **1.457 verdes · 0 falhas · 0 pulados · 0 `expected fail`** |
+| **Total** | **1.476 verdes · 0 falhas · 0 pulados · 0 `expected fail`** |
 
-A suíte de fronteira **não soma** ao total acima — ela é subconjunto dos 79 já
+A suíte de fronteira **não soma** ao total acima — ela é subconjunto dos 83 já
 contados para `packages/persistencia`. Executada isoladamente em modo
 bloqueante, `pnpm --filter @intensicare/persistencia test:fronteira` →
-**44 verdes** contra PostgreSQL 16.14 efêmero real;
+**47 verdes** contra PostgreSQL 16.14 efêmero real;
 `node scripts/check_contratos.mjs` → **148 verificações**;
 `python3 scripts/check_doc_conventions.py` → 249 arquivos, sem violação;
 `python3 scripts/check_forbidden_content.py` → 590 arquivos, sem achado.
 
 **Checkout limpo e hermético** (§12): clone fresco da branch em diretório
 separado, `pnpm install --frozen-lockfile` seguido de `pnpm verify` →
-**exit 0, os mesmos 1.457 testes em 11 pacotes, zero falhas e zero pulados**. O
+**exit 0, os mesmos 1.476 testes em 11 pacotes, zero falhas e zero pulados**. O
 verde não depende de árvore aquecida — a armadilha que o ciclo 6 documentou
 (typecheck antes de build, verde local por acidente) não voltou.
 
 **Qualificação obrigatória da contagem** (achado 4 da primeira revisão): o
-número 1.457 vale para uma máquina **com PostgreSQL disponível**. Sem ele, a
+número 1.476 vale para uma máquina **com PostgreSQL disponível**. Sem ele, a
 suíte de fronteira se pula com aviso ruidoso em desenvolvimento e **falha** sob
 `CI=true` ou `IC_FRONTEIRA_PG=obrigatoria`. Para que "verify verde" passe a
 significar "fronteira P0 exercitada", `ci-plataforma.yml` recebeu
@@ -622,6 +622,7 @@ do escopo de escrita desta rodada, listadas em
 | Execução AMH e ambientes `stg`/`prod` | OS-01..OS-24; IG 1.1.0 | G3, G8 | Fora do alcance da V2 |
 | **Réplica de leitura e transação somente-leitura** | Decisão de arquitetura: enquanto a âncora de escopo for o selo em tabela, `instalar` precisa escrever, e **nenhuma réplica de leitura pode servir a aplicação**. As três alternativas já foram MEDIDAS contra PostgreSQL 16.14 e não servem — linha, advisory lock e sequência não sobrevivem a `ROLLBACK TO SAVEPOINT` | Escalar leitura por réplica é impossível sem trocar a âncora; `default_transaction_read_only` é `PGC_USERSET`, então o próprio app pode inviabilizar-se | Ato do titular — só entra em jogo se réplica de leitura entrar no plano |
 | **`BLK-0003` é internamente contraditório** | O registro traz `status: RESOLVIDO COM ESCOPO` e, no mesmo bloco YAML, `who_must_act: AUTH-SECURITY — UNASSIGNED — VALIDATION REQUIRED`. As duas não podem valer juntas | Enquanto durar, qualquer citação do bloqueio é ambígua: este relatório o cita pelo `who_must_act`, e um leitor que olhe o `status` conclui o oposto | Reconciliação documental é engenharia; **nomear o papel é ato do titular** |
+| **Recusa de comando não deixa rastro de auditoria** | `transitionWorkItem` devolve `{outcome:"conflict"}` e **retorna antes** do `insertAuditEvent` — o produto não registra a tentativa negada. Descoberto ao corrigir um teste cujo nome prometia o contrário; um teste irmão **afirma** o comportamento atual | Se a política clínica exigir rastro de tentativa negada, `SEC-0032`/`SAF-0023` não estão satisfeitos. Há teste que **mede** a lacuna, para que fechá-la exija revisitar a nota | **Quais eventos exigem rastro é política de auditoria clínica** — decisão do titular; a mudança em `clinical-repository.ts` é engenharia |
 | **Campo `execucao` da matriz de acessibilidade conflaciona duas coisas** | Quatro dos cinco critérios `manual_obrigatorio` estão com `execucao: "executado"`, registrando que a **cobertura automatizada** rodou — não que a validação manual ocorreu. Um único campo não expressa "automatizado feito, manual pendente" | Risco de leitura de que a acessibilidade está validada quando não está | Engenharia para separar os campos; a classificação WCAG em si é do titular |
 
 **Nenhum pedido foi enviado, nenhuma pessoa nomeada, nenhum risco aceito e
@@ -707,10 +708,10 @@ git checkout codex/finalizacao-plataforma-v2
 
 # Gate completo (exige PostgreSQL local para exercitar a fronteira P0)
 pnpm install --frozen-lockfile
-pnpm verify                     # esperado: exit 0, 1.457 testes verdes
+pnpm verify                     # esperado: exit 0, 1.476 testes verdes
 
 # Fronteira de isolamento contra PostgreSQL real, em modo BLOQUEANTE
-pnpm test:fronteira             # esperado: 44 verdes
+pnpm test:fronteira             # esperado: 47 verdes
 
 # Cluster PostgreSQL efêmero, se não houver servidor
 node scripts/pg-efemero.mjs up      # JSON de uma linha na stdout

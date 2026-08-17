@@ -97,11 +97,22 @@
 --     aplicação, porque nela toda transação é somente-leitura por definição.
 --     Escalar leitura por réplica exigirá outra âncora de escopo — o que é
 --     decisão de arquitetura e de topologia, não deste arquivo.
---   * `nextval` também ATRIBUI o id de transação. Como os `bigserial` deste
---     esquema chamam `nextval`, qualquer uso de sequência ANTES do `instalar`
---     torna a instalação recusada. É por isso que o escopo tem de ser a
---     primeira instrução após `begin` — contrato verificado nos quatro
---     caminhos de transação do produto.
+--   * `nextval` atribui o id de transação de forma CONDICIONAL — e esta
+--     linha já esteve errada nas duas direções. Medido contra PostgreSQL
+--     16.14: `nextval` atribui id de topo APENAS nas chamadas que precisam
+--     gravar a tupla da sequência em WAL (a primeira, e a seguinte a um
+--     `setval`); dentro da janela de cache (`SEQ_LOG_VALS` = 32 valores) NÃO
+--     atribui. Logo um `nextval` antes do `instalar` derruba o contrato
+--     "escopo é a primeira escrita" de forma INTERMITENTE, cerca de uma vez a
+--     cada 32 — que é o modo de falha mais caro de diagnosticar. As duas
+--     metades do comportamento estão fixadas em
+--     `../postgres/fronteira-postgres.test.ts` (ACHADO-16).
+--
+--     O que ancora o contrato é a atribuição de id por ESCRITA (de heap ou de
+--     sequência), não `nextval` em particular. Que os quatro caminhos de
+--     transação do produto instalem o escopo como primeira instrução após
+--     `begin` foi verificado por LEITURA de código, NÃO por teste — trate como
+--     NÃO VERIFICADO até existir um teste que o exerça.
 --
 -- IDEMPOTENTE e reaplicável. PREMISSA reversível (ADR-0016, regime
 -- GDEC-0015/GDEC-0017). Não fecha SEC-0009, SAF-0008, THR-0050 nem MG-G6.
@@ -398,23 +409,46 @@ begin
   -- então o privilégio de pg_write_all_data só aparece depois de um SET ROLE.
   -- Cobre privilégio de TABELA e de COLUNA: um GRANT UPDATE (tenant_id) não
   -- aparece em has_table_privilege, e bastaria para forjar o selo.
+  -- CORRIGIDO (5ª revisão adversarial, ACHADO-15/P1): avaliar o privilégio
+  -- sobre a RELAÇÃO `selo` deixava passar o caminho INDIRETO. Uma view simples
+  -- sobre ela é AUTO-ATUALIZÁVEL e roda com os direitos do DONO (o migrador,
+  -- dono do selo): o privilégio fica sobre a VIEW, e nem `has_table_privilege`
+  -- nem `has_column_privilege` sobre `selo` o enxergam. Com isso a aplicação
+  -- reescrevia o próprio selo e PIVOTAVA de tenant — reabrindo o ACHADO-02.
+  --
+  -- O conjunto abaixo é o FECHO das relações que alcançam o selo: ele próprio
+  -- mais toda view/matview cuja regra de reescrita (`pg_rewrite`) dependa dele,
+  -- transitivamente (view sobre view sobre selo).
+  with recursive alcancam_o_selo as (
+    select to_regclass('intensicare_escopo.selo') as oid
+    union
+    select r.ev_class
+      from pg_depend d
+      join pg_rewrite r on r.oid = d.objid
+      join alcancam_o_selo a on a.oid = d.refobjid
+     where d.classid = 'pg_rewrite'::regclass
+       and d.refclassid = 'pg_class'::regclass
+       and r.ev_class is distinct from d.refobjid
+  )
   select count(*) into quantidade
     from pg_roles alvo
-   where pg_has_role('intensicare_app', alvo.oid, 'MEMBER')
+   cross join alcancam_o_selo rel
+   where rel.oid is not null
+     and pg_has_role('intensicare_app', alvo.oid, 'MEMBER')
      and (
-       has_table_privilege(alvo.oid, 'intensicare_escopo.selo',
+       has_table_privilege(alvo.oid, rel.oid,
          'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
        or exists (
          select 1 from pg_attribute a
-          where a.attrelid = 'intensicare_escopo.selo'::regclass
+          where a.attrelid = rel.oid
             and a.attnum > 0 and not a.attisdropped
-            and has_column_privilege(alvo.oid, a.attrelid, a.attnum,
+            and has_column_privilege(alvo.oid, rel.oid, a.attnum,
                   'SELECT, INSERT, UPDATE, REFERENCES')
        )
      );
   if quantidade > 0 then
     raise exception
-      'intensicare_app alcança % papel(is) com privilégio sobre a âncora intensicare_escopo.selo (ex.: pg_write_all_data) — o selo ficaria forjável',
+      'intensicare_app alcança a âncora intensicare_escopo.selo por % caminho(s) de privilégio (direto, por coluna, por papel predefinido como pg_write_all_data, ou por VIEW sobre o selo) — o selo ficaria forjável',
       quantidade
       using errcode = '42501';
   end if;
