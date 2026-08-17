@@ -261,6 +261,11 @@ describe("KPIR-14 contra o esquema atual — falha fechada, não fabrica número
       });
       expect(episodio.ancoraDeAlta.tipo).toBe("ausente");
     }
+    // Guarda de não-vacuidade, simétrica à de `lido.episodios` acima: as três
+    // variantes de tratamento de transferência são o ponto do teste — sem
+    // nenhuma, "todo episódio cai em DC(KPIR-14)" seria afirmado sem abrir
+    // variante alguma.
+    expect(resultado.variantes, "nenhuma variante KPIR-14 foi produzida").toHaveLength(3);
     for (const variante of resultado.variantes) {
       const aberta = variante.abrir(RECONHECIMENTO_DE_MONITORIZACAO);
       expect(aberta.altasVivas).toBe(0);

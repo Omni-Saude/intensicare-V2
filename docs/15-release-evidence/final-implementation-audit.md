@@ -234,7 +234,7 @@ execução, está em `docs/15-release-evidence/final-implementation-report.md`.
 
 ## 5. Disposição final (2026-08-17)
 
-Estado ao fim da rodada. `pnpm verify` **exit 0**, **1.476 testes verdes**,
+Estado ao fim da rodada. `pnpm verify` **exit 0**, **1.477 testes verdes**,
 **zero pulados**, **zero falhas**, **zero `expected fail`** (baseline: 1.026 +
 1 `expected fail` P0).
 

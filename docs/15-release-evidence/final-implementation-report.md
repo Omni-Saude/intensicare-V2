@@ -55,7 +55,7 @@ O resultado mensurável:
 | Métrica | Baseline (`ecd32d5`) | Agora | Δ |
 |---|---|---|---|
 | `pnpm verify` | exit 0 | **exit 0** | preservado |
-| Testes verdes | 1.026 | **1.476** | +450 |
+| Testes verdes | 1.026 | **1.477** | +451 |
 | `expected fail` | **1 (P0)** | **0** | eliminado |
 | Testes pulados | 0 | **0** | preservado |
 | Suíte contra PostgreSQL real | inexistente | **47 testes bloqueantes** | nova |
@@ -291,12 +291,12 @@ disponível:
 | `apps/web` | 187 |
 | `packages/vigilancia` | 77 |
 | `packages/persistencia` | 83 |
-| `packages/conformidade` | 62 |
+| `packages/conformidade` | 63 |
 | `packages/observabilidade` | 55 |
 | `packages/contratos` | 38 |
 | `packages/dominio` | 18 |
 | `packages/fixtures-sinteticas` | 13 |
-| **Total** | **1.476 verdes · 0 falhas · 0 pulados · 0 `expected fail`** |
+| **Total** | **1.477 verdes · 0 falhas · 0 pulados · 0 `expected fail`** |
 
 A suíte de fronteira **não soma** ao total acima — ela é subconjunto dos 83 já
 contados para `packages/persistencia`. Executada isoladamente em modo
@@ -306,14 +306,53 @@ bloqueante, `pnpm --filter @intensicare/persistencia test:fronteira` →
 `python3 scripts/check_doc_conventions.py` → 249 arquivos, sem violação;
 `python3 scripts/check_forbidden_content.py` → 590 arquivos, sem achado.
 
+**Independência de fuso horário** (`OBSERVED`, execução real e isolada): a suíte
+completa foi executada sob `TZ=Pacific/Kiritimati` (UTC+14) e sob
+`TZ=Pacific/Niue` (UTC−11) — **1.477 testes verdes, zero falhas, exit 0 nas
+duas**. Nenhuma dependência de fuso.
+
+Registro de uma medição errada e sua correção, porque o processo importa tanto
+quanto o número: uma primeira tentativa desta mesma medição foi feita **em
+paralelo** com outros trabalhos pesados e produziu falhas que foram
+inicialmente relatadas como dependência de fuso. Eram **contenção**: um único
+`pnpm verify` leva esta máquina a `load ~28`, e suítes com PGlite estouram o
+limite de 30 s sob concorrência — o sinal era um caso de **731548 ms**. Refeita
+com a máquina isolada, a suíte passa integralmente nos dois extremos. A
+alegação anterior foi retirada.
+
+**Independência de DATA**: `FECHADA EM TODO O WORKSPACE`. Em `apps/web` uma
+bomba-relógio **real** armou às `12:55:00Z` — `pnpm verify` foi de exit 0 a
+vermelho sem que um arquivo mudasse — e foi corrigida na **estrutura** (caminho
+único de construção que não aceita o parâmetro de escape), com prova sob o
+relógio do sistema em 2027 e em 2019 (187 verdes nas duas).
+
+Os demais pacotes foram medidos depois, **um por vez em máquina ociosa**
+(load 2,7–8,0), sob `2027-03-05` e `2019-11-02`: os **1.289 testes verdes nas
+duas pontas, zero falhas**. O instrumento desloca **apenas `Date`**
+(`setTimeout`/`performance.now` intactos) e foi validado nos dois sentidos antes
+do uso. Causa medida da imunidade: `kernel-clinico/src`, `persistencia/src` e
+`vigilancia/src` têm **zero** ocorrências de `Date.now()`/`new Date()` — todo
+tempo entra por parâmetro, como o kernel foi projetado. Nenhuma correção foi
+necessária, e nenhum shim permanente foi imposto: seria mudar 11 suítes sem
+defeito que o justificasse.
+
+**Risco residual, não fechado e nomeado:** existem pontos de fuga de relógio em
+**código de produto**, com default de parede, que um teste futuro pode esquecer
+de injetar — `apps/api/src/eventos/ticket.ts:88,104,113` (expiração de ticket),
+`auth/verificador.ts:118`, `composicao/regras.ts:185`,
+`packages/conformidade/src/runner.ts:65` e `apps/api/src/db.ts:179,327,557,827`.
+Hoje **nenhum** produz teste dependente de data — isso foi medido, não suposto.
+O tratamento estrutural que `apps/web` recebeu (caminho único que não aceita o
+parâmetro) é mudança de produto e precisa de dono.
+
 **Checkout limpo e hermético** (§12): clone fresco da branch em diretório
 separado, `pnpm install --frozen-lockfile` seguido de `pnpm verify` →
-**exit 0, os mesmos 1.476 testes em 11 pacotes, zero falhas e zero pulados**. O
+**exit 0, os mesmos 1.477 testes em 11 pacotes, zero falhas e zero pulados**. O
 verde não depende de árvore aquecida — a armadilha que o ciclo 6 documentou
 (typecheck antes de build, verde local por acidente) não voltou.
 
 **Qualificação obrigatória da contagem** (achado 4 da primeira revisão): o
-número 1.476 vale para uma máquina **com PostgreSQL disponível**. Sem ele, a
+número 1.477 vale para uma máquina **com PostgreSQL disponível**. Sem ele, a
 suíte de fronteira se pula com aviso ruidoso em desenvolvimento e **falha** sob
 `CI=true` ou `IC_FRONTEIRA_PG=obrigatoria`. Para que "verify verde" passe a
 significar "fronteira P0 exercitada", `ci-plataforma.yml` recebeu
@@ -708,7 +747,7 @@ git checkout codex/finalizacao-plataforma-v2
 
 # Gate completo (exige PostgreSQL local para exercitar a fronteira P0)
 pnpm install --frozen-lockfile
-pnpm verify                     # esperado: exit 0, 1.476 testes verdes
+pnpm verify                     # esperado: exit 0, 1.477 testes verdes
 
 # Fronteira de isolamento contra PostgreSQL real, em modo BLOQUEANTE
 pnpm test:fronteira             # esperado: 47 verdes
