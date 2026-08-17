@@ -212,10 +212,15 @@ topologia:
   aplicação**, porque nela toda transação é somente-leitura por definição.
   Escalar leitura por réplica exigirá outra âncora de escopo — decisão de
   arquitetura, não deste pacote;
-- `nextval` **também atribui** o id de transação. Como os `bigserial` chamam
-  `nextval`, qualquer uso de sequência **antes** do `instalar` torna a
-  instalação recusada. É por isso que o escopo tem de ser a primeira instrução
-  após `begin`.
+- `nextval` atribui o id de transação de forma **condicional**: medido contra
+  PostgreSQL 16.14, só nas chamadas que precisam gravar a tupla da sequência em
+  WAL (a primeira, e a seguinte a um `setval`); dentro da janela de cache
+  (`SEQ_LOG_VALS` = 32) não atribui. Um `nextval` antes do `instalar` portanto
+  quebra o contrato **de forma intermitente**, cerca de 1 vez em 32. O que
+  ancora o contrato é a atribuição de id por **escrita**, não `nextval` em si.
+  Que os quatro caminhos de transação do produto instalem o escopo como
+  primeira instrução após `begin` foi verificado por **leitura de código, não
+  por teste** — está registrado como **NÃO VERIFICADO**.
 
 ### Contexto vazio ≠ contexto ausente (OBSERVED, PostgreSQL 16 real)
 

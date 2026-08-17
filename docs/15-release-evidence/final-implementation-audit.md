@@ -234,13 +234,13 @@ execução, está em `docs/15-release-evidence/final-implementation-report.md`.
 
 ## 5. Disposição final (2026-08-17)
 
-Estado ao fim da rodada. `pnpm verify` **exit 0**, **1.457 testes verdes**,
+Estado ao fim da rodada. `pnpm verify` **exit 0**, **1.476 testes verdes**,
 **zero pulados**, **zero falhas**, **zero `expected fail`** (baseline: 1.026 +
 1 `expected fail` P0).
 
 | ID | Estado final | Evidência | O que permanece |
 |---|---|---|---|
-| ACH-01 | **RESOLVIDO com limite** | 44 testes bloqueantes contra PostgreSQL 16.14 real; migrações `0003` e `0004`; `expected fail` P0 **eliminado** (polaridade invertida, não escondida) | Não é "RLS verificada": exige `DEC-G0-02` e `MG-G6`. Troca de tenant entre transações distintas segue aberta — é `SEC-0001`, não fechável pelo banco |
+| ACH-01 | **RESOLVIDO com limite** | 47 testes bloqueantes contra PostgreSQL 16.14 real; migrações `0003` e `0004`; `expected fail` P0 **eliminado** (polaridade invertida, não escondida) | Não é "RLS verificada": exige `DEC-G0-02` e `MG-G6`. Troca de tenant entre transações distintas segue aberta — é `SEC-0001`, não fechável pelo banco |
 | ACH-02 | **PARCIAL / BLOQUEADO** | 71 testes no escopo de autenticação, incluindo `alg=none`, confusão HS/RS, issuer, audiência, `kid`, rotação, `exp`/`nbf`, adulteração, cross-tenant, m2m e ausência de fallback | IdP real bloqueado por `BLK-0003` (`AUTH-SECURITY` UNASSIGNED). Adaptador OIDC só verificado contra servidor de teste local |
 | ACH-03 | **RESOLVIDO** | 61 testes; `PERFIL` obrigatório sem default; PGlite/fixtures/sintético recusados fora de `test`/`dev-synthetic` | `PortaMigracao` (lock consultivo, versão durável de schema) sem implementação real |
 | ACH-04 | **PARCIAL** | 34 testes; despachante versionado sobre bundle verificado; kill switch; rollback por `behaviorHash` | GCS **não despachável**: falta artefato de bundle, cuja autoria é ato clínico. 7 ratificações abertas (R1–R7) |

@@ -680,9 +680,42 @@ describe("B. append-only e imutabilidade sob tentativa ativa de adulteração", 
     TEMPO_LIMITE_MS,
   );
 
+  /**
+   * ACHADO-8b (5ª revisão adversarial) — ESTE TESTE FOI RENOMEADO PORQUE O
+   * NOME ANTERIOR ALEGAVA UM COMPORTAMENTO QUE O PRODUTO NÃO TEM.
+   *
+   * Ele se chamava "a auditoria registra a RECUSA, não só o sucesso". Mas quem
+   * inseria a linha `newState: "recusada"` era o PRÓPRIO TESTE, e só depois
+   * afirmava que ela existia: se a aplicação parasse de registrar recusas, o
+   * teste continuaria verde. Não negava nada.
+   *
+   * Investigado antes de renomear: o produto NÃO registra recusa.
+   * `transitionWorkItem` (`repositories/clinical-repository.ts`) devolve
+   * `{ outcome: "conflict" }` e RETORNA ANTES de chamar `insertAuditEvent` —
+   * e o teste irmão "SEC-0027/SAF-0017" AFIRMA esse comportamento
+   * (`auditoriaDepois` tem o mesmo tamanho de `auditoriaAntes`). Ou seja: o
+   * nome antigo não era só improvável, era CONTRADITO por outro teste deste
+   * mesmo arquivo.
+   *
+   * Exercitar o caminho que PRODUZ a recusa é, portanto, impossível daqui: o
+   * caminho não existe. Fazê-lo existir é mudança de comportamento em
+   * `clinical-repository.ts` (fora do meu escopo de escrita) e, mais do que
+   * isso, é decisão de POLÍTICA DE AUDITORIA CLÍNICA — que eventos precisam
+   * de rastro é matéria de SEC-0032/SAF-0023 e do titular, não de um agente.
+   *
+   * LACUNA REGISTRADA (não fechada): recusa de comando não deixa rastro
+   * consultável. O que este teste prova é apenas o round-trip de
+   * `insertAuditEvent` para um evento cujo `newState` é "recusada".
+   */
   it(
-    "SEC-0032 — a auditoria registra a RECUSA, não só o sucesso (uma tentativa negada deixa rastro consultável)",
+    "SEC-0032 — round-trip de insertAuditEvent com newState 'recusada' (NÃO prova que o produto registre recusas — ver nota acima)",
     async () => {
+      const antes = await withTenantTransaction(db, tenant.tenantId, (tx) => listAuditEvents(tx));
+      expect(
+        antes.some((a) => a.newState === "recusada"),
+        "já havia evento 'recusada' antes da inserção — o teste mediria outra coisa",
+      ).toBe(false);
+
       await withTenantTransaction(db, tenant.tenantId, (tx) =>
         insertAuditEvent(tx, {
           id: `${tenant.tenantId}-AUDIT-RECUSA`,
@@ -696,10 +729,49 @@ describe("B. append-only e imutabilidade sob tentativa ativa de adulteração", 
           idempotencyKey: `${tenant.tenantId}-CORR-02`,
         }),
       );
-      const auditoria = await withTenantTransaction(db, tenant.tenantId, (tx) =>
+      const depois = await withTenantTransaction(db, tenant.tenantId, (tx) => listAuditEvents(tx));
+      expect(depois.some((a) => a.newState === "recusada")).toBe(true);
+      expect(depois.length, "a inserção não acrescentou exatamente um evento").toBe(
+        antes.length + 1,
+      );
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    "SEC-0032 — LACUNA: uma recusa REAL do produto (conflito de versão) NÃO deixa rastro na auditoria",
+    async () => {
+      // Contraparte com dentes do teste acima: exercita o caminho que
+      // realmente produz uma recusa e mede que ele não audita nada. Se alguém
+      // implementar o registro de recusa, ESTE teste falha e obriga a
+      // revisitar a lacuna — em vez de a melhoria passar despercebida.
+      const auditoriaAntes = await withTenantTransaction(db, tenant.tenantId, (tx) =>
         listAuditEvents(tx),
       );
-      expect(auditoria.some((a) => a.newState === "recusada")).toBe(true);
+      const resultado = await withTenantTransaction(db, tenant.tenantId, (tx) =>
+        transitionWorkItem(tx, {
+          workItemId: tenant.workItemId,
+          tenantId: tenant.tenantId,
+          expectedVersion: 999,
+          nextState: "reconhecido",
+          actorId: `${tenant.tenantId}-CLIN-01`,
+          command: "acknowledge",
+          idempotencyKey: `${tenant.tenantId}-CORR-LACUNA`,
+          occurredAt: syntheticInstant("2026-08-16T10:10:00.000Z"),
+          outboxEventType: "alerta-atualizado",
+          orderingScope: `work_item:${tenant.workItemId}`,
+        }),
+      );
+      expect(resultado, "a transição deveria ter sido recusada por versão").toEqual({
+        outcome: "conflict",
+      });
+      const auditoriaDepois = await withTenantTransaction(db, tenant.tenantId, (tx) =>
+        listAuditEvents(tx),
+      );
+      expect(
+        auditoriaDepois.length,
+        "o produto passou a auditar recusas — a lacuna registrada acima foi fechada, revisite a nota",
+      ).toBe(auditoriaAntes.length);
     },
     TEMPO_LIMITE_MS,
   );

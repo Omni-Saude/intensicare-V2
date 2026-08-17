@@ -114,19 +114,35 @@ const SQL_DIAGNOSTICO_IDENTIDADE = `
     -- não aparecia nele, o detector devolvia false, o pool abria, e a
     -- aplicação reescrevia a coluna do selo — UPDATE sem WHERE não exige
     -- SELECT. A verificação passa a cobrir também privilégio de COLUNA.
-    (select coalesce(bool_or(
+    -- CORRIGIDO (5a revisao adversarial, ACHADO-15/P1): avaliar o privilegio
+    -- sobre a RELACAO selo deixava passar o caminho INDIRETO. Uma view simples
+    -- sobre ela e AUTO-ATUALIZAVEL e roda com os direitos do DONO: o
+    -- privilegio fica sobre a VIEW e some das duas funcoes. O conjunto abaixo
+    -- e o FECHO transitivo das relacoes que alcancam o selo via pg_rewrite.
+    (with recursive alcancam_o_selo as (
+       select to_regclass('intensicare_escopo.selo') as oid
+       union
+       select r.ev_class
+         from pg_depend d
+         join pg_rewrite r on r.oid = d.objid
+         join alcancam_o_selo a on a.oid = d.refobjid
+        where d.classid = 'pg_rewrite'::regclass
+          and d.refclassid = 'pg_class'::regclass
+          and r.ev_class is distinct from d.refobjid
+     )
+     select coalesce(bool_or(
               has_table_privilege(
-                alvo.oid, ancora.oid,
+                alvo.oid, rel.oid,
                 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
               or exists (
                 select 1 from pg_attribute a
-                 where a.attrelid = ancora.oid and a.attnum > 0 and not a.attisdropped
-                   and has_column_privilege(alvo.oid, ancora.oid, a.attnum,
+                 where a.attrelid = rel.oid and a.attnum > 0 and not a.attisdropped
+                   and has_column_privilege(alvo.oid, rel.oid, a.attnum,
                          'SELECT, INSERT, UPDATE, REFERENCES')
               )), false)
        from pg_roles alvo
-       cross join (select to_regclass('intensicare_escopo.selo') as oid) ancora
-      where ancora.oid is not null
+       cross join alcancam_o_selo rel
+      where rel.oid is not null
         and pg_has_role(session_user, alvo.oid, 'MEMBER')) as alcanca_ancora_do_escopo,
     -- CORRIGIDO (4a revisao adversarial, ACHADO-11/P2): esta guarda partia de
     -- nspname = 'public'. Uma PARTICAO em outro esquema, de uma tabela

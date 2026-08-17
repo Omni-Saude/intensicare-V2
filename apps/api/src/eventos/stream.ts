@@ -131,8 +131,13 @@ export interface OpcoesGatewayEventos {
    * que o servidor possa investigar; nada disso vai para o fio. Quem fia é
    * responsável por redigir o que registrar — o erro pode conter detalhe
    * de infraestrutura. Padrão: silêncio (nunca `console.log`).
+   *
+   * O retorno admite `Promise<void>` DE PROPÓSITO (ACHADO 9): declarar
+   * `=> void` não impedia um observador `async` — a assinabilidade de
+   * retorno `void` do TypeScript aceita `async` sem erro algum —, apenas
+   * escondia o caso. Declarado assim, o gateway é obrigado a tratá-lo, e é.
    */
-  readonly registrarFalha?: (origem: OrigemDeFalha, erro: unknown) => void;
+  readonly registrarFalha?: (origem: OrigemDeFalha, erro: unknown) => void | Promise<void>;
 }
 
 /**
@@ -140,7 +145,7 @@ export interface OpcoesGatewayEventos {
  * atribuível a um ponto do ciclo de vida, em vez de virar "erro no
  * stream".
  */
-export type OrigemDeFalha = "iniciar" | "bombear" | "pulsar" | "drenar";
+export type OrigemDeFalha = "iniciar" | "bombear" | "pulsar" | "drenar" | "encerrar";
 
 /** Estados que o SERVIDOR emite. `reconnecting`/`reconciled` são do cliente. */
 type EstadoEmitidoPeloServidor = Extract<
@@ -249,28 +254,28 @@ class ConexaoEventos {
    * iludido (ADR-0011 P5/P6/P10; prompt §20).
    */
   async #encerrarPorFalha(origem: OrigemDeFalha, erro: unknown): Promise<void> {
+    // Não rejeita porque NENHUM dos dois passos rejeita — garantia
+    // estrutural, não bloco defensivo morto.
+    await this.#reportarFalha(origem, erro);
+    await this.encerrarCom("falha-interna", null);
+  }
+
+  /**
+   * Entrega a falha ao observador do servidor sem jamais deixá-la voltar.
+   *
+   * ACHADO 9: a versão anterior chamava o observador SEM `await`, dentro de
+   * um `try/catch` síncrono. Como o tipo declarado devolvia `void` e o
+   * TypeScript aceita uma função `async` nesse contrato sem erro, um
+   * observador que rejeitasse escapava de dentro da própria função que
+   * existe para impedir escapes. O `Promise.resolve` DENTRO do `try` cobre
+   * os dois modos: o lançamento síncrono acontece antes dele e é pego pelo
+   * `try`; a rejeição assíncrona é pega pelo `await`.
+   */
+  async #reportarFalha(origem: OrigemDeFalha, erro: unknown): Promise<void> {
     try {
-      this.#opcoes.registrarFalha?.(origem, erro);
+      await Promise.resolve(this.#opcoes.registrarFalha?.(origem, erro));
     } catch {
-      // Observador defeituoso não pode impedir o encerramento.
-    }
-    try {
-      await this.encerrarCom("falha-interna", null);
-    } catch {
-      // Último recurso: se nem a instrução pôde ser escrita, o socket
-      // fecha assim mesmo. Um fim sem instrução ainda é melhor que uma
-      // conexão pendurada com aparência de viva.
-      try {
-        this.#encerrada = true;
-        this.#pararTimers();
-        this.#cancelarAssinatura?.();
-        this.#cancelarAssinatura = undefined;
-        this.#escritor.encerrar();
-      } catch {
-        // Este método é o FIM da cadeia de tratamento: ele não pode
-        // rejeitar, ou `#dispararProtegido` reintroduziria exatamente a
-        // promessa sem tratamento final que o ACHADO 7 aponta.
-      }
+      // Observador defeituoso não altera o fluxo de encerramento.
     }
   }
 
@@ -294,9 +299,24 @@ class ConexaoEventos {
   ): Promise<void> {
     if (this.#encerrada) return;
     this.#encerrada = true;
-    this.#pararTimers();
-    this.#cancelarAssinatura?.();
-    this.#cancelarAssinatura = undefined;
+
+    // Este método NÃO PODE REJEITAR: é aguardado em dois sítios que já
+    // executaram `reply.hijack()`, onde uma rejeição não teria como virar
+    // resposta HTTP. A garantia é estrutural — todo passo abaixo está
+    // isolado, e `#reportarFalha` também não rejeita.
+    const falhas: unknown[] = [];
+    try {
+      this.#pararTimers();
+    } catch (erro) {
+      falhas.push(erro);
+    }
+    try {
+      this.#cancelarAssinatura?.();
+    } catch (erro) {
+      falhas.push(erro);
+    } finally {
+      this.#cancelarAssinatura = undefined;
+    }
 
     const instrucao: MensagemInstrucaoReconciliacao = {
       motivo,
@@ -313,11 +333,22 @@ class ConexaoEventos {
         montarQuadro({ evento: EVENTO_SSE_INSTRUCAO_RECONCILIACAO, dados: instrucao }),
       );
       this.#emitirEstado("offline");
-    } finally {
-      // O encerramento do socket não depende de a instrução ter sido
+    } catch (erro) {
+      // ACHADO 10: era `finally` SEM `catch`. Duas consequências, ambas
+      // ruins: o método podia propagar para dois sítios pós-hijack sem
+      // proteção, e uma falha em `encerrar()` SUBSTITUÍA a exceção
+      // original. Agora cada passo é isolado e as falhas são coletadas na
+      // ordem em que ocorrem.
+      falhas.push(erro);
+    }
+    try {
+      // O fechamento do socket não depende de a instrução ter sido
       // escrita: conexão pendurada é pior que instrução perdida.
       this.#escritor.encerrar();
+    } catch (erro) {
+      falhas.push(erro);
     }
+    for (const falha of falhas) await this.#reportarFalha("encerrar", falha);
   }
 
   #pararTimers(): void {
@@ -579,9 +610,22 @@ export function registrarGatewayEventos(
   const controle: ControleDoGateway = {
     async encerrarTodas(motivo = "desligamento-servidor") {
       const vivas = [...conexoes];
-      conexoes.clear();
-      for (const conexao of vivas) await conexao.encerrarCom(motivo, null);
-      return vivas.length;
+      let encerradas = 0;
+      for (const conexao of vivas) {
+        try {
+          await conexao.encerrarCom(motivo, null);
+          encerradas += 1;
+        } catch {
+          // ACHADO 10: `conexoes.clear()` acontecia ANTES do laço, então
+          // uma conexão que lançasse abortava o laço e deixava as demais
+          // sem encerramento, sem instrução e já invisíveis ao controle.
+          // Agora cada conexão é isolada e só sai do conjunto DEPOIS da
+          // tentativa.
+        } finally {
+          conexoes.delete(conexao);
+        }
+      }
+      return encerradas;
     },
     conexoesVivas: () => conexoes.size,
   };
@@ -675,45 +719,72 @@ export function registrarGatewayEventos(
     const minimoRetomavel = await opcoes.fonte.cursorMinimoRetomavel(chave);
 
     // 5. A partir daqui a resposta é o fluxo — assumimos o socket.
+    //
+    // TUDO abaixo roda DEPOIS do `reply.hijack()`, onde uma exceção não
+    // tem como virar resposta HTTP: o Fastify já não é dono da resposta, e
+    // o cliente ficaria com um socket aberto e mudo. Por isso a região
+    // inteira — `writeHead`, criação do escritor e do objeto de conexão
+    // incluídas — está protegida, não apenas as chamadas assíncronas
+    // (ACHADO 10).
     reply.hijack();
     const bruta = reply.raw;
-    bruta.writeHead(200, {
-      "content-type": "text/event-stream; charset=utf-8",
-      "cache-control": "no-cache, no-store, no-transform",
-      connection: "keep-alive",
-      // Impede bufferização por proxy reverso — um heartbeat retido é um
-      // heartbeat inútil.
-      "x-accel-buffering": "no",
-      ...(reply.getHeader("set-cookie") === undefined
-        ? {}
-        : { "set-cookie": String(reply.getHeader("set-cookie")) }),
-    });
+    let conexao: ConexaoEventos | undefined;
+    try {
+      bruta.writeHead(200, {
+        "content-type": "text/event-stream; charset=utf-8",
+        "cache-control": "no-cache, no-store, no-transform",
+        connection: "keep-alive",
+        // Impede bufferização por proxy reverso — um heartbeat retido é um
+        // heartbeat inútil.
+        "x-accel-buffering": "no",
+        ...(reply.getHeader("set-cookie") === undefined
+          ? {}
+          : { "set-cookie": String(reply.getHeader("set-cookie")) }),
+      });
 
-    const escritor = criarEscritor(bruta);
-    const conexao = new ConexaoEventos({
-      contexto,
-      chave,
-      opcoes,
-      escritor,
-      cursorInicial: cursor.cursor,
-    });
+      const escritor = criarEscritor(bruta);
+      conexao = new ConexaoEventos({
+        contexto,
+        chave,
+        opcoes,
+        escritor,
+        cursorInicial: cursor.cursor,
+      });
+      const viva = conexao;
 
-    conexoes.add(conexao);
-    request.raw.on("close", () => {
-      conexao.encerrarPorDesconexaoDoCliente();
-      conexoes.delete(conexao);
-    });
+      conexoes.add(viva);
+      request.raw.on("close", () => {
+        viva.encerrarPorDesconexaoDoCliente();
+        conexoes.delete(viva);
+      });
 
-    // 6. Cursor irretomável ⇒ lacuna EXPLÍCITA (ADR-0011 P4). Nunca se
-    //    entrega um "pedaço do meio" fingindo continuidade.
-    if (cursor.cursor < minimoRetomavel) {
-      await conexao.encerrarCom("cursor-irretomavel", minimoRetomavel);
-      conexoes.delete(conexao);
-      return;
+      // 6. Cursor irretomável ⇒ lacuna EXPLÍCITA (ADR-0011 P4). Nunca se
+      //    entrega um "pedaço do meio" fingindo continuidade.
+      if (cursor.cursor < minimoRetomavel) {
+        await viva.encerrarCom("cursor-irretomavel", minimoRetomavel);
+        conexoes.delete(viva);
+        return;
+      }
+
+      await viva.iniciar();
+      if (viva.encerrada) conexoes.delete(viva);
+    } catch (erro) {
+      // Rede final da região pós-hijack. `encerrarCom` e `iniciar` já não
+      // rejeitam; o que sobra aqui é falha do `writeHead`, da fábrica de
+      // escritor ou do próprio construtor. O cliente não pode ficar com um
+      // socket pendurado por causa disso.
+      if (conexao !== undefined) conexoes.delete(conexao);
+      try {
+        await opcoes.registrarFalha?.("encerrar", erro);
+      } catch {
+        // observador defeituoso não impede o fechamento do socket
+      }
+      try {
+        if (!bruta.writableEnded) bruta.end();
+      } catch {
+        // socket já destruído — nada a fazer, e nada a propagar
+      }
     }
-
-    await conexao.iniciar();
-    if (conexao.encerrada) conexoes.delete(conexao);
   });
 
   return controle;
