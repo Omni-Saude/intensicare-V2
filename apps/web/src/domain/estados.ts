@@ -73,9 +73,10 @@ export type EstadoConectividade =
   | "reconciliado";
 
 /**
- * Estado de sessão (prompt §11, 6ª família). Declarado para não inventar
- * semântica depois; sem tela dedicada nesta fatia (SPR-G7-2 é
- * bed-grid/detalhe/reconhecer alerta, não autenticação).
+ * Estado de sessão (prompt §11, 6ª família). Desde ACH-07 há renderização
+ * dedicada (`../components/AvisosDeEstado.tsx`), alimentada pelo provedor de
+ * sessão (`../api/sessao.ts`) — a autenticação em si continua sendo do
+ * backend (ADR-0015, `not-started`).
  */
 export type EstadoSessao =
   | "ativa"
@@ -83,6 +84,19 @@ export type EstadoSessao =
   | "expirada"
   | "recuperada"
   | "trabalho_nao_salvo_protegido";
+
+/**
+ * Frescor DA VISÃO — introduzido no ACH-07. Deliberadamente SEPARADO de
+ * `EstadoFrescor`: aquele é o frescor do insumo CLÍNICO, computado no backend
+ * a partir do tempo clínico de fonte (ADR-0008 N5/SAF-0004) e jamais inferido
+ * pelo frontend. Este descreve apenas um fato que o frontend de fato conhece:
+ * se o conteúdo em tela veio da última busca bem-sucedida, ou se uma recarga
+ * posterior falhou e o que está exibido é anterior a essa falha.
+ *
+ * Só existem dois valores, e não há gradação — qualquer nuance além disso
+ * seria juízo clínico travestido de estado de transporte.
+ */
+export type FrescorVisao = "atual" | "desatualizado_apos_falha";
 
 /**
  * Banda de risco clínico — sempre exibida com rótulo textual, nunca só

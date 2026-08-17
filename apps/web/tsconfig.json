@@ -11,5 +11,9 @@
     "sourceMap": false,
     "types": ["vite/client"]
   },
-  "include": ["src"]
+  // `e2e` entra no typecheck de propósito: código de teste não verificado é
+  // onde defeitos se escondem, e a suíte de navegador é a única prova de
+  // vários critérios WCAG desta fatia. `playwright.config.ts` fica de fora
+  // porque usa `process.env`, e este app não declara os tipos do Node.
+  "include": ["src", "e2e"]
 }

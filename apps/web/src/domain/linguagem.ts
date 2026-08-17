@@ -29,6 +29,8 @@ import {
   type EstadoConectividade,
   type EstadoFrescor,
   type EstadoItemTrabalho,
+  type EstadoSessao,
+  type FrescorVisao,
   type Tom,
 } from "./estados.js";
 
@@ -185,6 +187,63 @@ export function textoConectividade(estado: EstadoConectividade): TextoComTom {
       return { texto: "Sincronizado — dados reconciliados após reconexão.", tom: "informativo" };
     default:
       return casoImpossivel(estado, "textoConectividade");
+  }
+}
+
+/**
+ * Texto da 6ª família do §11 (sessão). A redação segue a PROPOSTA já
+ * registrada em `docs/10-ux-and-accessibility/modelo-de-estados-obrigatorios.md`
+ * §4 — transcrita, não inventada aqui.
+ *
+ * VALIDATION REQUIRED (ADR-0029, condição C2 ABERTA): nenhum destes textos é
+ * terminologia ratificada. `expirada` nunca é redigida de forma que sugira
+ * que a ação pendente foi concluída, e `trabalho_nao_salvo_protegido` nunca
+ * afirma reenvio automático — a chave de idempotência permite reenvio seguro
+ * APÓS confirmação humana (ADR-0009 W2).
+ */
+export function textoSessao(estado: EstadoSessao): TextoComTom {
+  switch (estado) {
+    case "ativa":
+      return { texto: "Sessão ativa.", tom: "positivo" };
+    case "expirando":
+      return {
+        texto: "Sua sessão expira em breve — salve ou conclua a ação em andamento.",
+        tom: "atencao",
+      };
+    case "expirada":
+      return { texto: "Sessão expirada — reautentique para continuar.", tom: "alerta" };
+    case "recuperada":
+      return { texto: "Sessão recuperada.", tom: "informativo" };
+    case "trabalho_nao_salvo_protegido":
+      return { texto: "Há uma ação não concluída — ela não foi perdida.", tom: "atencao" };
+    default:
+      return casoImpossivel(estado, "textoSessao");
+  }
+}
+
+/**
+ * Texto do frescor DA VISÃO (ACH-07). Note o contraste deliberado com
+ * `textoFrescor`: aqui não se afirma nada sobre o dado clínico em si — apenas
+ * sobre o que a TELA está mostrando em relação à última tentativa de leitura.
+ *
+ * P8 (ADR-0029) vale igualmente: "desatualizado" nunca é redigido como
+ * "indisponível", e o texto nunca sugere que o conteúdo exibido é atual.
+ *
+ * VALIDATION REQUIRED (ADR-0029 C2 ABERTA) — redação provisória.
+ */
+export function textoFrescorVisao(frescor: FrescorVisao): TextoComTom {
+  switch (frescor) {
+    case "atual":
+      return { texto: "Conteúdo da última leitura bem-sucedida.", tom: "neutro" };
+    case "desatualizado_apos_falha":
+      return {
+        texto:
+          "Conteúdo desatualizado — a última tentativa de atualização falhou. " +
+          "O que está na tela é anterior a essa falha e pode não refletir o estado atual.",
+        tom: "alerta",
+      };
+    default:
+      return casoImpossivel(frescor, "textoFrescorVisao");
   }
 }
 

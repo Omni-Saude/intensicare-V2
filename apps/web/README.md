@@ -48,10 +48,17 @@ comportamento real de produção, para forçá-los. Nenhum estado é escondido
 nem um dado ausente é redigido como "normal" (HAZ-0005; ver os testes P1-P9
 em `src/domain/linguagem.test.ts`).
 
-O tipo `EstadoConectividade` (`src/domain/estados.ts`) já declara
-`degradado` para não inventar semântica depois, mas esta fatia não
-implementa uma tela de conectividade dedicada (sem SSE/push nesta fatia —
-ver pendências).
+Desde o ACH-07 as SEIS famílias do §11 têm superfície de renderização:
+conectividade e sessão ganharam componentes
+(`src/components/AvisosDeEstado.tsx`) e há uma **galeria de estados**
+(`/?estados`, apenas em desenvolvimento) que renderiza os 43 identificadores
+lado a lado — a varredura de contraste mais densa da fatia.
+
+Honestidade de capacidade: `reproduzindo` e `reconciliado` são
+renderizáveis mas **não são produzidos por transporte real** — esta fatia
+não tem SSE, WebSocket nem cursor de replay (ADR-0011 P4 pendente). O hook
+de conectividade nunca os emite; eles existem no catálogo, não como
+capacidade.
 
 ### Módulo de linguagem (ADR-0021)
 
@@ -73,8 +80,18 @@ fatia sintética.
 - Nenhum estado depende só de cor: todo selo (`BadgeTom`) carrega texto e
   glifo.
 - Cores dos tons semânticos (`.badge-tom--*`) foram escolhidas e
-  conferidas manualmente para contraste ≥ 4.5:1 — **validação automatizada
-  (ex.: axe-core) não foi executada nesta fatia** (ver pendências).
+  conferidas manualmente para contraste ≥ 4.5:1, e desde o ACH-07 também
+  **verificadas por axe-core em navegador real** (`e2e/acessibilidade.spec.ts`).
+- A matriz explícita de critérios WCAG — o que a automação cobre × o que
+  **exige uma pessoa usuária de tecnologia assistiva** — vive em
+  `src/a11y/matrizAcessibilidade.ts`, como código testado, não como prosa.
+
+> **NADA AQUI DECLARA ACESSIBILIDADE VALIDADA.** Automação encontra uma
+> fração conhecida das barreiras reais. A validação com leitor de tela,
+> ampliação e teclado, feita por pessoas que dependem dessas tecnologias, é
+> dependência humana e permanece **NÃO EXECUTADA** (ADR-0021 F7, SPR-G4-5,
+> MG-G4). O critério 2.4.11 (foco não obscurecido) também segue **não
+> executado** — sem teste dedicado.
 
 ## Scripts
 
@@ -83,10 +100,18 @@ fatia sintética.
   gera o build de produção (`vite build`).
 - `pnpm --filter @intensicare/web test` — roda os testes (vitest).
 - `pnpm --filter @intensicare/web typecheck` — só checagem de tipos.
+- `pnpm --filter @intensicare/web test:e2e` — suíte de navegador (Playwright).
+- `pnpm --filter @intensicare/web test:e2e:instalar` — baixa o navegador (uma vez).
 
 ## Testes (estado real, SPR-G7-2 pós-integração)
 
-77 testes, 7 arquivos, todos verdes (`pnpm --filter @intensicare/web test -- --run`):
+163 testes, 14 arquivos, todos verdes
+(`pnpm --filter @intensicare/web test -- --run`). A linha de base do ciclo 6
+era 77 em 7 arquivos; o ACH-07 acrescentou 86 sem remover nenhum. Além dos
+listados abaixo, o ACH-07 acrescentou `perfil.test.ts`, `api/guardas.test.ts`,
+`estado/recursoRemoto.test.ts`, `estado/conectividade.test.ts`,
+`build/guardaArtefatoSintetico.test.ts`, `components/resiliencia.test.tsx` e
+`a11y/acessibilidade.test.tsx`:
 
 - `src/api/clienteHttp.test.ts` — mapeamentos puros contrato→UI do
   cliente HTTP real (status ADR-0008, bandas, parâmetros, frescor
@@ -105,29 +130,38 @@ fatia sintética.
   via `react-dom/server` `renderToStaticMarkup` (ver pendência abaixo).
 - `src/index.test.ts` — esqueleto original (SPR-G7-1), preservado intacto.
 
-### Pendência de teste conhecida
+### Suíte de navegador e interação real (ACH-07)
 
-`@testing-library/react`, `@testing-library/user-event` e `jsdom` **não
-estão instalados** nesta fatia (fora do escopo desta tarefa rodar
-`pnpm add`). Os testes de componente usam `react-dom/server`
-`renderToStaticMarkup` (roda em Node puro, sem DOM) — cobre a marcação
-estática (texto pt-BR, `role`/`aria-*`, presença de `<button>`) mas
-**não** executa `useEffect` nem simula clique/teclado. Por isso:
+`jsdom`, `@testing-library/react`, `@testing-library/user-event`,
+`axe-core`, `@playwright/test` e `@axe-core/playwright` foram instalados no
+ACH-07. A limitação anterior — testes que não executavam `useEffect`, e
+portanto não conseguiam alcançar o defeito de rejeição de rede — deixou de
+existir:
 
-- `GradeLeitos`/`DetalhePaciente`/`App` só têm o estado inicial
-  ("carregando") coberto por teste de render — os estados pós-busca
-  (`pronto`, `vazio`, etc.) são cobertos indiretamente via
-  `clienteMock.test.ts` (dados) e `linguagem.test.ts` (texto), não como
-  DOM renderizado.
-- O fluxo de clique real de "Reconhecer alerta" é coberto pela máquina de
-  estados pura (`reconhecerAlertaMaquina.test.ts`), não por um clique
-  simulado em DOM.
-- Nenhuma auditoria de acessibilidade automatizada (axe-core ou
-  equivalente) foi executada.
+- `src/components/resiliencia.test.tsx` monta os componentes de verdade e
+  prova o teste de aceite do ACH-07 (rejeição ⇒ erro acionável; desmontagem
+  ⇒ `AbortSignal` abortado; falha de recarga ⇒ dado anterior rotulado).
+- `src/a11y/acessibilidade.test.tsx` roda axe-core em jsdom, mais teclado,
+  foco e live regions.
+- `e2e/` roda Playwright em navegador real: axe com `color-contrast`
+  ligado, alvos de toque, reflow a 320 CSS px e `prefers-reduced-motion`.
 
-Instalar `@testing-library/react` + `jsdom` (+ `@testing-library/
-user-event`, `@testing-library/jest-dom`) e migrar `render.test.tsx` para
-testes de interação real fica como pendência explícita desta fatia.
+**Estado da execução do E2E:** 22 verdes, 0 falhas, 0 bloqueados (3 execuções
+consecutivas). A sessão de desenvolvimento é obtida em runtime de
+`POST /v1/dev/sessao` (`src/api/sessaoDesenvolvimento.ts`), guardada apenas em
+memória, renovada antes de expirar e re-obtida no 401.
+
+Inventário de rede verificado: as ÚNICAS chamadas a `/v1/` são
+`POST /v1/dev/sessao` (sem `Authorization` — é o endpoint que emite o bearer)
+e `GET /v1/projecoes/grade-leitos` (com `Bearer`). Nenhuma requisição anônima
+de dado, e nenhum identificador de sessão em query string.
+
+Reproduzir:
+
+```
+pnpm --filter @intensicare/web test:e2e:instalar   # uma vez, baixa o navegador
+pnpm --filter @intensicare/web test:e2e
+```
 
 ## Integração real (SPR-G7-2, integrador)
 
@@ -143,9 +177,17 @@ HTTP REAL do contrato:
   vem da versão vista na projeção.
 - `src/api/tipos.ts` — `ProblemaLocal`/`CABECALHO_IDEMPOTENCIA` agora são
   re-exports do contrato real (espelhos locais removidos).
-- `App.tsx` — o cliente padrão é o HTTP real; o mock permanece para
-  testes de componente e via `?mock` na URL (explícito, nunca fallback
-  silencioso).
+- `App.tsx` — desde o ACH-07, `App` RECEBE cliente e sessão por injeção; a
+  escolha (perfil, `?mock`, sessão) vive em `src/api/resolverCliente.ts` e
+  roda em `main.tsx` antes de montar a árvore. `?mock` e a sessão sintética
+  **só existem em desenvolvimento**: fora dele a guarda LANÇA
+  (`src/perfil.ts`), o dublê é removido do pacote por `import()` dinâmico
+  sob `import.meta.env.DEV`, e o build de produção FALHA se um marcador
+  sintético chegar ao pacote emitido (`src/build/guardaArtefatoSintetico.ts`).
+- `src/api/sessao.ts` — porta de sessão. O cliente HTTP não conhece
+  credencial alguma: a constante `TOKEN_DEV` foi REMOVIDA. Sem provedor que
+  forneça credencial, o cliente recusa com estado `proibido` visível, em vez
+  de emitir requisição anônima ou cair para um dublê.
 - `vite.config.ts` — o fluxo dev aponta para a API local: proxy de
   `/v1/*` para `http://localhost:3000` (suba a API com
   `pnpm --filter @intensicare/api dev`).

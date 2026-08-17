@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import { gerarChaveIdempotencia } from "../api/idempotencia.js";
 import type { ClienteApiIntensiCare } from "../api/tipos.js";
 import type { Alerta } from "../domain/clinico.js";
@@ -6,12 +6,20 @@ import {
   ESTADO_INICIAL_RECONHECER_ALERTA,
   reduzirReconhecerAlerta,
 } from "../estado/reconhecerAlertaMaquina.js";
+import { MotivoAborto } from "../estado/recursoRemoto.js";
 
 interface ReconhecerAlertaProps {
   alerta: Alerta;
   cliente: ClienteApiIntensiCare;
   /** Notifica o pai quando o backend confirma o reconhecimento (nunca antes — ADR-0021 F5). */
   aoReconhecido: (alertaAtualizado: Alerta) => void;
+  /**
+   * Bloqueia o comando (offline). Modelo de estados §6: "comandos bloqueados
+   * ou enfileirados com aviso explícito — nunca sucesso aparente". Esta fatia
+   * BLOQUEIA e explica; não enfileira, porque uma fila de comandos clínicos
+   * exigiria política de conflito e de expiração que ninguém ratificou.
+   */
+  comandosBloqueados?: boolean;
 }
 
 const ESTADOS_QUE_PERMITEM_RECONHECER = new Set([
@@ -23,38 +31,92 @@ const ESTADOS_QUE_PERMITEM_RECONHECER = new Set([
 
 /**
  * Ação "Reconhecer alerta" com confirmação explícita em duas etapas.
- * Nunca mostra sucesso antes da confirmação do backend (aqui, do
- * cliente mock) — falha é sempre visível e recuperável, nunca engolida
- * (ADR-0021 F5, "nenhum otimismo que mascare falha de comando relevante
- * à segurança"; ver `../estado/reconhecerAlertaMaquina.ts`, testada à
- * parte).
+ * Nunca mostra sucesso antes da confirmação do backend — falha é sempre
+ * visível e recuperável, nunca engolida (ADR-0021 F5, "nenhum otimismo que
+ * mascare falha de comando relevante à segurança"; ver
+ * `../estado/reconhecerAlertaMaquina.ts`, testada à parte).
+ *
+ * DUAS CORREÇÕES DO ACH-07 aqui:
+ *
+ *   1. `lidarComConfirmar` era um `async` cujo `await cliente.reconhecerAlerta(...)`
+ *      não tinha `try/catch`, e era passado direto a `onClick`. Uma REJEIÇÃO
+ *      do cliente virava rejeição não tratada e a UI ficava presa em
+ *      "Enviando confirmação…" — o mesmo defeito de `GradeLeitos`/
+ *      `DetalhePaciente`, numa forma que o `noFloatingPromises` do Biome não
+ *      acusa (o handler de evento esconde a Promise).
+ *
+ *   2. A chave de idempotência era gerada A CADA confirmação, inclusive em
+ *      "Tentar novamente". Se a primeira tentativa tivesse chegado ao
+ *      servidor e só a RESPOSTA se perdesse, a nova tentativa levaria uma
+ *      chave diferente e o efeito poderia ser aplicado duas vezes — o oposto
+ *      do que ADR-0009 W2 garante. A chave passa a ser gerada uma vez por
+ *      sequência de reconhecimento e REUTILIZADA nas novas tentativas.
  */
-export function ReconhecerAlerta({ alerta, cliente, aoReconhecido }: ReconhecerAlertaProps) {
+export function ReconhecerAlerta({
+  alerta,
+  cliente,
+  aoReconhecido,
+  comandosBloqueados = false,
+}: ReconhecerAlertaProps) {
   const [estado, dispatch] = useReducer(reduzirReconhecerAlerta, ESTADO_INICIAL_RECONHECER_ALERTA);
+  const chaveRef = useRef<string | null>(null);
+  const controladorRef = useRef<AbortController | null>(null);
+
+  // Aborta um envio em curso se o componente desmontar. Cancelamento real:
+  // o sinal chega ao `fetch`, não a uma flag que descarta a resposta.
+  useEffect(() => {
+    return () => {
+      controladorRef.current?.abort(
+        new MotivoAborto("desmontagem", "Componente de reconhecimento desmontado."),
+      );
+    };
+  }, []);
 
   if (!ESTADOS_QUE_PERMITEM_RECONHECER.has(alerta.estado)) {
     return null;
   }
 
-  async function lidarComConfirmar() {
+  /** Nunca rejeita: todo caminho termina em um `dispatch`. */
+  async function lidarComConfirmar(): Promise<void> {
     dispatch({ tipo: "confirmar" });
-    const chave = gerarChaveIdempotencia(alerta.alertaId);
-    const resposta = await cliente.reconhecerAlerta(alerta.alertaId, chave);
 
-    if (resposta.estadoCarregamento === "pronto" && resposta.dados) {
-      aoReconhecido(resposta.dados);
-      dispatch({
-        tipo: "sucesso",
-        reconhecidoEm: resposta.dados.reconhecidoEm ?? new Date().toISOString(),
+    // Uma chave por SEQUÊNCIA de reconhecimento (ADR-0009 W2).
+    chaveRef.current ??= gerarChaveIdempotencia(alerta.alertaId);
+    const controlador = new AbortController();
+    controladorRef.current = controlador;
+
+    try {
+      const resposta = await cliente.reconhecerAlerta(alerta.alertaId, chaveRef.current, {
+        sinal: controlador.signal,
       });
-      return;
-    }
 
-    dispatch({
-      tipo: "falha",
-      mensagem:
-        resposta.problema?.detail ?? "Não foi possível reconhecer o alerta. Tente novamente.",
-    });
+      if (controlador.signal.aborted) return;
+
+      if (resposta.estadoCarregamento === "pronto" && resposta.dados) {
+        aoReconhecido(resposta.dados);
+        dispatch({
+          tipo: "sucesso",
+          reconhecidoEm: resposta.dados.reconhecidoEm ?? new Date().toISOString(),
+        });
+        return;
+      }
+
+      dispatch({
+        tipo: "falha",
+        mensagem:
+          resposta.problema?.detail ?? "Não foi possível reconhecer o alerta. Tente novamente.",
+      });
+    } catch (erro) {
+      // Desmontagem não produz estado: o componente já não está na tela.
+      if (controlador.signal.aborted) return;
+      void erro;
+      dispatch({
+        tipo: "falha",
+        mensagem:
+          "Não foi possível reconhecer o alerta: a requisição falhou antes de produzir " +
+          "resposta. Nada foi registrado. Tente novamente.",
+      });
+    }
   }
 
   if (estado.fase === "sucesso") {
@@ -69,9 +131,23 @@ export function ReconhecerAlerta({ alerta, cliente, aoReconhecido }: ReconhecerA
     return (
       <div role="group" aria-label={`Confirmar reconhecimento do alerta ${alerta.alertaId}`}>
         <p>Confirma que tomou ciência deste alerta?</p>
-        <button type="button" className="botao" onClick={lidarComConfirmar}>
-          Confirmar
-        </button>
+        {comandosBloqueados ? (
+          <p role="alert">
+            Sem conexão com o servidor: o reconhecimento não pode ser registrado agora e NÃO foi
+            enfileirado. Nada foi enviado. Use o procedimento institucional e repita quando a
+            conexão voltar.
+          </p>
+        ) : (
+          <button
+            type="button"
+            className="botao"
+            onClick={() => {
+              void lidarComConfirmar();
+            }}
+          >
+            Confirmar
+          </button>
+        )}
         <button
           type="button"
           className="botao botao--secundario"
@@ -107,7 +183,13 @@ export function ReconhecerAlerta({ alerta, cliente, aoReconhecido }: ReconhecerA
   }
 
   return (
-    <button type="button" className="botao" onClick={() => dispatch({ tipo: "iniciar" })}>
+    <button
+      type="button"
+      className="botao"
+      onClick={() => dispatch({ tipo: "iniciar" })}
+      disabled={comandosBloqueados}
+      {...(comandosBloqueados ? { "aria-describedby": `bloqueio-${alerta.alertaId}` } : {})}
+    >
       Reconhecer alerta
     </button>
   );

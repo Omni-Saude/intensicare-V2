@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ClienteApiIntensiCare } from "../api/tipos.js";
 import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
-import type { EstadoCarregamento } from "../domain/estados.js";
 import { textoAvaliacao, textoBandaRisco } from "../domain/linguagem.js";
 import { ROTULO_PARAMETRO } from "../domain/news2.js";
+import { combinarConectividade, useConectividadeNavegador } from "../estado/conectividade.js";
+import { useRecursoRemoto } from "../estado/recursoRemoto.js";
+import { IndicadorConectividade, RotuloFrescorVisao } from "./AvisosDeEstado.js";
 import { BadgeTom } from "./BadgeTom.js";
 import { ContribuicaoParametroLinha } from "./ContribuicaoParametroLinha.js";
 import { EstadoTela } from "./EstadoTela.js";
@@ -22,23 +24,36 @@ const ESTADOS_FAIL_CLOSED = new Set(["nao_avaliada", "invalida"]);
  * explicação pt-BR clínica, insumos ausentes/velhos DECLARADOS (nunca
  * omitidos), timestamps — e os alertas do leito com a ação de
  * reconhecimento.
+ *
+ * ACH-07: a busca migrou de `.then(...)` sem `.catch` para `useRecursoRemoto`.
+ * Trocar de leito ABORTA a requisição do leito anterior — antes, a resposta
+ * atrasada de um leito podia chegar depois da troca e ser descartada por uma
+ * flag, deixando a nova tela em "carregando" enquanto a antiga já havia
+ * respondido.
  */
 export function DetalhePaciente({ leitoId, cliente, aoVoltar }: DetalhePacienteProps) {
-  const [estadoTela, setEstadoTela] = useState<EstadoCarregamento>("carregando");
+  const buscar = useCallback(
+    (sinal: AbortSignal) => cliente.obterAvaliacaoPaciente(leitoId, { sinal }),
+    [cliente, leitoId],
+  );
+
+  const recurso = useRecursoRemoto<ItemGradeLeito>({ buscar });
+  const conectividadeNavegador = useConectividadeNavegador();
+  const marcarLeituraBemSucedida = conectividadeNavegador.marcarLeituraBemSucedida;
+  const conectividade = combinarConectividade(
+    conectividadeNavegador.estado,
+    recurso.exibindoDadoDesatualizado,
+  );
+
   const [item, setItem] = useState<ItemGradeLeito | null>(null);
 
   useEffect(() => {
-    let cancelado = false;
-    setEstadoTela("carregando");
-    cliente.obterAvaliacaoPaciente(leitoId).then((resposta) => {
-      if (cancelado) return;
-      setEstadoTela(resposta.estadoCarregamento);
-      setItem(resposta.dados);
-    });
-    return () => {
-      cancelado = true;
-    };
-  }, [leitoId, cliente]);
+    setItem(recurso.dados);
+  }, [recurso.dados]);
+
+  useEffect(() => {
+    if (recurso.obtidoEm !== null) marcarLeituraBemSucedida();
+  }, [recurso.obtidoEm, marcarLeituraBemSucedida]);
 
   function lidarComAlertaAtualizado(alertaAtualizado: Alerta) {
     setItem((atual) => {
@@ -59,7 +74,16 @@ export function DetalhePaciente({ leitoId, cliente, aoVoltar }: DetalhePacienteP
       </button>
       <h2 id="detalhe-paciente-titulo">{leitoId}</h2>
 
-      <EstadoTela estado={estadoTela} contexto={`detalhe do paciente — ${leitoId}`}>
+      <IndicadorConectividade estado={conectividade} />
+      <RotuloFrescorVisao frescor={recurso.frescorVisao} obtidoEm={recurso.obtidoEm} />
+
+      <EstadoTela
+        estado={recurso.estadoTela}
+        contexto={`detalhe do paciente — ${leitoId}`}
+        {...(recurso.problema?.detail !== undefined ? { detalhe: recurso.problema.detail } : {})}
+        aoTentarNovamente={recurso.recarregar}
+        tentativas={recurso.tentativas}
+      >
         {item && (
           <>
             <p>{item.pacienteApelido ?? "Leito vago — sem paciente associado."}</p>
@@ -122,6 +146,7 @@ export function DetalhePaciente({ leitoId, cliente, aoVoltar }: DetalhePacienteP
               cliente={cliente}
               aoAlertaAtualizado={lidarComAlertaAtualizado}
               tituloRegiao={`Alertas — ${leitoId}`}
+              comandosBloqueados={conectividade === "offline"}
             />
           </>
         )}

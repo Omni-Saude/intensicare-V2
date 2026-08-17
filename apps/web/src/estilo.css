@@ -1,14 +1,19 @@
 /**
  * apps/web/src/estilo.css
  *
- * Estilo mínimo desta fatia (SPR-G7-2). Cores dos tons semânticos
- * (`.badge-tom--*`) foram escolhidas e conferidas manualmente para
+ * Estilo mínimo desta fatia (SPR-G7-2, revisto em ACH-07). Cores dos tons
+ * semânticos (`.badge-tom--*`) foram escolhidas e conferidas manualmente para
  * contraste WCAG 2.2 AA (texto normal ≥ 4.5:1) contra o próprio fundo do
- * selo — validação automatizada (ex.: axe-core) não está disponível
- * nesta fatia (@testing-library/react e jsdom não instalados; ver
- * pendências no README). Nenhum estado depende só de cor: todo selo
- * carrega também texto e um glifo (`../domain/linguagem.ts`
- * `glifoTom`).
+ * selo. Nenhum estado depende só de cor: todo selo carrega também texto e um
+ * glifo (`../domain/linguagem.ts` `glifoTom`).
+ *
+ * ESTADO DA VERIFICAÇÃO DE CONTRASTE (ACH-07). axe-core passou a existir na
+ * suíte, mas a regra `color-contrast` é DESLIGADA em jsdom — jsdom não
+ * computa estilo cascateado, e um verde ali seria falso. A verificação real
+ * de 1.4.3/1.4.11 corre na suíte de navegador (`e2e/`) e está registrada como
+ * `nao_executado` em `src/a11y/matrizAcessibilidade.ts` enquanto o navegador
+ * do Playwright não estiver instalado. Os valores abaixo permanecem
+ * CONFERIDOS À MÃO, não verificados por ferramenta.
  */
 
 :root {
@@ -73,16 +78,39 @@ button {
   border: 0;
 }
 
+/*
+ * DEFEITO CORRIGIDO NO ACH-07 (WCAG 2.2 SC 1.4.10, Reflow).
+ *
+ * Este seletor tinha `white-space: nowrap` e `border-radius: 999px` — forma
+ * de "pílula", pensada para rótulos curtos. Mas os textos de estado desta
+ * fatia são deliberadamente LONGOS e explícitos ("Avaliação não computável —
+ * dados insuficientes para calcular com segurança (modo fail-closed)"), por
+ * exigência de segurança clínica: eles não podem ser abreviados. Com
+ * `nowrap`, a 320 CSS px (equivalente a 400% de zoom) o conteúdo media
+ * 1062px numa janela de 320px — rolagem nos DOIS eixos, medida pela suíte de
+ * navegador em `e2e/reflow.spec.ts`.
+ *
+ * O conflito era entre a forma do selo e a obrigação de não abreviar o texto.
+ * A obrigação clínica vence: o selo passa a quebrar linha, e o raio deixa de
+ * ser de pílula (que fica deformado em várias linhas). `align-items:
+ * baseline` mantém o glifo alinhado à primeira linha do texto.
+ *
+ * Nenhum texto foi encurtado para caber — encurtar o texto para satisfazer o
+ * layout seria alterar comunicação clínica por conveniência visual.
+ */
 .badge-tom {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: 0.35rem;
   padding: 0.15rem 0.6rem;
-  border-radius: 999px;
+  border-radius: 0.75rem;
   font-weight: 600;
   font-size: 0.85rem;
   line-height: 1.5;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  text-align: left;
 }
 
 .badge-tom__glifo {
@@ -163,6 +191,9 @@ main {
   align-items: center;
   margin-top: 0.4rem;
   gap: 0.5rem;
+  /* Sem `wrap`, dois selos longos lado a lado empurram a linha além da
+     janela sob reflow (SC 1.4.10). */
+  flex-wrap: wrap;
 }
 
 .controle-demonstracao {
@@ -243,5 +274,139 @@ main {
   .botao--secundario {
     background: transparent;
     color: #9cc4ea;
+  }
+}
+
+/* Alvo de toque mínimo de 24x24 CSS px (WCAG 2.2 SC 2.5.8). A verificação
+   automatizada exige caixa de layout real e vive na suíte de navegador. */
+.botao,
+.cartao-leito {
+  min-height: 24px;
+  min-width: 24px;
+}
+
+/* ---------------------------------------------------------------------------
+   Avisos de estado introduzidos no ACH-07 (frescor da visão, conectividade,
+   sessão). Todos usam borda + texto + glifo; nenhum depende só de cor.
+   --------------------------------------------------------------------------- */
+
+.cabecalho-tela {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.rotulo-frescor-visao,
+.indicador-conectividade,
+.aviso-sessao {
+  border: 1px solid #d7dce2;
+  border-left-width: 6px;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  margin: 0.75rem 0;
+}
+
+.rotulo-frescor-visao {
+  border-left-color: #7a1010;
+  background: #fff5f5;
+}
+.indicador-conectividade {
+  border-left-color: #6b4400;
+  background: #fff9ef;
+}
+.aviso-sessao {
+  border-left-color: #0b3d66;
+  background: #f2f7fc;
+}
+
+@media (prefers-color-scheme: dark) {
+  .rotulo-frescor-visao,
+  .indicador-conectividade,
+  .aviso-sessao {
+    border-color: #2b3542;
+  }
+  .rotulo-frescor-visao {
+    background: #2a1414;
+  }
+  .indicador-conectividade {
+    background: #241d0f;
+  }
+  .aviso-sessao {
+    background: #121c26;
+  }
+}
+
+.rotulo-frescor-visao p,
+.indicador-conectividade p,
+.aviso-sessao p {
+  margin: 0.4rem 0 0;
+}
+
+/* A grade repetida após falha de recarga é visualmente atenuada E precedida
+   pelo rótulo de frescor — a atenuação é reforço redundante, nunca o único
+   sinal (WCAG 1.4.1). */
+.grade-leitos--desatualizada {
+  opacity: 0.75;
+  border-top: 2px dashed #7a1010;
+}
+
+/* ---------------------------------------------------------------------------
+   Galeria de estados (revisão de UI, apenas desenvolvimento).
+   --------------------------------------------------------------------------- */
+
+.galeria-familia {
+  margin: 1.5rem 0;
+}
+.galeria-lista {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+  gap: 0.5rem;
+}
+.galeria-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  border: 1px solid #d7dce2;
+  border-radius: 0.4rem;
+  padding: 0.5rem 0.75rem;
+}
+.galeria-item code {
+  font-size: 0.8rem;
+}
+@media (prefers-color-scheme: dark) {
+  .galeria-item {
+    border-color: #2b3542;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Movimento reduzido (WCAG 2.2 SC 2.3.3 como alvo; AA como piso).
+
+   Esta fatia não usa NENHUMA animação: nenhuma informação de estado é
+   transmitida por movimento, e é isso que satisfaz o critério hoje. A regra
+   abaixo é rede de segurança para transições acrescentadas depois.
+
+   LIMITE HONESTO: a rede é escrita SEM `!important` (o gate de lint deste
+   repositório roda `biome ci --error-on-warnings` e rejeita `!important`).
+   Sem ele, uma regra futura de especificidade maior venceria esta. A
+   consequência é que o respeito a `prefers-reduced-motion` continua sendo
+   responsabilidade de quem escrever a transição — este bloco reduz o
+   esquecimento, não o elimina. Registrado no handoff.
+   --------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+    scroll-behavior: auto;
   }
 }

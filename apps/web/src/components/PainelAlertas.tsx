@@ -9,6 +9,8 @@ interface PainelAlertasProps {
   cliente: ClienteApiIntensiCare;
   aoAlertaAtualizado: (alertaAtualizado: Alerta) => void;
   tituloRegiao: string;
+  /** Repassado a `ReconhecerAlerta` — bloqueia o comando quando offline. */
+  comandosBloqueados?: boolean;
 }
 
 /** Lista de alertas (item de trabalho) com a ação "Reconhecer alerta". */
@@ -17,6 +19,7 @@ export function PainelAlertas({
   cliente,
   aoAlertaAtualizado,
   tituloRegiao,
+  comandosBloqueados = false,
 }: PainelAlertasProps) {
   if (alertas.length === 0) {
     return (
@@ -52,6 +55,7 @@ export function PainelAlertas({
               alerta={alerta}
               cliente={cliente}
               aoReconhecido={aoAlertaAtualizado}
+              comandosBloqueados={comandosBloqueados}
             />
           </li>
         ))}
