@@ -195,6 +195,22 @@ jobs:
           corepack prepare pnpm@9.0.0 --activate
       - name: Instalar dependências (lockfile congelado)
         run: pnpm install --frozen-lockfile
+      # OBRIGATÓRIO ANTES DO E2E, e a razão merece ficar escrita.
+      #
+      # O `webServer` do Playwright sobe `apps/api` por `tsx`, a partir do
+      # FONTE. Mas os pacotes do workspace são resolvidos por `dist/*.js`, e em
+      # checkout limpo `dist/` não existe: o servidor morre com
+      # `ERR_MODULE_NOT_FOUND` para `@intensicare/contratos/dist/index.js`, e o
+      # Playwright só reporta "Timed out waiting 120000ms from config.webServer"
+      # — uma mensagem que não diz nada sobre a causa.
+      #
+      # É exatamente a armadilha que o ciclo 6 já documentou para o `typecheck`
+      # antes do `build`: em máquina aquecida o erro não aparece, em checkout
+      # limpo sim, e o verde local é acidente. Foi reintroduzida aqui na
+      # primeira versão deste job e apanhada pelo próprio CI, na primeira
+      # execução — que é o argumento para o job existir.
+      - name: Construir pacotes do workspace (dist/ é pré-requisito do webServer)
+        run: pnpm build
       - name: Instalar navegador do Playwright
         run: pnpm test:e2e:instalar
       - name: E2E autenticado e acessibilidade automatizada
