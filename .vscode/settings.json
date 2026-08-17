@@ -1,0 +1,60 @@
+{
+  // ---------------------------------------------------------------------------
+  // Dialeto SQL deste repositório: PostgreSQL. NÃO é SQL Server.
+  //
+  // POR QUE ESTE ARQUIVO EXISTE
+  // As migrações em `packages/persistencia/src/migrations/*.sql` apareciam no
+  // editor com centenas de erros — todos FALSOS. A causa não está no SQL: está
+  // em qual gramática o editor aplica a ele.
+  //
+  // O VS Code registra um único identificador de linguagem genérico, `sql`. A
+  // extensão `ms-mssql.mssql`, quando instalada, assume esse identificador e
+  // analisa o arquivo como **T-SQL (Microsoft SQL Server)**. As migrações deste
+  // repositório usam construções que o T-SQL simplesmente não tem:
+  //
+  //   * cadeias com cifrão duplo (`$$ ... $$`) — 10 ocorrências em
+  //     `0003_fronteira_papeis.sql` e 14 em `0004_escopo_selado.sql`. O T-SQL não
+  //     conhece esse delimitador; ao encontrar o primeiro `$$` o analisador PERDE
+  //     a fronteira da cadeia e passa a interpretar todo o resto do arquivo como
+  //     código. É daí que vem o volume: um único desencontro de gramática vira
+  //     centenas de erros em cascata.
+  //   * blocos anônimos `DO $$ ... $$` em PL/pgSQL;
+  //   * `CREATE POLICY`, `ALTER TABLE ... FORCE ROW LEVEL SECURITY` (RLS por
+  //     tenant — ADR-0016), ausentes do T-SQL;
+  //   * `SECURITY DEFINER`, `search_path`, catálogo `pg_*`.
+  //
+  // EVIDÊNCIA DE QUE OS ERROS SÃO FALSOS (OBSERVED, execução real): as quatro
+  // migrações são aplicadas por `psql -v ON_ERROR_STOP=1` contra PostgreSQL
+  // 16.14 em cluster efêmero (`node scripts/pg-efemero.mjs up`) sem nenhum erro
+  // de sintaxe; a suíte de fronteira roda 36 testes bloqueantes sobre esse mesmo
+  // esquema; e o job `ensaio-de-migracao` as exercita contra PostgreSQL real no
+  // CI. Um arquivo que o servidor real analisa e executa não tem erro de
+  // sintaxe — tem um leitor com a gramática errada.
+  //
+  // O QUE ESTE AJUSTE FAZ, E O QUE NÃO FAZ
+  // Ele NÃO suprime diagnóstico verdadeiro. Ele desliga, apenas neste
+  // workspace, o serviço de linguagem T-SQL — que é inaplicável aqui, porque
+  // não existe SQL Server em nenhum ponto deste projeto. Para recuperar
+  // diagnóstico CORRETO, `.vscode/extensions.json` recomenda uma extensão
+  // PostgreSQL; com ela instalada, um erro sinalizado passa a ser um erro real.
+  // ---------------------------------------------------------------------------
+  "mssql.intelliSense.enableIntelliSense": false,
+  "mssql.intelliSense.enableErrorChecking": false,
+  "mssql.intelliSense.enableSuggestions": false,
+  "mssql.intelliSense.enableQuickInfo": false,
+
+  // Marca explicitamente o dialeto para toda ferramenta que o respeite. Não
+  // altera como o `sql` genérico é analisado, mas remove a ambiguidade para
+  // formatadores e extensões que leem esta chave.
+  "sql.dialect": "postgresql",
+  "[sql]": {
+    "editor.formatOnSave": false
+  },
+
+  // As migrações são artefato versionado e imutável depois de aplicadas: um
+  // formatador que as reescreva mudaria o hash de um arquivo que já rodou em
+  // banco real. Formatação automática fica desligada de propósito.
+  "files.associations": {
+    "packages/persistencia/src/migrations/*.sql": "sql"
+  }
+}

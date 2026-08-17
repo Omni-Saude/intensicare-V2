@@ -1,0 +1,26 @@
+{
+  // Extensões recomendadas para este workspace. Ver `.vscode/settings.json`
+  // para o diagnóstico completo de por que o dialeto importa aqui.
+  "recommendations": [
+    // Serviço de linguagem PostgreSQL. Com ele, o editor volta a analisar
+    // `packages/persistencia/src/migrations/*.sql` com a gramática CERTA —
+    // dollar-quoting, PL/pgSQL, RLS, `SECURITY DEFINER` — e um erro sinalizado
+    // passa a ser um erro real, em vez de ruído de gramática incompatível.
+    "ms-ossdata.vscode-pgsql",
+    // Formatação e lint do TypeScript/JSON deste monorepo. `pnpm lint` usa
+    // Biome, e o gate de CI roda `biome ci --error-on-warnings`; ter a mesma
+    // ferramenta no editor evita divergência entre local e CI.
+    "biomejs.biome"
+  ],
+  "unwantedRecommendations": [
+    // NÃO recomendada para este workspace: analisa `.sql` como T-SQL
+    // (SQL Server), dialeto que este projeto não usa em ponto nenhum. Sobre as
+    // migrações PostgreSQL ela produz centenas de erros falsos, todos
+    // originados de perder a fronteira das cadeias `$$ ... $$`.
+    //
+    // Isto não desinstala nada: quem já a tem instalada por outro projeto
+    // continua com ela, e `.vscode/settings.json` desliga apenas o serviço de
+    // linguagem dela neste workspace.
+    "ms-mssql.mssql"
+  ]
+}
