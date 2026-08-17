@@ -7,8 +7,10 @@ source: >
   OBSERVADO); packages/persistencia/src/repositories/clinical-repository.ts
   (insertOutboxEvent, insertClinicalObservationWithOutbox, transitionWorkItem,
   OBSERVADO); packages/persistencia/src/outbox-and-audit.test.ts (event_type
-  concretos exercitados em teste, OBSERVADO); apps/api/src/store.ts (log de
-  eventos em memória EventoFluxo, OBSERVADO — NÃO é o outbox real);
+  concretos exercitados em teste, OBSERVADO); apps/api/src/db.ts (replayEvents
+  — leitura do outbox REAL por cursor, OBSERVADO; substituiu o log em memória
+  de apps/api/src/store.ts, arquivo removido no SPR-G7-2); apps/api/src/eventos/
+  (gateway de entrega contínua autorizada, ACH-05, OBSERVADO);
   packages/contratos/src/index.ts (tipo EventoFluxo); docs/06-architecture/
   adrs/ADR-0010-backbone-transacao-outbox-eventos-garantias-de-entrega.md
   (accepted, GDEC-0008, B1-B10); ADR-0009 (W1, estados de WorkItem, accepted
@@ -39,13 +41,19 @@ O código-fonte desta fatia contém **duas** coisas chamadas informalmente
 "eventos", e são estruturalmente diferentes. Confundi-las seria uma alegação
 de garantia que o código não sustenta.
 
-| | (A) Outbox transacional real | (B) Log em memória de `apps/api` |
+**Correção de estado (2026-08-17).** A dicotomia que esta tabela descrevia —
+outbox real de um lado, log em memória de `apps/api` do outro — **deixou de
+existir**. `apps/api/src/store.ts` foi removido no `SPR-G7-2`; a coluna (B) é
+preservada abaixo apenas como registro do que o catálogo dizia, não como
+descrição do presente.
+
+| | (A) Outbox transacional real — **estado atual** | (B) Log em memória de `apps/api` — **HISTÓRICO, removido** |
 |---|---|---|
-| Onde | `packages/persistencia` — tabela `outbox_events` | `apps/api/src/store.ts` — `Map` em memória, tipo `EventoFluxo` |
+| Onde | `packages/persistencia` — tabela `outbox_events` | `apps/api/src/store.ts` — `Map` em memória. **Arquivo não existe mais** |
 | Implementa ADR-0010? | Sim — B1 (mesma transação), B3 (`ordering_scope`), parcialmente B8 (ver §6, gaps) | **Não.** Comentário no próprio arquivo: "NÃO implementa outbox transacional real (ADR-0010)" |
-| Durabilidade | Sim — tabela Postgres-compatível (PGlite), RLS por tenant, transação ACID | Nenhuma — perdido a cada reinício do processo |
-| Conectado a `apps/api`? | **Não** nesta fatia (`// INTEGRAÇÃO PENDENTE`) | Sim — é o que `GET /v1/eventos/stream` serve |
-| Consumidor/relay | Nenhum implementado (ADR-0010 B9/B10 pendente) | `GET /v1/eventos/stream`, catch-up por cursor apenas |
+| Durabilidade | Sim — tabela Postgres-compatível, RLS por tenant, transação ACID | Nenhuma — perdido a cada reinício do processo |
+| Conectado a `apps/api`? | **Sim** — `apps/api/src/db.ts::replayEvents` lê o outbox por cursor; a marca `// INTEGRAÇÃO PENDENTE` foi removida junto com `store.ts` | — |
+| Consumidor/relay | Gateway de entrega **contínua** autorizada em `apps/api/src/eventos/` (ACH-05): pulsação, cursor monotônico, fila limitada com desconexão explícita, retomada e autorização por evento. **Relay externo (ADR-0010 B9/B10) segue não implementado** | `GET /v1/eventos/stream`, catch-up por cursor apenas |
 | Uso deste documento | §2-§6 catalogam **este** como o outbox real da fatia | §2.3 cataloga este separadamente, como o que o cliente HTTP hoje efetivamente recebe |
 
 ## 2. Outbox real — eventos observados (`packages/persistencia`)
@@ -134,7 +142,13 @@ interface EventoFluxo {
 }
 ```
 
-### 5.2 Eventos concretos (OBSERVADO, `apps/api/src/store.ts`)
+### 5.2 Eventos concretos (OBSERVADO — hoje lidos do outbox real por `apps/api/src/db.ts::replayEvents`)
+
+Os quatro `tipo` abaixo permanecem exatamente os mesmos; o que mudou é a
+**origem**: deixaram de vir de um `Map` em processo e passaram a ser projetados
+do `outbox_events` durável, por cursor e escopados por tenant. O mapeamento
+`event_type` do outbox → `tipo` do contrato está em
+`apps/api/src/db.ts` (`OUTBOX_TO_CONTRACT_EVENT`).
 
 | `tipo` | Gatilho | `dados` observado |
 |---|---|---|
@@ -143,18 +157,30 @@ interface EventoFluxo {
 | `alerta-criado` | quando a avaliação válida cruza o limiar ilustrativo e gera `ItemTrabalho` | `{ id, estado, versao }` |
 | `alerta-atualizado` | `POST /v1/alertas/{id}/reconhecer` bem-sucedido | `{ id, estado, versao }` |
 
-### 5.3 Garantias — nenhuma das de ADR-0010 se aplica aqui
+### 5.3 Garantias — o que passou a valer e o que continua em aberto
 
-Este log **não** é uma implementação do outbox transacional. Escopo de
-ordenação é "todo o tenant" (sequência global por `tenantId`), não por
-`ordering_scope` declarado por tipo de evento (ADR-0010 B3); não há
-persistência (perdido a cada reinício do processo, HAZ-0012-like em espírito
-— mas fora de produção, apenas fatia de demonstração); não há dedup nem
-`idempotency_key` no envelope; `dados: unknown` não é tipado por variante,
-ao contrário do que um envelope de evento versionado (ADR-0010 B8) exigiria.
-Este gap está **declarado no próprio código-fonte** (`store.ts`, comentário
-de cabeçalho) e no `openapi.yaml` (`x-pendencias`) — não é uma omissão desta
-tarefa, é herdado e citado.
+**Correção de estado (2026-08-17).** O título anterior desta seção era
+"nenhuma das de ADR-0010 se aplica aqui", verdadeiro enquanto a superfície
+servia um `Map` em memória. Deixou de ser verdadeiro quando `apps/api` passou
+a ler o outbox durável.
+
+**Passou a valer** (`OBSERVED`): persistência (tabela `outbox_events`, não mais
+perdida a reinício); escopo por tenant imposto por RLS **e** por tipo
+(`TenantScopedKey`, `ADR-0016` §4.1 — chave sem tenant é inexprimível);
+ordenação por `ordering_scope` declarado (`ADR-0010` B3); cursor monotônico com
+retomada sem lacuna e sem duplicata não idempotente; fila por conexão limitada
+com **desconexão explícita e instrução de reconciliação** em vez de descarte
+silencioso (`ADR-0011` P5); autorização reavaliada **a cada evento entregue**,
+não apenas na abertura (`ADR-0011` P3).
+
+**Continua em aberto** (`BLOQUEADO`/`PROPOSAL`, não mascarado): o envelope não
+carrega todos os campos de `ADR-0010` B8 — os ausentes estão declarados em
+`x-pendencias` do `asyncapi.yaml`, não preenchidos por suposição; `dados` ainda
+não é tipado por variante, porque fechar o enum de `event_type` de `WorkItem`
+depende de o catálogo §2.3 sair de `PROPOSAL`; não há dedup por
+`idempotency_key` no envelope; e o **relay/publicador externo** (`ADR-0010`
+B9/B10) segue não implementado. Ambas as mudanças pendentes exigem alteração de
+esquema de persistência que não foi feita.
 
 ## 6. Envelope-alvo (ADR-0010 B8) vs. o que existe — gaps declarados
 

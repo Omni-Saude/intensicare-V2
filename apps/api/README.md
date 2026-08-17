@@ -56,9 +56,25 @@ implícita ao próprio ator + reconhecimento na mesma transação (`db.ts`).
 
 ### Pendências desta fatia
 
-1. **Autenticação** (`src/auth.ts`): stub de bearer sintético
-   (`SYNTH-TOKEN.<tenantId>.<atorId>`), sem verificação criptográfica —
-   ADR-0015 segue `not-started`.
+1. **Autenticação** (`src/auth.ts`): **corrigido nesta reconciliação
+   (ACH-09, 2026-08-17)** — a descrição anterior deste item ("stub de
+   bearer sintético `SYNTH-TOKEN.<tenantId>.<atorId>`, sem verificação
+   criptográfica — ADR-0015 segue `not-started`") ficou obsoleta em dois
+   pontos. (a) `ADR-0015` está `accepted` (direção `GDEC-0016`, minuta
+   redigida 2026-08-16, ciclo 6), não `not-started`
+   (`docs/06-architecture/adrs/adr-index.md` §3). (b) o mecanismo em si
+   mudou (achado §6.2, P0): tenant e ator só existem se vierem de um JWS
+   verificado por um verificador único (`auth/verificador.ts`) contra uma
+   fonte de chaves — adaptador OIDC/JWKS fail-closed ou emissor sintético
+   em memória restrito a `dev`/`test` —, com 65 testes adversariais;
+   forjar um tenant passa a exigir a chave privada do emissor. **O que
+   continua verdadeiro**: nenhum IdP foi selecionado (ADR-0015 §1); o
+   adaptador OIDC só foi verificado contra um servidor de teste local,
+   nunca contra provedor real — a integração com IdP real permanece
+   **BLOQUEADA** (`AUTH-SECURITY` é UNASSIGNED, `BLK-0003`, não há a quem
+   endereçar o pedido); isto não é autenticação de produção operante e não
+   fecha `MG-G6`, `SEC-0004` nem qualquer gate (ver o cabeçalho de
+   `src/auth.ts` para o detalhe completo).
 2. **`GET /v1/eventos/stream`**: replay do OUTBOX real por cursor
    (ADR-0011 P4) em `text/event-stream`, encerrando a conexão após o
    catch-up. Push contínuo em conexão aberta, autorizado a cada entrega

@@ -28,6 +28,7 @@ metadata:
   amendment_note: "emenda GDEC-0009 (agentificação G1/G2 — ata registers/agentificacao-g1-g2-2026-08-15.md, ac4b1bd): sprints SPR-G1-3/4/5/6 opcionais (variante observacional pré-piloto), SPR-G1-7 superseded como exigência, novos SPR-G1-9 (dossiê substituto, AGT-1) e SPR-G1-10 (baseline retrospectivo, AGT-2), G2 100% agentes sob 7 condições (AGT-3/AGT-4); versão verbatim pré-emenda preservada em 9382c8b"
   amendment_note_gdec_0013: "MODO CONSTRUÇÃO (GDEC-0013, 2026-08-16, decisão do titular; mapa .md §2.2 item 9): para todos os sprints de engenharia_v2, definition_of_ready lê-se como 'dependências satisfeitas' e definition_of_done como 'objetivo entregue + CI verde'; exigências de painel AGT-4 por artefato, pacotes de tarefa, escopos disjuntos e handoffs em formato fixo deixam de ser vinculantes; conteúdo clínico em construção = revisão única (autor ≠ revisor); painel N-de-M e 7 condições da AGT-3 permanecem SOMENTE em SPR-G2-4/MG-G2 e G8"
   amendment_note_gdec_0014: "GDEC-0014 (2026-08-16, decisão do titular; mapa .md §2.2 item 10): as 7 condições da AGT-3 e o painel N-de-M deixam de ser vinculantes em QUALQUER sprint, inclusive SPR-G2-4/MG-G2 e G8; promoção acionável sob autorização permanente do titular, a seu critério; vinculantes apenas CI de conteúdo proibido/PHI, PR para main e dados sintéticos como default; condicionantes por operação do parecer OS-16 persistem como obrigações jurídicas externas"
+  amendment_note_ach09: "Reconciliação documental ACH-09 (2026-08-17, especialista ic-reconciliador-docs, P2 §6.9): current_state de G0..G8 já estava correto (PARCIAL/BLOQUEADO/NÃO INICIADO conforme analise-pos-ciclo-6-mapa-vs-estado.md §2) e não foi alterado, EXCETO G5 (NÃO INICIADO -> PARCIAL: packages/conformidade e suite executavel, 22 cenarios CTS-01..CTS-22 contra fixtures pinadas -- MG-G5, aceitacao por verificador externo, continua nao iniciado). Evidencias obsoletas corrigidas por adendo datado (nunca reescrita silenciosa) em G2, G4, G6, G7, G8 -- ver bullets marcados '[corrigido ACH-09...]' ou '[emenda pos-ciclo 6...]' em cada evidence[]. mapa-de-projeto-ate-producao.md tinha G2 (§5.2/§12), G4, G6 e G7 (§12, matriz de cobertura dos gates) desincronizados deste YAML -- corrigido no .md nesta mesma reconciliacao. Nenhum gate promovido; nenhuma ADR marcada implemented/verified; estado factual duro (0 vias acionaveis, 47/47 inelegiveis, Observation AMH nao consumivel, safety case M0, nenhum dado real) inalterado."
   companion_document: docs/14-devsecops-and-delivery/mapa-de-projeto-ate-producao.md
   estimation_scale:
     P: "escopo estreito, poucas dependências, baixa incerteza"
@@ -382,6 +383,7 @@ phases:
       - "docs/00-governance/registers/risk-register.md RISK-0012 (S5)"
       - "docs/05-clinical-safety/pathway-portfolio/hard-gate-assessment.md §7.7 (contagem acionável 0; bloqueio é de dados, não de humanos)"
       - "docs/05-clinical-safety/pathway-portfolio/g2-validation-backlog.md (35 itens OPEN)"
+      - "[emenda pos-ciclo 6, 2026-08-16; consolidada ACH-09, 2026-08-17] SPR-G2-1 (mecanismo agentico AGT-3/AGT-4) executado no ciclo 5; SPR-G2-3 (bundle assinavel) deixou de estar bloqueado quando o runtime da fatia G7 passou a existir -- analise-pos-ciclo-6-mapa-vs-estado.md §2. A promocao sombra->acionavel (SPR-G2-4/MG-G2) segue sem dado real de G3, nao por ato humano pendente"
     entry_criteria:
       - "MG-G1 (portões de programa)"
       - "fontes evidenciadas via G3 (matriz sai de 0/47)"
@@ -670,8 +672,9 @@ phases:
     title: "Coerência UX/domínio/API"
     current_state: PARCIAL
     evidence:
-      - "nenhum modelo de estados §11, tabela de contrato UI/backend ou teste de acessibilidade nas fontes inventariadas"
-      - "baseline de decisão PARCIAL: 7 ADRs aceitos em GDEC-0008 e propagados ao índice em 75838b5 (aceito ≠ implementado); ADR-0002/0006 proposed; ADR-0012..0024 not-started"
+      - "nenhum modelo de estados §11, tabela de contrato UI/backend ou teste de acessibilidade nas fontes inventariadas -- estado do inventario original de cycle-2 (2026-08-15); ver bullet [corrigido ACH-09...] abaixo para o estado pos-ciclo 6"
+      - "baseline de decisão PARCIAL: 7 ADRs aceitos em GDEC-0008 e propagados ao índice em 75838b5 (aceito ≠ implementado); ADR-0002/0006 proposed; ADR-0012..0024 not-started -- estado do cycle-2 (2026-08-15), anterior a GDEC-0015/GDEC-0016/GDEC-0017"
+      - "[emenda pos-ciclo 6, 2026-08-16; corrigido ACH-09, 2026-08-17] ADR-0002 e ADR-0006 aceitos (GDEC-0016, Opcao A); as 13 direcoes ADR-0012..ADR-0024 aceitas (GDEC-0016) e minutadas em pt-BR (GDEC-0017, ciclo 6) -- ver docs/06-architecture/adrs/adr-index.md §3, nenhuma ADR-0012..0024 segue not-started. Artefatos UX §11 produzidos (SPR-G4-3) e contratos publicados (SPR-G4-4, parcial) -- ver mapa .md §5.4. Aceito != implementado permanece verdadeiro: MG-G4 e a validacao com usuarios (SPR-G4-5) seguem pendentes"
     entry_criteria:
       - "SPR-G0-1 (propagação de GDEC-0008)"
       - "evidência G1 (SPR-G1-7) para UX fundamentada"
@@ -796,9 +799,10 @@ phases:
               - "aprovação por fatia vertical, não em bloco"
   - id: G5
     title: "Conformidade de conectores"
-    current_state: "NÃO INICIADO"
+    current_state: PARCIAL
     evidence:
-      - "docs/08-interoperability/conformance/contract-v1/ (7 artefatos PROPOSAL; nenhum cenário executado)"
+      - "docs/08-interoperability/conformance/contract-v1/ (7 artefatos PROPOSAL; nenhum cenário executado) -- design original de cycle-2 (2026-08-15)"
+      - "[corrigido ACH-09, 2026-08-17; current_state NÃO INICIADO -> PARCIAL] packages/conformidade e suite executavel (22 cenarios CTS-01..CTS-22 contra fixtures pinadas por SHA-256; relatorio via 'pnpm --filter @intensicare/conformidade report'); NAO demonstra compatibilidade AMH, NAO move a matriz 47/47, NAO fecha G3 (packages/conformidade/README.md, 'LIMITE DURO'); nenhum cenario executado contra a AMH real. MG-G5 (aceitacao por verificador externo != implementador) segue nao iniciado -- 'nao e simplesmente nao iniciado' distingue codigo de aceitacao"
     entry_criteria:
       - "contratos publicados (SPR-G4-4)"
     exit_gate:
@@ -847,6 +851,7 @@ phases:
     evidence:
       - "docs/05-clinical-safety/hazard-log.md (47/47 OPEN); safety-requirements.md (42 SAF PROPOSAL)"
       - "safety-case-skeleton.md (M0; threat model 27 P0 + 39 P1, zero fechados)"
+      - "[emenda pos-ciclo 6, 2026-08-16] SPR-G6-2 avancou em parte: controles verificados adversarialmente na fatia sintetica, com tres achados reais dispostos; os 27 P0 seguem OPEN e MG-G6 continua exigindo verificador terceiro (DEC-G0-02) -- analise-pos-ciclo-6-mapa-vs-estado.md §2"
     entry_criteria:
       - "parecer OS-16 (SPR-G1-2)"
       - "controles implementáveis (código existe — SPR-G7-1)"
@@ -977,6 +982,7 @@ phases:
     evidence:
       - "cycle-2-delivery-orchestrator-report.md §9 (nenhum código de produção; stack sem ADR)"
       - "cycle-2-delivery-orchestrator-report.md §8 (fatia G7 com dados sintéticos após aceitação dos ADRs)"
+      - "[emenda pos-ciclo 6, 2026-08-16] SPR-G7-1 (fundacoes + CI) e SPR-G7-2 (fatia vertical sintetica, 11 passos com caminhos degradados) executados -- analise-pos-ciclo-6-mapa-vs-estado.md §2; MG-G7 (SPR-G7-3) permanece ato humano pendente; a fatia nao e release de producao -- mapa .md §5.7"
     entry_criteria:
       - "ADRs aceitos e propagados (SPR-G4-2)"
       - "fixtures sintéticas pinadas"
@@ -1041,6 +1047,7 @@ phases:
     evidence:
       - "nenhuma das 12 dimensões do go/no-go (§15.3) com evidência"
       - "ambientes AMH stg/prod inexistentes (RISK-0004) — condição não satisfazível unilateralmente pela V2"
+      - "[corrigido ACH-09, 2026-08-17] codigo de instrumentacao/vigilancia ja existe (packages/observabilidade, packages/vigilancia, com consumidor real em apps/api desde este ciclo) -- distinto de evidencia OPERACIONAL real (SLO medido, DR exercido, treinamento), que segue inexistente ate o piloto; current_state permanece NÃO INICIADO (nenhum piloto/producao rodou)"
     entry_criteria:
       - "MG-G2, MG-G3, MG-G4, MG-G5, MG-G6, MG-G7"
       - "ambientes AMH production-like (SPR-G3-11)"

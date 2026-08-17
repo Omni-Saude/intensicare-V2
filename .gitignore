@@ -37,3 +37,12 @@ coverage/
 # Cache do Python (gerado pelos scripts de gate)
 __pycache__/
 *.pyc
+
+# Saída de teste de navegador (Playwright — ACH-07). É artefato GERADO: os
+# traces embutem conteúdo das páginas exercitadas e não são conteúdo do
+# repositório. Também podado em `scripts/check_forbidden_content.py`, pela
+# mesma razão por que `node_modules/` e `dist/` já eram.
+test-results/
+playwright-report/
+blob-report/
+.playwright/

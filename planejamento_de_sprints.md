@@ -1,3 +1,24 @@
+> **AVISO DE SUPERSESSÃO (ACH-09, 2026-08-17, `ic-reconciliador-docs`,
+> despacho P2 §6.9).** Este documento é o **encargo original do ciclo 2**
+> (2026-08-15) que produziu `docs/14-devsecops-and-delivery/
+> mapa-de-projeto-ate-producao.md` e seu espelho `mapa-de-projeto-
+> backlog.yaml`. O regime de pré-condições que ele pressupõe em cada sprint
+> de engenharia — aceite formal de ADR antes de implementar, painel
+> adversarial por artefato, pacotes de tarefa formais e handoffs em
+> formato fixo — **deixou de vigorar em 2026-08-16** (`GDEC-0013`–
+> `GDEC-0017`, decisão escrita do titular rodaquino-OMNI; ver
+> `docs/00-governance/registers/decision-register.md`). Os produtos deste
+> encargo (mapa e backlog) foram reconciliados com o estado executável
+> real do ciclo 6 em `docs/14-devsecops-and-delivery/
+> analise-pos-ciclo-6-mapa-vs-estado.md`; use aquele documento e o
+> mapa/backlog **atuais** como fonte de estado — **não este arquivo**. O
+> texto abaixo é preservado **verbatim** como registro histórico do
+> encargo original; nada foi reescrito retroativamente, incluindo as
+> referências a "13 tópicos not-started" (§0 item 5, §6) que descrevem o
+> estado de 2026-08-15, anterior à decisão do titular.
+
+---
+
 Mapa ágil e rastreável do IntensiCare V2 até produção
 
 Papel e objetivo
