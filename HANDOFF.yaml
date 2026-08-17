@@ -366,6 +366,86 @@ ciclo_6_construcao_2026_08_16:
     capacidade sem gate a vista acumula trabalho que o dado real pode
     contradizer (SR-3 aplicado ao produto inteiro).
 
+consolidacao_final_2026_08_17:
+  aviso: >-
+    ESTADO VIVO — SUPERSEDE a seção ciclo_6_construcao_2026_08_16 no que toca ao
+    estado do código. As afirmações de regime, decisões e estado factual duro
+    daquela seção continuam valendo integralmente.
+  branch_atual: codex/finalizacao-plataforma-v2 (a partir de main @ ecd32d555291a6ab75e6bb2c3227ad557d87a368)
+  main_alterada: "NÃO — nenhum commit foi feito na main"
+  leitura_obrigatoria_na_retomada:
+    - docs/15-release-evidence/final-implementation-report.md
+    - docs/15-release-evidence/final-implementation-audit.md
+    - .claude/CONTRATO-DE-AGENTES.md (contrato dos especialistas)
+  encargo: PROMPT_IMPLEMENTACAO_FINAL_INTENSICARE_V2.md — auditoria de delta, correção e consolidação
+  metodo: >-
+    Doze especialistas estreitos com fronteira de domínio, escopo de escrita
+    DISJUNTO e critério de aceitação explícitos; nenhum agente genérico.
+    Definições em .claude/agents/. Nenhum arquivo teve dois autores: a fiação em
+    arquivos compartilhados foi aplicada por um único integrador. Síntese,
+    priorização, arbitragem e o relatório final permaneceram indelegáveis.
+  verificacao:
+    comando: pnpm verify
+    resultado: "exit 0"
+    testes: "1.441 verdes, ZERO pulados, ZERO falhas, ZERO expected fail (baseline: 1.026 + 1 expected fail P0)"
+    por_pacote: "api 319, kernel-clinico 305, rule-bundle 302, web 182, vigilancia 77, persistencia 66, conformidade 62, observabilidade 55, contratos 37, dominio 18, fixtures 13"
+    fronteira_postgres: "36 testes BLOQUEANTES contra PostgreSQL 16.14 real e efêmero (pnpm test:fronteira)"
+    contratos: "148 verificações (pnpm check:contratos) sobre openapi.yaml e asyncapi.yaml"
+    e2e_navegador: "22 cenários Playwright; ver estado corrente no relatório final §6"
+    qualificacao_obrigatoria: >-
+      A contagem de 1.441 vale para máquina COM PostgreSQL disponível. Sem ele a
+      suíte de fronteira se pula com aviso ruidoso em dev e FALHA sob CI=true ou
+      IC_FRONTEIRA_PG=obrigatoria. ci-plataforma.yml recebeu services:postgres
+      pinado por digest para que "verify verde" signifique "fronteira P0
+      exercitada". test:fronteira NÃO foi embutido em pnpm verify: quebraria a
+      máquina de quem não tem PostgreSQL instalado.
+  o_que_mudou_de_material:
+    - "ACH-01 (P0): fronteira de isolamento deixou de depender do simulador PGlite. Adaptador PostgreSQL real, migração 0003 (papel dono separado) e 0004 (escopo em tabela SELADA, funções SECURITY DEFINER, write-once por transação). A falha P0 que vivia como expected fail foi ELIMINADA — polaridade invertida, não escondida."
+    - "ACH-02 (P0): porta de autenticação única com verificador JWS e adaptador OIDC/JWKS fail-closed; 71 testes no escopo, incluindo alg=none, confusão HS/RS, issuer, audiência, kid, rotação, exp/nbf, adulteração, cross-tenant, m2m e ausência de fallback."
+    - "ACH-03 (P1): PERFIL passou a ser OBRIGATÓRIO e sem default; PGlite, fixtures e token sintético são recusados fora de test/dev-synthetic."
+    - "ACH-04 (P1): registro/despachante de regras versionado sobre bundle verificado, com kill switch e rollback provado por behaviorHash."
+    - "ACH-05 (P1): asyncapi.yaml 3.0.0 publicado; entrega SSE contínua autorizada (provada por mutação), no lugar do replay finito."
+    - "ACH-06 (P1): /v1/livez, /v1/readyz e /v1/startupz separados; prontidão e telemetria com consumidor real pela primeira vez."
+    - "ACH-07 (P1): rejeição de rede produz erro acionável; AbortController real; token e mock REPROVADOS no build de produção; E2E de navegador e axe."
+    - "ACH-08 (P1): artefatos não-root (UID 1000 e 101, medidos), SBOM determinístico, promoção que recusa tag e exige digest."
+    - "ACH-09 (P2): estado por gate reconciliado entre Markdown, YAML e Mermaid por emenda datada."
+  revisao_adversarial: >-
+    DUAS revisões independentes por agentes que não escreveram o código. A
+    primeira devolveu REFUTADO com 8 achados, 3 deles P1 reproduzidos contra
+    PostgreSQL real (escopo de tenant regravável; abrir() aceitando papel que
+    alcança o DONO das tabelas; contenção de perfil contornável por injeção).
+    Todos corrigidos. Um nono defeito (HTTP 500 em POST /v1/dev/sessao) foi
+    achado por execução de NAVEGADOR real e sobrevivia a um pnpm verify verde,
+    porque o vitest define NODE_ENV=test e satisfaz a guarda por um caminho que
+    o processo real não tem. Isto é resultado do método, não incidente.
+  estado_duro_INALTERADO: >-
+    0 vias clínicas acionáveis; 47/47 inelegíveis; Observation AMH não
+    consumível; somente candidato a integração; safety case M0; NENHUM dado
+    real acessado. Os seis pacotes de conteúdo clínico estão BYTE-IDÊNTICOS ao
+    commit-base — confirmado por revisão adversarial: nenhum vetor, limiar,
+    banda ou janela pôde ter mudado. Nenhum gate aprovado, nenhum MG-* satisfeito.
+  consequencia_que_nao_deve_surpreender: >-
+    /v1/readyz responde 503 PERMANENTE neste estado: o RULE-GCS não tem
+    artefato de bundle e nenhum alvo de frescor foi validado (Gate G1). É o
+    retrato honesto de um safety case em M0 com 0 vias acionáveis — não é
+    defeito a contornar. Nenhum SLO foi inventado: todo limiteMs no código é
+    null, e o veredito não PODE ser ready enquanto for, por construção.
+  fila_do_titular_acrescida:
+    - "PR de codex/finalizacao-plataforma-v2 para main (vinculante GDEC-0014); NENHUM push foi feito sem autorização"
+    - "BLK-0003 / AUTH-SECURITY UNASSIGNED — é o bloqueio ANTERIOR a todos os de identidade: sem dono nomeado não há a quem pedir metadados de IdP"
+    - "Ratificações clínicas R1..R7 do relatório final §8.1 (sedativeExposure ausente do contrato; vínculo terminológico GCS/RASS; partial->indisponivel no GCS; AUTORIA DO BUNDLE DO RULE-GCS, que é o que impede o GCS de ser despachável; código de NT fora do conjunto governado; mais as duas herdadas do ciclo 6)"
+    - "Registry OCI com residência decidida, chave sob custódia (custodiante != dono do pipeline, DEC-G0-06) e OIDC de CI — sem eles assinatura, proveniência e promoção seguem NÃO EXECUTADAS"
+    - "Ratificação dos limiares de scripts/politica-de-severidade.json (ADR-0022 §5.1 C4)"
+    - "Reconciliação do vocabulário de perfis: 6 de runtime x 7 ambientes de ADR-0019 — coexistem três vocabulários não reconciliados"
+    - "Decisão sobre tornar build-and-test, change-metadata e os 5 jobs de supply-chain checks obrigatórios da proteção da main"
+  riscos_residuais_principais:
+    - "A fronteira de IDENTIDADE AUTENTICADA é a que resta: o isolamento de armazenamento protege contra SQL arbitrário em voo, NÃO contra um chamador que peça o tenant errado (SEC-0001). Depende de IdP real."
+    - "Troca de tenant entre transações distintas na mesma conexão continua possível e NÃO é fechável pelo banco — é assim que um pool multi-tenant funciona. Documentada em teste como LIMITE, não como controle."
+    - "Gate estrutural ausente: a suíte roda com PERFIL e NODE_ENV ambos definidos; defeito que dependa da forma do ambiente real segue invisível por padrão."
+    - "PortaMigracao (lock consultivo + versão durável de schema) sem implementação real; migrações concorrentes não serializadas."
+    - "TLS na conexão de banco não coberto; custo de latência do selo de escopo não medido."
+  comandos_de_retomada: "ver docs/15-release-evidence/final-implementation-report.md §14"
+
 rules_for_any_resuming_agent:
   - Read docs/00-governance/evidence-notation.md before writing anything; front-matter is CI-enforced
   - Never name an owner, mark DECIDED, accept a risk, or resolve a contradiction — humans do that

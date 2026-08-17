@@ -318,25 +318,25 @@ flowchart LR
     A3["ADR-0003<br/>tenancy/ownership<br/>accepted"]:::drafted
     A4["ADR-0004<br/>identity/MPI<br/>accepted"]:::drafted
     A5["ADR-0005<br/>observation/time<br/>accepted"]:::drafted
-    A6["ADR-0006<br/>op vs analytical SoT"]:::notstarted
-    A7["ADR-0007<br/>rule bundles"]:::notstarted
-    A8["ADR-0008<br/>evaluation status"]:::notstarted
-    A9["ADR-0009<br/>alert state machine"]:::notstarted
-    A10["ADR-0010<br/>outbox/backbone"]:::notstarted
-    A11["ADR-0011<br/>projections/realtime"]:::notstarted
-    A12["ADR-0012<br/>API policy"]:::notstarted
-    A13["ADR-0013<br/>FHIR/HL7/terminology"]:::notstarted
-    A14["ADR-0014<br/>MCP"]:::notstarted
-    A15["ADR-0015<br/>authn"]:::notstarted
-    A16["ADR-0016<br/>authz/isolation"]:::notstarted
-    A17["ADR-0017<br/>crypto/keys"]:::notstarted
-    A18["ADR-0018<br/>audit/retention"]:::notstarted
-    A19["ADR-0019<br/>platform/residency"]:::notstarted
-    A20["ADR-0020<br/>SLO/DR"]:::notstarted
-    A21["ADR-0021<br/>frontend/BFF"]:::notstarted
-    A22["ADR-0022<br/>supply chain"]:::notstarted
-    A23["ADR-0023<br/>legacy import"]:::notstarted
-    A24["ADR-0024<br/>AI/ML"]:::notstarted
+    A6["ADR-0006<br/>op vs analytical SoT"]:::drafted
+    A7["ADR-0007<br/>rule bundles"]:::drafted
+    A8["ADR-0008<br/>evaluation status"]:::drafted
+    A9["ADR-0009<br/>alert state machine"]:::drafted
+    A10["ADR-0010<br/>outbox/backbone"]:::drafted
+    A11["ADR-0011<br/>projections/realtime"]:::drafted
+    A12["ADR-0012<br/>API policy"]:::drafted
+    A13["ADR-0013<br/>FHIR/HL7/terminology"]:::drafted
+    A14["ADR-0014<br/>MCP"]:::drafted
+    A15["ADR-0015<br/>authn"]:::drafted
+    A16["ADR-0016<br/>authz/isolation"]:::drafted
+    A17["ADR-0017<br/>crypto/keys"]:::drafted
+    A18["ADR-0018<br/>audit/retention"]:::drafted
+    A19["ADR-0019<br/>platform/residency"]:::drafted
+    A20["ADR-0020<br/>SLO/DR"]:::drafted
+    A21["ADR-0021<br/>frontend/BFF"]:::drafted
+    A22["ADR-0022<br/>supply chain"]:::drafted
+    A23["ADR-0023<br/>legacy import"]:::drafted
+    A24["ADR-0024<br/>AI/ML"]:::drafted
 
     A1 --> A2 --> A10 --> A9
     A1 --> A3 --> A4 --> A5 --> A6
@@ -375,6 +375,18 @@ flowchart LR
 > boundary" = fronteira AMH; "modular monolith" = monolito modular; "tenancy/ownership"
 > = tenancy/propriedade; "identity/MPI" = identidade/MPI), já expandidas em prosa nas
 > tabelas §3 e §3.1 acima.
+
+> **Correção de sincronização (ACH-09, 2026-08-17, reconciliação
+> documental).** Os nós `A6`–`A24` (`ADR-0006`–`ADR-0024`) estavam
+> estilizados com `classDef notstarted` (preenchimento cinza, borda
+> tracejada) — herdado de um corte anterior a qualquer aceite. Como a
+> tabela §3 já mostrava havia tempo que todas as 24 ADRs do piso estão
+> `accepted`, com minuta redigida, a classe foi corrigida para `drafted`
+> (mesma classe de `A1`–`A5`) em todos os 19 nós. Isto sincroniza o
+> diagrama com a tabela §3 e com o item 4 corrigido da §7 — não introduz
+> nem implica nenhuma alegação de `implemented`/`verified`; o diagrama
+> continua descrevendo apenas dependência de **aceitação**, não de
+> construção.
 
 ### 4.3 Observação de caminho crítico
 
@@ -474,6 +486,19 @@ autoridade para fazer.
    ADRs de extensão 0025–0029 (GDEC-0007), e ADR-0001, ADR-0003, ADR-0004, ADR-0005,
    ADR-0009, ADR-0010, ADR-0011 (GDEC-0008 item 4). Apenas **ADR-0002** e **ADR-0006**
    permanecem `proposed`, não decididas.
+
+   > **Correção (ACH-09, 2026-08-17, reconciliação documental —
+   > `ic-reconciliador-docs`).** O parágrafo acima descreve o estado em
+   > 2026-08-15 e ficou para trás em relação a `GDEC-0016` (2026-08-16 —
+   > aceite em lote: `ADR-0002`/`ADR-0006` aceitos; as direções dos treze
+   > `not-started` aceitas) e `GDEC-0017` (mesma data — as treze minutas
+   > `ADR-0012`–`ADR-0024` redigidas em pt-BR, materializando as direções
+   > aceitas; ver "Registro de materialização" no topo deste arquivo).
+   > **Estado atual: nenhuma das 24 ADRs do piso permanece `not-started`**
+   > — todas têm minuta redigida e todas as 24 estão `accepted` (11 por
+   > `GDEC-0007`/`GDEC-0008`, 13 por direção `GDEC-0016` com minuta ciclo
+   > 6). A tabela da §3 acima já refletia isso corretamente; só este item
+   > 4 estava desatualizado.
 5. **ADR-0004 foi redigida antes de seus pré-requisitos declarados** (ADR-0001,
    ADR-0003) porque a adjudicação que a desbloqueou aconteceu primeiro. Isto é
    legítimo — a tabela de dependência descreve ordem de *aceitação*, não ordem de

@@ -65,6 +65,29 @@ SCAN_FILES = ["README.md"]
 # every root in SCAN_ROOTS — see "Coverage of apps/ and packages/" above.
 EXCLUDED_DIR_NAMES = {"node_modules", "dist"}
 
+# Saída GERADA pela suíte de navegador (ACH-07, SPR-G4-5): os traces do
+# Playwright embutem o conteúdo das páginas exercitadas, incluindo os endereços
+# sintéticos que as fixtures usam. São artefato de execução, não conteúdo do
+# repositório, e estão em `.gitignore`. A poda existe para que uma execução
+# local logo após o E2E não produza achado sobre arquivo que o repositório não
+# contém.
+#
+# ANCORADO POR CAMINHO, não por nome de diretório (achado P3 de revisão
+# adversarial, 2026-08-17). Uma primeira versão acrescentou estes nomes a
+# `EXCLUDED_DIR_NAMES`, que poda por nome em QUALQUER profundidade: um arquivo
+# adicionado com `git add -f` sob um diretório chamado `test-results` em
+# qualquer lugar da árvore seria commitado e nunca varrido. `node_modules/` e
+# `dist/` podem podar por nome porque ocorrem em toda pasta de pacote e seu
+# conteúdo nunca é versionado; estes três ocorrem em UM lugar conhecido e a
+# poda deve dizer qual.
+EXCLUDED_RELATIVE_DIRS = frozenset(
+    {
+        os.path.join("apps", "web", "test-results"),
+        os.path.join("apps", "web", "playwright-report"),
+        os.path.join("apps", "web", "blob-report"),
+    }
+)
+
 # No addresses are currently allowlisted. Any addition requires a
 # DECIDED entry in docs/00-governance/registers/decision-register.md —
 # an agent may not silently allowlist an address to make this gate pass.
@@ -113,7 +136,13 @@ def iter_target_files(repo_root: str):
             # Prune in place so os.walk never descends into these dirs at
             # all (not just a post-hoc filter of results) — see module
             # docstring "Coverage of apps/ and packages/".
-            dirnames[:] = sorted(d for d in dirnames if d not in EXCLUDED_DIR_NAMES)
+            dirnames[:] = sorted(
+                d
+                for d in dirnames
+                if d not in EXCLUDED_DIR_NAMES
+                and os.path.relpath(os.path.join(dirpath, d), repo_root)
+                not in EXCLUDED_RELATIVE_DIRS
+            )
             for name in sorted(filenames):
                 yield os.path.join(dirpath, name)
     for rel in SCAN_FILES:

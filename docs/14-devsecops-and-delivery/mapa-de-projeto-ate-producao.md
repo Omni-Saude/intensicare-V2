@@ -368,8 +368,16 @@ campo correspondente do sprint homônimo está no espelho YAML
   "comitê humano qualificado" do §6.4 original fica superseded neste escopo
   (banner [AGENTIFICADO] no prompt §6.4); independência autor≠aprovador
   transposta a agentes (AGT-4).
-- **Estado**: `BLOQUEADO` — por **dados** (G3/AMH), não mais por atos
-  humanos; a contagem acionável continua **0** (a ata não cria dados).
+- **Estado**: `PARCIAL` — **corrigido nesta reconciliação (ACH-09,
+  2026-08-17)** para eliminar a contradição entre este campo (que ainda
+  lia `BLOQUEADO`) e a emenda pós-ciclo 6 logo acima, que já revisara o
+  estado da fase para `PARCIAL` sem propagar a mudança até aqui; a tabela
+  da seção 12 tinha o mesmo defeito e foi corrigida junto. Texto original
+  do ciclo 2, ainda válido para o que resta: a **promoção sombra→acionável**
+  (SPR-G2-4/MG-G2) permanece `BLOQUEADO` — por **dados** (G3/AMH), não mais
+  por atos humanos; a contagem acionável continua **0** (a ata AGT-3/AGT-4
+  não cria dados; a promoção exige dado real de G3 por via — condições 3 e
+  4 da tabela de sprints abaixo).
 - **Evidência**: 0/99 hard-gates (ciclo 0); §7.7 "actionable-pathway count
   remains ZERO"; método "EXECUTION BLOCKED" (P2 matriz; P1 papéis disposto
   por AGT-3); ata AGT-3/AGT-4 (DECIDED, `ac4b1bd`); RISK-0012 (S5)
@@ -510,10 +518,29 @@ Swimlane 4 — Dependências externas:
 - **Objetivo**: conector production-ready somente com testes de contrato,
   semântica, segurança, proveniência, replay, falha, carga, observabilidade
   e recuperação contra sistema externo representativo (§12.4).
-- **Estado**: `NÃO INICIADO` (desenho do harness FEITO como preparação).
-- **Evidência**: 7 artefatos §7.6 PROPOSAL; "nenhum cenário executado".
-- **Lacunas**: suites executáveis; sistema representativo/ambiente
-  aprovado; aceitador externo nomeado (≠ implementador).
+- **Estado**: `PARCIAL` — **corrigido nesta reconciliação (ACH-09,
+  2026-08-17)**: o texto original do ciclo 2 (`NÃO INICIADO`, desenho do
+  harness FEITO como preparação) não captura mais o estado real — o
+  harness deixou de ser desenho e passou a ser código executável
+  (`packages/conformidade`), sem que isso constitua aprovação de gate.
+  **O que isso NÃO é**: evidência de compatibilidade com a AMH, mudança do
+  achado "candidato a integração", ou fechamento do Gate G3 — o próprio
+  pacote declara esses limites (`packages/conformidade/README.md`,
+  "LIMITE DURO"). `MG-G5` (aceitação por verificador ≠ implementador)
+  permanece não iniciado.
+- **Evidência**: `packages/conformidade` transforma os 22 cenários de
+  `cenarios-teste-consumidor.md` (antes texto `NÃO EXECUTADO`) em suíte que
+  roda contra fixtures sintéticas pinadas por SHA-256 e emite relatório
+  (`pnpm --filter @intensicare/conformidade report` →
+  `reports/relatorio-conformidade.md`); nenhum cenário executado contra a
+  AMH (sandbox pinado/manifesto publicado inexistentes); os 7 artefatos
+  §7.6 (design original, PROPOSAL) permanecem como especificação de
+  origem.
+- **Lacunas**: ~~suites executáveis~~ **resolvida** (`packages/conformidade`);
+  sistema representativo/ambiente aprovado; aceitador externo nomeado
+  (≠ implementador); ligação da suíte à implementação real de `apps/api` —
+  o pacote testa sua própria camada anticorrupção de referência, não o
+  caminho de ingestão do produto (pendência que o próprio pacote registra).
 - **Épico EPC-G5-1 — conformidade executável**
 
 | Sprint | Swimlane | Objetivo | DoR | DoD | Dependências → Desbloqueia | IDs | Esforço |
@@ -596,10 +623,19 @@ Swimlane 4 — Dependências externas:
   capacidade validada.
 - **Estado**: `NÃO INICIADO`; **condições de ambiente não satisfazíveis
   unilateralmente pela V2** (ambientes AMH stg/prod inexistentes —
-  RISK-0004/L-14).
-- **Lacunas**: todas as 12 dimensões do go/no-go (§15.3) sem evidência;
-  ambientes AMH; validações clínicas/fatores humanos/acessibilidade/pentest
-  externas; treinamento e runbooks; autoridade de go-live não nomeada.
+  RISK-0004/L-14). **Nota desta reconciliação (ACH-09, 2026-08-17)**: o
+  estado do *gate* não muda — nenhum shadow, piloto ou produção rodou —,
+  mas a base de código com que a prontidão operacional (SPR-G8-1) será
+  demonstrada já existe: `packages/observabilidade` e `packages/vigilancia`,
+  com consumidor real em `apps/api` desde este ciclo. Código de
+  instrumentação **não é** evidência operacional: SLO medido, exercício de
+  DR, treinamento e runbooks exercidos continuam inexistentes até o piloto
+  (não é render de infra — §20).
+- **Lacunas**: todas as 12 dimensões do go/no-go (§15.3) sem evidência
+  **operacional** (a instrumentação de código para medi-las existe —
+  nota acima); ambientes AMH; validações clínicas/fatores
+  humanos/acessibilidade/pentest externas; treinamento e runbooks;
+  autoridade de go-live não nomeada.
 - **Épicos**: EPC-G8-1 prontidão operacional e validações; EPC-G8-2 piloto e
   produção.
 
@@ -620,7 +656,11 @@ Swimlane 4 — Dependências externas:
 
 - **Objetivo**: vigilância de resultados, carga de alarmes, incidentes,
   deriva, atualização de evidência/regra; revisão recorrente.
-- **Estado**: `NÃO INICIADO` (condicionado a MG-G8-PROD).
+- **Estado**: `NÃO INICIADO` (condicionado a MG-G8-PROD). **Nota desta
+  reconciliação (ACH-09, 2026-08-17)**: idem G8 — o código de vigilância
+  que `SPR-OC-1`/`SPR-OC-2` vão operar já existe (`packages/vigilancia`,
+  `packages/observabilidade`); o que falta é *operação real* sobre dado de
+  produção, que só existe depois de `MG-G8-PROD`.
 - **Épico EPC-OC-1 — vigilância e manutenção de evidência**
 
 | Sprint | Swimlane | Objetivo | Dependências | IDs | Esforço |
@@ -924,14 +964,30 @@ flowchart TB
 |---|---|---|---|---|---|---|
 | G0 (residual) | rodaquino-OMNI (GDEC-0004) | — | Donos nomeados + acesso + pinagem + governança | BLK-0002/0008 fechados; propagações residuais de GDEC-0008 concluídas | Nomeações (SPR-G0-2) | PARCIAL |
 | G1 | Revisor nomeado (GDEC-0003) + segundo revisor (SPR-G0-2) | GDEC-0009 vigente; dado real atrás de MD-1 | Dossiê substituto multi-fonte aprovado por painel AGT-4 (SPR-G1-9) + risco aceito registrado (AGT-1/RISK-0013) + corte histórico do baseline fixado (SPR-G1-10) | Uso pretendido aprovado com evidência substituta (VAL-0005 — rota do risco aceito) | **MG-G1** (SPR-G1-8 — permanece ato humano) | PARCIAL |
-| G2 | rodaquino-OMNI por autorização permanente (GDEC-0009/AGT-3), exercida por painel agentico AGT-4 | MG-G1; fontes evidenciadas (G3) | 7 condições cumulativas do AGT-3 (hard-gates inalterados; trilha AGT-4; G3 por via; parecer OS-16; sombra medida; kill switch/rollback; registro imutável) | Promoção com 7/7 condições demonstradas; reversão automática a sombra em violação de limiar | Autorização GDEC-0009 (já exercida) + gatilhos de revisita nomeados | BLOQUEADO (por dados) |
+| G2 | rodaquino-OMNI por autorização permanente (GDEC-0009/AGT-3), exercida por painel agentico AGT-4 | MG-G1; fontes evidenciadas (G3) | 7 condições cumulativas do AGT-3 (hard-gates inalterados; trilha AGT-4; G3 por via; parecer OS-16; sombra medida; kill switch/rollback; registro imutável) | Promoção com 7/7 condições demonstradas; reversão automática a sombra em violação de limiar | Autorização GDEC-0009 (já exercida) + gatilhos de revisita nomeados | PARCIAL — promoção BLOQUEADO (dados)[^1] |
 | G3 | Donos AMH+V2 (BLK-0015 pendente) | OS-05; MD-4/MD-5 residuais | Pinagem por digest; matriz com dados populados medidos; testes §7.6 em ambiente production-like | 6 blocos do §7.6 satisfeitos, por interface/via/tenant/modo | **MG-G3** (audiência bilateral AMH×V2) | BLOQUEADO |
-| G4 | AUTH-UX/AUTH-PRODUCT + validação de usuários | ADRs aceitos+propagados; evidência G1 | Jornada×domínio×API×erro×authz×audit + testes de contrato de cenário | Coerência provada por cenário (não schemas gerados) | **MG-G4** (SPR-G4-6) | NÃO INICIADO |
-| G5 | Aceitador de conformidade externo (a nomear) | Contratos publicados (SPR-G4-4) | 9 famílias de teste §12.4 contra sistema representativo | Suites verdes aceitas por verificador ≠ implementador | **MG-G5** (SPR-G5-2) | NÃO INICIADO |
-| G6 | Humanos autorizados + privacy/legal (BLK-0004) | Parecer OS-16; controles implementados | Controles verificados; P0/P1 dispostos; isolamento adversarial; aprovação legal | Aceite nominal de risco residual | **MG-G6** (SPR-G6-4) | NÃO INICIADO (prep. PARCIAL) |
-| G7 | Revisor independente da regra | SPR-G4-2 (stack); fixtures sintéticas | 11 passos + caminhos degradados + evidência automatizada §14 | Fatia demonstrada; revisão independente registrada | **MG-G7** (SPR-G7-3) | NÃO INICIADO |
+| G4 | AUTH-UX/AUTH-PRODUCT + validação de usuários | ADRs aceitos+propagados; evidência G1 | Jornada×domínio×API×erro×authz×audit + testes de contrato de cenário | Coerência provada por cenário (não schemas gerados) | **MG-G4** (SPR-G4-6) | PARCIAL[^1] |
+| G5 | Aceitador de conformidade externo (a nomear) | Contratos publicados (SPR-G4-4) | 9 famílias de teste §12.4 contra sistema representativo | Suites verdes aceitas por verificador ≠ implementador | **MG-G5** (SPR-G5-2) | PARCIAL — suíte executável implementada; MG-G5 NÃO INICIADO[^1] |
+| G6 | Humanos autorizados + privacy/legal (BLK-0004) | Parecer OS-16; controles implementados | Controles verificados; P0/P1 dispostos; isolamento adversarial; aprovação legal | Aceite nominal de risco residual | **MG-G6** (SPR-G6-4) | PARCIAL[^1] |
+| G7 | Revisor independente da regra | SPR-G4-2 (stack); fixtures sintéticas | 11 passos + caminhos degradados + evidência automatizada §14 | Fatia demonstrada; revisão independente registrada | **MG-G7** (SPR-G7-3) | PARCIAL[^1] |
 | G8 | Autoridade de go-live (≠ dono do pipeline) | MG-G2/G3/G4/G5/G6/G7; ambientes AMH | Go/no-go de 12 dimensões (§15.3), shadow→piloto→produção | Registro go/no-go nominal e datado por etapa | **MG-G8-PILOTO / MG-G8-PROD** | NÃO INICIADO / ambiente BLOQUEADO |
 | Op. contínua | AUTH-OPERATIONS + revisão recorrente | MG-G8-PROD | Vigilância K-8/alarmes/incidentes/deriva; re-pinagem ASM-0002 | Revisões recorrentes registradas | SPR-OC-3 | NÃO INICIADO |
+
+[^1]: **Correção desta reconciliação (ACH-09, 2026-08-17).** Esta tabela
+não havia sido propagada quando as seções 5.2/5.4/5.6/5.7 receberam a
+emenda pós-ciclo 6 (2026-08-16) — G2, G4, G6 e G7 ainda liam o estado
+pré-ciclo-6 aqui (`BLOQUEADO (por dados)`, `NÃO INICIADO`, `NÃO INICIADO
+(prep. PARCIAL)`, `NÃO INICIADO`, respectivamente), contradizendo o corpo
+das próprias seções e `mapa-de-projeto-backlog.yaml` (onde os quatro já
+liam `PARCIAL`). Corrigido para o estado único de
+`analise-pos-ciclo-6-mapa-vs-estado.md` §2: **nenhum destes é aprovação de
+gate** — `PARCIAL` significa camadas percorridas (preparação, implementação
+demonstrada em código), nunca verificação ou aprovação humana (§4 deste
+mapa). G5 também deixa de ser descrito como simplesmente "não iniciado":
+`packages/conformidade` é uma suíte executável (22 cenários
+`CTS-01..CTS-22` contra fixtures pinadas, relatório gerado por comando —
+ver §5.5), distinta da aceitação por verificador externo (`MG-G5`), que
+segue não iniciada.
 
 ---
 

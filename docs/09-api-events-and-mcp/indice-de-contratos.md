@@ -60,13 +60,28 @@ interface que não existe em código ou em ADR aceito (regra não-negociável
 
 ### 2.2 Implementação (OBSERVADO)
 
-`apps/api` (Fastify 5 + zod, PREMISSA PRE-04/PRE-05) implementa as seis
-rotas acima sobre um armazenamento **em memória**, explicitamente marcado
-`// INTEGRAÇÃO PENDENTE (fatia)` em `apps/api/src/store.ts` — não é
-`packages/persistencia` (que implementa o outbox/RLS/auditoria reais, ver
-§4). O núcleo de avaliação clínica em `apps/api/src/avaliacao.ts` é
-inteiramente local, inventado e ilustrativo (três parâmetros, limiares sem
-validação clínica) — não é `packages/kernel-clinico`.
+**Correção de estado (2026-08-17).** O texto anterior desta seção descrevia a
+fundação `SPR-G7-1` e ficou obsoleto em dois pontos, ambos superados ainda no
+ciclo 6 (`SPR-G7-2`, commit `87798af`) e agora corrigidos por observação do
+código: (a) o armazenamento **em memória** de `apps/api/src/store.ts` — arquivo
+que **não existe mais**, removido junto com a marca `// INTEGRAÇÃO PENDENTE
+(fatia)`; (b) a afirmação de que o núcleo de avaliação era "inteiramente local,
+inventado e ilustrativo". Preservado aqui como registro do que o índice dizia,
+sem reescrita silenciosa.
+
+Estado real (`OBSERVED`): `apps/api` (Fastify 5 + zod, PREMISSA PRE-04/PRE-05)
+implementa as rotas sobre `@intensicare/persistencia` — persistência real com
+RLS por tenant, outbox transacional (`ADR-0010` B1) e auditoria append-only,
+em `apps/api/src/db.ts`. A avaliação é a regra real de
+`@intensicare/kernel-clinico` (`RULE-NEWS2`), despachada por registro
+versionado sobre bundle verificado em `apps/api/src/regras/` (ACH-04).
+
+**O que isso NÃO significa.** A avaliação sai rotulada como sintética/sombra ou
+`não avaliado`: o bundle real do NEWS2 acumula seis ou mais bloqueios de
+prontidão e `activate({mode:"actionable"})` é recusado fail-closed. Continuam
+valendo: **0 vias clínicas acionáveis**, matriz **47/47 inelegíveis**, safety
+case **M0**, nenhum dado real acessado. Regra existir e ser despachável não é
+regra acionável.
 
 ### 2.3 Pendências declaradas no próprio contrato (`x-pendencias`, OBSERVADO)
 
@@ -86,15 +101,26 @@ validação clínica) — não é `packages/kernel-clinico`.
 |---|---|---|
 | Tabela `outbox_events` + funções de gravação transacional (ADR-0010 Opção A) | OBSERVADO, implementado | `packages/persistencia/src/migrations/0001_init.sql`, `src/repositories/clinical-repository.ts` |
 | Relay/publicador que leria o outbox e publicaria externamente (ADR-0010 B9/B10) | NÃO IMPLEMENTADO | — (nenhum arquivo) |
-| Log de eventos em memória exposto via `GET /v1/eventos/stream` (`EventoFluxo`) | OBSERVADO, implementado — **não é o outbox real**, ver `catalogo-de-eventos.md` §2 | `apps/api/src/store.ts`, tipo em `packages/contratos/src/index.ts` |
-| Documento AsyncAPI formal | NÃO EXISTE | pendência — `catalogo-de-eventos.md` (este diretório) é a semente |
+| `GET /v1/eventos/stream` (`EventoFluxo`) | OBSERVADO, implementado — lê o **outbox real** por cursor (`apps/api/src/db.ts::replayEvents`), não mais um log em memória. Desde ACH-05 é entrega **contínua** autorizada (pulsação, cursor monotônico, fila limitada, retomada, autorização por evento), não replay finito | `apps/api/src/eventos/`, `apps/api/src/db.ts`, tipo em `packages/contratos/src/index.ts` |
+| Documento AsyncAPI formal | OBSERVADO, publicado (ACH-05, 2026-08-17) — AsyncAPI 3.0.0 do canal `/v1/eventos/stream`, com evento de dados e três mensagens de plano de controle (pulsação, estado de conexão, instrução de reconciliação); `x-pendencias` declara os campos de `ADR-0010` B8 ainda ausentes, em vez de inventá-los | `packages/contratos/asyncapi.yaml`; vocabulário em `packages/contratos/src/asyncapi.ts`; validado por `scripts/check_contratos.mjs` |
 
 O `catalogo-de-eventos.md` deste diretório documenta, evento a evento, o que
 foi OBSERVADO nas duas superfícies acima, com escopo de ordenação, payload,
-garantias de entrega e consumidores conhecidos — como semente para uma
-futura especificação AsyncAPI contract-first, no mesmo espírito de
-`openapi.yaml`. A publicação formal em AsyncAPI é pendência registrada, não
-uma decisão deste índice.
+garantias de entrega e consumidores conhecidos. Ele foi a semente do
+`asyncapi.yaml` publicado em ACH-05, e permanece a fonte de verdade da
+semântica: `scripts/check_contratos.mjs` reprova divergência entre os dois —
+tanto evento declarado no contrato e inexistente no catálogo quanto evento
+emitido pela API e não declarado.
+
+**Limite honesto do que a publicação significa** (`OBSERVED`): o
+`asyncapi.yaml` é verificado estruturalmente e por coerência com o catálogo e
+com os tipos de `@intensicare/contratos`; ele **não** é validado contra o
+JSON Schema oficial da AsyncAPI 3.0 — nenhuma alegação de "AsyncAPI
+oficialmente validado" é feita. Os nomes de `event_type` de `WorkItem`
+seguem `PROPOSAL` no catálogo §2.3 e por isso o enum correspondente **não**
+foi fechado; os campos de `ADR-0010` B8 ausentes do envelope estão
+declarados em `x-pendencias`, não preenchidos por suposição. Ambos exigem
+mudança de esquema de persistência que não foi feita.
 
 ## 4. Exposição MCP
 
