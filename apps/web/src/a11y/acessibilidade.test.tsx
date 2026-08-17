@@ -38,6 +38,18 @@ import {
 } from "./matrizAcessibilidade.js";
 
 /**
+ * Conjunto FIXADO dos critérios que exigem tecnologia assistiva ou juízo
+ * humano — transcrição do rótulo `manual_obrigatorio` de
+ * `matrizAcessibilidade.ts`, não uma decisão nova.
+ *
+ * Existe porque o teste "nenhum critério de cobertura manual obrigatória é
+ * declarado dispensado" derivava a lista do próprio rótulo que ele deveria
+ * proteger: remover o rótulo (o ato de dispensar) esvaziava a lista e o teste
+ * passava sem asserção nenhuma.
+ */
+const SC_COM_VALIDACAO_MANUAL_OBRIGATORIA = ["2.1.1", "2.4.3", "2.4.7", "2.4.11", "4.1.3"] as const;
+
+/**
  * Regras desligadas em jsdom, com a razão. Toda entrada aqui precisa ter
  * cobertura declarada em `matrizAcessibilidade.ts` na trilha de navegador.
  */
@@ -321,10 +333,25 @@ describe("matriz de acessibilidade — honestidade de estado", () => {
   });
 
   it("nenhum critério de cobertura manual obrigatória é declarado dispensado", () => {
+    const manuais = criteriosQueExigemValidacaoManual();
+
+    // CEGUEIRA FECHADA (revisão adversarial): este teste era cego exatamente à
+    // regressão que o seu nome descreve. `criteriosQueExigemValidacaoManual()`
+    // é derivada do rótulo `manual_obrigatorio`, e REMOVER o rótulo É o ato de
+    // "declarar dispensado" — a filtragem esvaziava, o laço não executava
+    // nenhuma asserção, e o teste ficava verde. Fixar o conjunto transforma a
+    // remoção do rótulo em vermelho. Não é decisão de produto: é a transcrição
+    // do que `matrizAcessibilidade.ts` já declara hoje.
+    expect(
+      [...manuais.map((c) => c.sc)].sort(),
+      "o conjunto de critérios que exigem validação manual mudou: incluir um é " +
+        "reconhecer uma pendência; REMOVER um é declará-lo dispensado por automação",
+    ).toEqual([...SC_COM_VALIDACAO_MANUAL_OBRIGATORIA].sort());
+
     // Automação nunca encerra um critério que exige tecnologia assistiva: a
     // nota tem de dizer o que o verde NÃO prova.
-    for (const criterio of criteriosQueExigemValidacaoManual()) {
-      expect(criterio.nota).toMatch(
+    for (const criterio of manuais) {
+      expect(criterio.nota, `nota do critério ${criterio.sc}`).toMatch(
         /NÃO prova|não é decidível|exigindo validação|NÃO EXECUTADO|só um usuário|pode responder/i,
       );
     }

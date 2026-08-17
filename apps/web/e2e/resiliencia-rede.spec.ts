@@ -104,6 +104,16 @@ test.describe("sessão autenticada", () => {
     const { requisicoes } = coletarRequisicoesApi(page);
     await abrirAplicacao(page);
 
+    // Guarda de não-vacuidade, como nos três testes irmãos deste `describe`:
+    // o listener de rede pode não coletar NADA (corrida de navegação, rota
+    // abortada, sessão não emitida) e o laço abaixo passaria sem ter olhado
+    // uma única URL — verde por ausência de tráfego, não por ausência de
+    // identificador em query string.
+    expect(
+      requisicoes.length,
+      "nenhuma requisição de API foi coletada — o anti-padrão 12 não foi exercido",
+    ).toBeGreaterThan(0);
+
     for (const requisicao of requisicoes) {
       const url = new URL(requisicao.url());
       expect(url.search).not.toMatch(/token|bearer|authorization|tenant/i);

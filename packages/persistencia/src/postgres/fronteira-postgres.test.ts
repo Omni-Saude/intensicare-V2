@@ -44,7 +44,7 @@ import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AdaptadorPostgres, type ConfiguracaoPostgres } from "./pool.js";
 import { ErroIdentidadeInsegura, ErroTenantAusente, type ExecutorTenant } from "./porta.js";
-import { ConexaoPostgres, opcoesDaUrl, urlCom } from "./protocolo.js";
+import { ConexaoPostgres, ErroPostgres, opcoesDaUrl, urlCom } from "./protocolo.js";
 import {
   aplicarMigracao,
   type BancoProvisionado,
@@ -352,6 +352,92 @@ async function semearTenant(porta: AdaptadorPostgres, tenantId: string): Promise
 }
 
 // ---------------------------------------------------------------------------
+// Rejeição TIPADA — por que `.rejects.toThrow()` sem tipo é verde falso
+// ---------------------------------------------------------------------------
+
+/**
+ * `insufficient_privilege`. É o único SQLSTATE que prova "o servidor recusou
+ * PORQUE o papel não tem o privilégio".
+ */
+const SQLSTATE_PRIVILEGIO_INSUFICIENTE = "42501";
+
+/** `foreign_key_violation` — integridade referencial, não erro de sintaxe. */
+const SQLSTATE_VIOLACAO_DE_CHAVE_ESTRANGEIRA = "23503";
+
+/**
+ * Classe 28 do SQLSTATE (`invalid_authorization_specification`,
+ * `invalid_password`). Prova que o servidor REJEITOU a autenticação — e não
+ * que o host caiu, que o banco não existe ou que o soquete fechou.
+ */
+const CLASSE_SQLSTATE_AUTENTICACAO = "28";
+
+/**
+ * Captura a rejeição e devolve o erro. Se a promessa CUMPRIR, falha com o
+ * contexto — nenhum caminho de escalada pode ser aceito em silêncio.
+ */
+async function capturarRejeicao(promessa: Promise<unknown>, contexto: string): Promise<unknown> {
+  try {
+    await promessa;
+  } catch (erro) {
+    return erro;
+  }
+  throw new Error(`NÃO houve rejeição — ${contexto}`);
+}
+
+interface RecusaObservada {
+  readonly sql: string;
+  readonly sqlstate: string;
+  readonly mensagem: string;
+}
+
+/**
+ * Executa `sql` como a aplicação e devolve o SQLSTATE da recusa.
+ *
+ * POR QUE ISTO EXISTE (achado da terceira revisão adversarial): estas suítes
+ * asseriam `.rejects.toThrow()` **sem tipo nem mensagem**, o que aceita
+ * QUALQUER rejeição. Vários caminhos nomeiam objetos por nome literal
+ * (`clinical_observations_tenant_isolation`, `audit_events_no_update`). O
+ * PostgreSQL RESOLVE o nome antes de checar propriedade, então:
+ *
+ *   drop policy clinical_observations_tenant_isolation on clinical_observations;
+ *     ERROR: must be owner of relation clinical_observations   -- 42501, controle EXERCIDO
+ *   drop policy politica_que_alguem_renomeou on clinical_observations;
+ *     ERROR: policy "..." does not exist                       -- 42704, controle NÃO exercido
+ *
+ * Sem o SQLSTATE, renomear um objeto troca o segundo caso pelo primeiro e o
+ * teste segue verde medindo outra coisa. A existência dos objetos nomeados é
+ * coberta pelo teste irmão "os objetos nomeados ... EXISTEM".
+ */
+async function recusaDe(
+  porta: AdaptadorPostgres,
+  tenantId: string,
+  sql: string,
+): Promise<RecusaObservada> {
+  const erro = await capturarRejeicao(
+    porta.comTenant(tenantId, (tx) => tx.query(sql)),
+    `o servidor ACEITOU: ${sql}`,
+  );
+  expect(erro, `a recusa de '${sql}' não veio do servidor PostgreSQL`).toBeInstanceOf(ErroPostgres);
+  const pg = erro as ErroPostgres;
+  return { sql, sqlstate: pg.codigo, mensagem: pg.message };
+}
+
+/**
+ * Assere que TODAS as recusas foram por privilégio insuficiente, relatando de
+ * uma vez as que não foram (com SQLSTATE e mensagem), em vez de abortar na
+ * primeira e esconder as demais.
+ */
+function exigirRecusaPorPrivilegio(recusas: readonly RecusaObservada[], esperadas: number): void {
+  expect(recusas).toHaveLength(esperadas);
+  const forasDoControle = recusas.filter((r) => r.sqlstate !== SQLSTATE_PRIVILEGIO_INSUFICIENTE);
+  expect(
+    forasDoControle,
+    "recusa que NÃO foi por privilégio insuficiente (42501): o comando falhou por outro motivo " +
+      "(objeto inexistente, sintaxe, tipo) e o controle de privilégio NÃO foi exercido",
+  ).toEqual([]);
+}
+
+// ---------------------------------------------------------------------------
 // Suíte
 // ---------------------------------------------------------------------------
 
@@ -446,12 +532,80 @@ function registrarSuite(urlSuperusuario: string): void {
             "select pg_read_file('/etc/hosts')",
             "truncate audit_events",
           ];
+          const recusas: RecusaObservada[] = [];
           for (const sql of caminhos) {
-            await expect(
-              porta.comTenant(TENANT_A, (tx) => tx.query(sql)),
-              `o servidor ACEITOU um caminho de escalada: ${sql}`,
-            ).rejects.toThrow();
+            recusas.push(await recusaDe(porta, TENANT_A, sql));
           }
+          // Cada caminho tem de ser recusado POR PRIVILÉGIO (42501). Antes
+          // isto era `.rejects.toThrow()` sem tipo: aceitava qualquer
+          // rejeição, inclusive "objeto não existe" (42704).
+          exigirRecusaPorPrivilegio(recusas, caminhos.length);
+        },
+        TEMPO_LIMITE_MS,
+      );
+
+      it(
+        "os objetos nomeados nos caminhos de escalada EXISTEM (senão a recusa mediria outra coisa)",
+        async () => {
+          // Contraparte indispensável do teste acima. O PostgreSQL resolve o
+          // NOME antes de checar propriedade: renomear a política ou o
+          // gatilho troca 42501 ("must be owner") por 42704 ("does not
+          // exist"), e sem esta verificação a suíte continuaria verde com o
+          // controle desligado. Aqui a asserção é a existência do alvo.
+          const alvos = await porta.comTenant(TENANT_A, async (tx) => ({
+            politica: await tx.query<{ n: number }>(
+              `select count(*)::int as n from pg_policy p
+                 join pg_class c on c.oid = p.polrelid
+                where c.relname = 'clinical_observations'
+                  and p.polname = 'clinical_observations_tenant_isolation'`,
+            ),
+            gatilho: await tx.query<{ n: number }>(
+              `select count(*)::int as n from pg_trigger t
+                 join pg_class c on c.oid = t.tgrelid
+                where c.relname = 'audit_events'
+                  and t.tgname = 'audit_events_no_update'
+                  and not t.tgisinternal`,
+            ),
+            funcao: await tx.query<{ n: number }>(
+              `select count(*)::int as n from pg_proc p
+                 join pg_namespace n on n.oid = p.pronamespace
+                where n.nspname = 'public' and p.proname = 'intensicare_forbid_mutation'`,
+            ),
+            migrador: await tx.query<{ n: number }>(
+              "select count(*)::int as n from pg_roles where rolname = $1",
+              [PAPEL_MIGRADOR],
+            ),
+            tabelas: await tx.query<{ n: number }>(
+              `select count(*)::int as n from pg_class c
+                 join pg_namespace ns on ns.oid = c.relnamespace
+                where ns.nspname = 'public' and c.relkind = 'r'
+                  and c.relname in ('clinical_observations', 'audit_events')`,
+            ),
+          }));
+
+          expect(
+            alvos.politica.rows[0]?.n,
+            "a política 'clinical_observations_tenant_isolation' não existe — " +
+              "os caminhos que a nomeiam falhariam por 42704, não por privilégio",
+          ).toBe(1);
+          expect(
+            alvos.gatilho.rows[0]?.n,
+            "o gatilho 'audit_events_no_update' não existe — " +
+              "os caminhos que o nomeiam falhariam por 42704, não por privilégio",
+          ).toBe(1);
+          expect(
+            alvos.funcao.rows[0]?.n,
+            "a função 'public.intensicare_forbid_mutation' não existe — " +
+              "`create or replace` sobre ela não exerceria propriedade",
+          ).toBe(1);
+          expect(
+            alvos.migrador.rows[0]?.n,
+            `o papel '${PAPEL_MIGRADOR}' não existe — 'set role'/'grant' falhariam por 42704`,
+          ).toBe(1);
+          expect(
+            alvos.tabelas.rows[0]?.n,
+            "clinical_observations e/ou audit_events não existem",
+          ).toBe(2);
         },
         TEMPO_LIMITE_MS,
       );
@@ -489,10 +643,23 @@ function registrarSuite(urlSuperusuario: string): void {
           // não basta bloquear `SET ROLE` se bastasse reconectar com outro nome.
           for (const usuario of ["postgres", PAPEL_MIGRADOR]) {
             const urlForjada = urlCom(banco.urlAplicacao, { usuario });
-            await expect(
+            const erro = await capturarRejeicao(
               ConexaoPostgres.conectar(opcoesDaUrl(urlForjada, "SYNTH-intruso")),
               `a senha da aplicação autenticou como '${usuario}'`,
-            ).rejects.toThrow();
+            );
+            // Tipada: `.rejects.toThrow()` sem tipo aceitaria host inalcançável,
+            // banco inexistente ou soquete fechado — nenhum deles prova que o
+            // servidor RECUSOU a credencial. Só a classe 28 do SQLSTATE prova.
+            expect(
+              erro,
+              `a rejeição de '${usuario}' não veio do servidor (transporte, não autenticação)`,
+            ).toBeInstanceOf(ErroPostgres);
+            const pg = erro as ErroPostgres;
+            expect(
+              pg.codigo.slice(0, 2),
+              `autenticação como '${usuario}' falhou por SQLSTATE ${pg.codigo} (${pg.message}), ` +
+                "que não é recusa de credencial",
+            ).toBe(CLASSE_SQLSTATE_AUTENTICACAO);
           }
         },
         TEMPO_LIMITE_MS,
@@ -541,7 +708,22 @@ function registrarSuite(urlSuperusuario: string): void {
             opcoesDaUrl(banco.urlAplicacao, "SYNTH-topologia-nova"),
           );
           try {
-            await expect(nova.executar("set session authorization postgres")).rejects.toThrow();
+            // NÃO listado no despacho, mesma classe de defeito e mesmo arquivo:
+            // este é o lado VERDE do par vermelho/verde do ACHADO-01, e
+            // `.rejects.toThrow()` sem tipo aceitaria soquete fechado, erro de
+            // sintaxe ou tempo esgotado como se fossem "escalada recusada".
+            const erroDaEscalada = await capturarRejeicao(
+              nova.executar("set session authorization postgres"),
+              "a topologia NOVA permitiu a escalada",
+            );
+            expect(erroDaEscalada).toBeInstanceOf(ErroPostgres);
+            const pgEscalada = erroDaEscalada as ErroPostgres;
+            expect(
+              pgEscalada.codigo,
+              `a escalada foi recusada por SQLSTATE ${pgEscalada.codigo} ` +
+                `("${pgEscalada.message}"), e não por privilégio insuficiente`,
+            ).toBe(SQLSTATE_PRIVILEGIO_INSUFICIENTE);
+
             const aindaApp = await nova.consultar<{ u: string }>("select current_user::text as u");
             expect(aindaApp.rows[0]?.u).toBe(PAPEL_APLICACAO);
 
@@ -974,7 +1156,7 @@ function registrarSuite(urlSuperusuario: string): void {
           );
           expect(ancora.rows[0]?.n, "a tabela de selo não existe — teste inconclusivo").toBe(1);
 
-          for (const sql of [
+          const caminhosDaAncora = [
             "select * from intensicare_escopo.selo",
             "update intensicare_escopo.selo set tenant_id = 'SYNTH-TENANT-PG-B'",
             "delete from intensicare_escopo.selo",
@@ -982,12 +1164,15 @@ function registrarSuite(urlSuperusuario: string): void {
             "alter table intensicare_escopo.selo disable row level security",
             "drop function intensicare_escopo.instalar(text)",
             "create table intensicare_escopo.forjada (id text)",
-          ]) {
-            await expect(
-              porta.comTenant(TENANT_A, (tx) => tx.query(sql)),
-              `a aplicação alcançou a âncora do escopo: ${sql}`,
-            ).rejects.toThrow();
+          ];
+          const recusas: RecusaObservada[] = [];
+          for (const sql of caminhosDaAncora) {
+            recusas.push(await recusaDe(porta, TENANT_A, sql));
           }
+          // A âncora acima prova que o objeto EXISTE; esta prova que a recusa
+          // foi por PRIVILÉGIO. Sem as duas, "esquema não existe" e "acesso
+          // negado" produzem o mesmo verde.
+          exigirRecusaPorPrivilegio(recusas, caminhosDaAncora.length);
         },
         TEMPO_LIMITE_MS,
       );
@@ -1207,7 +1392,7 @@ function registrarSuite(urlSuperusuario: string): void {
               tx.query<{ pid: number }>("select pg_backend_pid() as pid"),
             );
 
-            await expect(
+            const erroDaTransacao = await capturarRejeicao(
               solo.comTenant(TENANT_A, async (tx) => {
                 await tx.query(
                   `insert into audit_events
@@ -1223,7 +1408,19 @@ function registrarSuite(urlSuperusuario: string): void {
                   ["SYNTH-ALERTA-ORFAO", TENANT_A, "SYNTH-ENC-INEXISTENTE"],
                 );
               }),
-            ).rejects.toThrow();
+              "a transação com violação de integridade foi CONFIRMADA",
+            );
+            // Tipada: sem o SQLSTATE, um erro de coluna inexistente, de tipo ou
+            // de sintaxe no primeiro `insert` abortaria a transação do mesmo
+            // jeito e o teste seguiria verde SEM nunca ter exercido a
+            // integridade referencial que ele diz medir.
+            expect(erroDaTransacao).toBeInstanceOf(ErroPostgres);
+            const pgTransacao = erroDaTransacao as ErroPostgres;
+            expect(
+              pgTransacao.codigo,
+              `a transação abortou por SQLSTATE ${pgTransacao.codigo} (${pgTransacao.message}), ` +
+                "e não por violação de chave estrangeira",
+            ).toBe(SQLSTATE_VIOLACAO_DE_CHAVE_ESTRANGEIRA);
 
             const conexao = await solo.pool.adquirir();
             try {
@@ -1522,6 +1719,120 @@ function registrarSuite(urlSuperusuario: string): void {
           }
         },
         TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "ACHADO-11 — partição em OUTRO esquema não escapa da auditoria (4ª revisão, P2)",
+        async () => {
+          // A auditoria e as guardas partiam de `nspname = 'public'`. Uma
+          // partição de uma tabela particionada de `public` criada em OUTRO
+          // esquema nasce sem RLS, sem FORCE e sem política — e nenhuma das
+          // três camadas a via. O invariante correto não é sobre um ESQUEMA:
+          // é sobre as relações ALCANÇÁVEIS pelo papel de aplicação.
+          const alvo = await provisionarBanco({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_fora"),
+            recriarBanco: true,
+          });
+          const administrativa = await ConexaoPostgres.conectar(
+            opcoesDaUrl(alvo.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            await administrativa.executar("create schema synth_fora");
+            await administrativa.executar(
+              `create table public.synth_medicoes (tenant_id text not null, id text not null, dado text)
+                 partition by list (tenant_id)`,
+            );
+            await administrativa.executar(
+              "alter table public.synth_medicoes enable row level security",
+            );
+            await administrativa.executar(
+              "alter table public.synth_medicoes force row level security",
+            );
+            await administrativa.executar(
+              `create policy synth_medicoes_tenant_isolation on public.synth_medicoes
+                 using (tenant_id = intensicare_escopo.tenant_atual())
+                 with check (tenant_id = intensicare_escopo.tenant_atual())`,
+            );
+            // A partição vai para FORA de public — é o ponto do achado.
+            await administrativa.executar(
+              `create table synth_fora.synth_medicoes_b partition of public.synth_medicoes
+                 for values in ('SYNTH-TENANT-PG-B')`,
+            );
+            await administrativa.executar(
+              `grant usage on schema synth_fora to ${PAPEL_APLICACAO}`,
+            );
+            await administrativa.executar(
+              `grant select, insert on synth_fora.synth_medicoes_b to ${PAPEL_APLICACAO}`,
+            );
+
+            await expect(
+              aplicarMigracao(alvo.urlSuperusuarioNoBanco, "0003_fronteira_papeis.sql"),
+              "partição fora de public atravessou a auditoria de isolamento",
+            ).rejects.toThrow(/sem isolamento completo|synth_medicoes_b/i);
+          } finally {
+            await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "ACHADO-11 — o pool RECUSA identidade com USAGE em esquema fora da lista permitida",
+        async () => {
+          const alvo = await provisionarBanco({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_esquema"),
+            recriarBanco: true,
+          });
+          const administrativa = await ConexaoPostgres.conectar(
+            opcoesDaUrl(alvo.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            // Guarda contra falso-verde: sem USAGE o pool tem de ABRIR.
+            const antes = await AdaptadorPostgres.abrir({ url: alvo.urlAplicacao });
+            await antes.encerrar();
+
+            await administrativa.executar("create schema synth_extra");
+            await administrativa.executar(
+              `grant usage on schema synth_extra to ${PAPEL_APLICACAO}`,
+            );
+            await expect(
+              AdaptadorPostgres.abrir({ url: alvo.urlAplicacao }),
+              "o pool aceitou identidade com alcance a esquema não previsto",
+            ).rejects.toThrow(ErroIdentidadeInsegura);
+          } finally {
+            await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "ACHADO-13 — a aplicação tem USAGE mas NÃO SELECT nas sequências (oráculo de volume cross-tenant)",
+        async () => {
+          // `select` em sequência expõe `last_value`, um contador GLOBAL sobre
+          // todos os tenants — oráculo de volume. Só `usage` é necessário para
+          // `nextval` nos `bigserial`.
+          const privilegios = await porta.comTenant(TENANT_A, (tx) =>
+            tx.query<{ nome: string; le: boolean; usa: boolean }>(
+              `select c.relname as nome,
+                      has_sequence_privilege($1, c.oid, 'SELECT') as le,
+                      has_sequence_privilege($1, c.oid, 'USAGE') as usa
+                 from pg_class c join pg_namespace n on n.oid = c.relnamespace
+                where n.nspname = 'public' and c.relkind = 'S'
+                order by c.relname`,
+              [PAPEL_APLICACAO],
+            ),
+          );
+          expect(privilegios.rows.length, "nenhuma sequência encontrada — teste inconclusivo")
+            .toBeGreaterThan(0);
+          for (const seq of privilegios.rows) {
+            expect(seq.usa, `${seq.nome}: a aplicação precisa de USAGE para nextval`).toBe(true);
+            expect(seq.le, `${seq.nome}: SELECT expõe last_value (oráculo de volume)`).toBe(false);
+          }
+        },
+        TEMPO_LIMITE_MS,
       );
 
       it(

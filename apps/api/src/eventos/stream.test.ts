@@ -183,6 +183,14 @@ interface Controle {
    * consumidor a tratar sem confiar no escopo do produtor.
    */
   injetarEnvelopeAlheio: boolean;
+  /**
+   * ACHADO 7: as três bordas assíncronas do gateway. Cada uma faz a
+   * dependência REJEITAR — falha transitória de leitura do backbone, de
+   * revalidação de sessão e de autorização por evento.
+   */
+  falharLeitura: boolean;
+  falharRevalidacao: boolean;
+  falharAutorizacao: boolean;
 }
 
 interface Cenario {
@@ -216,18 +224,34 @@ async function montarCenario(
     cursorMinimoRetomavel: 0,
     saturado: false,
     injetarEnvelopeAlheio: false,
+    falharLeitura: false,
+    falharRevalidacao: false,
+    falharAutorizacao: false,
   };
   const abortadores: AbortController[] = [];
 
   const base = criarPortaDeStubSintetico(autenticarSintetico);
   const porta: PortaAutorizacaoEventos = {
     verificarSessao: (request) => base.verificarSessao(request),
-    revalidarSessao: () => controle.revalidar(),
-    autorizarEntrega: (_contexto, evento) => controle.autorizar(evento),
+    revalidarSessao: () => {
+      if (controle.falharRevalidacao) {
+        return Promise.reject(new Error("SYNTH-FALHA: revalidação de sessão indisponível"));
+      }
+      return controle.revalidar();
+    },
+    autorizarEntrega: (_contexto, evento) => {
+      if (controle.falharAutorizacao) {
+        return Promise.reject(new Error("SYNTH-FALHA: autorização de entrega indisponível"));
+      }
+      return controle.autorizar(evento);
+    },
   };
 
   const fonte: FonteEventosDuraveis = {
     lerDesde(chave, cursor, limite) {
+      if (controle.falharLeitura) {
+        return Promise.reject(new Error("SYNTH-FALHA: leitura do backbone indisponível"));
+      }
       const tenant = chave.tenantId as string;
       if (controle.injetarEnvelopeAlheio) {
         // Produtor defeituoso/comprometido: devolve envelope alheio APESAR
@@ -285,7 +309,10 @@ async function montarCenario(
     caminhoReconciliacao: "/v1/projecoes/grade-leitos",
     criarEscritor: (resposta: RespostaBruta): EscritorSse => {
       const real = new EscritorSseHttp(resposta);
-      if (!controle.saturado) return real;
+      // Envoltório sempre ativo, mas TRANSPARENTE enquanto não saturado: a
+      // saturação é avaliada a cada chamada, não congelada na criação. É o
+      // que permite saturar, agendar o reexame de dreno e então dessaturar
+      // — exercitando a borda `void this.#drenar()` do temporizador.
       // Cliente lento: o socket aceita, mas NUNCA drena. É o modo de falha
       // de P5 tornado determinístico, sem depender do tamanho do buffer
       // TCP da máquina que roda a suíte.
@@ -293,7 +320,7 @@ async function montarCenario(
         escrever: (quadro) => {
           real.escrever(quadro);
         },
-        bytesPendentes: () => Number.MAX_SAFE_INTEGER,
+        bytesPendentes: () => (controle.saturado ? Number.MAX_SAFE_INTEGER : real.bytesPendentes()),
         encerrar: () => {
           real.encerrar();
         },

@@ -10,7 +10,7 @@ source: >-
   ecd32d555291a6ab75e6bb2c3227ad557d87a368 (main);
   execuções reais de pnpm verify, pnpm --filter … test, test:fronteira e
   test:e2e registradas neste documento;
-  três revisões adversariais independentes sobre as fronteiras P0
+  quatro revisões adversariais independentes sobre as fronteiras P0
 date_collected: "2026-08-17"
 collector: orquestrador técnico de consolidação; construção por 12 especialistas estreitos de escopo disjunto
 last_updated: "2026-08-17"
@@ -32,7 +32,7 @@ risco, hazard, ADR ou ordem de serviço.
 | Branch de trabalho | `codex/finalizacao-plataforma-v2` |
 | `main` alterada? | **Não.** Nenhum commit foi feito na `main` |
 | Branches históricas | `cycle-4/*` e `cycle-5/*` **não** foram mescladas nem usadas como fonte |
-| Escopo | os nove achados do §6 do encargo, mais o que três revisões adversariais independentes acrescentaram |
+| Escopo | os nove achados do §6 do encargo, mais o que quatro revisões adversariais independentes acrescentaram |
 
 Método (§9): doze especialistas estreitos com fronteira de domínio, escopo de
 escrita **disjunto** e critério de aceitação explícitos; nenhum agente genérico.
@@ -55,10 +55,10 @@ O resultado mensurável:
 | Métrica | Baseline (`ecd32d5`) | Agora | Δ |
 |---|---|---|---|
 | `pnpm verify` | exit 0 | **exit 0** | preservado |
-| Testes verdes | 1.026 | **1.445** | +419 |
+| Testes verdes | 1.026 | **1.446** | +420 |
 | `expected fail` | **1 (P0)** | **0** | eliminado |
 | Testes pulados | 0 | **0** | preservado |
-| Suíte contra PostgreSQL real | inexistente | **40 testes bloqueantes** | nova |
+| Suíte contra PostgreSQL real | inexistente | **41 testes bloqueantes** | nova |
 | Verificações de contrato | 0 (sem gate) | **148** | nova |
 | E2E de navegador autenticado | inexistente | **22/22 verdes** (4 execuções observadas) | nova |
 
@@ -67,24 +67,31 @@ tenant deixou de ser assegurada por um simulador embarcado** e passou a ser
 exercitada contra PostgreSQL 16.14 real, e que a falha P0 que vivia como
 `expected fail` dentro de um gate verde foi **eliminada**, não renomeada.
 
-**Três** revisões adversariais independentes foram conduzidas por agentes que
+**Quatro** revisões adversariais independentes foram conduzidas por agentes que
 não escreveram o código, e a taxa de achado **não convergiu**:
 
-| Rodada | Veredito | Achados |
-|---|---|---|
-| 1ª | **`REFUTADO`** | 8 — três P1 reproduzidos contra banco real |
-| 2ª (sobre as correções) | **`CONFIRMADO_COM_RESSALVAS`** | 6 P2/P3; as três P1 não reabriram |
-| 3ª (sobre as correções da 2ª) | **`REFUTADO`** | 9 — dois P1 com leitura **e escrita** cross-tenant reproduzidas |
+| Rodada | Veredito | Achados | Corrigidos | Registrados |
+|---|---|---|---|---|
+| 1ª | **`REFUTADO`** | 8 (3 P1) | 7 | 1 (aceito como imprecisão) |
+| 2ª — sobre as correções | **`CONFIRMADO_COM_RESSALVAS`** | 6 (P2/P3) | 6 | 0 |
+| 3ª — sobre as correções da 2ª | **`REFUTADO`** | 9 (2 P1) | 8 | 1 |
+| 4ª — sobre as correções da 3ª | **`REFUTADO`** | 12 (P2/P3) | em correção | — |
 
-Todos foram corrigidos. Somam-se dois defeitos achados fora das revisões: um por
-execução de navegador real e um pelo orquestrador ao validar as migrações contra
-PostgreSQL real. Ao todo **nove cláusulas caíram**.
+Somam-se **dois** defeitos achados fora das revisões: um por execução de
+navegador real e um pelo orquestrador ao validar as migrações contra PostgreSQL
+real. **Total: 37 achados**, dos quais 5 P1 com leitura e escrita cross-tenant
+reproduzidas contra banco real.
 
-Isto é registrado como resultado do método, não como incidente — era exatamente
-para isso que a revisão existia. Mas a leitura honesta do conjunto é a inversa
-da tranquilizadora: **três rodadas não bastaram para convergir**, e a terceira
-achou mais que a segunda. Nenhuma delas substitui o verificador terceiro
-independente que `DEC-G0-02` exige.
+Uma versão anterior deste parágrafo dizia "ao todo nove cláusulas caíram" e
+"todos foram corrigidos". As duas afirmações eram falsas contra a própria tabela
+acima — "nove" era o total da **primeira** rodada apresentado como agregado, e
+dois achados permanecem **registrados, não corrigidos**. Corrigido após a quarta
+revisão, que apanhou exatamente isso.
+
+A leitura honesta do conjunto é a inversa da tranquilizadora: **quatro rodadas
+não bastaram para convergir**. A terceira achou mais que a segunda e a quarta
+mais que a terceira. Nenhuma delas substitui o verificador terceiro independente
+que `DEC-G0-02` exige — e o padrão sugere que ele encontrará mais.
 
 **Nada nesta entrega altera o estado factual duro.** Continuam valendo: **0 vias
 clínicas acionáveis**; matriz **47/47 inelegíveis**; `Observation` da AMH **não
@@ -99,9 +106,10 @@ em **M0**; **nenhum dado real acessado**. Nenhum gate foi aprovado, nenhum
 Verificados por **execução** nesta rodada:
 
 - kernel NEWS2 determinístico, sem relógio interno e sem dependência de runtime;
-- 93 vetores `CRV-NEWS2-0101..0193` e a mutação de 93,07% do kernel — **os seis
-  pacotes de conteúdo clínico estão byte-idênticos ao commit-base**, confirmado
-  por revisão adversarial: nenhum vetor, limiar, banda ou janela pôde ter mudado;
+- 93 vetores `CRV-NEWS2-0101..0193` executados red/green;
+- **os seis pacotes de conteúdo clínico estão byte-idênticos ao commit-base**,
+  confirmado por revisão adversarial: nenhum vetor, limiar, banda ou janela pôde
+  ter mudado;
 - segunda regra GCS com gate de sedação fail-closed;
 - outbox transacional, auditoria append-only, concorrência otimista;
 - idempotência por hash do corpo com conflito explícito em replay divergente;
@@ -274,30 +282,30 @@ disponível:
 | `packages/rule-bundle` | 302 |
 | `apps/web` | 182 |
 | `packages/vigilancia` | 77 |
-| `packages/persistencia` | 75 |
+| `packages/persistencia` | 76 |
 | `packages/conformidade` | 62 |
 | `packages/observabilidade` | 55 |
 | `packages/contratos` | 37 |
 | `packages/dominio` | 18 |
 | `packages/fixtures-sinteticas` | 13 |
-| **Total** | **1.445 verdes · 0 falhas · 0 pulados · 0 `expected fail`** |
+| **Total** | **1.446 verdes · 0 falhas · 0 pulados · 0 `expected fail`** |
 
 A suíte de fronteira **não soma** ao total acima — ela é subconjunto dos 75 já
 contados para `packages/persistencia`. Executada isoladamente em modo
 bloqueante, `pnpm --filter @intensicare/persistencia test:fronteira` →
-**40 verdes** contra PostgreSQL 16.14 efêmero real;
+**41 verdes** contra PostgreSQL 16.14 efêmero real;
 `node scripts/check_contratos.mjs` → **148 verificações**;
 `python3 scripts/check_doc_conventions.py` → 249 arquivos, sem violação;
 `python3 scripts/check_forbidden_content.py` → 590 arquivos, sem achado.
 
 **Checkout limpo e hermético** (§12): clone fresco da branch em diretório
 separado, `pnpm install --frozen-lockfile` seguido de `pnpm verify` →
-**exit 0, os mesmos 1.445 testes em 11 pacotes, zero falhas e zero pulados**. O
+**exit 0, os mesmos 1.446 testes em 11 pacotes, zero falhas e zero pulados**. O
 verde não depende de árvore aquecida — a armadilha que o ciclo 6 documentou
 (typecheck antes de build, verde local por acidente) não voltou.
 
 **Qualificação obrigatória da contagem** (achado 4 da primeira revisão): o
-número 1.445 vale para uma máquina **com PostgreSQL disponível**. Sem ele, a
+número 1.446 vale para uma máquina **com PostgreSQL disponível**. Sem ele, a
 suíte de fronteira se pula com aviso ruidoso em desenvolvimento e **falha** sob
 `CI=true` ou `IC_FRONTEIRA_PG=obrigatoria`. Para que "verify verde" passe a
 significar "fronteira P0 exercitada", `ci-plataforma.yml` recebeu
@@ -340,8 +348,12 @@ funcionar. Investigados um a um, **nenhum era defeito do produto**:
 
 - **Validação com usuários de tecnologias assistivas**: `NÃO EXECUTADA`,
   dependência humana (`MG-G4`). Automação WCAG não a substitui, e o job
-  bloqueante acrescentado ao CI **não** muda isso: os critérios marcados
-  `manual_obrigatorio` na matriz continuam não executados.
+  bloqueante acrescentado ao CI **não** muda isso. Precisão devida, porque a
+  frase anterior era falsa contra o dado: dos cinco critérios marcados
+  `manual_obrigatorio`, quatro estão com `execucao: "executado"` na matriz — o
+  campo registra que a **cobertura automatizada** rodou, não que a validação
+  manual ocorreu. O campo conflaciona as duas coisas, e essa é uma limitação da
+  matriz que fica registrada aqui.
 - **WCAG 2.4.11 (foco não obscurecido)**: `NÃO EXECUTADO` — sem teste dedicado.
 - **Bloqueio de comandos em offline contra alerta vindo da API**: verificado
   contra alerta fornecido por rota, porque a API não produz alerta sem bundle
@@ -401,8 +413,9 @@ por funções `SECURITY DEFINER` com `search_path` fixo e chave
 **Limites que permanecem, declarados:**
 
 1. **Isto não é "RLS verificada".** Verificação exige verificador terceiro
-   independente (`DEC-G0-02`) e aceite humano nominal (`MG-G6`). Os 27 P0 do
-   threat model seguem `OPEN`. Teste escrito por agente não é a independência
+   independente (`DEC-G0-02`) e aceite humano nominal (`MG-G6`). Os **32** P0 do
+   threat model seguem `OPEN` (27 do corpo original mais 5 acrescentados;
+   o modelo declara 83 ameaças, todas `OPEN`). Teste escrito por agente não é a independência
    que `SEC-0009`/`SAF-0037` exigem — e esta rodada mostra por quê: **nove**
    cláusulas caíram ao longo de três revisões adversariais independentes.
 2. **Troca de tenant entre transações distintas na mesma conexão continua
@@ -590,7 +603,7 @@ do escopo de escrita desta rodada, listadas em
 | Limiares de severidade | Ratificação de `scripts/politica-de-severidade.json` | `ADR-0022` §5.1 C4 | Ato do titular |
 | Checks obrigatórios | Decisão sobre `build-and-test`, `change-metadata` e os 5 jobs de supply chain na proteção da `main` | Workflow verde ≠ check obrigatório | Ato do titular |
 | Validação assistiva | Sessões com usuários de tecnologias assistivas | `MG-G4` | Terceiro externo |
-| Pentest e verificador independente | `DEC-G0-02` | `MG-G6`; 27 P0 seguem `OPEN` | Terceiro externo |
+| Pentest e verificador independente | `DEC-G0-02` | `MG-G6`; 32 P0 seguem `OPEN` | Terceiro externo |
 | Reconciliação de vocabulário de perfis | 6 perfis de runtime × 7 ambientes de `ADR-0019` | Coexistem três vocabulários não reconciliados | Ato do titular |
 | Execução AMH e ambientes `stg`/`prod` | OS-01..OS-24; IG 1.1.0 | G3, G8 | Fora do alcance da V2 |
 
@@ -646,7 +659,7 @@ injetável; o cliente de protocolo é substituível por `pg` sem tocar consumido
 | G3 | `BLOQUEADO` | inalterado — execução AMH |
 | G4 | `PARCIAL` | contratos e UX avançaram; `MG-G4` segue ato humano |
 | G5 | `PARCIAL` | reclassificado: suíte implementada ≠ verificação externa |
-| G6 | `PARCIAL` | fronteira de tenant passou a ser exercitada contra banco real; **27 P0 seguem `OPEN`**, verificador terceiro pendente |
+| G6 | `PARCIAL` | fronteira de tenant passou a ser exercitada contra banco real; **32 P0 seguem `OPEN`**, verificador terceiro pendente |
 | G7 | `PARCIAL` | fatia mais robusta; `MG-G7` segue ato humano pendente |
 | G8 | `NÃO INICIADO` / ambiente `BLOQUEADO` | mecânica de artefato existe; nenhuma evidência operacional |
 | Op. contínua | `NÃO INICIADO` | instrumentação ganhou consumidor; operação real inexistente |
@@ -663,10 +676,10 @@ git checkout codex/finalizacao-plataforma-v2
 
 # Gate completo (exige PostgreSQL local para exercitar a fronteira P0)
 pnpm install --frozen-lockfile
-pnpm verify                     # esperado: exit 0, 1.445 testes verdes
+pnpm verify                     # esperado: exit 0, 1.446 testes verdes
 
 # Fronteira de isolamento contra PostgreSQL real, em modo BLOQUEANTE
-pnpm test:fronteira             # esperado: 40 verdes
+pnpm test:fronteira             # esperado: 41 verdes
 
 # Cluster PostgreSQL efêmero, se não houver servidor
 node scripts/pg-efemero.mjs up      # JSON de uma linha na stdout

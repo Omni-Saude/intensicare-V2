@@ -234,7 +234,7 @@ execução, está em `docs/15-release-evidence/final-implementation-report.md`.
 
 ## 5. Disposição final (2026-08-17)
 
-Estado ao fim da rodada. `pnpm verify` **exit 0**, **1.445 testes verdes**,
+Estado ao fim da rodada. `pnpm verify` **exit 0**, **1.446 testes verdes**,
 **zero pulados**, **zero falhas**, **zero `expected fail`** (baseline: 1.026 +
 1 `expected fail` P0).
 
@@ -291,3 +291,54 @@ novos, **todos P2/P3, nenhum P0 ou P1**:
 em cinco execuções seguintes; o orquestrador também não conseguiu reproduzi-la
 (`pnpm lint` devolve `6 infos`, exit 0, estável). Hipótese mais plausível:
 árvore apanhada no meio de edição concorrente.
+
+### 5.3 Terceira revisão adversarial — veredito `REFUTADO`
+
+Pedida pelo titular porque a taxa de achado não havia caído. Achou **mais** que a
+segunda: 9 achados, **dois deles P1 com leitura e escrita cross-tenant
+reproduzidas** contra PostgreSQL 16.14 real.
+
+| # | Achado | Sev. | Estado |
+|---|---|---|---|
+| 1 | Tabela **particionada** em `public` escapa da auditoria: a 2ª rodada alargou só os *contadores* de propriedade; os laços de política e a auditoria seguiam em `relkind='r'` | **P1** | **CORRIGIDO** |
+| 2 | Selo forjável por **privilégio de coluna** — `has_table_privilege` responde só sobre tabela | **P1** | **CORRIGIDO** |
+| 3 | Marcador anti-savepoint **zerável** por `DISCARD SEQUENCES`; caminho de exceção **fail-open** | P2 | **CORRIGIDO** |
+| 4 | `pool.ts` não verificava a sequência da âncora | P2 | **CORRIGIDO por remoção** da sequência |
+| 5 | Âncora do SSE disparava no quadro de **início** (`replaying`), não no de fim (`online`) | P2 | **CORRIGIDO** |
+| 6 | `.rejects.toThrow()` sem tipo sobre 18 caminhos de escalada | P2 | **CORRIGIDO** |
+| 7 | Emissor sintético alcançável por vocabulário de perfil paralelo (não alcançável pela composição atual) | P3 | **Registrado** |
+| 8 | Verdes falsos residuais em quatro suítes | P2/P3 | **CORRIGIDO** |
+| 9 | A árvore mutou durante a revisão | P3 | Registrado — ver §5.4 |
+
+Mais um **décimo defeito, achado pelo orquestrador**: `0003` abortava no caminho
+de atualização (`alter sequence … owner to` sobre sequência *owned*). O teste que
+deveria pegá-lo **passava por sorte** — a operação é no-op quando o dono não muda,
+e o laço não tinha `ORDER BY`. Corrigida a causa **e fixada a ordem adversa**.
+
+### 5.4 Quarta revisão adversarial — veredito `REFUTADO`
+
+12 achados, todos P2/P3 — **nenhum P0 ou P1**. Cinco recaem sobre este documento
+e sobre o relatório final, e estão corrigidos:
+
+| # | Achado | Sev. | Estado |
+|---|---|---|---|
+| 1 | A auditoria e a guarda de runtime só enxergam o esquema `public`: partição em outro esquema escapa (leitura e escrita cross-tenant reproduzidas, migrações em exit 0). **Não explorável na fatia entregue** — o app só tem `USAGE` em `public`/`intensicare_escopo` | P2 | Despachado |
+| 2 | `pnpm verify` vermelho e árvore mutando durante a revisão; arquivos de rascunho criados dentro do repositório | P2 | **CORRIGIDO** (processo) |
+| 3 | "Ao todo nove cláusulas caíram" e "todos foram corrigidos" desmentidos pela própria tabela | P2 | **CORRIGIDO** |
+| 4 | A terceira rodada não existia neste documento | P2 | **CORRIGIDO** (§5.3) |
+| 5 | A mutação de 93,07% aparecia nas **duas** listas (execução e inspeção) | P2 | **CORRIGIDO** |
+| 6 | "27 P0 seguem OPEN" subconta em cinco — são **32** | P2 | **CORRIGIDO** |
+| 7 | Três promessas sem tratamento final em `stream.ts`; `online` escrito antes do `await` que pode rejeitar | P3 | Despachado |
+| 8 | O ramo "sem política" da auditoria é inalcançável — a §5 cria a política antes de a §6 auditar; a atribuição causal no cabeçalho está errada | P3 | Despachado |
+| 9 | Transação somente-leitura fica inoperante: **nenhuma réplica de leitura pode servir a aplicação**. Custo não declarado | P3 | Despachado |
+| 10 | `nextval` atribui xid e o app tem `SELECT` em todas as sequências; `last_value` é oráculo de volume cross-tenant | P3 | Despachado |
+| 11 | `BLK-0003` citado como sem dono contra `status: RESOLVIDO COM ESCOPO` do registro — o registro é internamente contraditório | P3 | Registrado — autoridade do titular |
+| 12 | Contagens publicadas que não fechavam (detalhamento por pacote do HANDOFF; matriz de acessibilidade) | P3 | **CORRIGIDO** |
+
+**O achado 2 é uma crítica de processo que o orquestrador aceita sem desconto.**
+A verificação desta rodada correu contra uma árvore em movimento: agentes
+concorrentes editavam enquanto o revisor media. As execuções verdes publicadas
+valem para o estado que cada uma mediu, e o estado final foi reverificado em
+árvore estável — mas a disciplina correta é congelar a árvore antes de revisar, e
+ela não foi seguida. Nenhum arquivo de rascunho permanece no repositório
+(verificado).
