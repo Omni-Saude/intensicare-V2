@@ -9,7 +9,7 @@ statement: >
   lógica do domínio de sedação/desmame. Todos os vereditos são PROPOSAL — AWAITING NAMED
   CLINICAL REVIEW (reviewer: rodaquino-OMNI).
 provenance:
-  source_repo: intensicare (legado V1, READ-ONLY mount em /Users/familia/intensicare)
+  source_repo: intensicare (legado V1, SOMENTE LEITURA — https://github.com/Omni-Saude/intensicare)
   path_or_url: docs/05-clinical-safety/legacy-review/neuro-sedation-scores/
   commit_sha_or_version: legado fixado em 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (2026-08-15); SHA-256 por arquivo em docs/archive/legacy-provenance/legacy-pin-cycle-1.md
   section_or_lines: diretório inteiro
@@ -37,7 +37,7 @@ superseded_by: null
 
 ## 1. Escopo e método
 
-OBSERVED: o repositório legado `/Users/familia/intensicare` foi revisado READ-ONLY no HEAD git
+OBSERVED: o repositório legado `https://github.com/Omni-Saude/intensicare` foi revisado READ-ONLY no HEAD git
 `1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79` (2026-08-15). Cada arquivo citado foi hasheado no
 momento da leitura (`shasum -a 256`) e comparado com o manifesto de pin do ciclo-1
 (`docs/archive/legacy-provenance/legacy-pin-cycle-1.md`). Todos os arquivos citados sob `src/`,
@@ -101,7 +101,7 @@ Todos os vereditos: **PROPOSAL — AWAITING NAMED CLINICAL REVIEW (reviewer: rod
 ## 4. Adendo de hash — arquivos citados AUSENTES do manifesto do ciclo-1
 
 OBSERVED, hasheados in loco em 2026-08-15 no HEAD legado `1dc1ea6…` (regra hash-and-note;
-caminhos relativos a `/Users/familia/intensicare/`):
+caminhos relativos a `https://github.com/Omni-Saude/intensicare`):
 
 ```text
 716a9354b75face954281e215ee8f21d2d895cbab2ab2a31b159d561a2c4d800  pyproject.toml

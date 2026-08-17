@@ -9,7 +9,7 @@ statement: >
   NAMED CLINICAL REVIEW (reviewer: rodaquino-OMNI).
 provenance:
   source_repo: intensicare (legado V1, READ-ONLY) + intensicare-V2
-  path_or_url: /Users/familia/intensicare (hashes por arquivo em news2-review.md §0 e mews-review.md §0)
+  path_or_url: https://github.com/Omni-Saude/intensicare (hashes por arquivo em news2-review.md §0 e mews-review.md §0)
   commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD legado no pin)
   section_or_lines: referências de linha por citação ao longo do documento
   date_collected: 2026-08-15
@@ -35,7 +35,7 @@ superseded_by: null
 # Achados compartilhados — revisão legada de EWS (NEWS2 + MEWS)
 
 Citações usam as tabelas de hash em `news2-review.md` §0 e `mews-review.md` §0.
-Caminhos legados relativos a `/Users/familia/intensicare/`.
+Caminhos legados relativos a `https://github.com/Omni-Saude/intensicare`.
 
 ## SF-1 — A camada de alerta EWS orientada a eventos é código morto
 

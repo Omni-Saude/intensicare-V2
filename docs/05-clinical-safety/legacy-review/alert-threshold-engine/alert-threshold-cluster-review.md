@@ -45,7 +45,7 @@ superseded_by: null
 
 ## 0. Fontes e integridade
 
-- Cluster: `/Users/familia/intensicare/docs/rules/alert-threshold/` —
+- Cluster: `https://github.com/Omni-Saude/intensicare/tree/1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79/docs/rules/alert-threshold` —
   OBSERVED 2026-08-15: **116 registros de regra** (`ls | wc -l`), todos
   individualmente hasheados com SHA-256 em
   `docs/archive/legacy-provenance/legacy-pin-cycle-1.md` (o conjunto de

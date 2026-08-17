@@ -11,7 +11,7 @@ last_updated: 2026-08-14
 PROPOSAL — this policy operationalizes prompt §3 rules 2–5 and the
 migration-manifest template in prompt §16. It governs how (and whether) any
 idea, code, schema, migration, rule, test, or asset from the legacy repository
-(`/Users/familia/intensicare/`, mounted read-only) or from AMH
+(`https://github.com/Omni-Saude/intensicare`, read-only) or from AMH
 (`Omni-Saude/amh-data-platform`, mounted read-only) may enter IntensiCare V2.
 
 ## 1. Default: DO NOT COPY
@@ -38,7 +38,7 @@ imported as an implemented control").
 
 ## 2. What counts as "the legacy repository" for this policy
 
-- Legacy: `/Users/familia/intensicare/` (READ-ONLY), including
+- Legacy: `https://github.com/Omni-Saude/intensicare` (READ-ONLY), including
   `INTENSICARE_TECHNICAL_ASSESSMENT.md` and
   `INTENSICARE_DOCS_INTELLIGENCE_AUDIT.md`. Treated as risk-informed input, not
   authority (prompt §2, line 72).

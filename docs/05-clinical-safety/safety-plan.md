@@ -40,8 +40,8 @@ superseded_by: null
 
 | Token | Resolves to |
 |---|---|
-| `PROMPT:n-m` | `/Users/familia/code/intensicare-V2/INTENSICARE_V2_ORCHESTRATOR_PROMPT.md`, lines n–m |
-| `LEGACY-TA:n-m` | `/Users/familia/intensicare/INTENSICARE_TECHNICAL_ASSESSMENT.md`, lines n–m (READ-ONLY, risk-informed input, **not authority**) |
+| `PROMPT:n-m` | `https://github.com/Omni-Saude/intensicare-V2/blob/main/INTENSICARE_V2_ORCHESTRATOR_PROMPT.md`, lines n–m |
+| `LEGACY-TA:n-m` | `INTENSICARE_TECHNICAL_ASSESSMENT.md`, lines n–m (READ-ONLY, risk-informed input, **not authority**) |
 
 Legacy paths quoted *inside* `LEGACY-TA` excerpts (e.g. `src/intensicare/services/mews.py:11-13`)
 are the assessment's own citations into the legacy repository. This document has **not**

@@ -33,7 +33,7 @@ text in `docs/00-governance/legacy-import-policy.md`):
 - V2 lives in a new repository with independent history, package
   namespace, secrets, environments, databases, deployment pipeline, and
   release identity.
-- A prior system (`/Users/familia/intensicare/`, referred to as
+- A prior system (`https://github.com/Omni-Saude/intensicare`, referred to as
   "legacy") and an external data platform
   (`Omni-Saude/amh-data-platform`, referred to as "AMH") are mounted
   **read-only**. Neither is ever modified as part of V2 work.

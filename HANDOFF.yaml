@@ -36,7 +36,7 @@ pinned_evidence:               # re-verify before relying on any of it
   maezo_manifest_producer_commit: 09a0a282e69f49aa9c6944b25afb35eee65fcc9c
   contracts_lock_draft: docs/08-interoperability/amh-data/contracts.lock.draft.yaml  # DRAFT — NOT ACCEPTED
   access_method: gh CLI OAuth as rodaquino-OMNI (read-only)   # NOT the GitHub App the prompt names -> BLK-0009
-  legacy_repository: /Users/familia/intensicare (READ-ONLY, never modify)
+  legacy_repository: https://github.com/Omni-Saude/intensicare (READ-ONLY, never modify)
   legacy_assessment_caution: >-
     INTENSICARE_TECHNICAL_ASSESSMENT.md is an UNTRACKED working-tree file —
     not commit-pinned; hash before citing; line numbers drift silently.

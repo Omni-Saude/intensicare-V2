@@ -43,7 +43,7 @@ importação.
 
 ## 1. Fontes verificadas, com hashes
 
-Todos os caminhos relativos a `/Users/familia/intensicare` (READ-ONLY), fixados
+Todos os caminhos relativos a `https://github.com/Omni-Saude/intensicare` (READ-ONLY), fixados
 (pinned) no HEAD git `1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79`, hashes
 recalculados no momento da revisão (2026-08-15) e comparados a
 `docs/archive/legacy-provenance/legacy-pin-cycle-1.md`.

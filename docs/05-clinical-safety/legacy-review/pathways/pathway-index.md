@@ -44,7 +44,7 @@ superseded_by: null
 
 ## 0. Proveniência e método
 
-OBSERVED (2026-08-15): o repositório legado `/Users/familia/intensicare` estava no
+OBSERVED (2026-08-15): o repositório legado `https://github.com/Omni-Saude/intensicare` estava no
 HEAD git `1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79` quando cada arquivo citado
 abaixo foi lido. O SHA-256 de cada arquivo citado foi verificado contra
 `docs/archive/legacy-provenance/legacy-pin-cycle-1.md` (o manifesto de pin do

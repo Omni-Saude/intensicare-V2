@@ -5,7 +5,7 @@ status: PROPOSAL
 label: OBSERVED (definitions as implemented) + PROPOSAL (verdicts)
 owner: UNASSIGNED — VALIDATION REQUIRED
 reviewer: rodaquino-OMNI
-source: /Users/familia/intensicare (legacy V1, READ-ONLY), pinned per docs/archive/legacy-provenance/legacy-pin-cycle-1.md
+source: https://github.com/Omni-Saude/intensicare (legacy V1, READ-ONLY), pinned per docs/archive/legacy-provenance/legacy-pin-cycle-1.md
 date_collected: 2026-08-15
 last_updated: 2026-08-15
 provenance:
@@ -141,7 +141,7 @@ Per the review packet's stop condition, the following were **not reconstructed**
 
 1. **Primary sources of the extracted rule catalog.** The catalog cites
    `ahlabs-trilhas @ 8166c07e` (Django backend) and `trilhas-frontend @ f9656be2`
-   (React). Neither repository is mounted anywhere under `/Users/familia/intensicare`
+   (React). Neither repository is contained within `https://github.com/Omni-Saude/intensicare`
    (OBSERVED: filesystem search 2026-08-15 finds only the catalog itself and
    similarly-named test files for the new engine). All section-2 reviews rest on the
    catalog text at the pinned hashes, not on primary code.

@@ -57,8 +57,8 @@ superseded_by: null
   none has been executed.
 - Rule (PROPOSAL, `safety-plan.md` §6.4): an S4/S5 hazard may not rely on `PROC` alone,
   and may not rely on a single barrier.
-- `PROMPT:n` = `/Users/familia/code/intensicare-V2/INTENSICARE_V2_ORCHESTRATOR_PROMPT.md` line n.
-- `LEGACY-TA:n` = `/Users/familia/intensicare/INTENSICARE_TECHNICAL_ASSESSMENT.md` line n (read-only input).
+- `PROMPT:n` = `https://github.com/Omni-Saude/intensicare-V2/blob/main/INTENSICARE_V2_ORCHESTRATOR_PROMPT.md` line n.
+- `LEGACY-TA:n` = `INTENSICARE_TECHNICAL_ASSESSMENT.md` line n (read-only input).
 
 ---
 

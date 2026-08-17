@@ -41,7 +41,7 @@ superseded_by: null
 
 SOURCE (`PROMPT:551`): architecture principle 1 — **"Safety state precedes severity."**
 
-SOURCE (`/Users/familia/intensicare/INTENSICARE_TECHNICAL_ASSESSMENT.md:478`): in the
+SOURCE (`INTENSICARE_TECHNICAL_ASSESSMENT.md:478`): in the
 predecessor, missing inputs produced a numeric `0` that was persisted and could drive a
 `normal` bed state — "The metadata **is not elevated into an evaluation-status contract**.
 This is a confirmed violation of documented intent and the most serious clinical safety

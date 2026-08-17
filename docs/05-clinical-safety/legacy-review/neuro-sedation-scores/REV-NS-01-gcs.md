@@ -36,7 +36,7 @@ superseded_by: null
 
 ## 1. Conforme implementado (OBSERVED, verbatim)
 
-Fontes (caminhos relativos a `/Users/familia/intensicare/`; status de manifesto conforme pin do ciclo-1):
+Fontes (caminhos relativos a `https://github.com/Omni-Saude/intensicare`; status de manifesto conforme pin do ciclo-1):
 
 | Caminho | Linhas | SHA-256 | Manifesto |
 |---|---|---|---|

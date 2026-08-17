@@ -45,7 +45,7 @@ superseded_by: null
 
 ## 0. Arquivos citados e integridade
 
-Todos os caminhos relativos a `/Users/familia/intensicare/`. OBSERVED
+Todos os caminhos relativos a `https://github.com/Omni-Saude/intensicare`. OBSERVED
 2026-08-15: todo SHA-256 abaixo corresponde a
 `docs/archive/legacy-provenance/legacy-pin-cycle-1.md`.
 

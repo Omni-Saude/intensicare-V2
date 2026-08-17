@@ -52,7 +52,7 @@ superseded_by: null
 
 ## 0. Fontes e integridade
 
-Caminhos relativos a `/Users/familia/intensicare/`. OBSERVED 2026-08-15
+Caminhos relativos a `https://github.com/Omni-Saude/intensicare`. OBSERVED 2026-08-15
 (este revisor re-hasheou cada arquivo com `shasum -a 256` e comparou contra
 `docs/archive/legacy-provenance/legacy-pin-cycle-1.md` / o `inventory.md`
 do ciclo-1): todos os três correspondem.

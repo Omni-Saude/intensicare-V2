@@ -39,7 +39,7 @@ superseded_by: null
 
 ## 0. Sources and integrity
 
-Paths relative to `/Users/familia/intensicare/`. OBSERVED 2026-08-15
+Paths relative to `https://github.com/Omni-Saude/intensicare`. OBSERVED 2026-08-15
 (re-hashed with `shasum -a 256`, compared against
 `docs/archive/legacy-provenance/legacy-pin-cycle-1.md` /
 `inventory.md`): all match.

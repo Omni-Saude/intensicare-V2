@@ -112,7 +112,7 @@ def prefill_background(
 ```
 
 **Finding CDF-1 (dead code).** OBSERVED: `grep -rn "prefill_background"
-/Users/familia/intensicare/` returns exactly one hit — the definition itself.
+https://github.com/Omni-Saude/intensicare` returns exactly one hit — the definition itself.
 `prefill_background` is never imported or called by `api/v1/evolucoes.py`,
 any other service module, or the test file. The auto-populate-the-Background-
 section capability that `docs/adr/0028-…md` describes as central to the

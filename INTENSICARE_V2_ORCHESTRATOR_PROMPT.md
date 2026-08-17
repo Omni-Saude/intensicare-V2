@@ -13,12 +13,12 @@ Resolve and record these before doing substantive work:
 
 ```yaml
 # ATUALIZADO 2026-08-15 — valores corrigidos para o estado real (DEC-G0-07/08; EVID-0010/0011)
-v2_repository: /Users/familia/code/intensicare-V2
+v2_repository: https://github.com/Omni-Saude/intensicare-V2   # o caminho da cópia local é específico da máquina e deliberadamente NÃO registrado aqui
 v2_remote: https://github.com/Omni-Saude/intensicare-V2   # main PROTEGIDO: checks doc-conventions+forbidden-content (strict), enforce_admins, histórico linear, sem force-push/deleção, PR obrigatório (0 aprovações até haver 2º revisor)
 v2_branches: "main (protegido) | cycle-0/spark-foundation (fundação, pushed) | cycle-1/clinical-content (clínico + adjudicação; verificar se já integrado a main)"
-legacy_repository_read_only: /Users/familia/intensicare/
-legacy_assessment: /Users/familia/intensicare/INTENSICARE_TECHNICAL_ASSESSMENT.md   # ARQUIVO NÃO RASTREADO no git: calcular SHA-256 antes de citar; linhas derivam silenciosamente
-legacy_docs_audit: /Users/familia/intensicare/INTENSICARE_DOCS_INTELLIGENCE_AUDIT.md
+legacy_repository_read_only: https://github.com/Omni-Saude/intensicare   # SOMENTE LEITURA; pin do ciclo 1 = 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79
+legacy_assessment: INTENSICARE_TECHNICAL_ASSESSMENT.md   # NÃO EXISTE NO REPOSITÓRIO (verificado no commit pinado): vive apenas na árvore de trabalho local do legado, logo NÃO HÁ URL. Calcular SHA-256 antes de citar; linhas derivam silenciosamente
+legacy_docs_audit: INTENSICARE_DOCS_INTELLIGENCE_AUDIT.md   # idem: ausente do repositório, sem URL
 amh_data_repository: https://github.com/Omni-Saude/amh-data-platform   # licença: concessão escrita do titular (DEC-G0-08); reuso de artefato exige aprovação por artefato
 amh_access_mechanism: "gh CLI OAuth como rodaquino-OMNI (DEC-G0-07) — NÃO é GitHub App; somente leitura; VERIFICAR acesso antes de pedir novo login"
 amh_evidence_snapshot_commit: 0a07a6f1fab36fb2f5eeee0fcd8e945c95f67116   # RE-PINAR e verificar deriva a cada sessão (ASM-0002); era HEAD de main em 2026-08-14

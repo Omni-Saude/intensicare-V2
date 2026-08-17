@@ -10,7 +10,7 @@ statement: >
   CLINICAL REVIEW (reviewer: rodaquino-OMNI).
 provenance:
   source_repo: intensicare (legado V1, READ-ONLY) + intensicare-V2 + academic.oup.com
-  path_or_url: /Users/familia/intensicare (ver tabela de citação por arquivo, seção 0)
+  path_or_url: https://github.com/Omni-Saude/intensicare (ver tabela de citação por arquivo, seção 0)
   commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD legado no pin; SHA-256 por arquivo abaixo)
   section_or_lines: referências de linha por citação ao longo do documento
   date_collected: 2026-08-15
@@ -43,7 +43,7 @@ superseded_by: null
 
 ## 0. Base de citação — arquivos e hashes
 
-Todos os caminhos legados são relativos a `/Users/familia/intensicare/` no HEAD
+Todos os caminhos legados são relativos a `https://github.com/Omni-Saude/intensicare` no HEAD
 `1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79` (2026-08-15). **[pin]** = em
 `docs/archive/legacy-provenance/legacy-pin-cycle-1.md`; **[reviewer-hash]** = não
 naquele manifesto, hasheado por este revisor em 2026-08-15 (`shasum -a 256`) —

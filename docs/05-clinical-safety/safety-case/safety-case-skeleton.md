@@ -45,7 +45,7 @@ superseded_by: null
 
 ## 0. The predecessor's lesson, stated up front
 
-SOURCE (`/Users/familia/intensicare/INTENSICARE_TECHNICAL_ASSESSMENT.md:461-465`):
+SOURCE (`INTENSICARE_TECHNICAL_ASSESSMENT.md:461-465`):
 
 > "The repository contains a hazard log, design mitigations, clinical rule references, a
 > clinical sign-off artifact, test vectors, and regulatory planning. This is substantially

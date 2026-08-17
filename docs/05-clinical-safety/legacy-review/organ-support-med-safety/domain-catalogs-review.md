@@ -12,7 +12,7 @@ statement: >
   owner rule. All verdicts are PROPOSALS; nothing is imported.
 provenance:
   source_repo: intensicare (legacy V1, READ-ONLY)
-  path_or_url: /Users/familia/intensicare/docs/plan/_work/alerts/
+  path_or_url: https://github.com/Omni-Saude/intensicare/tree/1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79/docs/plan/_work/alerts
   commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD at pin; files NOT in pin manifest — hashed at read time, marked (rt))
   section_or_lines: cited per finding
   date_collected: 2026-08-15

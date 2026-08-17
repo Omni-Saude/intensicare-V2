@@ -76,8 +76,8 @@ the label `DECIDED`.**
 
 | Token | Resolves to |
 |---|---|
-| `LEGACY-TA:n` | `/Users/familia/intensicare/INTENSICARE_TECHNICAL_ASSESSMENT.md` line *n*, READ-ONLY. Risk-informed input, **not authority** (`PROMPT:72`). See the provenance caveat below. |
-| `PROMPT:n` | `/Users/familia/code/intensicare-V2/INTENSICARE_V2_ORCHESTRATOR_PROMPT.md` line *n*. |
+| `LEGACY-TA:n` | `INTENSICARE_TECHNICAL_ASSESSMENT.md` line *n*, READ-ONLY. Risk-informed input, **not authority** (`PROMPT:72`). See the provenance caveat below. |
+| `PROMPT:n` | `https://github.com/Omni-Saude/intensicare-V2/blob/main/INTENSICARE_V2_ORCHESTRATOR_PROMPT.md` line *n*. |
 | `AMH-CF §n` | `docs/08-interoperability/amh-data/compatibility-finding.md` section *n*. |
 
 **Provenance precision — OBSERVED 2026-08-14, and it matters.** The legacy assessment is an

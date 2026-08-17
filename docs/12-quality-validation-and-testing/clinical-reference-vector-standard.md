@@ -51,7 +51,7 @@ actionable production mode.
 
 | Token | Resolves to |
 |---|---|
-| `PROMPT:n-m` | `/Users/familia/code/intensicare-V2/INTENSICARE_V2_ORCHESTRATOR_PROMPT.md`, lines n–m |
+| `PROMPT:n-m` | `https://github.com/Omni-Saude/intensicare-V2/blob/main/INTENSICARE_V2_ORCHESTRATOR_PROMPT.md`, lines n–m |
 | `DOM-xxxx` | `docs/03-domain/invariants/DOM-invariants.md` |
 | `GLOSSARY` | `docs/03-domain/glossary.md` |
 | `TIME-SEMANTICS` | `docs/03-domain/time-semantics.md` |

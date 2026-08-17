@@ -5,12 +5,12 @@ status: PROPOSAL
 label: PROPOSAL (atribuições) sobre enumeração OBSERVED em inventory.md
 owner: rodaquino-OMNI (revisor clínico responsável, GDEC-0003)
 collector: catalogador de conteúdo clínico legado (ciclo 1, Tarefa 1)
-source: docs/05-clinical-safety/legacy-review/00-inventory/inventory.md; /Users/familia/intensicare @ 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79
+source: docs/05-clinical-safety/legacy-review/00-inventory/inventory.md; https://github.com/Omni-Saude/intensicare @ 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79
 date_collected: 2026-08-15
 last_updated: 2026-08-15
 provenance:
   source_repo: intensicare (legado V1, READ-ONLY)
-  path_or_url: /Users/familia/intensicare
+  path_or_url: https://github.com/Omni-Saude/intensicare
   commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD, reverificado em 2026-08-15)
   section_or_lines: enumeração de todo o repositório; hashes por arquivo citados inline
   date_collected: 2026-08-15

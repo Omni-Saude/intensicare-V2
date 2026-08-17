@@ -5,12 +5,12 @@ status: PROPOSAL
 label: OBSERVED (fatos de enumeração) com rótulos INFERENCE/PROPOSAL por item
 owner: rodaquino-OMNI (revisor clínico responsável, GDEC-0003)
 collector: catalogador de conteúdo clínico legado (ciclo 1, Tarefa 1)
-source: /Users/familia/intensicare @ 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79; docs/archive/legacy-provenance/legacy-pin-cycle-1.md
+source: https://github.com/Omni-Saude/intensicare @ 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79; docs/archive/legacy-provenance/legacy-pin-cycle-1.md
 date_collected: 2026-08-15
 last_updated: 2026-08-15
 provenance:
   source_repo: intensicare (legado V1, READ-ONLY)
-  path_or_url: /Users/familia/intensicare
+  path_or_url: https://github.com/Omni-Saude/intensicare
   commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD, re-verificado 2026-08-15)
   section_or_lines: enumeração do repositório inteiro; hashes por arquivo citados inline
   date_collected: 2026-08-15
@@ -28,7 +28,7 @@ provenance:
 # Inventário de conteúdo clínico legado do ciclo-1
 
 > **Propósito.** A enumeração autoritativa de TODO conteúdo clínico localizado no
-> repositório legado V1 (`/Users/familia/intensicare`, READ-ONLY, fixado no HEAD
+> repositório legado V1 (`https://github.com/Omni-Saude/intensicare`, READ-ONLY, fixado no HEAD
 > `1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79`, re-verificado em 2026-08-15), para que
 > o ciclo 1 possa provar que 100% do conteúdo clínico da V1 localizado está ou
 > atribuído a um workstream de revisão ou explicitamente adiado com motivo (ver
@@ -48,7 +48,7 @@ provenance:
 > **`(rt)`** são de arquivos **não presentes no manifesto de pin** e foram
 > computados no momento da leitura em 2026-08-15 com `shasum -a 256` (conforme a
 > própria regra de re-hash do manifesto). Os caminhos são relativos a
-> `/Users/familia/intensicare/`.
+> `https://github.com/Omni-Saude/intensicare`.
 
 ## 0. Método (OBSERVED)
 

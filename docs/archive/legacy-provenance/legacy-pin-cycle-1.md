@@ -3,12 +3,12 @@ doc_id: LEGACY-PIN-CYCLE-1
 title: Pin de evidência legada do ciclo-1 — estado do repositório e manifesto SHA-256 por arquivo
 status: OBSERVED
 owner: delivery orchestrator (cycle 1); accountable reviewer rodaquino-OMNI (GDEC-0003)
-source: /Users/familia/intensicare (repositório legado READ-ONLY), hasheado in place no momento da coleta
+source: https://github.com/Omni-Saude/intensicare (repositório legado READ-ONLY), hasheado in place no momento da coleta
 date_collected: 2026-08-15
 last_updated: 2026-08-15
 provenance:
   source_repo: intensicare (legado V1)
-  path_or_url: /Users/familia/intensicare
+  path_or_url: https://github.com/Omni-Saude/intensicare
   commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD no momento do pin)
   section_or_lines: n/a — hashes de arquivo inteiro abaixo
   date_collected: 2026-08-15
@@ -26,7 +26,7 @@ provenance:
 
 # Pin de evidência legada do ciclo-1
 
-OBSERVED: o repositório legado `/Users/familia/intensicare` estava no HEAD
+OBSERVED: o repositório legado `https://github.com/Omni-Saude/intensicare` estava no HEAD
 git `1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79` em 2026-08-15 quando a revisão
 do ciclo-1 começou. Como o conteúdo clínico daquele repositório inclui
 arquivos de working-tree não rastreados (ver `legacy_assessment_caution` do
@@ -43,7 +43,7 @@ Regras:
   arquivo (`shasum -a 256 <caminho>`) e comparar contra este manifesto. Em
   caso de descasamento, a citação está obsoleta e o registro de revisão deve
   ser re-verificado, não confiado.
-- Os caminhos abaixo são relativos a `/Users/familia/intensicare/`.
+- Os caminhos abaixo são relativos a `https://github.com/Omni-Saude/intensicare`.
 
 Conjuntos de arquivo hasheados: `src/intensicare/services/`,
 `src/intensicare/models/`, `src/intensicare/schemas/`,

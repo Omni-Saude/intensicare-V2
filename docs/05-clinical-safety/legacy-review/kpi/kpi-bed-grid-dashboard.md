@@ -5,7 +5,7 @@ status: PROPOSAL
 label: OBSERVED (definitions as implemented) + PROPOSAL (verdicts)
 owner: UNASSIGNED — VALIDATION REQUIRED
 reviewer: rodaquino-OMNI
-source: /Users/familia/intensicare (legacy V1, READ-ONLY), pinned per docs/archive/legacy-provenance/legacy-pin-cycle-1.md
+source: https://github.com/Omni-Saude/intensicare (legacy V1, READ-ONLY), pinned per docs/archive/legacy-provenance/legacy-pin-cycle-1.md
 date_collected: 2026-08-15
 last_updated: 2026-08-15
 provenance:
@@ -27,7 +27,7 @@ rodaquino-OMNI)**. Nothing here authorizes import; see
 
 ## 0. Provenance and hash verification
 
-OBSERVED 2026-08-15. All paths relative to `/Users/familia/intensicare/` at commit
+OBSERVED 2026-08-15. All paths relative to `https://github.com/Omni-Saude/intensicare` at commit
 `1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79`. Hashes verified against
 `docs/archive/legacy-provenance/legacy-pin-cycle-1.md` unless marked *hash-and-note*
 (file absent from the pin manifest; SHA-256 computed in place on 2026-08-15).

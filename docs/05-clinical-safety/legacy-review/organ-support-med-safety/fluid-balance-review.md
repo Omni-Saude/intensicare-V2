@@ -12,7 +12,7 @@ statement: >
   PROPOSALS; nothing is imported.
 provenance:
   source_repo: intensicare (legacy V1, READ-ONLY)
-  path_or_url: /Users/familia/intensicare
+  path_or_url: https://github.com/Omni-Saude/intensicare
   commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD at pin; per-file SHA-256 below)
   section_or_lines: cited per finding
   date_collected: 2026-08-15

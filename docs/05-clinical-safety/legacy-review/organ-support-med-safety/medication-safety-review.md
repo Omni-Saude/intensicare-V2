@@ -13,7 +13,7 @@ statement: >
   vereditos são PROPOSALS; nada é importado.
 provenance:
   source_repo: intensicare (legado V1, READ-ONLY)
-  path_or_url: /Users/familia/intensicare
+  path_or_url: https://github.com/Omni-Saude/intensicare
   commit_sha_or_version: 1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79 (HEAD no pin; SHA-256 por arquivo abaixo)
   section_or_lines: citado por achado
   date_collected: 2026-08-15

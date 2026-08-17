@@ -54,7 +54,7 @@ superseded_by: null
 - **SOURCE NOT LOCATED — não é possível revisar além do catálogo.** As fontes primárias que
   o catálogo cita (`trilhas-frontend src/utils/dataForms/dataFormFonoaudiologo.ts:146-181` e
   `trilha_homecare/models/choices/formulario.py:375-403`, snapshots `f9656be266` /
-  `8166c07eae`) são repositórios **não montados** dentro de `/Users/familia/intensicare` no
+  `8166c07eae`) são repositórios **não contidos** em `https://github.com/Omni-Saude/intensicare` no
   HEAD fixado. Conforme a condição de parada, nenhuma reconstrução é tentada; o conteúdo da
   enumeração acima é atribuído ao catálogo, não a fonte verificada.
 

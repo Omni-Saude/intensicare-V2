@@ -42,7 +42,7 @@ pertence ao workstream de pathways; este registro revisa **apenas lógica clíni
 
 ## 1. Fontes verificadas, com hashes
 
-Caminhos relativos a `/Users/familia/intensicare` (READ-ONLY), fixados no HEAD git
+Caminhos relativos a `https://github.com/Omni-Saude/intensicare` (READ-ONLY), fixados no HEAD git
 `1dc1ea6cc83f1e01ca7b7ee70a511f3dbc47cd79`; hashes recomputados em 2026-08-15 contra
 `docs/archive/legacy-provenance/legacy-pin-cycle-1.md`.
 

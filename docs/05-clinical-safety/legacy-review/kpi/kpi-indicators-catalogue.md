@@ -5,7 +5,7 @@ status: PROPOSAL
 label: OBSERVED (behaviour as implemented) + PROPOSAL (verdicts)
 owner: UNASSIGNED — VALIDATION REQUIRED
 reviewer: rodaquino-OMNI
-source: /Users/familia/intensicare (legacy V1, READ-ONLY), pinned per docs/archive/legacy-provenance/legacy-pin-cycle-1.md
+source: https://github.com/Omni-Saude/intensicare (legacy V1, READ-ONLY), pinned per docs/archive/legacy-provenance/legacy-pin-cycle-1.md
 date_collected: 2026-08-15
 last_updated: 2026-08-15
 provenance:
