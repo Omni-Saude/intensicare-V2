@@ -257,6 +257,11 @@ describe("nenhum valor de variável de ambiente vaza na mensagem de erro", () =>
     ambiente.IC_MIGRACAO_TIMEOUT_MS = `${sentinela}-TIMEOUT`;
     const erro = capturarErro(ambiente);
     expect(erro.message).not.toContain(sentinela);
+    // Guarda de não-vacuidade: um erro SEM problemas enumerados satisfaria
+    // "nenhum problema ecoa a sentinela" por ausência de problema. O ambiente
+    // montado acima é inválido em toda variável endurecida — se a validação
+    // parasse de enumerar, este teste deixaria de medir o vazamento.
+    expect(erro.problemas.length, "o erro não enumerou problema algum").toBeGreaterThan(0);
     for (const problema of erro.problemas) {
       expect(problema.motivo).not.toContain(sentinela);
     }

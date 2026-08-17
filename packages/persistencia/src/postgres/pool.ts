@@ -21,6 +21,20 @@
  * O que este arquivo NÃO faz: não escolhe provedor, região ou residência de
  * dados (decisão do titular); não alega que a RLS está verificada — verificação
  * exige terceiro independente (DEC-G0-02) e o gate MG-G6.
+ *
+ * QUANDO A RECUSA DE IDENTIDADE ACONTECE — leia antes de chamar de "fechado"
+ * -------------------------------------------------------------------------
+ * O controle 1 roda UMA vez, em `abrir()`. Ele é um retrato do estado do banco
+ * no instante do boot. Uma alteração de esquema feita por superusuário (ou pelo
+ * migrador) DEPOIS disso — tipicamente `ALTER TABLE ... INHERIT`, `ATTACH
+ * PARTITION`, `CREATE FUNCTION ... SECURITY DEFINER` ou um `GRANT` avulso —
+ * NÃO é reavaliada enquanto o processo viver: ela só será vista no próximo boot
+ * (ou na próxima migração, cujas auditorias são as mesmas). Isso é "fechado até
+ * o próximo deploy", não "fechado", e está declarado assim de propósito em
+ * `../README.md` e no cabeçalho de `../migrations/0005_fecho_de_privilegio.sql`.
+ * Fechar a janela exigiria EVENT TRIGGER de DDL, que no PostgreSQL 16 só
+ * superusuário pode criar — privilégio que o papel de migração, por desenho
+ * (`0003`), não tem.
  */
 
 import type { Transaction } from "@electric-sql/pglite";
@@ -54,6 +68,9 @@ interface DiagnosticoIdentidade {
   readonly tabelas_proprias: number;
   readonly alcanca_ancora_do_escopo: boolean;
   readonly relacoes_alcancaveis_sem_isolamento: number;
+  readonly ancestrais_alcancaveis_sem_isolamento: number;
+  readonly funcoes_definer_de_terceiro: number;
+  readonly visoes_alcancaveis_sem_invocador: number;
   readonly esquemas_fora_da_lista: number;
 }
 
@@ -167,6 +184,114 @@ const SQL_DIAGNOSTICO_IDENTIDADE = `
           or not c.relforcerowsecurity
           or not exists (select 1 from pg_policy pol where pol.polrelid = c.oid)
         )) as relacoes_alcancaveis_sem_isolamento,
+    -- ACHADO-18 (6a revisao adversarial, P1): a guarda acima exige coluna
+    -- tenant_id, e por isso era CEGA ao sentido inverso da heranca. Medido
+    -- contra PostgreSQL 16.14: numa consulta a um ANCESTRAL valem as politicas
+    -- DELE, e as das descendentes sao IGNORADAS. Como o ancestral so precisa
+    -- ter um SUBCONJUNTO das colunas da descendente, ele pode nao ter
+    -- tenant_id nenhum — e entao nenhum contador o via. Um
+    -- "alter table organizations inherit public.novo_pai" seguido de
+    -- "grant select on public.novo_pai" entregava todas as linhas de todos os
+    -- tenants com o diagnostico inteiro em ZERO.
+    -- Basta o elo DIRETO: todo topo de cadeia alcancavel casa aqui.
+    (select count(*)::int
+       from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where c.relkind in ('r', 'p', 'f')
+        and n.nspname <> 'information_schema'
+        and n.nspname not like 'pg\\_%'
+        and exists (select 1 from pg_inherits i where i.inhparent = c.oid)
+        and exists (
+          select 1 from pg_roles alvo
+           where pg_has_role(session_user, alvo.oid, 'MEMBER')
+             and (
+               has_table_privilege(alvo.oid, c.oid,
+                 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+               or exists (
+                 select 1 from pg_attribute a
+                  where a.attrelid = c.oid and a.attnum > 0 and not a.attisdropped
+                    and has_column_privilege(alvo.oid, c.oid, a.attnum,
+                          'SELECT, INSERT, UPDATE, REFERENCES')
+               )
+             ))
+        and not (
+          c.relrowsecurity
+          and c.relforcerowsecurity
+          and exists (
+            select 1 from pg_policy pol
+             where pol.polrelid = c.oid
+               and pg_get_expr(pol.polqual, pol.polrelid) ilike '%tenant_atual%')
+        )) as ancestrais_alcancaveis_sem_isolamento,
+    -- ACHADO-17 (6a revisao adversarial, P1): o fecho por pg_rewrite que
+    -- protege a ancora cobre view e matview, e NAO cobre funcao. Uma funcao
+    -- SECURITY DEFINER criada pelo migrador escreve no selo em nome da
+    -- aplicacao — e o PostgreSQL concede EXECUTE a PUBLIC por PADRAO, sem
+    -- nenhum GRANT escrito. Nao da para resolver por alcance (corpo de funcao
+    -- nao gera pg_depend sobre as relacoes que referencia, e SQL dinamico
+    -- derrota analise estatica), entao a regra e de SUPERFICIE: fora do par
+    -- selado, nenhuma. Medido em PostgreSQL 16.14 recem-provisionado: o
+    -- conjunto e exatamente esse par, contando pg_catalog inclusive.
+    (select count(*)::int
+       from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where p.prosecdef
+        and pg_get_userbyid(p.proowner) <> session_user
+        and not (n.nspname = 'intensicare_escopo'
+                 and p.proname in ('instalar', 'tenant_atual'))
+        and (
+          exists (
+            select 1 from pg_roles alvo
+             where pg_has_role(session_user, alvo.oid, 'MEMBER')
+               and has_function_privilege(alvo.oid, p.oid, 'EXECUTE')
+          )
+          -- GATILHO: medido contra PostgreSQL 16.14, a execucao de funcao de
+          -- gatilho NAO passa por verificacao de EXECUTE do usuario corrente —
+          -- o privilegio e conferido na CRIACAO do gatilho. Logo um gatilho
+          -- SECURITY DEFINER numa tabela que a aplicacao escreve roda com os
+          -- direitos do DONO mesmo com EXECUTE revogado de todo mundo, e
+          -- reescreve o selo no meio de um INSERT legitimo. Contar so o
+          -- EXECUTE deixava passar exatamente este caminho.
+          or exists (
+            select 1
+              from pg_trigger tg
+              join pg_class rel on rel.oid = tg.tgrelid
+             where tg.tgfoid = p.oid
+               and not tg.tgisinternal
+               and exists (
+                 select 1 from pg_roles alvo
+                  where pg_has_role(session_user, alvo.oid, 'MEMBER')
+                    and has_table_privilege(alvo.oid, rel.oid,
+                          'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+               )
+          )
+        )) as funcoes_definer_de_terceiro,
+    -- VIEW/MATVIEW/TABELA ESTRANGEIRA alcancavel. A 0003 ja RECUSA estes
+    -- objetos em tempo de migracao (matview e tabela estrangeira nao aceitam
+    -- politica; view sem security_invoker roda com os direitos do DONO). O
+    -- runtime era CEGO a eles: uma view do migrador sobre um ANCESTRAL sem
+    -- politica devolve todos os tenants, e o ancestral nem precisa ser
+    -- alcancavel pela aplicacao — medido contra PostgreSQL 16.14.
+    (select count(*)::int
+       from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where c.relkind in ('v', 'm', 'f')
+        and n.nspname <> 'information_schema'
+        and n.nspname not like 'pg\\_%'
+        and exists (
+          select 1 from pg_roles alvo
+           where pg_has_role(session_user, alvo.oid, 'MEMBER')
+             and (
+               has_table_privilege(alvo.oid, c.oid,
+                 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+               or exists (
+                 select 1 from pg_attribute a
+                  where a.attrelid = c.oid and a.attnum > 0 and not a.attisdropped
+                    and has_column_privilege(alvo.oid, c.oid, a.attnum,
+                          'SELECT, INSERT, UPDATE, REFERENCES')
+               )
+             ))
+        and not (
+          c.relkind = 'v'
+          and coalesce(array_to_string(c.reloptions, ','), '')
+                ~* 'security_invoker\\s*=\\s*(true|on|1)'
+        )) as visoes_alcancaveis_sem_invocador,
     -- A aplicacao nao deve alcancar esquema fora da lista permitida: e o que
     -- mantem o conjunto acima limitado e auditavel.
     (select count(*)::int
@@ -217,6 +342,21 @@ export function motivosDeRecusaDeIdentidade(d: DiagnosticoIdentidade): string[] 
   if (d.relacoes_alcancaveis_sem_isolamento > 0) {
     motivos.push(
       `o papel conectado alcança ${d.relacoes_alcancaveis_sem_isolamento} relação(ões) com coluna tenant_id sem RLS/FORCE/política — inclusive partições fora do esquema public, que nascem sem isolamento`,
+    );
+  }
+  if (d.ancestrais_alcancaveis_sem_isolamento > 0) {
+    motivos.push(
+      `o papel conectado alcança ${d.ancestrais_alcancaveis_sem_isolamento} relação(ões) que são ANCESTRAIS de outra(s) por herança/partição e não têm RLS+FORCE+política ancorada — numa consulta ao ancestral valem as políticas DELE, e as das descendentes são IGNORADAS (ACHADO-18)`,
+    );
+  }
+  if (d.funcoes_definer_de_terceiro > 0) {
+    motivos.push(
+      `o papel conectado alcança ${d.funcoes_definer_de_terceiro} função(ões) SECURITY DEFINER de terceiro fora do par selado (intensicare_escopo.instalar/tenant_atual), por EXECUTE ou por GATILHO em relação que ele escreve — uma delas basta para forjar o selo de escopo e pivotar de tenant; lembre que o PostgreSQL concede EXECUTE a PUBLIC por padrão, e que gatilho roda sem verificar EXECUTE (ACHADO-17)`,
+    );
+  }
+  if (d.visoes_alcancaveis_sem_invocador > 0) {
+    motivos.push(
+      `o papel conectado alcança ${d.visoes_alcancaveis_sem_invocador} view/matview/tabela estrangeira sem security_invoker=true — ela roda com os direitos do DONO e contorna a RLS de quem consulta (matview e tabela estrangeira não aceitam política nenhuma)`,
     );
   }
   if (d.esquemas_fora_da_lista > 0) {

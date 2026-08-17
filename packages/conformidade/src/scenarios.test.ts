@@ -9,6 +9,39 @@ import { runAllScenarios, SCENARIOS } from "./scenarios.js";
 
 const fixtures = loadPinnedFixtures();
 
+/**
+ * Cardinalidade e distribuição PINADAS EM LITERAL.
+ *
+ * POR QUÊ. Cinco testes deste arquivo eram laços sobre
+ * `runAllScenarios(fixtures)` sem nenhuma guarda de cardinalidade, e dois
+ * deles filtravam por veredito antes de asserir. Nada no arquivo media o
+ * tamanho do retorno: um `runAllScenarios` que devolvesse `[]` — ou que
+ * deixasse de produzir cenários `passou`, ou de produzir cenários
+ * `nao-executavel` — deixava todos os cinco VERDES, afirmando propriedades
+ * sobre um conjunto que não existia. Medido antes da correção: 22 resultados,
+ * 12 `passou`, 0 `falhou`, 10 `nao-executavel`.
+ *
+ * Os números abaixo são LITERAIS deliberadamente, e não `SCENARIOS.length`
+ * nem recontagem do próprio retorno: dado sob teste não pode ser a fonte da
+ * própria expectativa.
+ */
+const RESULTADOS = runAllScenarios(fixtures);
+const TOTAL_ESPERADO = 22;
+const PASSOU_ESPERADO = 12;
+const FALHOU_ESPERADO = 0;
+const NAO_EXECUTAVEL_ESPERADO = 10;
+
+describe("cardinalidade da execução — guarda de não-vacuidade dos laços abaixo", () => {
+  it("runAllScenarios devolve os 22 resultados, na distribuição de veredito medida", () => {
+    expect(RESULTADOS).toHaveLength(TOTAL_ESPERADO);
+    expect(RESULTADOS.filter((r) => r.verdict === "passou")).toHaveLength(PASSOU_ESPERADO);
+    expect(RESULTADOS.filter((r) => r.verdict === "falhou")).toHaveLength(FALHOU_ESPERADO);
+    expect(RESULTADOS.filter((r) => r.verdict === "nao-executavel")).toHaveLength(
+      NAO_EXECUTAVEL_ESPERADO,
+    );
+  });
+});
+
 describe("catálogo dos 22 cenários", () => {
   it("tem exatamente 22 cenários, com identificadores únicos CTS-01..CTS-22", () => {
     expect(SCENARIOS).toHaveLength(22);
@@ -29,7 +62,8 @@ describe("catálogo dos 22 cenários", () => {
   });
 
   it("todo cenário produz ao menos uma verificação — nenhum é decorativo", () => {
-    for (const result of runAllScenarios(fixtures)) {
+    expect(RESULTADOS).toHaveLength(TOTAL_ESPERADO);
+    for (const result of RESULTADOS) {
       expect(result.checks.length).toBeGreaterThan(0);
     }
   });
@@ -60,22 +94,42 @@ describe("catálogo dos 22 cenários", () => {
   );
 
   it("nenhum cenário reporta PASSOU com verificação bloqueada (execução parcial não passa)", () => {
-    for (const result of runAllScenarios(fixtures)) {
+    // O `if` interno é um FILTRO: se nenhum cenário tivesse veredito `passou`,
+    // o corpo nunca executaria e o teste passaria sem inspecionar nada. Conta
+    // quantos entraram e compara com o literal medido.
+    let inspecionados = 0;
+    for (const result of RESULTADOS) {
       if (result.verdict === "passou") {
+        expect(
+          result.checks.length,
+          `${result.id}: veredito passou sem verificação`,
+        ).toBeGreaterThan(0);
         expect(result.checks.every((c) => c.status === "passou")).toBe(true);
+        inspecionados += 1;
       }
     }
+    expect(inspecionados, "nenhum cenário com veredito `passou` foi inspecionado").toBe(
+      PASSOU_ESPERADO,
+    );
   });
 
   it("todo cenário NÃO EXECUTÁVEL nomeia a causa em ao menos uma verificação", () => {
-    for (const result of runAllScenarios(fixtures)) {
+    // Mesmo filtro, mesmo risco: sem cenário `nao-executavel` nenhum, o
+    // `continue` esvaziava o teste.
+    let inspecionados = 0;
+    for (const result of RESULTADOS) {
       if (result.verdict !== "nao-executavel") continue;
       expect(result.checks.some((c) => c.blockedBy !== undefined)).toBe(true);
+      inspecionados += 1;
     }
+    expect(inspecionados, "nenhum cenário `nao-executavel` foi inspecionado").toBe(
+      NAO_EXECUTAVEL_ESPERADO,
+    );
   });
 
   it("todo cenário declara ao menos uma limitação — nenhum se apresenta como prova completa", () => {
-    for (const result of runAllScenarios(fixtures)) {
+    expect(RESULTADOS).toHaveLength(TOTAL_ESPERADO);
+    for (const result of RESULTADOS) {
       expect(result.limitations.length).toBeGreaterThan(0);
     }
   });

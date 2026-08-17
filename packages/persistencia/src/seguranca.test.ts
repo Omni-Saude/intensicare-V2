@@ -422,7 +422,11 @@ describe("A. isolamento de tenant no armazenamento sob tentativa ativa de contor
           from pg_class c join pg_namespace n on n.oid = c.relnamespace
          where n.nspname = 'public' and c.relkind = 'r'
          order by c.relname`);
-      expect(tabelas.rows.length).toBeGreaterThanOrEqual(TABELAS_SOB_RLS.length);
+      // A guarda saía do próprio catálogo declarado no arquivo: esvaziar
+      // `TABELAS_SOB_RLS` a degradaria para `>= 0` e o laço abaixo perderia o
+      // piso. As 13 tabelas são literal.
+      expect(TABELAS_SOB_RLS).toHaveLength(13);
+      expect(tabelas.rows.length).toBeGreaterThanOrEqual(13);
 
       const politicas = await db.query<{ tablename: string }>(
         `select tablename from pg_policies where schemaname = 'public'`,
@@ -768,6 +772,12 @@ describe("B. append-only e imutabilidade sob tentativa ativa de adulteração", 
       const auditoriaDepois = await withTenantTransaction(db, tenant.tenantId, (tx) =>
         listAuditEvents(tx),
       );
+      // A linha de base precisa ser não-vazia: se a auditoria estivesse vazia
+      // nos DOIS lados, "a recusa não deixou rastro" seria satisfeito por
+      // ausência de auditoria inteira, e não pela lacuna que este teste mede.
+      expect(auditoriaAntes.length, "auditoria vazia — o delta zero não mede nada").toBeGreaterThan(
+        0,
+      );
       expect(
         auditoriaDepois.length,
         "o produto passou a auditar recusas — a lacuna registrada acima foi fechada, revisite a nota",
@@ -990,6 +1000,12 @@ describe("C. atomicidade do outbox: nunca fato sem evento, nunca evento órfão"
         const outboxDepois = await withTenantTransaction(db, vitima.tenantId, (tx) =>
           listOutboxEvents(tx),
         );
+        // O esperado vem do próprio par antes/depois: se a semeadura falhasse
+        // e as duas leituras fossem VAZIAS, "o intruso não escreveu nada"
+        // passaria por ausência de dado — sem provar que o predicado de tenant
+        // barrou coisa alguma. A linha de base precisa existir para que o
+        // delta zero signifique alguma coisa.
+        expect(outboxAntes.length, "semeadura não produziu outbox — teste inconclusivo").toBe(1);
         expect(auditoriaDepois).toHaveLength(auditoriaAntes.length);
         expect(outboxDepois).toHaveLength(outboxAntes.length);
       } finally {

@@ -50,6 +50,7 @@ export const ARQUIVOS_DE_MIGRACAO = [
   "0002_g7_integration.sql",
   "0003_fronteira_papeis.sql",
   "0004_escopo_selado.sql",
+  "0005_fecho_de_privilegio.sql",
 ] as const;
 
 export interface MigracaoLida {

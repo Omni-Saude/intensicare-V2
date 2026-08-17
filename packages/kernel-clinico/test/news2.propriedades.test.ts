@@ -252,6 +252,14 @@ describe("NEWS2 — propriedades (fast-check)", () => {
         // Entradas completas e plausíveis: Escala 2 ≥93 requer O2, que está sempre
         // presente aqui — o resultado deve ser `valid`.
         expect(record.status).toBe("valid");
+        // Guarda de não-vacuidade. O NOME desta propriedade promete "soma das
+        // 7 contribuições", e o corpo verificava um subconjunto estrito disso:
+        // com `parameters` VAZIO, `scores` é `[]`, `[].every(...)` é `true`,
+        // a soma é 0, `0 ∈ [0,20]`, `red` é `false` e o tier calculado é
+        // "low" — a propriedade inteira passaria sobre um registro que não
+        // pontuou parâmetro nenhum. A cardinalidade 7 é a que o próprio nome
+        // do teste declara.
+        expect(record.parameters, "NEWS2 sem os 7 parâmetros").toHaveLength(7);
         const scores = record.parameters.map((c) => c.score);
         expect(scores.every((s) => s !== null)).toBe(true);
         const sum = (scores as number[]).reduce((x, y) => x + y, 0);

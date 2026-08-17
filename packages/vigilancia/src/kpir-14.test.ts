@@ -109,6 +109,15 @@ describe("KPIR-14 — as duas sub-decisões abertas NUNCA são escolhidas em sil
       "variantes",
       "nota",
     ]);
+    // `resultado.subDecisoesAbertas` É a constante `SUBDECISOES_ABERTAS` do
+    // produto (kpir-14.ts): comparar as duas é TAUTOLOGIA — passa por
+    // construção, inclusive se a lista ficasse VAZIA, e nesse caso o
+    // `.every(...)` abaixo também passaria por vacuidade. Ancorado em literal:
+    // as DUAS sub-decisões nomeadas de §3 precisam estar abertas.
+    expect(resultado.subDecisoesAbertas.map((s) => s.id)).toEqual([
+      "transferencia-para-outra-uti",
+      "janela-de-deduplicacao-de-readmissao",
+    ]);
     expect(resultado.subDecisoesAbertas).toEqual(SUBDECISOES_ABERTAS);
     expect(resultado.subDecisoesAbertas.every((s) => s.estado.startsWith("ABERTA"))).toBe(true);
   });

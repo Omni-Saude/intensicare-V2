@@ -1479,13 +1479,14 @@ function registrarSuite(urlSuperusuario: string): void {
 
     describe("(g) migrações em instalação limpa e em atualização", () => {
       it(
-        "instalação limpa: as quatro migrações aplicadas pelo papel migrador deixam o invariante de pé",
+        "instalação limpa: as cinco migrações aplicadas pelo papel migrador deixam o invariante de pé",
         async () => {
           expect(banco.migracoesAplicadas).toEqual([
             "0001_init.sql",
             "0002_g7_integration.sql",
             "0003_fronteira_papeis.sql",
             "0004_escopo_selado.sql",
+            "0005_fecho_de_privilegio.sql",
           ]);
           const papel = await porta.comTenant(TENANT_A, (tx) =>
             tx.query<{
@@ -2322,6 +2323,675 @@ function registrarSuite(urlSuperusuario: string): void {
             // contaminar os demais bancos desta mesma execução.
             await administrativa.executar(`revoke synth_papel_super from ${PAPEL_APLICACAO}`);
             await administrativa.executar("drop role if exists synth_papel_super");
+            await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      // ---------------------------------------------------------------------
+      // ACHADO-17 (6ª revisão, F1) — função SECURITY DEFINER de TERCEIRO
+      // ---------------------------------------------------------------------
+      // O handoff da 5ª revisão registrou este limite por escrito e NÃO o
+      // atacou: "função SECURITY DEFINER de terceiro que leia o selo não é
+      // coberta pelo fecho de `pg_rewrite`; a aplicação não pode criar funções,
+      // mas registro o limite". Os testes abaixo atacam as duas metades: a
+      // premissa (o app não cria função) e o caminho (função criada por quem
+      // pode).
+
+      it(
+        "a aplicação NÃO pode plantar função própria: sem CREATE em nenhum esquema alcançável e sem TEMP no banco",
+        async () => {
+          // Metade PREMISSA do ACHADO-17. Se um dia alguém conceder CREATE (ou
+          // TEMPORARY, que abre `pg_temp`), este teste falha ALTO — em vez de o
+          // argumento "o app não cria funções" envelhecer em silêncio num
+          // comentário.
+          const estado = await porta.comTenant(TENANT_A, async (tx) => ({
+            esquemas: await tx.query<{ nspname: string }>(
+              `select n.nspname::text
+                 from pg_namespace n
+                where exists (
+                        select 1 from pg_roles alvo
+                         where pg_has_role(session_user, alvo.oid, 'MEMBER')
+                           and has_schema_privilege(alvo.oid, n.oid, 'CREATE'))
+                order by 1`,
+            ),
+            banco: await tx.query<{ temp: boolean; criar: boolean }>(
+              `select has_database_privilege(session_user, current_database(), 'TEMP') as temp,
+                      has_database_privilege(session_user, current_database(), 'CREATE') as criar`,
+            ),
+          }));
+          expect(
+            estado.esquemas.rows.map((r) => r.nspname),
+            "a aplicação alcança CREATE em algum esquema — poderia plantar a própria função SECURITY DEFINER (o que a torna dona, e portanto sem ganho de privilégio) ou sequestrar resolução de nome",
+          ).toEqual([]);
+          expect(
+            estado.banco.rows[0],
+            "TEMP no banco abre `pg_temp`, que está no search_path das funções seladas; CREATE no banco permite criar esquema novo",
+          ).toEqual({ temp: false, criar: false });
+        },
+        TEMPO_LIMITE_MS,
+      );
+
+      it(
+        "ACHADO-17 — o conjunto de funções SECURITY DEFINER executáveis pela aplicação é EXATAMENTE o par selado",
+        async () => {
+          // Prova positiva, bloqueante: hoje o único código que roda com
+          // privilégio de terceiro em nome da aplicação são `instalar` e
+          // `tenant_atual`. Medido contra PostgreSQL 16.14: num banco recém
+          // provisionado, o servidor NÃO traz nenhuma outra função
+          // SECURITY DEFINER — nem em `pg_catalog`, nem em
+          // `information_schema`. Logo a varredura pode ser sobre TODOS os
+          // esquemas, sem lista de exceção, e um `GRANT EXECUTE` futuro (ou
+          // uma extensão que instale função SECURITY DEFINER com EXECUTE para
+          // PUBLIC) falha aqui.
+          const alcancaveis = await porta.comTenant(TENANT_A, (tx) =>
+            tx.query<{ esquema: string; funcao: string; dono: string }>(
+              `select n.nspname::text as esquema, p.proname::text as funcao,
+                      pg_get_userbyid(p.proowner)::text as dono
+                 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+                where p.prosecdef
+                  and pg_get_userbyid(p.proowner) <> session_user
+                  and exists (
+                        select 1 from pg_roles alvo
+                         where pg_has_role(session_user, alvo.oid, 'MEMBER')
+                           and has_function_privilege(alvo.oid, p.oid, 'EXECUTE'))
+                order by 1, 2`,
+            ),
+          );
+          expect(alcancaveis.rows).toEqual([
+            { esquema: "intensicare_escopo", funcao: "instalar", dono: PAPEL_MIGRADOR },
+            { esquema: "intensicare_escopo", funcao: "tenant_atual", dono: PAPEL_MIGRADOR },
+          ]);
+        },
+        TEMPO_LIMITE_MS,
+      );
+
+      it(
+        "ACHADO-17 — função SECURITY DEFINER de terceiro FORJA o selo e pivota de tenant; o pool e a 0005 recusam",
+        async () => {
+          // Metade CAMINHO do ACHADO-17, medida contra PostgreSQL 16.14.
+          // O fecho de `pg_rewrite` da 0004 §6.2 cobre view e matview sobre o
+          // selo. NÃO cobre função: o corpo de uma função em SQL/PL-pgSQL não
+          // gera dependência em `pg_depend` sobre as tabelas que referencia
+          // (só `BEGIN ATOMIC` o faz), e nenhuma análise estática resiste a SQL
+          // dinâmico. Por isso a regra tem de ser de SUPERFÍCIE, não de alcance:
+          // nenhuma função SECURITY DEFINER de terceiro é executável pelo app
+          // fora do par selado.
+          //
+          // O detalhe que torna isto um pé-de-cabra e não uma hipótese: no
+          // PostgreSQL, `CREATE FUNCTION` concede EXECUTE a PUBLIC por PADRÃO.
+          // Nenhum GRANT é escrito abaixo — e ainda assim a aplicação chama.
+          // Provisionado ATÉ a 0004: é o estado que a 5ª revisão deixou, e é
+          // nele que o EXECUTE padrão para PUBLIC ainda está armado. A 0005
+          // desarma o padrão (teste seguinte) — aqui o que se mede é o dano
+          // enquanto ele existe, e as duas recusas que passam a fechá-lo.
+          const alvo = await provisionarBanco({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_definer"),
+            ateMigracao: "0004_escopo_selado.sql",
+            recriarBanco: true,
+          });
+          const migradora = await ConexaoPostgres.conectar(
+            opcoesDaUrl(alvo.urlMigrador, "verificacao"),
+          );
+          const administrativa = await ConexaoPostgres.conectar(
+            opcoesDaUrl(alvo.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            // Semeado pelo SUPERUSUÁRIO (ignora RLS): os dois tenants existem
+            // de verdade, senão "não vejo nada" seria falso verde.
+            await administrativa.consultar(
+              "insert into organizations (id, tenant_id, name) values ($1,$1,$3), ($2,$2,$4)",
+              [TENANT_A, TENANT_B, "Org A", "Org B"],
+            );
+            // Função "de diagnóstico" plausível, criada pelo MIGRADOR.
+            await migradora.executar(
+              `create function public.synth_marcar_escopo(p text) returns void
+                 language sql security definer as $x$
+                   update intensicare_escopo.selo set tenant_id = p where pid = pg_backend_pid()
+                 $x$`,
+            );
+
+            // 1) SEM nenhum GRANT, a aplicação já pode executar.
+            const podeExecutar = await administrativa.consultar<{ pode: boolean }>(
+              `select has_function_privilege($1, 'public.synth_marcar_escopo(text)', 'EXECUTE') as pode`,
+              [PAPEL_APLICACAO],
+            );
+            expect(
+              podeExecutar.rows[0]?.pode,
+              "sem EXECUTE para PUBLIC o cenário perde o sentido — o padrão do PostgreSQL é justamente conceder",
+            ).toBe(true);
+
+            // 2) E, executando, PIVOTA de tenant dentro da transação em voo —
+            //    exatamente o ACHADO-02, reaberto por fora da 0004.
+            //    Conexão CRUA: o ponto do teste é que o dano existe mesmo com
+            //    o `comTenant` correto, e depois que o pool recusar abrir não
+            //    haveria como demonstrá-lo por lá.
+            const intrusa = await ConexaoPostgres.conectar(
+              opcoesDaUrl(alvo.urlAplicacao, "SYNTH-intrusa"),
+            );
+            try {
+              await intrusa.executar("begin");
+              await intrusa.consultar("select intensicare_escopo.instalar($1)", [TENANT_A]);
+              const antes = await intrusa.consultar<{ id: string }>(
+                "select id from organizations order by id",
+              );
+              expect(antes.rows.map((r) => r.id)).toEqual([TENANT_A]);
+
+              await intrusa.consultar("select public.synth_marcar_escopo($1)", [TENANT_B]);
+              const depois = await intrusa.consultar<{ tenant: string }>(
+                "select intensicare_escopo.tenant_atual() as tenant",
+              );
+              expect(
+                depois.rows[0]?.tenant,
+                "o selo NÃO foi forjado — se a 0004 já cobrisse função SECURITY DEFINER, este teste perderia o sentido e precisaria ser reescrito, não apagado",
+              ).toBe(TENANT_B);
+              const cruzado = await intrusa.consultar<{ id: string }>(
+                "select id from organizations order by id",
+              );
+              expect(
+                cruzado.rows.map((r) => r.id),
+                "leitura cross-tenant por selo forjado via função SECURITY DEFINER de terceiro",
+              ).toEqual([TENANT_B]);
+              await intrusa.executar("rollback");
+            } finally {
+              await intrusa.fechar();
+            }
+
+            // 3) O pool RECUSA abrir sobre este banco...
+            await expect(
+              AdaptadorPostgres.abrir({ url: alvo.urlAplicacao }),
+              "abrir() é cego a função SECURITY DEFINER de terceiro executável pela aplicação",
+            ).rejects.toThrow(ErroIdentidadeInsegura);
+
+            // 4) A 0005 aplicada CONCLUI — e conclui porque REPARA o caso: ela
+            //    revoga o EXECUTE de PUBLIC antes de auditar. Medido: sem esta
+            //    ordem, a auditoria acusaria uma condição que a própria
+            //    migração acabaria de desfazer.
+            await aplicarMigracao(alvo.urlSuperusuarioNoBanco, "0005_fecho_de_privilegio.sql");
+            const depoisDaMigracao = await administrativa.consultar<{ pode: boolean }>(
+              `select has_function_privilege($1, 'public.synth_marcar_escopo(text)', 'EXECUTE') as pode`,
+              [PAPEL_APLICACAO],
+            );
+            expect(
+              depoisDaMigracao.rows[0]?.pode,
+              "a 0005 não revogou o EXECUTE que o PostgreSQL havia concedido a PUBLIC",
+            ).toBe(false);
+            // E, reparado o padrão, a aplicação volta a poder abrir.
+            const portaReparada = await AdaptadorPostgres.abrir({ url: alvo.urlAplicacao });
+            await portaReparada.encerrar();
+
+            // 5) O que a 0005 NÃO pode reparar sozinha é uma concessão NOMINAL
+            //    ao papel de aplicação: revogar de PUBLIC não a alcança. Aí a
+            //    migração RECUSA concluir, e o pool recusa abrir.
+            await administrativa.executar(
+              `grant execute on function public.synth_marcar_escopo(text) to ${PAPEL_APLICACAO}`,
+            );
+            await expect(
+              aplicarMigracao(alvo.urlSuperusuarioNoBanco, "0005_fecho_de_privilegio.sql"),
+            ).rejects.toThrow(/security definer/i);
+            await expect(
+              AdaptadorPostgres.abrir({ url: alvo.urlAplicacao }),
+              "abrir() aceitou concessão NOMINAL de EXECUTE sobre função SECURITY DEFINER de terceiro",
+            ).rejects.toThrow(ErroIdentidadeInsegura);
+          } finally {
+            await migradora.fechar();
+            await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "ACHADO-17 — a 0005 revoga o EXECUTE PADRÃO para PUBLIC, presente e futuro",
+        async () => {
+          // Detectar não basta: o padrão do PostgreSQL (`EXECUTE` para PUBLIC
+          // em toda função nova) é o que transforma um `create function`
+          // rotineiro numa concessão de privilégio. A 0005 desarma o padrão
+          // para o papel de migração; a auditoria fica como rede.
+          const alvo = await provisionarBanco({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_padrao"),
+            recriarBanco: true,
+          });
+          const migradora = await ConexaoPostgres.conectar(
+            opcoesDaUrl(alvo.urlMigrador, "verificacao"),
+          );
+          try {
+            await migradora.executar(
+              `create function public.synth_funcao_nova() returns integer
+                 language sql immutable as $x$ select 1 $x$`,
+            );
+            const acl = await migradora.consultar<{ pode: boolean }>(
+              `select has_function_privilege($1, 'public.synth_funcao_nova()', 'EXECUTE') as pode`,
+              [PAPEL_APLICACAO],
+            );
+            expect(
+              acl.rows[0]?.pode,
+              "função nova do migrador nasceu executável pela aplicação — o EXECUTE padrão para PUBLIC continua ligado",
+            ).toBe(false);
+            // CONTRAPARTE INDISPENSÁVEL: revogar o EXECUTE de PUBLIC não pode
+            // quebrar o gatilho append-only, que é uma função de `public` sobre
+            // a qual a aplicação passa a NÃO ter EXECUTE. Medido contra
+            // PostgreSQL 16.14: a execução de função de GATILHO não passa por
+            // verificação de EXECUTE do usuário corrente — o privilégio é
+            // conferido na CRIAÇÃO do gatilho. Sem esta asserção, a 0005
+            // poderia estar desligando o controle de auditoria em silêncio.
+            const portaPadrao = await AdaptadorPostgres.abrir({ url: alvo.urlAplicacao });
+            try {
+              const semeado = await semearTenant(portaPadrao, TENANT_A);
+              const acessoAoGatilho = await portaPadrao.comTenant(TENANT_A, (tx) =>
+                tx.query<{ pode: boolean }>(
+                  `select has_function_privilege(session_user,
+                            'public.intensicare_forbid_mutation()', 'EXECUTE') as pode`,
+                ),
+              );
+              expect(
+                acessoAoGatilho.rows[0]?.pode,
+                "a aplicação ainda tem EXECUTE na função de gatilho — o cenário não exerceu a revogação",
+              ).toBe(false);
+              const erro = await capturarRejeicao(
+                portaPadrao.comTenant(TENANT_A, (tx) =>
+                  tx.query("update audit_events set command = 'x' where id = $1", [
+                    semeado.auditId,
+                  ]),
+                ),
+                "o gatilho append-only não impediu o UPDATE",
+              );
+              expect(erro).toBeInstanceOf(ErroPostgres);
+              expect((erro as ErroPostgres).message).toMatch(/append-only/i);
+            } finally {
+              await portaPadrao.encerrar();
+            }
+          } finally {
+            await migradora.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "ACHADO-17 — GATILHO SECURITY DEFINER forja o selo SEM nenhum EXECUTE; o pool e a 0005 recusam",
+        async () => {
+          // Achado próprio, encontrado ATACANDO a própria correção acima: ela
+          // contava `EXECUTE`, e há uma porta que não passa por `EXECUTE`
+          // nenhum. Medido contra PostgreSQL 16.14 — e é a MESMA propriedade
+          // que o teste anterior usa como garantia (o gatilho append-only
+          // continua funcionando sem EXECUTE), agora do lado ofensivo.
+          const alvo = await provisionarBanco({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_gatilho"),
+            recriarBanco: true,
+          });
+          const administrativa = await ConexaoPostgres.conectar(
+            opcoesDaUrl(alvo.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            await administrativa.consultar(
+              "insert into organizations (id, tenant_id, name) values ($1,$1,$3), ($2,$2,$4)",
+              [TENANT_A, TENANT_B, "Org A", "Org B"],
+            );
+            await administrativa.executar(
+              `create function public.synth_gatilho_forja() returns trigger
+                 language plpgsql security definer as $x$
+                 begin
+                   update intensicare_escopo.selo set tenant_id = '${TENANT_B}'
+                    where pid = pg_backend_pid();
+                   return new;
+                 end $x$`,
+            );
+            // EXECUTE revogado de TODO MUNDO: é o ponto do teste.
+            await administrativa.executar(
+              "revoke execute on function public.synth_gatilho_forja() from public",
+            );
+            await administrativa.executar(
+              `create trigger synth_forja before insert on public.audit_events
+                 for each row execute function public.synth_gatilho_forja()`,
+            );
+            const semExecute = await administrativa.consultar<{ pode: boolean }>(
+              `select has_function_privilege($1, 'public.synth_gatilho_forja()', 'EXECUTE') as pode`,
+              [PAPEL_APLICACAO],
+            );
+            expect(
+              semExecute.rows[0]?.pode,
+              "a aplicação tem EXECUTE na função — o cenário não exerceria o caminho SEM EXECUTE",
+            ).toBe(false);
+
+            const intrusa = await ConexaoPostgres.conectar(
+              opcoesDaUrl(alvo.urlAplicacao, "SYNTH-intrusa"),
+            );
+            try {
+              await intrusa.executar("begin");
+              await intrusa.consultar("select intensicare_escopo.instalar($1)", [TENANT_A]);
+              await intrusa.consultar(
+                `insert into audit_events
+                   (id, tenant_id, actor_id, command, aggregate_type, aggregate_id, occurred_at, idempotency_key)
+                 values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                [
+                  "SYNTH-AE-1",
+                  TENANT_A,
+                  `${TENANT_A}-CLIN-01`,
+                  "leitura-grade-leitos",
+                  "tenant",
+                  TENANT_A,
+                  instante("2026-08-16T10:08:00.000Z"),
+                  "SYNTH-CORR-1",
+                ],
+              );
+              const depois = await intrusa.consultar<{ tenant: string }>(
+                "select intensicare_escopo.tenant_atual() as tenant",
+              );
+              expect(
+                depois.rows[0]?.tenant,
+                "o gatilho não forjou o selo — o cenário perdeu o sentido e precisa ser reescrito, não apagado",
+              ).toBe(TENANT_B);
+              await intrusa.executar("rollback");
+            } finally {
+              await intrusa.fechar();
+            }
+
+            await expect(
+              AdaptadorPostgres.abrir({ url: alvo.urlAplicacao }),
+              "abrir() só contou EXECUTE e ficou cego ao gatilho SECURITY DEFINER",
+            ).rejects.toThrow(ErroIdentidadeInsegura);
+            await expect(
+              aplicarMigracao(alvo.urlSuperusuarioNoBanco, "0005_fecho_de_privilegio.sql"),
+            ).rejects.toThrow(/security definer/i);
+          } finally {
+            await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      // ---------------------------------------------------------------------
+      // ACHADO-18 (6ª revisão, F2) — herança anexada DEPOIS das migrações
+      // ---------------------------------------------------------------------
+
+      it(
+        "ACHADO-18 — filha anexada DEPOIS das migrações, sob pai PROTEGIDO, é filtrada pela política do PAI (medido)",
+        async () => {
+          // Metade REFUTADA da hipótese F2. Medido contra PostgreSQL 16.14: numa
+          // consulta ao PAI, a política do PAI é aplicada às linhas vindas das
+          // FILHAS (o plano mostra `Filter: (tenant_id =
+          // intensicare_escopo.tenant_atual())` sobre a filha). Anexar uma
+          // tabela por herança DEPOIS da migração, portanto, NÃO vaza por si —
+          // o que vaza é o sentido inverso, no teste seguinte.
+          const alvo = await provisionarBanco({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_heranca_ok"),
+            recriarBanco: true,
+          });
+          const administrativa = await ConexaoPostgres.conectar(
+            opcoesDaUrl(alvo.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            await administrativa.consultar(
+              "insert into organizations (id, tenant_id, name) values ($1,$1,$2)",
+              [TENANT_A, "Org A"],
+            );
+            await administrativa.executar(
+              `create table public.synth_filha (
+                 id text not null, tenant_id text not null, name text not null,
+                 created_at timestamptz not null default now(),
+                 constraint organizations_tenant_is_self check (tenant_id = id))`,
+            );
+            // `organizations` carrega a restrição `tenant_id = id`, então a
+            // linha da filha que pertence a A precisa MESMO ter id = TENANT_A
+            // (chave primária não é herdada, logo o id repetido é aceito). É
+            // por isso que a asserção adiante é sobre `name`, e não sobre `id`.
+            await administrativa.consultar(
+              "insert into public.synth_filha (id, tenant_id, name) values ($1,$1,$3), ($2,$2,$4)",
+              [TENANT_A, TENANT_B, "filha de A", "filha de B"],
+            );
+            // ANEXADA DEPOIS de todas as migrações — nenhuma auditoria correu
+            // depois deste instante.
+            await administrativa.executar(
+              "alter table public.synth_filha inherit public.organizations",
+            );
+
+            const portaHeranca = await AdaptadorPostgres.abrir({ url: alvo.urlAplicacao });
+            try {
+              const vistoPorA = await portaHeranca.comTenant(TENANT_A, (tx) =>
+                tx.query<{ name: string }>("select name from organizations order by name"),
+              );
+              // A linha 'filha de A' SÓ existe na FILHA: se ela não aparecesse,
+              // o teste passaria por vacuidade (herança ignorada) e não
+              // provaria que a política do PAI é que está filtrando. E 'filha
+              // de B' não pode aparecer: é o isolamento sob teste.
+              expect(
+                vistoPorA.rows.map((r) => r.name),
+                "a filha não foi lida pelo pai (vacuidade) ou vazou a linha de B",
+              ).toEqual(["Org A", "filha de A"]);
+            } finally {
+              await portaHeranca.encerrar();
+            }
+          } finally {
+            await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "ACHADO-18 — tabela PROTEGIDA anexada a um PAI alcançável sem política vaza leitura e escrita; o pool e a 0005 recusam",
+        async () => {
+          // O caminho REAL, e ele é o INVERSO do que a hipótese F2 supunha.
+          // Medido contra PostgreSQL 16.14: numa consulta ao PAI, valem as
+          // políticas do PAI — as da FILHA são IGNORADAS. Logo, tornar
+          // `organizations` filha de um pai novo e sem política entrega todas as
+          // linhas de todos os tenants, e o plano nem sequer mostra filtro.
+          //
+          // O pai NÃO PRECISA ter coluna `tenant_id` (basta ter um subconjunto
+          // das colunas da filha) — e era exatamente esse o ponto cego: a guarda
+          // `relacoes_alcancaveis_sem_isolamento` do pool só olhava relações COM
+          // coluna `tenant_id`, então este pai era invisível para ela.
+          // Medido: o diagnóstico de `abrir()` devolvia ZERO em todos os
+          // contadores num banco onde a aplicação lia e escrevia todos os
+          // tenants.
+          const alvo = await provisionarBanco({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_ancestral"),
+            recriarBanco: true,
+          });
+          const administrativa = await ConexaoPostgres.conectar(
+            opcoesDaUrl(alvo.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            await administrativa.consultar(
+              "insert into organizations (id, tenant_id, name) values ($1,$1,$3), ($2,$2,$4)",
+              [TENANT_A, TENANT_B, "Org A", "Org B"],
+            );
+            // Pai SEM `tenant_id`, sem RLS. Anexado DEPOIS das migrações.
+            await administrativa.executar(
+              "create table public.synth_ancestral (id text, name text)",
+            );
+            await administrativa.executar(
+              "alter table public.organizations inherit public.synth_ancestral",
+            );
+            await administrativa.executar(
+              `grant select, update on public.synth_ancestral to ${PAPEL_APLICACAO}`,
+            );
+
+            const intrusa = await ConexaoPostgres.conectar(
+              opcoesDaUrl(alvo.urlAplicacao, "SYNTH-intrusa"),
+            );
+            try {
+              await intrusa.executar("begin");
+              await intrusa.consultar("select intensicare_escopo.instalar($1)", [TENANT_A]);
+              const lido = await intrusa.consultar<{ id: string }>(
+                "select id from public.synth_ancestral order by id",
+              );
+              expect(
+                lido.rows.map((r) => r.id),
+                "leitura cross-tenant pelo ancestral não ocorreu — o cenário perdeu o sentido e precisa ser reescrito, não apagado",
+              ).toEqual([TENANT_A, TENANT_B]);
+
+              const escrita = await intrusa.consultar(
+                "update public.synth_ancestral set name = $1 where id = $2",
+                ["ESCRITO-POR-A", TENANT_B],
+              );
+              expect(escrita.affectedRows, "escrita cross-tenant pelo ancestral não ocorreu").toBe(
+                1,
+              );
+              await intrusa.executar("rollback");
+            } finally {
+              await intrusa.fechar();
+            }
+
+            // 1) O pool RECUSA abrir...
+            await expect(
+              AdaptadorPostgres.abrir({ url: alvo.urlAplicacao }),
+              "abrir() é cego a ancestral alcançável sem política (o pai nem tem coluna tenant_id)",
+            ).rejects.toThrow(ErroIdentidadeInsegura);
+
+            // 2) ...e a migração de fecho RECUSA concluir.
+            await expect(
+              aplicarMigracao(alvo.urlSuperusuarioNoBanco, "0005_fecho_de_privilegio.sql"),
+            ).rejects.toThrow(/ancestr/i);
+          } finally {
+            await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "ACHADO-18 — o ancestral alcançável é pego mesmo TRANSITIVAMENTE (avô → pai → tabela protegida)",
+        async () => {
+          // A exposição é transitiva: consultar o AVÔ expande a cadeia inteira
+          // e aplica as políticas do AVÔ. Medido contra PostgreSQL 16.14.
+          const alvo = await provisionarBanco({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_avo"),
+            recriarBanco: true,
+          });
+          const administrativa = await ConexaoPostgres.conectar(
+            opcoesDaUrl(alvo.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            await administrativa.executar("create table public.synth_meio (id text, name text)");
+            await administrativa.executar("create table public.synth_avo (id text)");
+            await administrativa.executar(
+              "alter table public.organizations inherit public.synth_meio",
+            );
+            await administrativa.executar("alter table public.synth_meio inherit public.synth_avo");
+            // Só o AVÔ é concedido: o elo do meio NÃO é alcançável por
+            // privilégio nenhum, e ainda assim expõe a tabela protegida — é por
+            // isso que a guarda não pode exigir que o elo vazador seja ele
+            // próprio alcançável.
+            await administrativa.executar(`grant select on public.synth_avo to ${PAPEL_APLICACAO}`);
+
+            // O vazamento existe de fato antes de qualquer guarda opinar.
+            const intrusa = await ConexaoPostgres.conectar(
+              opcoesDaUrl(alvo.urlAplicacao, "SYNTH-intrusa"),
+            );
+            try {
+              await administrativa.consultar(
+                "insert into organizations (id, tenant_id, name) values ($1,$1,$2)",
+                [TENANT_B, "Org B"],
+              );
+              await intrusa.executar("begin");
+              await intrusa.consultar("select intensicare_escopo.instalar($1)", [TENANT_A]);
+              const lido = await intrusa.consultar<{ id: string }>(
+                "select id from public.synth_avo order by id",
+              );
+              expect(
+                lido.rows.map((r) => r.id),
+                "a cadeia avô→pai→tabela protegida não vazou — o cenário perdeu o sentido",
+              ).toEqual([TENANT_B]);
+              await intrusa.executar("rollback");
+            } finally {
+              await intrusa.fechar();
+            }
+
+            await expect(
+              AdaptadorPostgres.abrir({ url: alvo.urlAplicacao }),
+              "abrir() não viu o ancestral alcançável no topo da cadeia",
+            ).rejects.toThrow(ErroIdentidadeInsegura);
+          } finally {
+            await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "ACHADO-18 — VIEW sobre ancestral NÃO alcançável também vaza; o pool e a 0005 recusam",
+        async () => {
+          // Segundo achado próprio desta rodada, encontrado atacando a própria
+          // correção: a contagem de ancestrais exige que o ANCESTRAL seja
+          // alcançável. Uma view do migrador sobre ele — sem
+          // `security_invoker` — roda com os direitos do DONO e devolve todos
+          // os tenants, com o ancestral inacessível à aplicação. A `0003` já
+          // recusava esse objeto em tempo de MIGRAÇÃO; o runtime é que era cego.
+          const alvo = await provisionarBanco({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_visao"),
+            recriarBanco: true,
+          });
+          const administrativa = await ConexaoPostgres.conectar(
+            opcoesDaUrl(alvo.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            await administrativa.consultar(
+              "insert into organizations (id, tenant_id, name) values ($1,$1,$3), ($2,$2,$4)",
+              [TENANT_A, TENANT_B, "Org A", "Org B"],
+            );
+            await administrativa.executar(
+              "create table public.synth_ancestral (id text, name text)",
+            );
+            await administrativa.executar(
+              `alter table public.synth_ancestral owner to ${PAPEL_MIGRADOR}`,
+            );
+            await administrativa.executar(
+              "alter table public.organizations inherit public.synth_ancestral",
+            );
+            await administrativa.executar(
+              "create view public.synth_visao as select id, name from public.synth_ancestral",
+            );
+            await administrativa.executar(
+              `alter view public.synth_visao owner to ${PAPEL_MIGRADOR}`,
+            );
+            await administrativa.executar(
+              `grant select on public.synth_visao to ${PAPEL_APLICACAO}`,
+            );
+
+            const intrusa = await ConexaoPostgres.conectar(
+              opcoesDaUrl(alvo.urlAplicacao, "SYNTH-intrusa"),
+            );
+            try {
+              await intrusa.executar("begin");
+              await intrusa.consultar("select intensicare_escopo.instalar($1)", [TENANT_A]);
+              const lido = await intrusa.consultar<{ id: string }>(
+                "select id from public.synth_visao order by id",
+              );
+              expect(
+                lido.rows.map((r) => r.id),
+                "a view sobre o ancestral não vazou — o cenário perdeu o sentido",
+              ).toEqual([TENANT_A, TENANT_B]);
+              // E o ancestral em si permanece INALCANÇÁVEL: é isso que torna a
+              // contagem de ancestrais, sozinha, insuficiente.
+              const direto = await capturarRejeicao(
+                intrusa.consultar("select id from public.synth_ancestral"),
+                "o ancestral era alcançável — o cenário mediria outra coisa",
+              );
+              expect(direto).toBeInstanceOf(ErroPostgres);
+              expect((direto as ErroPostgres).codigo).toBe(SQLSTATE_PRIVILEGIO_INSUFICIENTE);
+              await intrusa.executar("rollback");
+            } finally {
+              await intrusa.fechar();
+            }
+
+            await expect(
+              AdaptadorPostgres.abrir({ url: alvo.urlAplicacao }),
+              "abrir() é cego a view sem security_invoker alcançável pela aplicação",
+            ).rejects.toThrow(ErroIdentidadeInsegura);
+            await expect(
+              aplicarMigracao(alvo.urlSuperusuarioNoBanco, "0005_fecho_de_privilegio.sql"),
+            ).rejects.toThrow(/security_invoker/i);
+          } finally {
             await administrativa.fechar();
           }
         },
