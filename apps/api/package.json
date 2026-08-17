@@ -18,7 +18,9 @@
     "@intensicare/dominio": "workspace:*",
     "@intensicare/fixtures-sinteticas": "workspace:*",
     "@intensicare/kernel-clinico": "workspace:*",
+    "@intensicare/observabilidade": "workspace:*",
     "@intensicare/persistencia": "workspace:*",
+    "@intensicare/rule-bundle": "workspace:*",
     "fastify": "^5.12.0",
     "zod": "4.4.3"
   },

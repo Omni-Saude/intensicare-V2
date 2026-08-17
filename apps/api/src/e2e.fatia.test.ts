@@ -18,6 +18,7 @@
  * NÃO são os V1–V8 formais (TST-DOM-0005), que permanecem pendentes.
  */
 
+import { setTimeout as dormir } from "node:timers/promises";
 import type { PGlite } from "@electric-sql/pglite";
 import {
   type GradeLeitosResposta,
@@ -45,6 +46,59 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { gerarTokenSintetico } from "./auth.js";
 import { buildServer } from "./index.js";
+
+/**
+ * Tipos de `EventoFluxo` do contrato. O fluxo de eventos deixou de ser replay
+ * finito e passou a ser entrega CONTÍNUA (ADR-0011): uma conexão que não
+ * termina não tem fim de corpo para `inject` esperar, então a verificação de
+ * não vazamento lê um PREFIXO do fluxo contra a porta real.
+ */
+const TIPOS_DE_EVENTO_DE_DOMINIO = [
+  "observacao-clinica-registrada",
+  "observacoes-ingeridas",
+  "avaliacao-computada",
+  "alerta-criado",
+  "alerta-atualizado",
+] as const;
+
+/**
+ * Âncora de fim de catch-up: o servidor só emite `event: estado-conexao`
+ * depois de drenar o backlog. Parar por SILÊNCIO TEMPORAL tornaria toda
+ * asserção de ausência abaixo vacuamente verdadeira quando o catch-up ficasse
+ * mais lento que a janela (achado P2 de revisão adversarial, 2026-08-17).
+ */
+const FIM_DO_CATCHUP = "event: estado-conexao";
+
+/** Abre o fluxo, acumula o prefixo ATÉ O FIM DO CATCH-UP e encerra do lado do cliente. */
+async function lerPrefixoDoFluxo(
+  base: string,
+  headers: Record<string, string>,
+  cursor = 0,
+): Promise<{ status: number; texto: string }> {
+  const controlador = new AbortController();
+  const resposta = await fetch(`${base}/v1/eventos/stream?cursor=${String(cursor)}`, {
+    headers: { ...headers, accept: "text/event-stream" },
+    signal: controlador.signal,
+  });
+  let texto = "";
+  if (resposta.body !== null) {
+    const leitor = resposta.body.getReader();
+    const decodificador = new TextDecoder();
+    const teto = Date.now() + 5_000;
+    for (;;) {
+      if (texto.includes(FIM_DO_CATCHUP)) break;
+      if (Date.now() > teto) break;
+      const leitura = leitor
+        .read()
+        .catch(() => ({ done: true, value: undefined }) as ReadableStreamReadResult<Uint8Array>);
+      const proximo = await Promise.race([leitura, dormir(500).then(() => "ocioso" as const)]);
+      if (proximo === "ocioso" || proximo.done) break;
+      texto += decodificador.decode(proximo.value, { stream: true });
+    }
+  }
+  controlador.abort();
+  return { status: resposta.status, texto };
+}
 
 const scenario = buildG7SyntheticScenario();
 const TENANT = scenario.organization.id;
@@ -88,6 +142,8 @@ function serieCompleta(t: string) {
 describe("E2E da fatia G7 — feliz e degradados sobre a fiação real", () => {
   let db: PGlite;
   let app: FastifyInstance;
+  /** Base HTTP real — só o fluxo contínuo precisa dela; o resto usa `inject`. */
+  let base: string;
 
   beforeAll(async () => {
     db = createInMemoryDatabase();
@@ -105,6 +161,12 @@ describe("E2E da fatia G7 — feliz e degradados sobre a fiação real", () => {
       });
     });
     app = await buildServer({ db });
+    await app.listen({ port: 0, host: "127.0.0.1" });
+    const endereco = app.server.address();
+    if (endereco === null || typeof endereco === "string") {
+      throw new Error("porta efêmera não atribuída ao servidor de teste");
+    }
+    base = `http://127.0.0.1:${String(endereco.port)}`;
   }, 30_000);
 
   afterAll(async () => {
@@ -147,6 +209,38 @@ describe("E2E da fatia G7 — feliz e degradados sobre a fiação real", () => {
       expect(tipos).toContain("alerta-criado");
       const alertaEvento = outbox.find((e) => e.eventType === "alerta-criado");
       expect(alertaEvento?.aggregateId).toBe(alertaId);
+
+      // REGISTRO IMUTÁVEL do despacho de regra, durável na MESMA transação
+      // (achado §6.4 requisito 5): versão de regra, versão de bundle, digest
+      // das entradas, razões, proveniência e correlação.
+      const despacho = outbox.find((e) => e.eventType === "regra-despachada");
+      expect(despacho).toBeDefined();
+      const registro = despacho?.payload as Record<string, unknown>;
+      expect(registro.chaveRegra).toBe("RULE-NEWS2@0.2.0");
+      expect(registro.desfecho).toBe("avaliada");
+      // Modo SOMBRA e NÃO acionável — o artefato local não tem cadeia de
+      // assinatura (ADR-0007 C5 aberta). Estado factual imutável: 0 vias
+      // clínicas acionáveis.
+      expect(registro.modo).toBe("sombra");
+      expect(registro.acionavel).toBe(false);
+      const bundle = registro.bundle as Record<string, unknown>;
+      expect(bundle.assinatura).toBe("assinatura_ausente");
+      expect(bundle.bloqueiosDeAtivacao).toContain("assinatura_ausente_adr0007_c5");
+
+      // O despacho NÃO é publicado no fluxo: não pertence ao vocabulário de
+      // `EventoFluxo`, e rotulá-lo como observação clínica seria um quadro
+      // SSE que mente sobre o que carrega.
+      //
+      // A asserção anterior era `expect(TIPOS_DE_EVENTO_DE_DOMINIO)
+      // .not.toContain("regra-despachada")` — uma tautologia: verificava que um
+      // literal `as const` declarado NESTE arquivo não continha uma string.
+      // Não podia falhar e nada media sobre o servidor (achado P3 de segunda
+      // revisão adversarial, 2026-08-17). Agora a asserção é sobre o FLUXO
+      // REAL, lido até o fim do catch-up.
+      const fluxo = await lerPrefixoDoFluxo(base, AUTH);
+      expect(fluxo.texto).toContain(FIM_DO_CATCHUP);
+      expect(fluxo.texto).not.toContain("event: regra-despachada");
+      expect(fluxo.texto).not.toContain("regra-despachada");
     });
 
     it("a projeção de grade de leitos mostra o leito em alerta", async () => {
@@ -268,12 +362,20 @@ describe("E2E da fatia G7 — feliz e degradados sobre a fiação real", () => {
       });
       expect(avaliacoes.statusCode).toBe(404);
 
-      const eventos = await app.inject({
-        method: "GET",
-        url: "/v1/eventos/stream?cursor=0",
-        headers: AUTH_OUTRO_TENANT,
-      });
-      expect(eventos.body).not.toContain("event:");
+      // Asserção original: `not.toContain("event:")` sobre o corpo finito do
+      // replay. O fluxo contínuo emite quadros de CONTROLE (`estado-conexao`,
+      // `pulsacao`) sem dado clínico; o que não pode aparecer é evento de
+      // DOMÍNIO — nem o tenant vítima em parte alguma do prefixo.
+      const eventos = await lerPrefixoDoFluxo(base, AUTH_OUTRO_TENANT);
+      // NÃO VACUIDADE: sem esta linha um prefixo vazio satisfaria todas as
+      // asserções de ausência abaixo. A âncora prova que o catch-up do outro
+      // tenant foi lido inteiro antes de afirmarmos que nada vazou.
+      expect(eventos.texto).toContain(FIM_DO_CATCHUP);
+      for (const tipo of TIPOS_DE_EVENTO_DE_DOMINIO) {
+        expect(eventos.texto).not.toContain(`event: ${tipo}`);
+      }
+      expect(eventos.texto).not.toContain(TENANT);
+      expect(eventos.texto).not.toContain(P002.subjectRef);
     });
   });
 

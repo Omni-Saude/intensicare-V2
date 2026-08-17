@@ -4,8 +4,15 @@
  * banco é semeado com o cenário sintético G7
  * (`@intensicare/fixtures-sinteticas`): todo id de encontro/leito/paciente
  * usado aqui vem do cenário, nunca é inventado.
+ *
+ * EXCEÇÃO ao `inject`: o fluxo de eventos. `GET /v1/eventos/stream` deixou de
+ * ser replay finito e passou a ser entrega CONTÍNUA (ADR-0011; o replay que
+ * fechava a conexão após o catch-up era o anti-padrão §10-11). Uma conexão que
+ * não termina não tem fim de corpo para `inject` esperar, então esses testes
+ * abrem a porta real e leem um PREFIXO do fluxo — ver `lerPrefixoDoFluxo`.
  */
 
+import { setTimeout as dormir } from "node:timers/promises";
 import {
   type AvaliacoesPacienteResposta,
   type GradeLeitosResposta,
@@ -18,6 +25,97 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { gerarTokenSintetico } from "./auth.js";
 import { buildServer } from "./index.js";
+
+/**
+ * Âncora de fim de catch-up. O servidor só emite `event: estado-conexao`
+ * DEPOIS de drenar o backlog (`eventos/stream.ts`: `await this.#bombear()`
+ * e então `#emitirEstado`). Ancorar nela é o que torna uma asserção de
+ * AUSÊNCIA honesta.
+ *
+ * ACHADO P2 de revisão adversarial (2026-08-17): estas asserções paravam por
+ * SILÊNCIO TEMPORAL (`ociosidadeMs`). Se o catch-up ficasse mais lento que a
+ * janela — CPU concorrida, banco frio —, "nenhum evento do outro tenant"
+ * passaria vacuamente, porque nada teria sido lido ainda. Silêncio não é
+ * prova de ausência; o quadro de controle é.
+ */
+const FIM_DO_CATCHUP = "event: estado-conexao";
+const catchUpConcluido = (texto: string): boolean => texto.includes(FIM_DO_CATCHUP);
+
+/** Tipos de `EventoFluxo` do contrato — os únicos que o fluxo publica. */
+const TIPOS_DE_EVENTO_DE_DOMINIO = [
+  "observacao-clinica-registrada",
+  "observacoes-ingeridas",
+  "avaliacao-computada",
+  "alerta-criado",
+  "alerta-atualizado",
+] as const;
+
+interface PrefixoDeFluxo {
+  readonly status: number;
+  readonly contentType: string;
+  readonly texto: string;
+  /** `true` se o servidor fechou o corpo sozinho — o modo de falha antigo. */
+  readonly encerrouSozinho: boolean;
+}
+
+/**
+ * Abre o fluxo contínuo, acumula um PREFIXO e encerra do lado do cliente.
+ *
+ * Para quando `ate(texto)` fica verdadeiro, quando o servidor fecha o corpo ou
+ * quando o fluxo fica em silêncio por `ociosidadeMs`. Afirmar ausência sobre
+ * este prefixo é a mesma afirmação que as versões anteriores destes testes
+ * faziam sobre o corpo finito do replay.
+ */
+async function lerPrefixoDoFluxo(
+  base: string,
+  headers: Record<string, string>,
+  opcoes: {
+    cursor?: number;
+    ate?: (texto: string) => boolean;
+    ociosidadeMs?: number;
+    tetoMs?: number;
+  } = {},
+): Promise<PrefixoDeFluxo> {
+  const controlador = new AbortController();
+  const consulta = opcoes.cursor === undefined ? "" : `?cursor=${String(opcoes.cursor)}`;
+  const resposta = await fetch(`${base}/v1/eventos/stream${consulta}`, {
+    headers: { ...headers, accept: "text/event-stream" },
+    signal: controlador.signal,
+  });
+
+  let texto = "";
+  let encerrouSozinho = false;
+  if (resposta.body !== null) {
+    const leitor = resposta.body.getReader();
+    const decodificador = new TextDecoder();
+    const teto = Date.now() + (opcoes.tetoMs ?? 5_000);
+    for (;;) {
+      if (opcoes.ate?.(texto) === true) break;
+      if (Date.now() > teto) break;
+      const leitura = leitor
+        .read()
+        .catch(() => ({ done: true, value: undefined }) as ReadableStreamReadResult<Uint8Array>);
+      const proximo = await Promise.race([
+        leitura,
+        dormir(opcoes.ociosidadeMs ?? 500).then(() => "ocioso" as const),
+      ]);
+      if (proximo === "ocioso") break;
+      if (proximo.done) {
+        encerrouSozinho = true;
+        break;
+      }
+      texto += decodificador.decode(proximo.value, { stream: true });
+    }
+  }
+  controlador.abort();
+
+  return {
+    status: resposta.status,
+    contentType: resposta.headers.get("content-type") ?? "",
+    texto,
+    encerrouSozinho,
+  };
+}
 
 const scenario = buildG7SyntheticScenario();
 const TENANT = scenario.organization.id; // SYNTH-TENANT-G7
@@ -67,9 +165,17 @@ function envelopeCritico(overrides: Partial<Record<string, unknown>> = {}) {
 
 describe("rotas /v1 (fatia SPR-G7-2 — integração real: PGlite + kernel NEWS2)", () => {
   let app: FastifyInstance;
+  /** Base HTTP real — necessária só para o fluxo contínuo; o resto usa `inject`. */
+  let base: string;
 
   beforeAll(async () => {
     app = await buildServer();
+    await app.listen({ port: 0, host: "127.0.0.1" });
+    const endereco = app.server.address();
+    if (endereco === null || typeof endereco === "string") {
+      throw new Error("porta efêmera não atribuída ao servidor de teste");
+    }
+    base = `http://127.0.0.1:${String(endereco.port)}`;
   }, 30_000);
 
   afterAll(async () => {
@@ -272,13 +378,21 @@ describe("rotas /v1 (fatia SPR-G7-2 — integração real: PGlite + kernel NEWS2
     });
 
     it("eventos do tenant G7 não aparecem no fluxo do tenant B", async () => {
-      const resposta = await app.inject({
-        method: "GET",
-        url: "/v1/eventos/stream?cursor=0",
-        headers: AUTH_B,
-      });
-      expect(resposta.statusCode).toBe(200);
-      expect(resposta.body).not.toContain("event:");
+      const fluxo = await lerPrefixoDoFluxo(base, AUTH_B, { cursor: 0, ate: catchUpConcluido });
+      expect(fluxo.status).toBe(200);
+      // NÃO VACUIDADE: sem esta linha, um prefixo vazio satisfaria todas as
+      // asserções de ausência abaixo. A âncora prova que o catch-up inteiro
+      // do tenant B foi lido antes de afirmarmos que nada de G7 apareceu.
+      expect(fluxo.texto).toContain(FIM_DO_CATCHUP);
+      // A asserção original era `not.toContain("event:")` sobre o corpo finito
+      // do replay. O fluxo contínuo emite quadros de CONTROLE (`estado-conexao`,
+      // `pulsacao`), que não carregam dado clínico; o que não pode aparecer é
+      // evento de DOMÍNIO de outro tenant. A verificação ficou mais precisa,
+      // não mais fraca.
+      for (const tipo of TIPOS_DE_EVENTO_DE_DOMINIO) {
+        expect(fluxo.texto).not.toContain(`event: ${tipo}`);
+      }
+      expect(fluxo.texto).not.toContain(TENANT);
     });
   });
 
@@ -398,30 +512,87 @@ describe("rotas /v1 (fatia SPR-G7-2 — integração real: PGlite + kernel NEWS2
     });
   });
 
-  describe("GET /v1/eventos/stream — replay do OUTBOX real por cursor", () => {
-    it("retorna os eventos do outbox (ingestão, avaliação, alerta) em text/event-stream", async () => {
-      const resposta = await app.inject({
+  /**
+   * D2 — a sessão de desenvolvimento destrava o frontend, que não tem como
+   * assinar um JWS por conta própria depois que o bearer deixou de ser texto
+   * legível. Ela EXISTE aqui porque o perfil é `test`; em perfil endurecido a
+   * rota não é registrada e a resposta é 404, não 403.
+   */
+  describe("POST /v1/dev/sessao — sessão sintética (dev-only)", () => {
+    it("emite um token que de fato autentica uma rota /v1 real", async () => {
+      const sessao = await app.inject({ method: "POST", url: "/v1/dev/sessao" });
+      expect(sessao.statusCode).toBe(201);
+      const corpo = sessao.json() as { token: string; expiraEm: string };
+      expect(corpo.token.length).toBeGreaterThan(0);
+      expect(sessao.headers["cache-control"]).toBe("no-store");
+
+      // O token não é decoração: precisa abrir uma rota autenticada de verdade.
+      const grade = await app.inject({
         method: "GET",
-        url: "/v1/eventos/stream?cursor=0",
-        headers: AUTH_A,
+        url: "/v1/projecoes/grade-leitos",
+        headers: { authorization: `Bearer ${corpo.token}` },
       });
-      expect(resposta.statusCode).toBe(200);
-      expect(resposta.headers["content-type"]).toContain("text/event-stream");
-      expect(resposta.body).toContain("event: observacao-clinica-registrada");
-      expect(resposta.body).toContain("event: observacoes-ingeridas");
-      expect(resposta.body).toContain("event: avaliacao-computada");
-      expect(resposta.body).toContain("event: alerta-criado");
-      expect(resposta.body).toContain("event: alerta-atualizado");
+      expect(grade.statusCode).toBe(200);
+      // E precisa cair no tenant do cenário semeado — não em um tenant vazio.
+      expect((grade.json() as GradeLeitosResposta).leitos.length).toBeGreaterThan(0);
     });
 
-    it("cursor além do último evento => corpo sem eventos", async () => {
-      const resposta = await app.inject({
-        method: "GET",
-        url: "/v1/eventos/stream?cursor=999999",
-        headers: AUTH_A,
+    it("expiraEm vem do exp da claim verificada e está no futuro", async () => {
+      const sessao = await app.inject({ method: "POST", url: "/v1/dev/sessao" });
+      const { expiraEm } = sessao.json() as { expiraEm: string };
+      expect(Number.isNaN(Date.parse(expiraEm))).toBe(false);
+      expect(Date.parse(expiraEm)).toBeGreaterThan(Date.now());
+    });
+
+    it("não aceita tenant do chamador — o corpo enviado é ignorado (anti-padrão §10.3)", async () => {
+      const sessao = await app.inject({
+        method: "POST",
+        url: "/v1/dev/sessao",
+        payload: { tenantId: "SYNTH-TENANT-B", atorId: "SYNTH-INTRUSO" },
       });
-      expect(resposta.statusCode).toBe(200);
-      expect(resposta.body).not.toContain("event:");
+      expect(sessao.statusCode).toBe(201);
+      const { token } = sessao.json() as { token: string };
+      // Se o corpo tivesse efeito, esta leitura veria o tenant B (grade vazia).
+      const grade = await app.inject({
+        method: "GET",
+        url: "/v1/projecoes/grade-leitos",
+        headers: { authorization: `Bearer ${token}` },
+      });
+      expect((grade.json() as GradeLeitosResposta).leitos.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("GET /v1/eventos/stream — entrega contínua sobre o OUTBOX real", () => {
+    it("entrega os eventos do outbox (ingestão, avaliação, alerta) em text/event-stream", async () => {
+      const fluxo = await lerPrefixoDoFluxo(base, AUTH_A, {
+        cursor: 0,
+        ate: (texto) => TIPOS_DE_EVENTO_DE_DOMINIO.every((t) => texto.includes(`event: ${t}`)),
+      });
+      expect(fluxo.status).toBe(200);
+      expect(fluxo.contentType).toContain("text/event-stream");
+      for (const tipo of TIPOS_DE_EVENTO_DE_DOMINIO) {
+        expect(fluxo.texto).toContain(`event: ${tipo}`);
+      }
+      // Propriedade NOVA (ADR-0011, anti-padrão §10-11): depois do catch-up a
+      // conexão PERMANECE ABERTA. O comportamento anterior — encerrar logo após
+      // o backlog e chamar isso de tempo real — falharia aqui.
+      expect(fluxo.encerrouSozinho).toBe(false);
+    });
+
+    it("cursor além do último evento => nenhum evento de domínio entregue", async () => {
+      const fluxo = await lerPrefixoDoFluxo(base, AUTH_A, {
+        cursor: 999_999,
+        ate: catchUpConcluido,
+      });
+      expect(fluxo.status).toBe(200);
+      // Não vacuidade — ver a nota em `FIM_DO_CATCHUP`.
+      expect(fluxo.texto).toContain(FIM_DO_CATCHUP);
+      for (const tipo of TIPOS_DE_EVENTO_DE_DOMINIO) {
+        expect(fluxo.texto).not.toContain(`event: ${tipo}`);
+      }
+      // O cursor além do fim é do PRÓPRIO tenant; ainda assim nenhum
+      // identificador de tenant deve viajar num quadro de controle.
+      expect(fluxo.texto).not.toContain(TENANT);
     });
   });
 });

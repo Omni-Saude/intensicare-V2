@@ -31,6 +31,7 @@
  * Dados 100% sintéticos (marcador `SYNTH-`, política GDEC-0014).
  */
 
+import { setTimeout as dormir } from "node:timers/promises";
 import type { PGlite } from "@electric-sql/pglite";
 import type {
   GradeLeitosResposta,
@@ -63,6 +64,57 @@ import { gerarTokenSintetico } from "./auth.js";
 import { buildServer } from "./index.js";
 
 const TEMPO_LIMITE_MS = 60_000;
+
+/**
+ * Tipos de `EventoFluxo` do contrato. O fluxo de eventos passou a ser entrega
+ * CONTÍNUA (ADR-0011): a conexão não termina, então `inject` — que resolve no
+ * fim da resposta — não serve. A verificação de isolamento lê um PREFIXO do
+ * fluxo contra a porta real e encerra do lado do cliente.
+ */
+/**
+ * Âncora de fim de catch-up: o servidor só emite `event: estado-conexao` depois
+ * de drenar o backlog. É o que torna honesta uma asserção de AUSÊNCIA sobre o
+ * fluxo — silêncio temporal não é prova de que nada veio.
+ */
+const FIM_DO_CATCHUP = "event: estado-conexao";
+
+const TIPOS_DE_EVENTO_DE_DOMINIO = [
+  "observacao-clinica-registrada",
+  "observacoes-ingeridas",
+  "avaliacao-computada",
+  "alerta-criado",
+  "alerta-atualizado",
+] as const;
+
+async function lerPrefixoDoFluxo(
+  base: string,
+  headers: Record<string, string>,
+  ate?: (texto: string) => boolean,
+): Promise<{ status: number; texto: string }> {
+  const controlador = new AbortController();
+  const resposta = await fetch(`${base}/v1/eventos/stream?cursor=0`, {
+    headers: { ...headers, accept: "text/event-stream" },
+    signal: controlador.signal,
+  });
+  let texto = "";
+  if (resposta.body !== null) {
+    const leitor = resposta.body.getReader();
+    const decodificador = new TextDecoder();
+    const teto = Date.now() + 5_000;
+    for (;;) {
+      if (ate?.(texto) === true) break;
+      if (Date.now() > teto) break;
+      const leitura = leitor
+        .read()
+        .catch(() => ({ done: true, value: undefined }) as ReadableStreamReadResult<Uint8Array>);
+      const proximo = await Promise.race([leitura, dormir(500).then(() => "ocioso" as const)]);
+      if (proximo === "ocioso" || proximo.done) break;
+      texto += decodificador.decode(proximo.value, { stream: true });
+    }
+  }
+  controlador.abort();
+  return { status: resposta.status, texto };
+}
 
 const cenario = buildG7SyntheticScenario();
 const TENANT_G7 = cenario.organization.id;
@@ -152,6 +204,8 @@ async function contarEstadoDoTenant(db: PGlite, tenantId: string) {
 
 let db: PGlite;
 let app: FastifyInstance;
+/** Base HTTP real — só o fluxo contínuo precisa dela; o resto usa `inject`. */
+let base: string;
 /** Alerta REAL do tenant G7, criado no bootstrap — alvo das sondagens cross-tenant. */
 let alertaG7: string;
 
@@ -211,6 +265,12 @@ beforeAll(async () => {
   });
 
   app = await buildServer({ db });
+  await app.listen({ port: 0, host: "127.0.0.1" });
+  const endereco = app.server.address();
+  if (endereco === null || typeof endereco === "string") {
+    throw new Error("porta efêmera não atribuída ao servidor de teste");
+  }
+  base = `http://127.0.0.1:${String(endereco.port)}`;
 
   // Alerta real no G7 (série que cruza limiar) — alvo de F3/F6/I1/I2.
   const resposta = await app.inject({
@@ -465,25 +525,36 @@ describe("F. isolamento de tenant na API sob tentativa ativa de contorno", () =>
   it(
     "SEC-0009/THR-0016 — o fluxo de eventos (superfície contínua) não entrega NENHUM evento do outro tenant",
     async () => {
-      const r = await app.inject({
-        method: "GET",
-        url: "/v1/eventos/stream?cursor=0",
-        headers: AUTH_X,
-      });
-      expect(r.statusCode).toBe(200);
-      expect(r.body).not.toContain(P002.subjectRef);
-      expect(r.body).not.toContain(ENC_P002.id);
-      expect(r.body).not.toContain(alertaG7);
-      expect(r.body).not.toContain(TENANT_G7);
+      // Ancorado no fim do catch-up, NUNCA em silêncio temporal. O leitor sai
+      // no primeiro ócio de 500 ms; sem este predicado, um catch-up mais lento
+      // que a janela — CPU concorrida, banco frio — deixaria `texto` vazio e as
+      // NOVE asserções de ausência abaixo passariam VACUAMENTE. Achado P2 de
+      // segunda revisão adversarial (2026-08-17): a correção equivalente havia
+      // sido aplicada a `routes.test.ts` e `e2e.fatia.test.ts`, e este terceiro
+      // sítio — o de classe P0 — ficara de fora.
+      const r = await lerPrefixoDoFluxo(base, AUTH_X, (texto) => texto.includes(FIM_DO_CATCHUP));
+      expect(r.status).toBe(200);
+      // NÃO VACUIDADE: o servidor só emite este quadro DEPOIS de drenar o
+      // backlog, então chegar até ele prova que o catch-up do intruso foi lido
+      // por inteiro antes de afirmarmos que nada do outro tenant apareceu.
+      expect(r.texto).toContain(FIM_DO_CATCHUP);
+      expect(r.texto).not.toContain(P002.subjectRef);
+      expect(r.texto).not.toContain(ENC_P002.id);
+      expect(r.texto).not.toContain(alertaG7);
+      expect(r.texto).not.toContain(TENANT_G7);
+      // Reforço: nem sequer o TIPO de um evento de domínio alheio aparece.
+      for (const tipo of TIPOS_DE_EVENTO_DE_DOMINIO) {
+        expect(r.texto).not.toContain(`event: ${tipo}`);
+      }
 
       // Controle positivo: o dono VÊ os seus eventos — o vazio acima é
       // isolamento, não um fluxo quebrado.
-      const doDono = await app.inject({
-        method: "GET",
-        url: "/v1/eventos/stream?cursor=0",
-        headers: AUTH_G7,
-      });
-      expect(doDono.body).toContain("event:");
+      const doDono = await lerPrefixoDoFluxo(base, AUTH_G7, (texto) =>
+        TIPOS_DE_EVENTO_DE_DOMINIO.some((tipo) => texto.includes(`event: ${tipo}`)),
+      );
+      expect(
+        TIPOS_DE_EVENTO_DE_DOMINIO.some((tipo) => doDono.texto.includes(`event: ${tipo}`)),
+      ).toBe(true);
     },
     TEMPO_LIMITE_MS,
   );
