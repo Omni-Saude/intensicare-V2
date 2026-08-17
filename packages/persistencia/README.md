@@ -84,6 +84,14 @@ as migrações e exercita, de forma **bloqueante**:
 - IDOR sem oráculo de enumeração: id que existe noutro tenant e id
   inexistente produzem resposta idêntica;
 - transação abortada não vaza contexto nem escrita;
+- nenhuma função `SECURITY DEFINER` **de terceiro** é executável pela aplicação
+  fora do par selado — e a aplicação não pode plantar a própria (sem `CREATE`
+  em esquema nenhum, sem `TEMP` no banco). Uma função assim, criada pelo
+  migrador, **forja o selo e pivota de tenant**; o `EXECUTE` para `PUBLIC` é
+  concedido pelo PostgreSQL **por padrão** (ACHADO-17);
+- nenhuma relação alcançável é **ancestral** por herança/partição sem ter ela
+  própria RLS+FORCE+política ancorada: numa consulta ao ancestral valem as
+  políticas **dele**, e as das descendentes são ignoradas (ACHADO-18);
 - migrações em instalação limpa **e** em atualização de banco legado.
 
 Sem PostgreSQL na máquina, a suíte é **pulada com aviso ruidoso** em
@@ -221,6 +229,57 @@ topologia:
   Que os quatro caminhos de transação do produto instalem o escopo como
   primeira instrução após `begin` foi verificado por **leitura de código, não
   por teste** — está registrado como **NÃO VERIFICADO**.
+
+### Fecho de privilégio: função de terceiro e herança (`0005_fecho_de_privilegio.sql`)
+
+A `0004` recusa todo caminho de privilégio que **alcance**
+`intensicare_escopo.selo`, com fecho transitivo por `pg_rewrite` — o que cobre
+view e matview. Duas superfícies ficavam fora, e as duas foram **medidas como
+exploráveis** contra PostgreSQL 16.14:
+
+**ACHADO-17 — função `SECURITY DEFINER` de terceiro.** O corpo de uma função em
+SQL/PL-pgSQL **não** gera dependência em `pg_depend` sobre as relações que
+referencia (só `BEGIN ATOMIC` gera), e SQL dinâmico derrota qualquer análise de
+texto — logo o fecho por alcance não a enxerga. Uma função criada pelo
+**migrador** que escreve no selo reescopa a transação em voo: escopo instalado
+em A, chamada à função, `tenant_atual()` passa a devolver B, leitura **e**
+escrita cross-tenant passam. E o gatilho é o padrão do próprio PostgreSQL:
+`CREATE FUNCTION` concede `EXECUTE` a `PUBLIC` **sem nenhum `GRANT` escrito**.
+Fecho em duas camadas: a `0005` **desarma o padrão**
+(`ALTER DEFAULT PRIVILEGES ... REVOKE EXECUTE ON ROUTINES FROM PUBLIC` para o
+papel de migração, mais o revoke do que já existe) e **audita** — nenhuma função
+`SECURITY DEFINER` de terceiro executável pela aplicação fora do par selado.
+A regra é de **superfície, não de alcance**, e por isso é conservadora: recusa
+também função que não toca o selo. Medido: num banco recém-provisionado esse
+conjunto é exatamente {`instalar`, `tenant_atual`}, contando `pg_catalog` — zero
+falso positivo na linha de base. Revogar `EXECUTE` de `PUBLIC` **não** quebra o
+gatilho append-only: execução de função de gatilho não passa por verificação de
+`EXECUTE` do usuário corrente (medido).
+
+**ACHADO-18 — herança anexada depois das migrações.** A hipótese levantada era
+que anexar uma **filha** a uma tabela protegida vazaria. Medido: **não vaza** —
+numa consulta ao pai, a política do **pai** é aplicada às linhas vindas das
+filhas (o plano mostra o `Filter` sobre a filha). O que vaza é o **sentido
+inverso**: `ALTER TABLE organizations INHERIT public.novo_pai` seguido de
+`GRANT SELECT ON public.novo_pai` entrega **todas** as linhas de **todos** os
+tenants, porque numa consulta ao ancestral valem as políticas **dele** e as das
+descendentes são ignoradas. O ancestral não precisa nem ter coluna `tenant_id`
+(basta um subconjunto das colunas da descendente) — e era exatamente esse o
+ponto cego: a guarda de runtime só olhava relações **com** `tenant_id`, então o
+diagnóstico de `abrir()` devolvia **zero em todos os contadores** num banco onde
+a aplicação lia e escrevia todos os tenants. A exposição é transitiva
+(avô → pai → tabela protegida) e o elo do meio não precisa ser alcançável.
+
+**Limite de TEMPO — leia antes de chamar isto de "fechado".** As auditorias de
+migração rodam quando a **migração** roda; a guarda de identidade roda quando o
+processo **abre** o pool. Um `ALTER TABLE ... INHERIT`, um `CREATE FUNCTION ...
+SECURITY DEFINER` ou um `GRANT` avulso executado por superusuário **no meio da
+vida de um processo já aberto** não é reavaliado por nenhuma das duas: só será
+visto no próximo boot ou na próxima migração. Isso é **"fechado até o próximo
+deploy"**, não "fechado". Fechar a janela exigiria `EVENT TRIGGER` de DDL, que
+no PostgreSQL 16 só **superusuário** pode criar — privilégio que o papel de
+migração, por desenho (`0003`), não tem; um controle presente em alguns
+ambientes e ausente noutros seria pior que este limite declarado.
 
 ### Contexto vazio ≠ contexto ausente (OBSERVED, PostgreSQL 16 real)
 

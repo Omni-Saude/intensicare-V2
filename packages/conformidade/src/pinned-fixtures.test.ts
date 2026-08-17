@@ -101,6 +101,10 @@ describe("pin local das fixtures do contrato v1", () => {
   it("nenhuma fixture pinada carrega PSR na forma real (todas usam o marcador SYNTH-)", () => {
     const set = loadPinnedFixtures();
     const realPsr = /amh:psr:v1:(?!SYNTH-)[0-9a-f]{8}-[0-9a-f]{4}/i;
+    // Guarda de não-vacuidade: um conjunto vazio de fixtures satisfaz
+    // "nenhuma fixture carrega PSR real" por ausência de fixture, e este é
+    // justamente o teste que não pode passar por silêncio (SEC/PSR).
+    expect(set.fixtures).toHaveLength(10);
     for (const fixture of set.fixtures) {
       expect(realPsr.test(fixture.raw)).toBe(false);
     }

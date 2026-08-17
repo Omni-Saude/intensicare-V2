@@ -81,6 +81,14 @@ describe("relatório derivado da execução", () => {
 
   it("todos os totais são recontagens dos resultados, não constantes", () => {
     const { scenarios, semantics, totals } = report;
+    // A identidade "total == recontagem" é CIRCULAR sozinha: os dois lados
+    // saem do MESMO relatório. Um harness que perdesse todos os cenários
+    // `passou` faria `totals.passou == 0 == filter(...).length` e o teste
+    // continuaria verde. Ancorado primeiro em LITERAL medido (12/0/10 sobre as
+    // fixtures pinadas), e só então a identidade de recontagem.
+    expect(totals.passou).toBe(12);
+    expect(totals.falhou).toBe(0);
+    expect(totals.naoExecutavel).toBe(10);
     expect(totals.passou).toBe(scenarios.filter((s) => s.verdict === "passou").length);
     expect(totals.falhou).toBe(scenarios.filter((s) => s.verdict === "falhou").length);
     expect(totals.naoExecutavel).toBe(
@@ -107,6 +115,19 @@ describe("relatório derivado da execução", () => {
       ...report.scenarios.flatMap((s) => s.checks),
       ...report.semantics.flatMap((s) => s.checks),
     ];
+    // Guarda de não-vacuidade: `allChecks` vazio deixaria este laço — e o
+    // NOME "toda verificação bloqueada declara causa" — verde sem inspecionar
+    // verificação nenhuma. Os dois ramos do `if` também precisam ser
+    // exercitados, senão o teste mede só metade da regra que promete.
+    expect(allChecks.length, "nenhuma verificação foi produzida").toBeGreaterThan(0);
+    let bloqueadas = 0;
+    let executadas = 0;
+    for (const check of allChecks) {
+      if (check.status === "nao-executavel") bloqueadas += 1;
+      else executadas += 1;
+    }
+    expect(bloqueadas, "nenhuma verificação bloqueada").toBeGreaterThan(0);
+    expect(executadas, "nenhuma verificação executada").toBeGreaterThan(0);
     for (const check of allChecks) {
       expect(check.evidence.length).toBeGreaterThan(0);
       if (check.status === "nao-executavel") expect(check.blockedBy).toBeDefined();
@@ -116,13 +137,20 @@ describe("relatório derivado da execução", () => {
 
   it("o texto renderizado carrega o veredito de CADA cenário, como computado", () => {
     const rendered = renderReport(report);
+    // Guarda de não-vacuidade: relatório sem cenário nenhum tornaria este
+    // laço — e a promessa "de CADA cenário" — verde sobre texto vazio.
+    expect(report.scenarios).toHaveLength(22);
     for (const scenario of report.scenarios) {
       expect(rendered).toContain(`### ${scenario.id} — ${scenario.title}`);
       expect(rendered).toContain(`**Veredito: ${verdictLabel(scenario)}**`);
     }
-    expect(rendered).toContain(`| PASSOU | ${report.totals.passou} |`);
-    expect(rendered).toContain(`| FALHOU | ${report.totals.falhou} |`);
-    expect(rendered).toContain(`| NÃO EXECUTÁVEL | ${report.totals.naoExecutavel} |`);
+    // As três linhas do sumário eram TAUTOLÓGICAS: o esperado era interpolado
+    // do próprio `report.totals` que o texto renderiza, de modo que qualquer
+    // par (total, texto) consistente entre si passava — inclusive 0/0/0.
+    // Literais medidos, como no teste de totais acima.
+    expect(rendered).toContain("| PASSOU | 12 |");
+    expect(rendered).toContain("| FALHOU | 0 |");
+    expect(rendered).toContain("| NÃO EXECUTÁVEL | 10 |");
   });
 
   it("o relatório declara o limite duro antes de qualquer número", () => {

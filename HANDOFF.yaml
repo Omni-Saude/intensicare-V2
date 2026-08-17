@@ -387,13 +387,13 @@ consolidacao_final_2026_08_17:
   verificacao:
     comando: pnpm verify
     resultado: "exit 0"
-    testes: "1.476 verdes, ZERO pulados, ZERO falhas, ZERO expected fail (baseline: 1.026 + 1 expected fail P0)"
+    testes: "1.497 verdes, ZERO pulados, ZERO falhas, ZERO expected fail (baseline: 1.026 + 1 expected fail P0)"
     por_pacote: "api 336, kernel-clinico 305, rule-bundle 302, web 187, vigilancia 77, persistencia 83, conformidade 62, observabilidade 55, contratos 38, dominio 18, fixtures 13"
     fronteira_postgres: "47 testes BLOQUEANTES contra PostgreSQL 16.14 real e efêmero (pnpm test:fronteira)"
     contratos: "148 verificações (pnpm check:contratos) sobre openapi.yaml e asyncapi.yaml"
     e2e_navegador: "22 cenários Playwright; ver estado corrente no relatório final §6"
     qualificacao_obrigatoria: >-
-      A contagem de 1.476 vale para máquina COM PostgreSQL disponível. Sem ele a
+      A contagem de 1.497 vale para máquina COM PostgreSQL disponível. Sem ele a
       suíte de fronteira se pula com aviso ruidoso em dev e FALHA sob CI=true ou
       IC_FRONTEIRA_PG=obrigatoria. ci-plataforma.yml recebeu services:postgres
       pinado por digest para que "verify verde" signifique "fronteira P0
@@ -424,6 +424,23 @@ consolidacao_final_2026_08_17:
     de escalada esvaziarem mantendo a suíte verde. NÃO trate a contagem de
     rodadas como prova de robustez: o padrão diz que o verificador terceiro
     (DEC-G0-02) encontrará mais.
+  medicoes_de_robustez: >-
+    FUSO HORÁRIO: FECHADO. Suíte completa sob TZ=Pacific/Kiritimati (UTC+14) e
+    TZ=Pacific/Niue (UTC-11), máquina isolada: 1.497 verdes, zero falhas, exit 0
+    nas duas. Uma primeira medição, feita em paralelo com outro trabalho pesado,
+    produziu falhas relatadas como dependência de fuso; eram CONTENÇÃO (um caso
+    de 731548 ms) e a alegação foi RETIRADA.
+    DATA: FECHADO EM TODO O WORKSPACE. Em apps/web uma bomba-relógio real armou
+    às 12:55:00Z e foi corrigida na estrutura (187 verdes sob relógio de sistema
+    em 2027 e 2019). Fora de apps/web foi MEDIDO depois, um pacote por vez em
+    máquina ociosa, sob 2027-03-05 e 2019-11-02: os 1.289 testes verdes nas duas
+    pontas, zero falhas. Causa medida da imunidade: kernel-clinico/src,
+    persistencia/src e vigilancia/src têm ZERO ocorrências de Date.now()/new
+    Date() — todo tempo entra por parâmetro, como projetado. Nenhuma correção
+    foi necessária e nenhum shim permanente foi imposto.
+    RESTRIÇÃO DE MÁQUINA a respeitar em qualquer retomada: um `pnpm verify`
+    sozinho leva o load a ~28; rodar duas coisas pesadas em paralelo produz
+    VERMELHO FALSO por timeout de 30 s nas suítes com PGlite. Meça isolado.
   erros_do_orquestrador_registrados: >-
     (1) Duas vezes a verificação correu contra ARVORE EM MOVIMENTO, com agentes
     editando enquanto o revisor media — inclusive uma rodada declarada
@@ -462,6 +479,46 @@ consolidacao_final_2026_08_17:
     - "Gate estrutural ausente: a suíte roda com PERFIL e NODE_ENV ambos definidos; defeito que dependa da forma do ambiente real segue invisível por padrão."
     - "PortaMigracao (lock consultivo + versão durável de schema) sem implementação real; migrações concorrentes não serializadas."
     - "TLS na conexão de banco não coberto; custo de latência do selo de escopo não medido."
+  medicoes_finais_2026_08_17:
+    verify_maquina_ociosa: "pnpm verify exit 0, 1.497 testes em 11 pacotes, ZERO pulados, ZERO falhas, ZERO expected fail (kernel 305, api 336, rule-bundle 302, web 187, persistencia 83, vigilancia 77, conformidade 62, observabilidade 55, contratos 38, dominio 18, fixtures 13)"
+    fronteira_postgres: "47 testes bloqueantes contra PostgreSQL 16.14 real"
+    e2e: "22/22 Playwright, deterministico em 4 execucoes"
+    contratos: "148 verificacoes (openapi + asyncapi)"
+    ci_pr5: "10 checks verdes no commit 1a6f3df — build-and-test (pnpm verify com PostgreSQL real e IC_FRONTEIRA_PG=obrigatoria), ensaio-de-migracao, e2e-navegador, artefato-api, artefato-web, higiene-de-gate, vulnerabilidades-de-dependencia, doc-conventions, forbidden-content, change-metadata"
+    F6_fuso_horario: "RESPONDIDO — TZ=Pacific/Kiritimati (UTC+14): exit 0, 1.497 testes, zero falhas. A suite NAO depende de fuso. TZ=Pacific/Niue (UTC-11) NAO foi medido."
+  ARMADILHA_DE_MEDICAO_LOCAL: >-
+    LEIA ANTES DE INTERPRETAR QUALQUER VERMELHO LOCAL. Nesta maquina um unico
+    `pnpm verify` leva o load average a ~28 sozinho. Rodar QUALQUER outra coisa
+    em paralelo (outro verify, uma revisao adversarial que roda verify, um teste
+    de TZ) produz falhas por TIMEOUT que parecem defeitos e NAO SAO. O
+    orquestrador cometeu esse erro tres vezes e chegou a relatar uma
+    "dependencia de fuso horario" que era pura contencao — retratada depois com
+    medicao isolada. REGRA: uma coisa pesada por vez; se houver vermelho,
+    conferir `uptime` ANTES de concluir qualquer coisa; e o CI do PR #5 (runner
+    limpo) e' evidencia mais confiavel que esta bancada.
+  F5_MEDIDO_E_LIMPO: >-
+    Independencia de DATA fora de apps/web: MEDIDA e LIMPA. 1.289 testes verdes
+    em 2027-03-05 e em 2019-11-02, um pacote por vez, load 2,7-8,0. Zero falhas.
+    Instrumento: shim que desloca APENAS Date (setTimeout/performance.now
+    intactos), validado nos dois sentidos antes do uso. RISCO RESIDUAL, nao
+    fechado: sao pontos de fuga de relogio em CODIGO DE PRODUTO, com default de
+    parede, que um teste futuro pode esquecer de injetar —
+    apps/api/src/eventos/ticket.ts:88,104,113 (expiracao de ticket),
+    auth/verificador.ts:118, composicao/regras.ts:185,
+    packages/conformidade/src/runner.ts:65, apps/api/src/db.ts:179,327,557,827.
+    Hoje nenhum produz teste dependente de data (medido). O tratamento
+    estrutural (caminho unico que nao aceita o parametro) e' mudanca de PRODUTO
+    e precisa de dono.
+  SEXTA_REVISAO_NAO_CONCLUIDA: >-
+    A 6a rodada adversarial foi despachada e NAO concluiu (morreu por contencao
+    causada pelo proprio orquestrador, que rodava suites em paralelo). Alvos
+    nomeados pelos especialistas ao fechar a 5a, todos ABERTOS: (F1) funcao
+    SECURITY DEFINER de terceiro que leia o selo — o fecho de pg_rewrite cobre
+    view/matview e NAO cobre funcao; (F2) ALTER TABLE ... INHERIT aplicado
+    DEPOIS das migracoes, quando a auditoria ja rodou; (F3) outras assercoes
+    derivadas do proprio dado sob teste (o padrao circular foi corrigido em 2
+    lugares, pode haver irmaos); (F4) o contrato "escopo e' a primeira escrita"
+    segue NAO VERIFICADO — e' leitura de codigo, nao teste; (F5) acima.
   comandos_de_retomada: "ver docs/15-release-evidence/final-implementation-report.md §14"
 
 rules_for_any_resuming_agent:

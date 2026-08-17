@@ -217,6 +217,11 @@ describe("CASO EXIGIDO — deriva de fonte: a fonte está degradando", () => {
       ]),
     );
     expect(relatorio.nota).toContain("não conclui que a fonte degradou");
+    // Guarda de não-vacuidade. A afirmação é que TODO sinal carrega a
+    // proveniência de limiar NÃO RATIFICADO — um relatório sem sinal nenhum
+    // satisfaria o laço por ausência de sinal, e um limiar sem proveniência
+    // declarada passaria despercebido. São 8 sinais.
+    expect(relatorio.sinais, "relatório sem sinal — laço vazio").toHaveLength(8);
     for (const s of relatorio.sinais) {
       expect(s.limiar.proveniencia).toBe("limiar-de-instrumentacao-nao-ratificado-AUTH-CLINSAFETY");
     }
@@ -273,6 +278,11 @@ describe("amostra pequena NUNCA vira 'sem mudança' (anti-padrão KPI-PPV-01(c))
       },
       limiar: limiarDeInstrumentacao(0.1, 50),
     });
+    // Guarda de não-vacuidade: `[].every(...)` é `true`. Sem esta linha, um
+    // relatório que perdesse os sinais afirmaria "toda amostra é
+    // insuficiente" sem ter avaliado amostra alguma — e o `.some(...)`
+    // negativo logo abaixo também passaria por vacuidade.
+    expect(relatorio.sinais, "relatório sem sinal — `.every` e `.some` vazios").toHaveLength(8);
     expect(relatorio.sinais.every((s) => s.classificacao === "amostra_insuficiente")).toBe(true);
     expect(relatorio.sinais.some((s) => s.classificacao === "sem_mudanca_acima_do_limiar")).toBe(
       false,

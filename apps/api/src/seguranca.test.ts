@@ -699,7 +699,12 @@ describe("G. fail-closed do gate clínico: entrada ausente ou inválida jamais p
       // TODAS foram para quarentena, cada uma com motivo legível — nenhuma
       // silenciosamente aceita e nenhuma silenciosamente sumida.
       expect(corpo.aceitas).toHaveLength(0);
-      expect(corpo.quarentena).toHaveLength(malformadas.length);
+      // O esperado NÃO pode sair de `malformadas.length`: esvaziar a lista de
+      // entradas levaria os dois lados a 0 e o teste — inclusive o laço de
+      // motivos abaixo — continuaria verde sem exercitar quarentena nenhuma.
+      // As dez entradas malformadas estão declaradas acima, uma por linha.
+      expect(malformadas).toHaveLength(10);
+      expect(corpo.quarentena).toHaveLength(10);
       for (const item of corpo.quarentena) {
         expect(item.motivo.length).toBeGreaterThan(0);
       }

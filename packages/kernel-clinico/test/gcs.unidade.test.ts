@@ -312,6 +312,13 @@ describe("RULE-GCS — bordas de atualidade, expiração e contemporaneidade", (
       "expired_input:motor",
       "expired_input:verbal",
     ]);
+    // Guarda de não-vacuidade, na mesma disciplina do teste de
+    // `reassessGcsAtReadTime` mais abaixo: `[].every(...)` é `true`, logo um
+    // registro que perdesse a lista de componentes satisfaria "nenhum
+    // componente exibe valor" por AUSÊNCIA de componente, não por supressão.
+    // Os três componentes de `GCS_COMPONENT_ORDER` precisam estar presentes e
+    // suprimidos.
+    expect(record.components.map((c) => c.component)).toEqual(["eye", "verbal", "motor"]);
     expect(record.components.every((c) => c.value === null)).toBe(true);
   });
 
@@ -544,6 +551,10 @@ describe("RULE-GCS — curto-circuito de gate e fallback total", () => {
     );
     expect(record.status).toBe("not_evaluated");
     expect(record.reasons).toEqual(["population_unverified"]);
+    // Guarda de não-vacuidade: `[].every(...)` é `true`. O NOME do teste diz
+    // "nada é avaliado" — isso é uma afirmação sobre os TRÊS componentes, não
+    // sobre uma lista que poderia ter sumido no curto-circuito do gate.
+    expect(record.components.map((c) => c.component)).toEqual(["eye", "verbal", "motor"]);
     expect(record.components.every((c) => c.status === "not_evaluated")).toBe(true);
     expect(record.populationGate.passed).toBe(false);
   });

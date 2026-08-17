@@ -131,6 +131,11 @@ describe("(b) classificação — segredo não pode ser reclassificado como oper
 
   it("todo descritor tem nome único", () => {
     const nomes = DESCRITORES.map((d) => d.nome);
+    // `new Set(x).size === x.length` é `true` para `x` vazio, e o esperado sai
+    // do próprio dado sob teste: um catálogo de descritores que sumisse
+    // deixaria "todo descritor tem nome único" verde — e com ele os laços
+    // sobre `DESCRITORES` deste mesmo arquivo, que impõem o anti-padrão 9.
+    expect(nomes.length, "catálogo de descritores vazio").toBeGreaterThan(0);
     expect(new Set(nomes).size).toBe(nomes.length);
   });
 });
