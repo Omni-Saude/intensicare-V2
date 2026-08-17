@@ -20,8 +20,15 @@
     "check:boundaries": "node scripts/check_module_boundaries.mjs",
     "check:docs": "python3 scripts/check_doc_conventions.py",
     "check:forbidden": "python3 scripts/check_forbidden_content.py",
-    "verify": "pnpm build && pnpm typecheck && pnpm lint && pnpm check:boundaries && pnpm test && pnpm check:generated && pnpm check:docs && pnpm check:forbidden",
-    "check:generated": "node scripts/check_generated_files.mjs"
+    "check:contratos": "node scripts/check_contratos.mjs",
+    "verify": "pnpm build && pnpm typecheck && pnpm lint && pnpm check:boundaries && pnpm test && pnpm check:generated && pnpm check:contratos && pnpm check:docs && pnpm check:forbidden",
+    "check:generated": "node scripts/check_generated_files.mjs",
+    "test:fronteira": "IC_FRONTEIRA_PG=obrigatoria pnpm --filter @intensicare/persistencia test:fronteira",
+    "test:e2e": "pnpm --filter @intensicare/web test:e2e",
+    "test:e2e:instalar": "pnpm --filter @intensicare/web test:e2e:instalar",
+    "check:supply-chain": "node scripts/verificar-artefato.mjs tudo",
+    "sbom": "node scripts/verificar-artefato.mjs sbom --filtro @intensicare/api --saida evidencia/sbom-api.json",
+    "promover": "node scripts/promover-por-digest.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.8",

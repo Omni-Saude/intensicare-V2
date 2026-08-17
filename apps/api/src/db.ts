@@ -45,6 +45,8 @@ import { loadIntoDatabase } from "@intensicare/fixtures-sinteticas";
 import { type EvaluationRecord, reassessNews2AtReadTime } from "@intensicare/kernel-clinico";
 import {
   type ActiveEncounterRow,
+  AdaptadorPglite,
+  AdaptadorPostgres,
   bootstrapDatabase,
   createInMemoryDatabase,
   getIdempotencyRecord,
@@ -64,18 +66,19 @@ import {
   listLatestEvaluationPerEncounter,
   listOutboxEvents,
   listWorkItemsWithAlerts,
+  type PortaBancoDeDados,
   transitionWorkItem,
+  urlCom,
   type WorkItemWithAlertRow,
   withTenantTransaction,
 } from "@intensicare/persistencia";
+import { canonicalUnitFor, PARAM_TO_CONCEPT, PARAM_TO_KERNEL, requerAlerta } from "./avaliacao.js";
+import type { ConfiguracaoRuntime } from "./config/index.js";
 import {
-  canonicalUnitFor,
-  evaluateEncounter,
-  PARAM_TO_CONCEPT,
-  PARAM_TO_KERNEL,
-  requerAlerta,
-  toResultadoAvaliacao,
-} from "./avaliacao.js";
+  despacharNews2,
+  type RegistroDeRegras,
+  resultadoNaoAvaliadoNews2,
+} from "./regras/index.js";
 
 // Limiares de frescor ilustrativos — VALIDATION REQUIRED no ADR-0011 §3
 // (nenhum alvo numérico de latência/frescor foi decidido). Existem apenas
@@ -84,18 +87,90 @@ const FRESCOR_ATUAL_MS = 5 * 60 * 1000;
 const FRESCOR_ENVELHECENDO_MS = 30 * 60 * 1000;
 
 /**
- * Prepara o banco de desenvolvimento/teste: PGlite em memória, migrações
- * (0001/0002), rebaixamento para o papel de aplicação e SEMEADURA das
- * fixtures sintéticas (cenário G7 — política de dados sintéticos,
- * GDEC-0014). Quando `existing` é fornecido, assume-se JÁ migrado e
- * semeado pelo chamador (útil em teste E2E com semeadura própria).
+ * Abre o banco do processo e devolve a PORTA (`PortaBancoDeDados`) — nunca um
+ * `PGlite` cru. Qual adaptador é aberto é decidido pela CONFIGURAÇÃO validada
+ * (`apps/api/src/config/`), jamais por omissão:
+ *
+ *   - `existing` fornecido (teste E2E com semeadura própria) ⇒ simulador
+ *     embrulhado em `AdaptadorPglite`, e SÓ em perfil sintético;
+ *   - `banco.modo === "postgres"` ⇒ `AdaptadorPostgres.abrir(...)` com a URL do
+ *     papel de APLICAÇÃO montada a partir de `IC_BANCO_URL`/`IC_BANCO_USUARIO`/
+ *     `IC_BANCO_SENHA` (a URL de configuração não carrega credencial — ver
+ *     `config/carregar.ts`). O adaptador RECUSA identidade superusuário,
+ *     `BYPASSRLS` ou dona de tabela: URL errada ⇒ a API não sobe. É intencional
+ *     (ADR-0016 §4.1; anti-padrão 5 do contrato de agentes);
+ *   - caso contrário ⇒ PGlite em memória, migrado, e semeado com as fixtures
+ *     sintéticas SOMENTE quando `banco.semearFixturesSinteticas` (GDEC-0014;
+ *     anti-padrão 9 — fixtures nunca em perfil não-dev).
+ *
+ * Defesa em profundidade: em perfil não sintético a porta devolvida precisa
+ * declarar-se `postgres` COM fronteira de isolamento verificável. O simulador
+ * declara `fronteiraDeIsolamentoVerificavel: false` no próprio objeto, e é essa
+ * declaração — não a intenção de quem configurou — que decide (ACHADO-01,
+ * THR-0050 P0; anti-padrão 6: RLS sob PGlite não se generaliza).
  */
-export async function prepareDatabase(existing?: PGlite): Promise<PGlite> {
-  if (existing !== undefined) return existing;
+export async function prepareDatabase(
+  config: ConfiguracaoRuntime,
+  existing?: PGlite,
+): Promise<PortaBancoDeDados> {
+  const sintetico = config.classePerfil === "sintetico";
+
+  if (existing !== undefined) {
+    if (!sintetico) {
+      throw new Error(
+        `banco injetado (simulador PGlite) recusado no perfil "${config.perfil}": ` +
+          "o simulador não é fronteira de isolamento verificável e só é admissível " +
+          "em perfil sintético (anti-padrão 9; ADR-0016 §4.1).",
+      );
+    }
+    return new AdaptadorPglite(existing);
+  }
+
+  if (config.banco.modo === "postgres") {
+    const { url, usuario, senha } = config.banco;
+    if (url === null || usuario === null || senha === null) {
+      // Inalcançável com configuração validada (`carregar.ts` já exige as três
+      // em modo `postgres`); a guarda existe para que um caminho futuro que as
+      // torne opcionais falhe aqui, e não numa consulta clínica.
+      throw new Error(
+        'banco em modo "postgres" sem URL, usuário ou senha do papel de aplicação — ' +
+          "configuração incompleta recusa o boot em vez de degradar.",
+      );
+    }
+    const porta = await AdaptadorPostgres.abrir({
+      url: urlCom(url, { usuario, senha: senha.revelar() }),
+      tamanhoMaximo: 8,
+    });
+    exigirFronteiraVerificavel(config, porta);
+    return porta;
+  }
+
+  if (!sintetico) {
+    throw new Error(
+      `PGlite em memória recusado no perfil "${config.perfil}": ` +
+        "modo de banco sintético só é admissível em perfil sintético (anti-padrão 9).",
+    );
+  }
   const db = createInMemoryDatabase();
   await bootstrapDatabase(db);
-  await loadIntoDatabase(db);
-  return db;
+  if (config.banco.semearFixturesSinteticas) {
+    await loadIntoDatabase(db);
+  }
+  const porta = new AdaptadorPglite(db);
+  exigirFronteiraVerificavel(config, porta);
+  return porta;
+}
+
+/** Ver `prepareDatabase`: o rótulo do adaptador é lido do objeto, não suposto. */
+function exigirFronteiraVerificavel(config: ConfiguracaoRuntime, porta: PortaBancoDeDados): void {
+  if (config.classePerfil === "sintetico") return;
+  if (porta.rotulo !== "postgres" || !porta.fronteiraDeIsolamentoVerificavel) {
+    throw new Error(
+      `adaptador de banco "${porta.rotulo}" recusado no perfil "${config.perfil}": ` +
+        "fora de perfil sintético a aplicação exige fronteira de isolamento verificável " +
+        "(ADR-0016 §4.1; anti-padrão 6).",
+    );
+  }
 }
 
 // --- utilidades de tempo e identidade ---------------------------------------
@@ -169,6 +244,14 @@ export type IngestOutcome =
 export interface IngestArgs {
   readonly tenantId: string;
   readonly actorId: string;
+  /**
+   * Registro de regras clínicas versionadas. A avaliação NUNCA é chamada
+   * diretamente: ela passa pelo despachante, que impõe as portas fail-closed
+   * (artefato de regra disponível, motor reproduz o `behaviorHash` pinado,
+   * quadro de chaves de runtime ligado) antes de deixar o kernel rodar
+   * (ADR-0007; achado §6.4 P1).
+   */
+  readonly registroDeRegras: RegistroDeRegras;
   readonly idempotencyKey: string;
   readonly requestHash: string;
   readonly encontroId: string;
@@ -189,7 +272,10 @@ export interface IngestArgs {
  * atinge condição de exibição → auditoria da ação. Falha em qualquer etapa
  * reverte TUDO — nunca efeito sem evento nem evento sem efeito (ADR-0010 B1).
  */
-export async function ingestObservations(db: PGlite, args: IngestArgs): Promise<IngestOutcome> {
+export async function ingestObservations(
+  db: PortaBancoDeDados,
+  args: IngestArgs,
+): Promise<IngestOutcome> {
   return withTenantTransaction(db, args.tenantId, async (tx) => {
     // Idempotência com hash do corpo (draft IETF idempotency-key-header).
     const existing = await getIdempotencyRecord(tx, args.idempotencyKey);
@@ -311,10 +397,24 @@ export async function ingestObservations(db: PGlite, args: IngestArgs): Promise<
       },
     });
 
-    // Avaliação NEWS2 REAL sobre TODAS as observações persistidas do encontro.
+    // Avaliação NEWS2 sobre TODAS as observações persistidas do encontro,
+    // DESPACHADA pelo registro de regras. Quando qualquer porta do despachante
+    // recusa (artefato ausente, motor divergente, regra desligada), NÃO há
+    // registro de kernel e NÃO há escore: `resultadoNaoAvaliadoNews2` devolve
+    // `status: "indisponivel"` com escore/banda `null` e o texto pt-BR da
+    // recusa (HAZ-0005 — ausência de resultado nunca vira zero, e ausência de
+    // resultado não é ausência de risco; ADR-0008 §8.3).
     const persisted = await listClinicalObservationsForEncounter(tx, args.encontroId);
-    const record = evaluateEncounter(persisted, args.contexto, agoraIso);
-    const avaliacao: ResultadoAvaliacao = toResultadoAvaliacao(record);
+    const despacho = despacharNews2(
+      args.registroDeRegras,
+      { observacoes: persisted, contexto: args.contexto },
+      { instanteIso: agoraIso, correlacaoId: envelopeId },
+    );
+    const record = despacho.tipo === "avaliada" ? despacho.resultado.registroKernel : null;
+    const avaliacao: ResultadoAvaliacao =
+      despacho.tipo === "avaliada"
+        ? despacho.resultado.resultado
+        : resultadoNaoAvaliadoNews2(despacho.registro);
 
     const evaluationId = `SYNTH-AVAL-${randomUUID()}`;
     await insertEvaluationRecord(tx, {
@@ -326,10 +426,13 @@ export async function ingestObservations(db: PGlite, args: IngestArgs): Promise<
       totalScore: avaliacao.escore,
       riskTier: avaliacao.banda,
       redParameter: avaliacao.parametroVermelho,
-      fires: record.fires,
+      // Recusa de despacho ⇒ nenhum registro de kernel: `fires` é `false` e o
+      // registro persistido fica vazio. Herdar `true` de uma avaliação que não
+      // aconteceu seria fabricar condição de exibição.
+      fires: record?.fires ?? false,
       evaluatedAt: nowInstant(),
       result: avaliacao as unknown as Record<string, unknown>,
-      kernelRecord: record as unknown as Record<string, unknown>,
+      kernelRecord: (record ?? {}) as unknown as Record<string, unknown>,
     });
     await insertOutboxEvent(tx, {
       tenantId: args.tenantId,
@@ -345,9 +448,27 @@ export async function ingestObservations(db: PGlite, args: IngestArgs): Promise<
       },
     });
 
+    // REGISTRO IMUTÁVEL do despacho, durável na MESMA transação (requisito 5
+    // do achado §6.4): versão de regra, versão de bundle, digest das entradas,
+    // razões, proveniência e correlação. Vale igualmente para a recusa — é
+    // justamente a recusa que precisa ser auditável depois.
+    //
+    // `regra-despachada` NÃO pertence ao vocabulário de `EventoFluxo` do
+    // contrato (`packages/contratos/asyncapi.yaml`), e por isso `replayEvents`
+    // não o publica no fluxo: ele é registro durável interno, não mensagem de
+    // canal. Ver a nota em `OUTBOX_TO_CONTRACT_EVENT`.
+    await insertOutboxEvent(tx, {
+      tenantId: args.tenantId,
+      orderingScope: `encounter:${args.encontroId}`,
+      eventType: "regra-despachada",
+      aggregateType: "evaluation_record",
+      aggregateId: evaluationId,
+      payload: despacho.registro as unknown as Record<string, unknown>,
+    });
+
     // Alerta durável + item de trabalho + outbox — MESMA transação.
     let alerta: ResumoItemTrabalho | null = null;
-    if (requerAlerta(record)) {
+    if (record !== null && requerAlerta(record)) {
       const alertId = `SYNTH-ALERTA-${randomUUID()}`;
       await insertAlert(tx, {
         id: alertId,
@@ -422,7 +543,7 @@ function calcularFrescor(evaluatedAtIso: string | null, agora: Date): Frescor {
  * velho parecendo fresco; HAZ-0005).
  */
 export async function projectBedGrid(
-  db: PGlite,
+  db: PortaBancoDeDados,
   args: { tenantId: string; actorId: string; correlationId: string },
 ): Promise<EntradaGradeLeitos[]> {
   return withTenantTransaction(db, args.tenantId, async (tx) => {
@@ -528,7 +649,7 @@ export async function projectBedGrid(
 
 /** `null` se o paciente é desconhecido OU pertence a outro tenant — indistinguíveis por desenho. */
 export async function getPatientEvaluations(
-  db: PGlite,
+  db: PortaBancoDeDados,
   args: { tenantId: string; actorId: string; pacienteRef: string; correlationId: string },
 ): Promise<ResultadoAvaliacao[] | null> {
   return withTenantTransaction(db, args.tenantId, async (tx) => {
@@ -553,7 +674,18 @@ export type AcknowledgeOutcome =
   | { readonly kind: "not-found" }
   | { readonly kind: "version-conflict"; readonly atual: ItemTrabalho }
   | { readonly kind: "illegal-transition"; readonly atual: ItemTrabalho }
-  | { readonly kind: "applied"; readonly item: ItemTrabalho };
+  | {
+      readonly kind: "applied";
+      readonly item: ItemTrabalho;
+      /**
+       * Estado de ONDE a transição partiu, na forma canônica de
+       * `@intensicare/dominio`. Existe para que a telemetria de transição
+       * (`recordWorkItemTransition`) reporte o par real; sem ele o chamador
+       * teria de passar `null` ou adivinhar — e um par inventado é pior que
+       * um contador ausente.
+       */
+      readonly estadoAnterior: WorkItemState;
+    };
 
 function buildItemTrabalho(
   row: WorkItemWithAlertRow,
@@ -592,7 +724,7 @@ function buildItemTrabalho(
  * gera sua própria auditoria e evento de outbox.
  */
 export async function acknowledgeAlert(
-  db: PGlite,
+  db: PortaBancoDeDados,
   args: {
     tenantId: string;
     actorId: string;
@@ -701,12 +833,24 @@ export async function acknowledgeAlert(
       reconhecidoPor: args.actorId,
       reconhecidoEm: agoraIso,
     };
-    return { kind: "applied", item } as const;
+    return { kind: "applied", item, estadoAnterior: state } as const;
   });
 }
 
 // --- fluxo de eventos (replay por cursor, ADR-0011 P4) ----------------------
 
+/**
+ * Tradução do tipo de evento do OUTBOX (vocabulário interno de persistência)
+ * para o vocabulário FECHADO de `EventoFluxo` do contrato
+ * (`packages/contratos/asyncapi.yaml`).
+ *
+ * Linha do outbox sem entrada aqui NÃO é publicada no fluxo. Antes havia um
+ * `?? "observacao-clinica-registrada"`, que rotularia qualquer tipo novo como
+ * observação clínica — um quadro SSE que mente sobre o que carrega. É o caso
+ * de `regra-despachada` (registro imutável de despacho, ver
+ * `ingestObservations`): ele é durável e auditável, e não é mensagem de canal.
+ * Omitir é honesto; renomear seria falsificar.
+ */
 const OUTBOX_TO_CONTRACT_EVENT: Readonly<Record<string, EventoFluxo["tipo"]>> = {
   clinical_observation_recorded: "observacao-clinica-registrada",
   "observacoes-ingeridas": "observacoes-ingeridas",
@@ -716,7 +860,7 @@ const OUTBOX_TO_CONTRACT_EVENT: Readonly<Record<string, EventoFluxo["tipo"]>> = 
 };
 
 export async function replayEvents(
-  db: PGlite,
+  db: PortaBancoDeDados,
   args: { tenantId: string; actorId: string; cursor: number; correlationId: string },
 ): Promise<EventoFluxo[]> {
   return withTenantTransaction(db, args.tenantId, async (tx) => {
@@ -730,12 +874,18 @@ export async function replayEvents(
       outcome: "sucesso",
       idempotencyKey: args.correlationId,
     });
-    return rows.map((row) => ({
-      sequencia: row.id,
-      tipo: OUTBOX_TO_CONTRACT_EVENT[row.eventType] ?? "observacao-clinica-registrada",
-      tenantId: row.tenantId,
-      ocorridoEm: pgTimestampToIso(row.occurredAt),
-      dados: row.payload,
-    }));
+    const eventos: EventoFluxo[] = [];
+    for (const row of rows) {
+      const tipo = OUTBOX_TO_CONTRACT_EVENT[row.eventType];
+      if (tipo === undefined) continue;
+      eventos.push({
+        sequencia: row.id,
+        tipo,
+        tenantId: row.tenantId,
+        ocorridoEm: pgTimestampToIso(row.occurredAt),
+        dados: row.payload,
+      });
+    }
+    return eventos;
   });
 }

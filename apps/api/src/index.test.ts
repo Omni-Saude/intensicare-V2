@@ -48,4 +48,75 @@ describe("apps/api (fundação executável — servidor sobre persistência real
     expect(JSON.stringify(body)).not.toContain("SYNTH-PACIENTE-INEXISTENTE");
     expect(body.instance).toMatch(/^urn:intensicare:requisicao:/);
   });
+
+  // -------------------------------------------------------------------------
+  // As TRÊS superfícies de saúde, compostas em `buildServer` (anti-padrão 10:
+  // nunca o mesmo endpoint/status para liveness, readiness e startup).
+  // -------------------------------------------------------------------------
+
+  describe("superfícies de saúde separadas", () => {
+    it("GET /v1/livez responde 200 sem tocar dependência, e declara não ser critério de promoção", async () => {
+      const r = await app.inject({ method: "GET", url: "/v1/livez" });
+      expect(r.statusCode).toBe(200);
+      const corpo = r.json();
+      expect(corpo.vivo).toBe(true);
+      expect(corpo.declaracaoPt).toContain("/v1/readyz");
+      // Sonda em cache é sonda mentirosa.
+      expect(r.headers["cache-control"]).toBe("no-store");
+    });
+
+    it("GET /v1/startupz responde 200 'concluida' depois que buildServer resolveu", async () => {
+      const r = await app.inject({ method: "GET", url: "/v1/startupz" });
+      expect(r.statusCode).toBe(200);
+      const corpo = r.json();
+      expect(corpo.estado).toBe("concluida");
+      expect(corpo.etapasPendentes).toEqual([]);
+      expect(r.headers["cache-control"]).toBe("no-store");
+    });
+
+    /**
+     * 503 aqui é o RETRATO HONESTO do estado, não um defeito: o RULE-GCS não
+     * tem artefato de bundle no repositório (`rule-bundle` não constrói
+     * manifesto para ele), então a regra R1 do avaliador bloqueia a prontidão.
+     * Enquanto nenhum alvo de frescor for validado (Gate G1) e o perfil for
+     * sintético, esta superfície NÃO fica verde — e é assim que ela distingue
+     * "processo vivo" de "capacidade clínica segura".
+     */
+    it("GET /v1/readyz responde 503 com veredito e razões do vocabulário fechado", async () => {
+      const r = await app.inject({ method: "GET", url: "/v1/readyz" });
+      expect(r.statusCode).toBe(503);
+      const corpo = r.json();
+      expect(["not_ready", "degraded"]).toContain(corpo.veredito);
+      expect(corpo.razoes.length).toBeGreaterThan(0);
+      expect(corpo.razoes.map((razao: { codigo: string }) => razao.codigo)).toContain(
+        "rule_bundle_unavailable",
+      );
+      expect(corpo.perfil.somenteSintetico).toBe(true);
+      // Nenhum alvo numérico de frescor foi decidido — VALIDATION REQUIRED.
+      for (const limite of corpo.limitesDeFrescorDeclarados) {
+        expect(limite.limiteMs).toBeNull();
+      }
+      expect(r.headers["cache-control"]).toBe("no-store");
+    });
+
+    it("as três superfícies não são o mesmo endpoint nem o mesmo status", async () => {
+      const [liveness, prontidao, startup] = await Promise.all([
+        app.inject({ method: "GET", url: "/v1/livez" }),
+        app.inject({ method: "GET", url: "/v1/readyz" }),
+        app.inject({ method: "GET", url: "/v1/startupz" }),
+      ]);
+      expect(liveness.statusCode).toBe(200);
+      expect(startup.statusCode).toBe(200);
+      // Vivo e iniciado, e mesmo assim SEM capacidade segura: é exatamente a
+      // distinção que colapsar as três superfícies destruiria.
+      expect(prontidao.statusCode).toBe(503);
+    });
+
+    it("a prontidão não vaza endereço, credencial nem identificador de sujeito", async () => {
+      const r = await app.inject({ method: "GET", url: "/v1/readyz" });
+      const bruto = r.body;
+      expect(bruto).not.toMatch(/:\/\//);
+      expect(bruto).not.toMatch(/senha|password|secret|token/i);
+    });
+  });
 });
