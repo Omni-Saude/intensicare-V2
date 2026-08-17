@@ -410,14 +410,29 @@ consolidacao_final_2026_08_17:
     - "ACH-08 (P1): artefatos não-root (UID 1000 e 101, medidos), SBOM determinístico, promoção que recusa tag e exige digest."
     - "ACH-09 (P2): estado por gate reconciliado entre Markdown, YAML e Mermaid por emenda datada."
   revisao_adversarial: >-
-    DUAS revisões independentes por agentes que não escreveram o código. A
-    primeira devolveu REFUTADO com 8 achados, 3 deles P1 reproduzidos contra
-    PostgreSQL real (escopo de tenant regravável; abrir() aceitando papel que
-    alcança o DONO das tabelas; contenção de perfil contornável por injeção).
-    Todos corrigidos. Um nono defeito (HTTP 500 em POST /v1/dev/sessao) foi
-    achado por execução de NAVEGADOR real e sobrevivia a um pnpm verify verde,
-    porque o vitest define NODE_ENV=test e satisfaz a guarda por um caminho que
-    o processo real não tem. Isto é resultado do método, não incidente.
+    CINCO revisões independentes por agentes que NÃO escreveram o código, e a
+    taxa de achado NÃO CONVERGIU: rodadas 1..5 produziram 8, 6, 9, 12 e 12
+    achados (vereditos REFUTADO, CONFIRMADO_COM_RESSALVAS, REFUTADO, REFUTADO,
+    REFUTADO). Somam-se 2 defeitos achados fora das revisões — um por execução
+    de navegador real, um pelo orquestrador ao validar migrações. TOTAL: 49
+    achados, SETE deles P1 com leitura e escrita cross-tenant reproduzidas
+    contra PostgreSQL real. A 5ª rodada REABRIU uma classe que a 4ª declarava
+    fechada (pivô de tenant dentro da transação, agora por view
+    auto-atualizável sobre a âncora do escopo), achou matview vazando em
+    esquema PERMITIDO (intensicare_escopo, que o app precisa para chamar
+    instalar) e uma guarda de não-vacuidade CIRCULAR que permitia 29 caminhos
+    de escalada esvaziarem mantendo a suíte verde. NÃO trate a contagem de
+    rodadas como prova de robustez: o padrão diz que o verificador terceiro
+    (DEC-G0-02) encontrará mais.
+  erros_do_orquestrador_registrados: >-
+    (1) Duas vezes a verificação correu contra ARVORE EM MOVIMENTO, com agentes
+    editando enquanto o revisor media — inclusive uma rodada declarada
+    "congelada" que não estava. (2) O commit 9d0ef6c usou `git add -A` com um
+    especialista em voo e levou uma alteração PARCIAL da migração 0003, sem
+    0004 nem pool.ts; aquele commit não foi verificado como unidade. (3) A
+    justificativa de que `nextval` atribui id de transação foi repassada a um
+    especialista SEM verificação e gravada na 0004 como fato medido — é FALSA
+    contra PostgreSQL 16.14, porque sequência é não-transacional.
   estado_duro_INALTERADO: >-
     0 vias clínicas acionáveis; 47/47 inelegíveis; Observation AMH não
     consumível; somente candidato a integração; safety case M0; NENHUM dado
@@ -431,6 +446,7 @@ consolidacao_final_2026_08_17:
     defeito a contornar. Nenhum SLO foi inventado: todo limiteMs no código é
     null, e o veredito não PODE ser ready enquanto for, por construção.
   fila_do_titular_acrescida:
+    - "PR #5 ABERTO em https://github.com/Omni-Saude/intensicare-V2/pull/5 — 10 checks de CI verdes; NAO fazer merge sem os checks e as autoridades aplicaveis (GDEC-0014)"
     - "PR de codex/finalizacao-plataforma-v2 para main (vinculante GDEC-0014); NENHUM push foi feito sem autorização"
     - "BLK-0003 / AUTH-SECURITY UNASSIGNED — é o bloqueio ANTERIOR a todos os de identidade: sem dono nomeado não há a quem pedir metadados de IdP"
     - "Ratificações clínicas R1..R7 do relatório final §8.1 (sedativeExposure ausente do contrato; vínculo terminológico GCS/RASS; partial->indisponivel no GCS; AUTORIA DO BUNDLE DO RULE-GCS, que é o que impede o GCS de ser despachável; código de NT fora do conjunto governado; mais as duas herdadas do ciclo 6)"
@@ -439,6 +455,8 @@ consolidacao_final_2026_08_17:
     - "Reconciliação do vocabulário de perfis: 6 de runtime x 7 ambientes de ADR-0019 — coexistem três vocabulários não reconciliados"
     - "Decisão sobre tornar build-and-test, change-metadata e os 5 jobs de supply-chain checks obrigatórios da proteção da main"
   riscos_residuais_principais:
+    - "32 P0 do threat model seguem OPEN (27 do corpo original + 5 acrescentados; o modelo declara 83 ameacas, todas OPEN). G6 exige verificador terceiro (DEC-G0-02) e aceite humano (MG-G6)."
+    - "LIMITE ARQUITETURAL: enquanto a ancora de escopo for o selo em tabela, transacao somente-leitura e REPLICA DE LEITURA sao inviaveis — instalar precisa escrever. As tres alternativas (linha, advisory lock, sequencia) foram MEDIDAS e nao sobrevivem a ROLLBACK TO SAVEPOINT. Declarado em 0004_escopo_selado.sql e no README do pacote."
     - "A fronteira de IDENTIDADE AUTENTICADA é a que resta: o isolamento de armazenamento protege contra SQL arbitrário em voo, NÃO contra um chamador que peça o tenant errado (SEC-0001). Depende de IdP real."
     - "Troca de tenant entre transações distintas na mesma conexão continua possível e NÃO é fechável pelo banco — é assim que um pool multi-tenant funciona. Documentada em teste como LIMITE, não como controle."
     - "Gate estrutural ausente: a suíte roda com PERFIL e NODE_ENV ambos definidos; defeito que dependa da forma do ambiente real segue invisível por padrão."
