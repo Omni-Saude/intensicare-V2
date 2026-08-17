@@ -42,13 +42,6 @@ info:
     name: IntensiCare V2 (engenharia de plataforma)
 x-pendencias:
   - >-
-    GET /v1/eventos/stream implementa replay de backlog por cursor
-    (ADR-0011 P4) em formato `text/event-stream`, mas encerra a conexão
-    após o catch-up — push contínuo em conexão aberta, autorizado a cada
-    entrega (ADR-0011 P3/P5/P6), NÃO está implementado nesta fatia.
-    Registrado como pendência de integração com o futuro gateway único de
-    tempo real.
-  - >-
     `StatusAvaliacao.parcial` é RESERVADO a classes futuras de escore
     (ADR-0026, classes 2+) e é INALCANÇÁVEL para NEWS2 (decisão
     N-8/GDEC-0007: all-or-not_evaluated é permanente para NEWS2). A API
@@ -56,11 +49,15 @@ x-pendencias:
     enum apenas para que a chegada de uma classe 2+ não seja uma quebra de
     contrato. (Correção da revisão única SPR-G7-2, item 3.)
   - >-
-    Autenticação: `apps/api` implementa um stub de bearer sintético
-    (formato `SYNTH-TOKEN.<tenantId>.<atorId>`) que carrega `tenant_id` e
-    identidade de ator, conforme premissa do ADR-0015 (`not-started`).
-    Não é um mecanismo de autenticação real — nenhuma verificação
-    criptográfica de token ocorre.
+    Autenticação: o bearer é um JWS compacto ASSINADO, verificado contra
+    uma fonte de chaves (assinatura, `iss`, `aud`, `exp`, `nbf`, `kid`).
+    O tenant vem exclusivamente de claim assinada — não é mais lido do
+    texto do token. O que permanece PENDENTE: nenhum IdP foi selecionado
+    (ADR-0015 §1; fronteira TB-06 do modelo de ameaças não decidida), e o
+    adaptador OIDC só foi verificado contra um SERVIDOR DE TESTE LOCAL,
+    nunca contra provedor real. Em perfil de desenvolvimento o emissor é
+    local e sintético. Isto NÃO é autenticação de produção operante e não
+    fecha `MG-G6`, `SEC-0004` nem qualquer gate.
   - >-
     Contexto demográfico do gate populacional (ADR-0027) viaja no envelope
     de ingestão (`contexto`) — PREMISSA reversível desta fatia; demografia
@@ -82,15 +79,53 @@ tags:
   - name: alertas
     description: Ciclo de vida de item de trabalho/alerta (ADR-0009).
   - name: eventos
-    description: Fluxo de eventos com cursor de retomada (ver x-pendencias).
+    description: >-
+      Fluxo contínuo de eventos duráveis, com cursor de retomada e
+      autorização por entrega (ADR-0011).
   - name: saude
-    description: Verificação de saúde do serviço.
+    description: >-
+      Liveness, readiness e startup — SUPERFÍCIES SEPARADAS. Usar o mesmo
+      endpoint ou o mesmo status para as três é anti-padrão explícito
+      (§10.10): colapsá-las produz o supervisor que mata em laço um processo
+      que só precisava de mais tempo, ou que deixa entrar tráfego em um
+      processo que subiu sem regra clínica.
+  - name: desenvolvimento
+    description: >-
+      Superfícies que existem SOMENTE em perfil que admite material
+      sintético. Em perfil endurecido não são registradas.
 paths:
+  /health:
+    get:
+      operationId: obterLivenessLegado
+      tags: [saude]
+      deprecated: true
+      summary: >-
+        LIVENESS LEGADO. Mantida da fundação SPR-G7-1 por compatibilidade.
+        **NÃO é utilizável como critério de promoção.**
+      description: >-
+        Responde `{"status":"ok"}` incondicionalmente: 200 com o banco fora,
+        sem bundle de regra ativo e sem identidade configurada. Não afirma
+        nada sobre capacidade clínica segura. Promoção, balanceamento e
+        decisão de tráfego olham `/v1/readyz`; supervisão de inicialização
+        olha `/v1/startupz`.
+      security: []
+      responses:
+        "200":
+          description: O processo consegue responder. Nada além disso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthzResposta"
+
   /v1/healthz:
     get:
       operationId: obterSaude
       tags: [saude]
-      summary: Verifica a saúde do serviço.
+      deprecated: true
+      summary: >-
+        LEGADO — liveness COM toque de banco (`select 1`). Nem liveness pura
+        nem prontidão. Mantida por compatibilidade; promoção usa
+        `/v1/readyz`.
       security: []
       responses:
         "200":
@@ -99,6 +134,137 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthzResposta"
+
+  /v1/livez:
+    get:
+      operationId: obterLiveness
+      tags: [saude]
+      summary: >-
+        Liveness. O processo consegue responder? Sem I/O de banco, sem
+        dependência, sem avaliação.
+      description: >-
+        200 sempre que o processo está de pé; se ele não estiver, não há
+        resposta — e é essa a ausência que serve de sinal. O corpo carrega
+        uma declaração explícita de que liveness NÃO indica capacidade
+        clínica segura, para quem for tentado a usá-la como critério de
+        promoção. A resposta nunca é cacheável: uma resposta de sonda em
+        cache é uma resposta mentirosa.
+      security: []
+      responses:
+        "200":
+          description: Processo vivo.
+          headers:
+            Cache-Control:
+              description: Sempre `no-store`.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespostaLiveness"
+
+  /v1/readyz:
+    get:
+      operationId: obterProntidao
+      tags: [saude]
+      summary: >-
+        Readiness. Existe CAPACIDADE SEGURA? Bundle de regra, identidade e
+        chaves, dependências obrigatórias, frescor de projeção e degradação
+        visível (ADR-0020 O4).
+      description: >-
+        200 apenas em `ready`. `not_ready` é 503 SEMPRE — uma instância sem
+        bundle de regra, sem identidade ou sem banco não recebe tráfego
+        clínico sob nenhuma política. `degraded` é 503 por padrão
+        (fail-closed); se uma instância degradada deve receber tráfego é uma
+        pergunta OPERACIONAL ABERTA (**VALIDATION REQUIRED**), não uma
+        decisão tomada em código.
+
+
+        CONSEQUÊNCIA DECLARADA, não escondida: enquanto nenhum alvo de
+        frescor for validado (Gate G1) e o perfil for sintético, o veredito é
+        no máximo `degraded` e esta superfície responde 503 de forma
+        permanente. Isso é o retrato honesto do estado (safety case M0, 0
+        vias clínicas acionáveis) — não um defeito a contornar invertendo o
+        padrão sem decisão humana registrada.
+
+
+        A resposta é anônima, como as demais sondas: um balanceador não porta
+        credencial clínica. Por isso o corpo só carrega vocabulário FECHADO
+        de razões, NOMES de subsistema (jamais URI, host ou credencial) e
+        texto pt-BR de operação.
+      security: []
+      responses:
+        "200":
+          description: Veredito `ready`.
+          headers:
+            Cache-Control:
+              description: Sempre `no-store`.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RelatorioProntidao"
+        "503":
+          description: >-
+            Veredito `not_ready` ou `degraded`, ou falha da PRÓPRIA avaliação
+            de prontidão. Neste último caso o detalhe técnico não é publicado
+            (política de redação, SAF-0026/SEC-0015) e o corpo assume a forma
+            de `ProntidaoNaoAvaliada` — sem veredito, a instância não é
+            declarada pronta.
+          headers:
+            Cache-Control:
+              description: Sempre `no-store`.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/RelatorioProntidao"
+                  - $ref: "#/components/schemas/ProntidaoNaoAvaliada"
+
+  /v1/startupz:
+    get:
+      operationId: obterInicializacao
+      tags: [saude]
+      summary: A inicialização terminou?
+      description: >-
+        Superfície separada de readiness porque as duas dizem coisas
+        operacionalmente opostas com o mesmo código HTTP. `startupz` diz
+        "este processo ainda não terminou de subir — espere, não me
+        reinicie"; `readyz` diz "este processo subiu e mesmo assim não tem
+        capacidade segura — não me mande tráfego".
+
+
+        200 em `concluida`; 503 em `iniciando` e em `falhou`. `falhou` é
+        estado TERMINAL: uma inicialização que falhou não volta a `iniciando`
+        por conta própria — quem reinicia é o supervisor, e até lá o processo
+        continua respondendo falha.
+      security: []
+      responses:
+        "200":
+          description: Inicialização concluída.
+          headers:
+            Cache-Control:
+              description: Sempre `no-store`.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespostaStartup"
+        "503":
+          description: Inicialização em curso (`iniciando`) ou falha (`falhou`).
+          headers:
+            Cache-Control:
+              description: Sempre `no-store`.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespostaStartup"
 
   /v1/ingestao/observacoes:
     post:
@@ -323,16 +489,115 @@ paths:
       security:
         - bearerSyntheticStub: []
 
+  /v1/eventos/ticket:
+    post:
+      operationId: emitirTicketEventos
+      tags: [eventos]
+      summary: >-
+        Emite um ticket efêmero de USO ÚNICO para abrir o fluxo de eventos a
+        partir de um navegador.
+      description: >-
+        `EventSource` não envia cabeçalho `Authorization`. As saídas
+        possíveis eram cookie de sessão ou ticket efêmero; credencial em
+        query string é PROIBIDA (anti-padrão §10-12). O valor do ticket sai
+        deste endpoint EXCLUSIVAMENTE no `Set-Cookie` — nunca no corpo, nunca
+        em URL, nunca em log:
+
+
+        `ic_ticket_eventos=<opaco>; Path=/v1/eventos/stream; Max-Age=<ttl>;
+        HttpOnly; Secure; SameSite=Strict`
+
+
+        `HttpOnly` impede que JavaScript o leia (e portanto que o coloque em
+        uma URL); `Path` restrito faz o cookie não acompanhar nenhuma outra
+        requisição. O ticket é consumido na ABERTURA do fluxo, inclusive
+        quando o restante do handshake falha — o uso único vale também no
+        caminho de erro. Ticket inexistente, já usado ou expirado devolvem o
+        MESMO `problem+json` (ADR-0016 §4.1: negação e inexistência não se
+        distinguem para o chamador), e a resposta jamais ecoa o valor
+        recebido.
+
+
+        Ticket válido NÃO é entrega pré-autorizada (ADR-0011 P3): quem abre o
+        fluxo passa por revalidação de sessão, e cada evento é autorizado
+        imediatamente antes de ser escrito.
+
+
+        PREMISSA REVERSÍVEL (ADR-0011 §5.3 não vincula transporte de push;
+        ADR-0015 segue `not-started`): quando a sessão de navegador for
+        decidida, este mecanismo é substituído sem alterar nenhuma mensagem
+        do canal.
+      responses:
+        "201":
+          description: >-
+            Ticket emitido. O VALOR viaja apenas no cabeçalho `Set-Cookie`.
+          headers:
+            Set-Cookie:
+              description: >-
+                `ic_ticket_eventos=<opaco>; Path=/v1/eventos/stream;
+                Max-Age=<ttl>; HttpOnly; Secure; SameSite=Strict`
+              schema:
+                type: string
+            Cache-Control:
+              description: Sempre `no-store` — ticket em cache é ticket vazado.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketEventosResposta"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+      security:
+        - bearerSyntheticStub: []
+
   /v1/eventos/stream:
     get:
       operationId: obterFluxoEventos
       tags: [eventos]
       summary: >-
-        Replay de backlog de eventos duráveis do tenant, a partir de um
-        cursor de retomada (ADR-0011 P4). Ver `x-pendencias`: esta fatia
-        entrega catch-up por cursor em `text/event-stream`, não push
-        contínuo em conexão aberta.
+        Fluxo CONTÍNUO de eventos duráveis do tenant, em conexão aberta, com
+        cursor de retomada e autorização a cada entrega (ADR-0011
+        P3/P4/P5/P6).
+      description: >-
+        A conexão PERMANECE ABERTA depois do catch-up e segue entregando o
+        que ficar durável enquanto viver. O push é derivação EXCLUSIVA do
+        estado durável: o notificador interno é um despertador que não
+        transporta evento nem dado clínico — ao ser acordado, o servidor relê
+        o backbone a partir do próprio cursor. Não existe caminho pelo qual
+        um fato não persistido chegue ao cliente.
+
+
+        Autorização em TRÊS momentos: no handshake, a cada pulsação (pega
+        expiração/revogação mesmo em conexão silenciosa) e POR EVENTO,
+        imediatamente antes de escrever o quadro — subscrição autorizada não
+        é entrega pré-autorizada.
+
+
+        Além dos eventos de domínio, o fluxo emite quadros de CONTROLE, sem
+        dado clínico: `estado-conexao`, `pulsacao` e
+        `instrucao-reconciliacao`. Todo encerramento pelo servidor é
+        precedido de instrução de reconciliação com motivo, cursor e caminho
+        autoritativo — a lacuna é explícita, jamais um socket que some. O
+        backoff e o jitter da reconexão são dirigidos pelo servidor. O
+        vocabulário completo do plano de controle está em
+        `packages/contratos/asyncapi.yaml`.
+
+
+        Credencial: cabeçalho `Authorization` (cliente não-navegador) OU o
+        cookie de ticket efêmero emitido por `POST /v1/eventos/ticket`.
+        Parâmetro de consulta com nome de credencial, tenant ou identificador
+        de sujeito é RECUSADO com 400 antes de qualquer outra coisa.
       parameters:
+        - name: Last-Event-ID
+          in: header
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+          description: >-
+            Cursor de retomada padrão do SSE — a forma preferida, porque o
+            navegador o reenvia sozinho na reconexão.
         - name: cursor
           in: query
           required: false
@@ -341,34 +606,126 @@ paths:
             minimum: 0
             default: 0
           description: >-
-            Sequência do último evento já visto pelo cliente; a resposta
-            contém apenas eventos com sequência estritamente maior.
+            Sequência do último evento já visto pelo cliente; são entregues
+            apenas eventos com sequência estritamente maior. Alternativa a
+            `Last-Event-ID` para clientes que não o enviam. NÃO carrega
+            credencial, tenant nem identificador de sujeito.
       responses:
         "200":
           description: >-
-            Fluxo `text/event-stream` com os eventos de retomada, cada um
-            com `id:` igual à sua sequência (cursor) e `data:` contendo o
-            JSON serializado de `EventoFluxo`.
+            Fluxo `text/event-stream` em conexão aberta. Cada evento de
+            domínio traz `id:` igual à sua sequência (cursor), `event:` igual
+            ao `tipo` e `data:` com o JSON de `EventoFluxo`. Quadros de
+            controle não têm `id:`.
           content:
             text/event-stream:
               schema:
                 type: string
+        "400":
+          description: >-
+            Cursor de retomada inválido, ou parâmetro de consulta proibido
+            (credencial/tenant/sujeito em query string).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
         "401":
           $ref: "#/components/responses/NaoAutenticado"
       security:
         - bearerSyntheticStub: []
+        - ticketEfemeroCookie: []
+
+  /v1/dev/sessao:
+    post:
+      operationId: criarSessaoDeDesenvolvimento
+      tags: [desenvolvimento]
+      summary: >-
+        Emite uma sessão SINTÉTICA de desenvolvimento. Existe SOMENTE em
+        perfil que admite adaptador sintético.
+      description: >-
+        DEV-ONLY. Em perfil endurecido esta rota NÃO É REGISTRADA: a resposta
+        é 404, e não 403 — uma superfície que responde 403 continua
+        anunciando que existe.
+
+
+        Não aceita entrada. O tenant e o ator são os do cenário sintético
+        semeado (marcador `SYNTH-`); nada vem do chamador. Um endpoint de
+        emissão que aceitasse `tenantId` no corpo seria uma máquina de
+        fabricar identidade para qualquer tenant (anti-padrão §10.3).
+
+
+        O token emitido é um JWS assinado pelo emissor local do processo e é
+        VERIFICADO por este mesmo serviço antes de sair; `expiraEm` vem do
+        `exp` da claim verificada, nunca de um cálculo paralelo. Se o
+        material recém-assinado não passa no verificador, nenhuma sessão é
+        entregue.
+
+
+        Esta rota não concede acesso a nada real e não é, sob nenhuma
+        leitura, um mecanismo de autenticação de produção.
+      security: []
+      responses:
+        "201":
+          description: Sessão sintética emitida.
+          headers:
+            Cache-Control:
+              description: Sempre `no-store`.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessaoDeDesenvolvimentoResposta"
+        "500":
+          description: >-
+            O token emitido não passou no verificador desta instância;
+            nenhuma sessão foi entregue (fail-closed).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "503":
+          description: >-
+            A porta de autenticação instalada não emite token. Nenhuma
+            sessão foi criada.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
 
 components:
   securitySchemes:
     bearerSyntheticStub:
       type: http
       scheme: bearer
-      bearerFormat: "SYNTH-TOKEN.<tenantId>.<atorId>"
+      bearerFormat: JWS
       description: >-
-        Stub de autenticação sintética (PREMISSA reversível, ADR-0015
-        `not-started`): o token carrega `tenant_id` e identidade de ator em
-        texto, sem verificação criptográfica. Nunca usar formato real de
-        token em nenhum ambiente.
+        Bearer JWS compacto, verificado por um verificador único: algoritmo
+        em lista branca (nunca `none`, nunca HMAC), `kid` resolvido contra
+        uma fonte de chaves, e conferência de `iss`, `aud`, `exp` e `nbf`.
+        `tenantId` e `atorId` vêm SOMENTE de claim assinada — forjar um
+        tenant exige a chave privada do emissor. A razão interna de uma
+        recusa nunca é serializada: o corpo é uniforme por classe de status,
+        para que a resposta não seja um oráculo de qual verificação falhou.
+
+
+        O QUE ISTO NÃO É (ver `x-pendencias`): autenticação de produção
+        operante. Nenhum IdP foi selecionado (ADR-0015 §1) e o adaptador
+        OIDC só foi exercitado contra um servidor de teste LOCAL. Em perfil
+        de desenvolvimento o emissor é local e sintético, e os tokens
+        carregam identificadores com marcador `SYNTH-`.
+    ticketEfemeroCookie:
+      type: apiKey
+      in: cookie
+      name: ic_ticket_eventos
+      description: >-
+        Ticket efêmero de USO ÚNICO para abrir `GET /v1/eventos/stream` a
+        partir de um navegador. Emitido por `POST /v1/eventos/ticket` e
+        entregue EXCLUSIVAMENTE por `Set-Cookie` (`HttpOnly; Secure;
+        SameSite=Strict`, `Path` restrito à rota do fluxo). Consumido na
+        abertura, inclusive quando o handshake falha. O nome do cookie é o
+        mesmo declarado em `packages/contratos/asyncapi.yaml` e conferido
+        pelo gate de contratos.
   parameters:
     IdempotencyKey:
       name: Idempotency-Key
@@ -388,12 +745,250 @@ components:
       description: Versão do recurso vista pelo chamador (concorrência otimista, ADR-0009 W3).
   responses:
     NaoAutenticado:
-      description: Cabeçalho `Authorization` ausente ou token sintético malformado.
+      description: >-
+        Não foi possível estabelecer identidade: `Authorization` ausente,
+        esquema inválido, assinatura inválida, emissor/audiência
+        divergentes, token expirado, ou ticket de fluxo ausente/já
+        usado/expirado. O corpo é UNIFORME por classe de status e não
+        distingue qual verificação falhou — a razão interna nunca é
+        serializada, para que a resposta não seja um oráculo (ADR-0015 §8 V1;
+        ADR-0016 §4.1).
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/ProblemDetails"
   schemas:
+    RespostaLiveness:
+      type: object
+      additionalProperties: false
+      required: [vivo, declaracaoPt]
+      properties:
+        vivo:
+          type: boolean
+          const: true
+        declaracaoPt:
+          type: string
+          description: >-
+            Declaração explícita de que liveness NÃO indica capacidade
+            clínica segura, banco disponível, bundle de regra ativo ou
+            identidade configurada, e de que esta superfície não é utilizável
+            como critério de promoção.
+
+    VereditoProntidao:
+      type: string
+      description: >-
+        Ordem de severidade `not_ready` > `degraded` > `ready`. Vocabulário
+        FECHADO — espelha `READINESS_VERDICT_LABELS` da observabilidade.
+      enum: [ready, degraded, not_ready]
+
+    CodigoRazaoProntidao:
+      type: string
+      description: >-
+        Vocabulário FECHADO de razões (`READINESS_REASON_CODES`). Texto livre
+        em razão é rota de PHI e é inauditável; por isso o código é
+        enumerado e o texto humano viaja em campo separado.
+      enum:
+        - rule_bundle_unavailable
+        - required_dependency_unavailable
+        - identity_not_configured
+        - projection_stale
+        - projection_freshness_threshold_unvalidated
+        - degradation_active
+        - degradation_unsurfaced
+
+    RazaoDeProntidao:
+      type: object
+      additionalProperties: false
+      required: [codigo, detalhe]
+      properties:
+        codigo:
+          $ref: "#/components/schemas/CodigoRazaoProntidao"
+        detalhe:
+          type: string
+          description: >-
+            Texto pt-BR de console operacional. NOMEIA o subsistema que
+            faltou; jamais o endereço dele, jamais dado de paciente. Ids de
+            dependência com forma endereçável (URI, host, credencial) são
+            recusados antes de chegar aqui.
+
+    PerfilDeclarado:
+      type: object
+      additionalProperties: false
+      required: [somenteSintetico, declaracaoPt]
+      properties:
+        somenteSintetico:
+          type: boolean
+          description: >-
+            `true` quando o processo opera exclusivamente sobre dados
+            sintéticos e não está conectado a nenhuma fonte clínica real.
+        declaracaoPt:
+          type: string
+
+    LimiteDeFrescorDeclarado:
+      type: object
+      additionalProperties: false
+      required: [projecao, limiteMs]
+      properties:
+        projecao:
+          type: string
+          enum: [grade_leitos, avaliacoes_paciente, fluxo_eventos]
+        limiteMs:
+          type: [integer, "null"]
+          minimum: 0
+          description: >-
+            `null` = **VALIDATION REQUIRED** (Gate G1). Nunca é preenchido
+            por código: nenhum alvo numérico de frescor foi decidido. O
+            avaliador trata `null` como impedimento a `ready`, e NÃO como
+            "sem limite".
+
+    DegradacaoExposta:
+      type: object
+      additionalProperties: false
+      required:
+        [modo, dominio, desdeMs, mensagemUi, comportamentoSeguro, fallbackManual, condicaoSaida, exibidaEm]
+      properties:
+        modo:
+          type: string
+          enum:
+            - regra_clinica_desligada
+            - projecao_atrasada
+            - outbox_acumulando
+            - entrega_tempo_real_indisponivel
+            - insumo_sem_frescor
+            - dependencia_indisponivel
+            - telemetria_indisponivel
+        dominio:
+          type: string
+          enum: [dependency, rule, freshness, event, projection, delivery, telemetry]
+        desdeMs:
+          type: integer
+          description: Instante de entrada no modo, em milissegundos do relógio injetado.
+        mensagemUi:
+          type: string
+        comportamentoSeguro:
+          type: string
+        fallbackManual:
+          type: string
+        condicaoSaida:
+          type: string
+        exibidaEm:
+          type: array
+          description: >-
+            Canais em que a degradação já foi tornada VISÍVEL. Degradação
+            ativa que nenhum canal exibiu derruba a prontidão — é assim que a
+            proibição de degradação silenciosa tem dente.
+          items:
+            type: string
+            enum: [api_contract, ui, operational_console]
+
+    RelatorioProntidao:
+      type: object
+      additionalProperties: false
+      required: [veredito, razoes, perfil, degradacoes, limitesDeFrescorDeclarados]
+      properties:
+        veredito:
+          $ref: "#/components/schemas/VereditoProntidao"
+        razoes:
+          type: array
+          items:
+            $ref: "#/components/schemas/RazaoDeProntidao"
+        perfil:
+          $ref: "#/components/schemas/PerfilDeclarado"
+        degradacoes:
+          type: array
+          items:
+            $ref: "#/components/schemas/DegradacaoExposta"
+        limitesDeFrescorDeclarados:
+          type: array
+          items:
+            $ref: "#/components/schemas/LimiteDeFrescorDeclarado"
+
+    ProntidaoNaoAvaliada:
+      type: object
+      additionalProperties: false
+      required: [veredito, razoes, erroDeAvaliacao]
+      description: >-
+        Forma devolvida quando a PRÓPRIA avaliação de prontidão falhou.
+        Fail-closed: sem veredito, a instância não é declarada pronta. A
+        exceção NÃO é ecoada — ela costuma carregar host, credencial ou
+        parâmetro de consulta (SAF-0026/SEC-0015).
+      properties:
+        veredito:
+          type: string
+          const: not_ready
+        razoes:
+          type: array
+          maxItems: 0
+          items:
+            $ref: "#/components/schemas/RazaoDeProntidao"
+        erroDeAvaliacao:
+          type: string
+
+    RespostaStartup:
+      type: object
+      additionalProperties: false
+      required: [estado, etapasPendentes, iniciadoEmMs]
+      properties:
+        estado:
+          type: string
+          description: >-
+            `falhou` é TERMINAL — uma inicialização que falhou não volta a
+            `iniciando` por conta própria.
+          enum: [iniciando, concluida, falhou]
+        etapasPendentes:
+          type: array
+          description: Etapas declaradas e ainda não concluídas, na ordem de declaração.
+          items:
+            type: string
+        iniciadoEmMs:
+          type: integer
+          description: >-
+            Instante de início, no relógio INJETADO. O registro não lê o
+            relógio do sistema por conta própria e não tem tempo limite de
+            inicialização — um limite seria alvo numérico, matéria do Gate G1.
+
+    TicketEventosResposta:
+      type: object
+      additionalProperties: false
+      required: [expiraEm, ttlSegundos, usoUnico, entregaEm]
+      description: >-
+        Corpo de `POST /v1/eventos/ticket`. NÃO contém o valor do ticket —
+        ele sai apenas no `Set-Cookie`.
+      properties:
+        expiraEm:
+          type: string
+          format: date-time
+        ttlSegundos:
+          type: integer
+          minimum: 1
+          description: >-
+            Validade configurada no servidor. **VALIDATION REQUIRED**
+            (ADR-0011 §3): não é alvo medido nem SLO.
+        usoUnico:
+          type: boolean
+          const: true
+        entregaEm:
+          type: string
+          const: cookie
+          description: >-
+            Diz ao cliente que o valor NÃO deve ser procurado no corpo.
+
+    SessaoDeDesenvolvimentoResposta:
+      type: object
+      additionalProperties: false
+      required: [token, expiraEm]
+      description: DEV-ONLY — ver `POST /v1/dev/sessao`.
+      properties:
+        token:
+          type: string
+          description: >-
+            JWS compacto assinado pelo emissor local e sintético deste
+            processo. Não concede acesso a nada real.
+        expiraEm:
+          type: string
+          format: date-time
+          description: Lido do `exp` da claim VERIFICADA, nunca de cálculo paralelo.
+
     ProblemDetails:
       type: object
       description: Envelope de erro RFC 9457, textos em pt-BR.

@@ -121,7 +121,13 @@ export function canonicalUnitFor(
 // Linha do banco → observação do kernel
 // ---------------------------------------------------------------------------
 
-function toKernelQuality(quality: string): SourceDataQuality {
+/**
+ * Qualidade de fonte persistida → vocabulário do kernel, fail-closed.
+ * Exportado para que o provedor do GCS (`src/regras/gcs.ts`) aplique a
+ * MESMA política de qualidade — duplicar uma decisão fail-closed em dois
+ * lugares é como as duas cópias divergem.
+ */
+export function qualidadeParaKernel(quality: string): SourceDataQuality {
   if (quality === "valid" || quality === "warning" || quality === "quarantined") return quality;
   // "unknown" (ou qualquer valor imprevisto): fail-closed — ver premissa no topo.
   return "quarantined";
@@ -143,7 +149,10 @@ export function toKernelObservation(row: ClinicalObservationRow): ObservationInp
       parameter,
       value: { kind: "code", code: row.sourceCode },
       effectiveTime,
-      provenance: { sourceSystem: "SYNTH-api", sourceDataQuality: toKernelQuality(row.quality) },
+      provenance: {
+        sourceSystem: "SYNTH-api",
+        sourceDataQuality: qualidadeParaKernel(row.quality),
+      },
     };
   }
 
@@ -157,7 +166,7 @@ export function toKernelObservation(row: ClinicalObservationRow): ObservationInp
     parameter,
     value: { kind: "quantity", value: value ?? Number.NaN, unit },
     effectiveTime,
-    provenance: { sourceSystem: "SYNTH-api", sourceDataQuality: toKernelQuality(row.quality) },
+    provenance: { sourceSystem: "SYNTH-api", sourceDataQuality: qualidadeParaKernel(row.quality) },
   };
 }
 

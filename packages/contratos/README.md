@@ -25,8 +25,8 @@ pt-BR) cobre:
   com explicação por parâmetro.
 - `POST /v1/alertas/{id}/reconhecer` — reconhecimento de alerta com
   concorrência segura via `If-Match` (ADR-0009 W3, Q2-A aceita).
-- `GET /v1/eventos/stream` — replay de backlog por cursor (ver pendência
-  abaixo).
+- `GET /v1/eventos/stream` — fluxo SSE contínuo autorizado (ver
+  `asyncapi.yaml` e a seção "Canal de eventos" abaixo).
 - `GET /v1/healthz`.
 
 `src/index.ts` declara, à mão, os tipos TypeScript coerentes com o YAML —
@@ -50,20 +50,79 @@ tipos são apenas TypeScript; a validação `zod` concreta vive em
 - Correção 4 (baixa): a semântica de idempotência com hash do corpo
   (422 em replay divergente) está documentada na operação de ingestão.
 
-### Pendências desta fatia
+## Canal de eventos — `asyncapi.yaml` (AsyncAPI 3.0)
+
+`asyncapi.yaml` é o contrato do plano de assinatura, par do `openapi.yaml`
+(plano de requisição/resposta). Ele descreve o canal `/v1/eventos/stream`
+com quatro mensagens: o evento de dados (`EventoFluxo`) e três de plano de
+controle — pulsação, estado de conexão e instrução de reconciliação.
+
+`src/asyncapi.ts` é a fonte única, em TypeScript, do vocabulário que aquele
+documento descreve (tipos de evento, estados de conexão, motivos de
+encerramento, ações de reconciliação, nomes de evento SSE, nome do cookie
+de ticket). `EventoFluxo["tipo"]` deriva de `TIPOS_EVENTO_FLUXO` — o enum
+não é redigitado em dois lugares.
+
+Garantias que o contrato declara (ADR-0011, aceito em GDEC-0008, Opção A):
+
+- a conexão **permanece aberta** após o catch-up (P1/P3);
+- cada entrega é reautorizada **no momento da entrega**, não só na abertura
+  (P3; ADR-0016 §4.1);
+- o cliente retoma por cursor durável e o servidor **declara** até onde o
+  cursor é retomável; lacuna vira instrução explícita de reconciliação por
+  polling (P4);
+- filas por conexão são limitadas e o excesso **desconecta explicitamente**
+  com instrução — nunca descarte silencioso com conexão de aparência
+  saudável (P5);
+- estado de conexão faz parte do contrato (P6);
+- o polling server-authoritative é o caminho de verdade de recuperação; o
+  push é otimização de latência sobre ele (P8).
+
+O contrato de cliente está declarado como dado em
+`CONTRATO_CLIENTE_EVENTOS` — o frontend implementa aqueles sete passos.
+
+### Validação (gate bloqueante)
+
+`node scripts/check_contratos.mjs` valida `openapi.yaml` **e**
+`asyncapi.yaml` e falha (exit 1) em: documento inválido, chave YAML
+duplicada, `$ref` que não resolve, mensagem sem payload, credencial em
+query string, e qualquer divergência entre o contrato TypeScript, o
+AsyncAPI e o catálogo `docs/09-api-events-and-mcp/catalogo-de-eventos.md`
+(mais o mapa `OUTBOX_TO_CONTRACT_EVENT` de `apps/api/src/db.ts`). O
+`asyncapi.test.ts` exercita o gate nos dois sentidos: aprova os documentos
+reais e reprova doze mutações distintas.
+
+## Pendências desta fatia
 
 - Geração automática de tipos a partir do `openapi.yaml` (hoje escritos à
   mão) não está configurada.
-- `GET /v1/eventos/stream` implementa apenas replay de backlog por cursor
-  (ADR-0011 P4), fechando a conexão após o catch-up — push contínuo em
-  conexão aberta com autorização por push (ADR-0011 P3/P5/P6) não está
-  implementado (ver `x-pendencias` no próprio `openapi.yaml`).
+- O envelope de evento no fio ainda **não** tem os campos de ADR-0010 B8
+  que a tabela `outbox_events` não grava: chave de idempotência, versão de
+  esquema, tempos separados (fato × emissão × publicação) e
+  correlação/causalidade. O gap está declarado em `x-pendencias` do
+  `asyncapi.yaml` e catalogado no catálogo §6 — não é fechado aqui porque
+  fechá-lo é mudança de esquema de persistência.
+- O enum de eventos de `WorkItem` continua aberto (catálogo §2.3:
+  `outboxEventType` é string livre do chamador). Nenhum nome foi inventado.
+- A validação do `asyncapi.yaml` é **estrutural e de coerência**, não
+  contra o JSON Schema oficial da AsyncAPI 3.0 — nenhuma dependência JS
+  nova foi instalada nesta entrega.
+- Limites de fila, intervalo de pulsação e política de backoff seguem
+  `VALIDATION REQUIRED` (ADR-0011 P5/§3 D6): são configuração injetada, não
+  constante decidida no código.
 - ADR-0012 (versionamento de API, modelo de erro, idempotência, paginação,
-  política de compatibilidade) segue `not-started`; este contrato lê as
-  convenções já aceitas em ADR-0009/ADR-0011 mais o prompt §12.1, mas não
-  substitui aquela decisão.
+  política de compatibilidade) está `accepted` (direção `GDEC-0016`, minuta
+  redigida 2026-08-16, ciclo 6) — **corrigido nesta reconciliação (ACH-09,
+  2026-08-17)**; este item descrevia `ADR-0012` como `not-started`, o que
+  deixou de ser verdade (`docs/06-architecture/adrs/adr-index.md` §3). Este
+  contrato foi escrito lendo as convenções já aceitas em ADR-0009/ADR-0011
+  mais o prompt §12.1; a reconciliação entre este `openapi.yaml` e a
+  minuta formal de ADR-0012 (já redigida) não foi verificada nesta rodada
+  — permanece pendência, agora por outro motivo que não a inexistência da
+  minuta.
 
 ## Scripts
 
 - `pnpm --filter @intensicare/contratos build`
 - `pnpm --filter @intensicare/contratos test`
+- `node scripts/check_contratos.mjs` (gate de contratos)

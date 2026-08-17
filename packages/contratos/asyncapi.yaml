@@ -1,0 +1,543 @@
+asyncapi: 3.0.0
+
+info:
+  title: IntensiCare V2 — canal de eventos em tempo real
+  version: 0.1.0
+  description: >-
+    Contrato do canal de entrega em tempo real da V2 (ADR-0011, aceito em
+    GDEC-0008 na Opção A, minuta P1–P10 integral). Complementa o
+    `openapi.yaml` do mesmo pacote: aquele descreve o plano de requisição/
+    resposta, este descreve o plano de assinatura.
+
+
+    Regra estrutural que atravessa todo este documento (ADR-0011 P1/P8 e
+    regra §3-9 do prompt): **o canal de push NUNCA é o registro clínico**.
+    Todo evento aqui descrito é derivação de estado durável já gravado
+    (outbox transacional, ADR-0010); o caminho de verdade de recuperação é
+    o polling server-authoritative do `openapi.yaml`. Push é otimização de
+    latência sobre o polling — nunca o contrário.
+
+
+    Toda referência de exemplo usa o marcador `SYNTH-` (política de dados
+    sintéticos, GDEC-0014). Nenhum identificador real, PHI, CPF, e-mail ou
+    segredo aparece neste documento. Nenhuma alegação de efetividade
+    clínica, conformidade regulatória ou segurança comprovada é feita por
+    este contrato.
+  contact:
+    name: IntensiCare V2 (engenharia de plataforma)
+
+x-rastreio:
+  adrs:
+    - >-
+      ADR-0011 P2 — toda projeção, cache, cursor e subscrição é chaveada
+      por tenant (e por encontro onde aplicável) em toda camada.
+    - >-
+      ADR-0011 P3 — cada entrega push é autorizada contra o contexto
+      verificado da sessão NO MOMENTO DA ENTREGA; subscrição autorizada não
+      é entrega pré-autorizada.
+    - >-
+      ADR-0011 P4 — o cliente retoma de cursor durável e o servidor declara
+      até onde o cursor é retomável; cursor irretomável instrui
+      reconciliação por polling, com a lacuna EXPLÍCITA.
+    - >-
+      ADR-0011 P5 — filas por conexão são limitadas; ao exceder, o servidor
+      desconecta explicitamente com instrução de reconciliação, jamais
+      descarta deltas em silêncio mantendo a conexão com aparência de
+      saúde. Backoff/jitter dirigidos pelo servidor.
+    - >-
+      ADR-0011 P6 — estados de conexão fazem parte do contrato (online,
+      degraded, offline, reconnecting, replaying, reconciled).
+    - >-
+      ADR-0011 P8 — polling server-authoritative é o caminho de verdade de
+      recuperação de TODA superfície.
+    - >-
+      ADR-0016 §4.1 — nomes de canal SSE são construídos por um tipo
+      `TenantScopedKey` (impossível por tipo produzir chave sem tenant); a
+      entrega SSE reavalia autorização POR EVENTO e encerra a assinatura
+      quando a autorização deixa de valer.
+    - >-
+      ADR-0010 B3/B8 — ordenação por escopo declarado e envelope de evento
+      interno; ver `x-pendencias` para os campos de B8 ainda ausentes.
+  catalogo: docs/09-api-events-and-mcp/catalogo-de-eventos.md
+  contrato_typescript: packages/contratos/src/asyncapi.ts
+  gate: scripts/check_contratos.mjs
+
+x-pendencias:
+  - >-
+    ENVELOPE INCOMPLETO FRENTE A ADR-0010 B8. O envelope entregue no fio é
+    exatamente o `EventoFluxo` que a persistência produz hoje
+    (`sequencia`, `tipo`, `tenantId`, `ocorridoEm`, `dados`). Os campos que
+    B8 exige e que a tabela `outbox_events` AINDA NÃO grava — chave de
+    idempotência, versão de esquema do evento, tempos separados (fato ×
+    emissão × publicação) e correlação/causalidade — continuam AUSENTES, e
+    este documento NÃO os inventa. Gap catalogado em
+    `docs/09-api-events-and-mcp/catalogo-de-eventos.md` §6. Fechá-los é
+    mudança de esquema de persistência, fora do escopo deste contrato.
+  - >-
+    O enum `TipoEventoFluxo` NÃO fecha o catálogo de eventos de `WorkItem`
+    (catálogo §2.3: `outboxEventType` é string livre do chamador). Nomes
+    como `work_item_escalated` são PROPOSAL no catálogo, não existem em
+    código, e por isso não aparecem aqui.
+  - >-
+    LIMITES DE FILA, INTERVALO DE PULSAÇÃO E POLÍTICA DE BACKOFF são
+    `VALIDATION REQUIRED` (ADR-0011 P5 diz isto literalmente; §3 D6/D7 não
+    têm alvo). Este contrato fixa a ESTRUTURA (fila limitada, shed por
+    desconexão explícita, backoff dirigido pelo servidor) e transporta os
+    números no fio porque quem os escolhe é a configuração do servidor.
+    Nenhum valor aqui é um SLO aprovado; nenhum alvo de latência de entrega
+    é declarado.
+  - >-
+    TRANSPORTE DO HANDSHAKE É PREMISSA REVERSÍVEL. ADR-0011 §5.3 declara
+    explicitamente que a decisão "não vincula transporte concreto de push".
+    O `EventSource` nativo não envia cabeçalho `Authorization` e credencial
+    em query string é anti-padrão proibido; adotamos ticket efêmero de uso
+    único entregue e lido SOMENTE por cookie `HttpOnly; Secure;
+    SameSite=Strict`. Uma decisão futura de sessão (ADR-0015/0016)
+    substitui o mecanismo sem alterar as mensagens deste documento.
+  - >-
+    ADR-0012 (versionamento de API, modelo de erro, compatibilidade) segue
+    `not-started`. A política de evolução declarada em
+    `x-politica-evolucao` é a leitura desta fatia, não aquela decisão.
+
+x-politica-evolucao:
+  compativel:
+    - acrescentar campo opcional a uma mensagem
+    - acrescentar valor a enum de plano de controle (motivo, estado de conexão)
+    - acrescentar canal ou operação nova
+  quebra:
+    - remover ou renomear campo
+    - estreitar tipo ou tornar campo obrigatório
+    - acrescentar valor a `TipoEventoFluxo` (o consumidor filtra por tipo)
+    - mudar a semântica de `sequencia` (cursor de retomada)
+  regra_consumidor: >-
+    O consumidor IGNORA campos que não conhece e NUNCA silencia um `event:`
+    desconhecido: registra-o como lacuna observável e reconcilia por
+    polling (ADR-0011 P4/P8).
+
+servers:
+  desenvolvimentoLocal:
+    host: localhost:3000
+    protocol: http
+    description: >-
+      Ambiente de desenvolvimento local, dados 100% sintéticos. O canal
+      trafega como `text/event-stream` (SSE) sobre HTTP/1.1.
+    security:
+      - $ref: "#/components/securitySchemes/ticketEfemeroCookie"
+      - $ref: "#/components/securitySchemes/bearerSinteticoStub"
+
+channels:
+  fluxoDeEventos:
+    address: /v1/eventos/stream
+    title: Fluxo de eventos do tenant
+    description: >-
+      Assinatura SSE contínua, escopada a exatamente um tenant (ADR-0011
+      P2). O nome interno do canal é construído por `TenantScopedKey`
+      (ADR-0016 §4.1) — não existe canal sem tenant verificado, e não
+      existe canal cross-tenant.
+
+
+      A conexão PERMANECE ABERTA após o catch-up: primeiro entrega o
+      backlog desde o cursor informado (estado `replaying`), depois segue
+      entregando o que for produzido enquanto a conexão viver (estado
+      `online`). O encerramento é sempre explícito e sempre precedido de
+      `instrucao-reconciliacao`.
+    messages:
+      eventoFluxo:
+        $ref: "#/components/messages/EventoFluxo"
+      pulsacao:
+        $ref: "#/components/messages/Pulsacao"
+      estadoConexao:
+        $ref: "#/components/messages/EstadoConexao"
+      instrucaoReconciliacao:
+        $ref: "#/components/messages/InstrucaoReconciliacao"
+    x-cursor:
+      cabecalho_retomada: Last-Event-ID
+      parametro_alternativo: cursor
+      descricao: >-
+        O cliente retoma pelo cabeçalho SSE padrão `Last-Event-ID` (que o
+        navegador reenvia sozinho) ou pelo parâmetro de consulta `cursor`.
+        Ambos carregam APENAS um número de sequência — jamais credencial,
+        tenant ou identificador de sujeito (anti-padrão §10-12). O tenant
+        vem exclusivamente do contexto verificado da sessão.
+
+operations:
+  receberFluxoDeEventos:
+    action: receive
+    channel:
+      $ref: "#/channels/fluxoDeEventos"
+    title: Receber o fluxo contínuo de eventos do tenant
+    summary: >-
+      O cliente recebe eventos de dados e mensagens de plano de controle
+      enquanto a autorização continuar válida a cada entrega (ADR-0011 P3).
+    description: >-
+      Sequência normativa da assinatura:
+
+
+      1. Handshake — o servidor verifica a sessão e deriva o contexto
+      (identidade, tenant, escopo). Nada de escopo vem do cliente sem
+      verificação (regra §3-6).
+
+
+      2. `estado-conexao: replaying` — o servidor anuncia o catch-up.
+
+
+      3. Zero ou mais `EventoFluxo` do backlog, em ordem estritamente
+      crescente de `sequencia`.
+
+
+      4. `estado-conexao: online` — fim do catch-up, a conexão SEGUE
+      ABERTA.
+
+
+      5. Enquanto viver: `EventoFluxo` novos assim que ficam duráveis, e
+      `pulsacao` no intervalo anunciado. Cada entrega é reautorizada
+      (ADR-0011 P3; ADR-0016 §4.1).
+
+
+      6. Encerramento — SEMPRE `instrucao-reconciliacao` antes de fechar,
+      com motivo, ação e cursor. Nunca fecha em silêncio.
+    messages:
+      - $ref: "#/channels/fluxoDeEventos/messages/eventoFluxo"
+      - $ref: "#/channels/fluxoDeEventos/messages/pulsacao"
+      - $ref: "#/channels/fluxoDeEventos/messages/estadoConexao"
+      - $ref: "#/channels/fluxoDeEventos/messages/instrucaoReconciliacao"
+
+components:
+  securitySchemes:
+    ticketEfemeroCookie:
+      type: httpApiKey
+      name: ic_ticket_eventos
+      in: cookie
+      description: >-
+        Ticket efêmero de USO ÚNICO, obtido em `POST /v1/eventos/ticket`
+        (documentado no `openapi.yaml`) e entregue SOMENTE por cookie
+        `HttpOnly; Secure; SameSite=Strict` com `Path` estreito. O valor
+        nunca aparece em URL, corpo de resposta, corpo de erro ou log.
+        Ticket reusado ou expirado é rejeitado. PREMISSA REVERSÍVEL —
+        ADR-0011 §5.3 não vincula transporte.
+    bearerSinteticoStub:
+      type: http
+      scheme: bearer
+      description: >-
+        Caminho de cliente NÃO-navegador (teste, serviço). Stub sintético
+        `SYNTH-TOKEN.<tenantId>.<atorId>` de `apps/api/src/auth.ts` —
+        não é autenticação real, não há verificação criptográfica. Ver
+        `x-pendencias` do `openapi.yaml`.
+
+  messages:
+    EventoFluxo:
+      name: eventoFluxo
+      title: Evento de fluxo (plano de dados)
+      summary: >-
+        Um evento durável do backbone interno, entregue como derivação do
+        estado já persistido — nunca um fato que ainda não foi gravado
+        (ADR-0011 P1; DOM-0006).
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/EventoFluxo"
+      x-sse:
+        campo_event: >-
+          O nome do evento SSE é o próprio valor de `tipo` (um dos
+          `TipoEventoFluxo`), para que o cliente possa usar
+          `addEventListener` por tipo.
+        campo_id: >-
+          O `id:` do quadro SSE é a `sequencia` — é o cursor durável de
+          retomada (ADR-0011 P4).
+      examples:
+        - name: alertaCriadoSintetico
+          summary: Alerta criado a partir de avaliação sintética.
+          payload:
+            sequencia: 42
+            tipo: alerta-criado
+            tenantId: SYNTH-TENANT-G7
+            ocorridoEm: "2026-08-16T12:00:00.000Z"
+            dados:
+              id: SYNTH-ALERTA-0001
+              estado: nao-atribuido
+              versao: 1
+
+    Pulsacao:
+      name: pulsacao
+      title: Pulsação (plano de controle)
+      summary: >-
+        Prova periódica de que a conexão está viva. A AUSÊNCIA de pulsação
+        dentro do intervalo anunciado é o sinal de que a conexão morreu —
+        o cliente deve degradar a tela visivelmente, jamais mantê-la com
+        aparência de atual (HAZ-0025; ADR-0011 P6).
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/MensagemPulsacao"
+      x-sse:
+        campo_event: pulsacao
+      examples:
+        - name: pulsacaoEmDia
+          payload:
+            emitidoEm: "2026-08-16T12:00:05.000Z"
+            estado: online
+            cursor: 42
+            pendentes: 0
+
+    EstadoConexao:
+      name: estadoConexao
+      title: Estado de conexão (plano de controle)
+      summary: >-
+        Estado de conexão como parte do CONTRATO, não como cortesia do
+        cliente (ADR-0011 P6).
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/MensagemEstadoConexao"
+      x-sse:
+        campo_event: estado-conexao
+      examples:
+        - name: catchUpConcluido
+          payload:
+            estado: online
+            descricao: Conexão aberta e em dia com o cursor do servidor.
+            emitidoEm: "2026-08-16T12:00:00.500Z"
+            cursor: 42
+
+    InstrucaoReconciliacao:
+      name: instrucaoReconciliacao
+      title: Instrução de reconciliação (plano de controle)
+      summary: >-
+        Precede SEMPRE o encerramento pelo servidor. Torna a lacuna
+        EXPLÍCITA e diz ao cliente o que fazer antes de voltar a confiar na
+        tela (ADR-0011 P4/P5; prompt §20 — incerteza de entrega jamais
+        oculta).
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/MensagemInstrucaoReconciliacao"
+      x-sse:
+        campo_event: instrucao-reconciliacao
+      examples:
+        - name: filaExcedida
+          summary: Cliente lento — shed honesto por desconexão explícita (P5).
+          payload:
+            motivo: fila-excedida
+            descricao: >-
+              A fila desta conexão excedeu o limite declarado. A conexão foi
+              encerrada de propósito — nenhum evento foi descartado em
+              silêncio; reconcilie por polling.
+            acao: reconciliar-por-polling
+            caminhoReconciliacao: /v1/projecoes/grade-leitos
+            cursor: 42
+            cursorMinimoRetomavel: 0
+            reconexao:
+              esperaMinimaMs: 1000
+              esperaMaximaMs: 30000
+              jitter: 0.2
+            emitidoEm: "2026-08-16T12:00:10.000Z"
+        - name: cursorIrretomavel
+          summary: Lacuna explícita — jamais silenciosamente pulada (P4).
+          payload:
+            motivo: cursor-irretomavel
+            descricao: >-
+              O cursor informado é anterior ao ponto mais antigo que o
+              servidor consegue retomar. Há uma lacuna: reconcilie por
+              polling antes de confiar na tela.
+            acao: reconciliar-por-polling
+            caminhoReconciliacao: /v1/projecoes/grade-leitos
+            cursor: 3
+            cursorMinimoRetomavel: 100
+            reconexao:
+              esperaMinimaMs: 1000
+              esperaMaximaMs: 30000
+              jitter: 0.2
+            emitidoEm: "2026-08-16T12:00:10.000Z"
+
+  schemas:
+    TipoEventoFluxo:
+      type: string
+      description: >-
+        Enum FECHADO dos tipos de evento entregues. Espelha exatamente
+        `TIPOS_EVENTO_FLUXO` em `packages/contratos/src/asyncapi.ts` e a
+        imagem do mapa `OUTBOX_TO_CONTRACT_EVENT` de `apps/api/src/db.ts`.
+        `scripts/check_contratos.mjs` FALHA se este enum divergir do
+        contrato TypeScript ou do catálogo em prosa.
+      enum:
+        - observacoes-ingeridas
+        - observacao-clinica-registrada
+        - avaliacao-computada
+        - alerta-criado
+        - alerta-atualizado
+
+    EstadoConexaoEnum:
+      type: string
+      description: >-
+        Estados de conexão de ADR-0011 P6, nas palavras exatas da cláusula
+        aceita (que os cita do prompt §11). Os TOKENS DE FIO permanecem em
+        inglês porque renomeá-los criaria taxonomia divergente da ADR; toda
+        descrição e rótulo derivado é em pt-BR.
+      enum:
+        - online
+        - degraded
+        - offline
+        - reconnecting
+        - replaying
+        - reconciled
+
+    MotivoEncerramento:
+      type: string
+      description: >-
+        Motivo pelo qual o servidor encerrou a assinatura. Cada valor
+        corresponde a uma cláusula aceita — nenhum é invenção deste
+        contrato.
+      enum:
+        - cursor-irretomavel
+        - fila-excedida
+        - autorizacao-revogada
+        - sessao-expirada
+        - contexto-alterado
+        - escopo-divergente
+        - desligamento-servidor
+
+    AcaoReconciliacao:
+      type: string
+      description: >-
+        `reconciliar-por-polling` é o caminho de verdade de recuperação
+        (ADR-0011 P8).
+      enum:
+        - reconciliar-por-polling
+        - reconectar-do-cursor
+
+    EventoFluxo:
+      type: object
+      description: >-
+        Envelope entregue no fio. É EXATAMENTE o que a persistência produz
+        hoje — ver `x-pendencias` para os campos de ADR-0010 B8 ainda
+        ausentes (idempotência, versão de esquema, tempos separados,
+        correlação/causalidade). Nada aqui é inventado.
+      additionalProperties: false
+      required: [sequencia, tipo, tenantId, ocorridoEm, dados]
+      properties:
+        sequencia:
+          type: integer
+          minimum: 0
+          description: >-
+            Cursor durável de retomada (ADR-0011 P4), monotônico e
+            estritamente crescente dentro do tenant. Vai também no `id:` do
+            quadro SSE.
+        tipo:
+          $ref: "#/components/schemas/TipoEventoFluxo"
+        tenantId:
+          type: string
+          description: >-
+            Tenant do evento. O consumidor REESCOPA a partir do envelope e
+            jamais confia no escopo do produtor (ADR-0016 §4.1). Divergência
+            frente à chave da assinatura encerra a conexão com motivo
+            `escopo-divergente`.
+          examples: [SYNTH-TENANT-G7]
+        ocorridoEm:
+          type: string
+          format: date-time
+          description: >-
+            Instante de gravação da linha de outbox. NÃO distingue tempo do
+            fato clínico × emissão × publicação — o gap de B8 está
+            declarado, não mascarado (catálogo §6).
+        dados:
+          description: >-
+            Corpo do evento. NÃO é tipado por variante de `tipo` nesta
+            fatia — limitação OBSERVADA e declarada (catálogo §5.3), não
+            uma omissão deste documento.
+
+    MensagemPulsacao:
+      type: object
+      additionalProperties: false
+      required: [emitidoEm, estado, cursor, pendentes]
+      properties:
+        emitidoEm:
+          type: string
+          format: date-time
+        estado:
+          $ref: "#/components/schemas/EstadoConexaoEnum"
+        cursor:
+          type: integer
+          minimum: 0
+          description: Último cursor efetivamente entregue nesta conexão.
+        pendentes:
+          type: integer
+          minimum: 0
+          description: >-
+            Eventos aguardando escrita nesta conexão. Torna o backlog da
+            conexão observável em vez de invisível (ADR-0011 P5/P10).
+
+    MensagemEstadoConexao:
+      type: object
+      additionalProperties: false
+      required: [estado, descricao, emitidoEm, cursor]
+      properties:
+        estado:
+          $ref: "#/components/schemas/EstadoConexaoEnum"
+        descricao:
+          type: string
+          description: Descrição pt-BR pronta para exibição.
+        emitidoEm:
+          type: string
+          format: date-time
+        cursor:
+          type: integer
+          minimum: 0
+
+    PoliticaReconexao:
+      type: object
+      additionalProperties: false
+      required: [esperaMinimaMs, esperaMaximaMs, jitter]
+      description: >-
+        Backoff/jitter DIRIGIDOS PELO SERVIDOR (ADR-0011 P5). Os números
+        são configuração do servidor e permanecem `VALIDATION REQUIRED` —
+        este contrato não os decide, apenas os transporta.
+      properties:
+        esperaMinimaMs:
+          type: integer
+          minimum: 0
+        esperaMaximaMs:
+          type: integer
+          minimum: 0
+        jitter:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    MensagemInstrucaoReconciliacao:
+      type: object
+      additionalProperties: false
+      required:
+        - motivo
+        - descricao
+        - acao
+        - caminhoReconciliacao
+        - cursor
+        - cursorMinimoRetomavel
+        - reconexao
+        - emitidoEm
+      properties:
+        motivo:
+          $ref: "#/components/schemas/MotivoEncerramento"
+        descricao:
+          type: string
+          description: >-
+            Descrição pt-BR pronta para exibição. NUNCA contém credencial,
+            ticket, tenant de outro escopo nem identificador de sujeito.
+        acao:
+          $ref: "#/components/schemas/AcaoReconciliacao"
+        caminhoReconciliacao:
+          type: string
+          description: >-
+            Caminho relativo da projeção autoritativa a consultar
+            (ADR-0011 P8). Sem credencial, sem identificador de sujeito.
+          examples: [/v1/projecoes/grade-leitos]
+        cursor:
+          type: integer
+          minimum: 0
+        cursorMinimoRetomavel:
+          type: [integer, "null"]
+          minimum: 0
+          description: >-
+            Menor cursor que o servidor ainda consegue retomar — "o
+            servidor declara até onde o cursor é retomável" (ADR-0011 P4).
+            `null` quando o motivo não é de retomada.
+        reconexao:
+          $ref: "#/components/schemas/PoliticaReconexao"
+        emitidoEm:
+          type: string
+          format: date-time

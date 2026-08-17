@@ -12,11 +12,22 @@
  * release evidence."
  *
  * Consequência dessa última linha, aplicada a este arquivo: o veredito
- * calculado aqui NÃO é evidência de release. Ele é um sinal operacional. O
- * endpoint `/v1/healthz` que existe hoje em `apps/api/src/routes.ts` faz
- * `select 1` — isto é liveness, não prontidão, e continua sendo liveness até
- * que alguém ligue esta função a ele (integração ainda não feita; ver
- * pendências).
+ * calculado aqui NÃO é evidência de release. Ele é um sinal operacional.
+ *
+ * ESTADO REAL (atualizado em 2026-08-17, ACH-06): esta função PASSOU a ter
+ * consumidor. `apps/api/src/saude/` a liga a `GET /v1/readyz`, superfície
+ * distinta de `/v1/livez` (liveness pura) e de `/v1/startupz`. O
+ * `/v1/healthz` que fazia `select 1` foi preservado e está documentado como
+ * liveness legado, **não utilizável para promoção**. O texto anterior —
+ * "continua sendo liveness até que alguém ligue esta função a ele" — deixou
+ * de ser verdadeiro e fica como registro.
+ *
+ * CONSEQUÊNCIA QUE NÃO DEVE SURPREENDER: no estado atual `/v1/readyz`
+ * responde **503 permanente**, porque o RULE-GCS não tem artefato de bundle e
+ * nenhum alvo de frescor foi validado (Gate G1). Esse é o retrato honesto de
+ * um safety case em M0 com 0 vias clínicas acionáveis — não um defeito a
+ * contornar. Se uma instância `degraded` deve receber tráfego é decisão
+ * humana, parametrizada e fail-closed por padrão.
  *
  * Nenhuma alegação de efetividade clínica é feita por este módulo.
  */

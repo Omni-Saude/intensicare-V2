@@ -13,10 +13,19 @@
  * vivem em famílias de métrica distintas e nenhuma função aqui chama de
  * "alerta" um sinal operacional.
  *
- * ESTADO REAL: nada em `apps/api` chama estas funções ainda. A instrumentação
- * existe e é testada; ela NÃO está ligada ao laço em execução. Isso está
- * declarado como pendência — instrumentação não conectada mede zero, e um
- * gráfico vazio parece um sistema saudável.
+ * ESTADO REAL (atualizado em 2026-08-17, ACH-06/integração): estas funções
+ * PASSARAM a ter consumidor. `apps/api/src/saude/telemetria.ts` as invoca por
+ * hooks de requisição sobre as rotas `/v1/*` e por gravadores tipados, e
+ * `apps/api/src/index.ts` monta a fiação. O texto anterior — "nada em
+ * `apps/api` chama estas funções ainda" — deixou de ser verdadeiro e está
+ * preservado aqui apenas como registro.
+ *
+ * O QUE ISSO NÃO SIGNIFICA. Continuam inexistentes: exportador/coletor real
+ * (`ADR-0019`), propagação multi-instância do kill switch, agendador real de
+ * sondas, SLO medido em ambiente real, ensaio de restore, exercício de DR e
+ * treinamento de suporte. Medir não é observar em produção: nenhuma métrica
+ * aqui atravessa o limite do processo. E nenhum alvo numérico foi decidido —
+ * todo limiar segue `VALIDATION REQUIRED`.
  */
 import type { WorkItemState } from "@intensicare/dominio";
 import {
