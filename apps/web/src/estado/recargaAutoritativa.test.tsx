@@ -32,7 +32,11 @@ import { GradeLeitos } from "../components/GradeLeitos.js";
 import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
 import { criarRelogioDeTeste, type RelogioDeTeste } from "../teste/relogioDeTeste.js";
 import { CICLOS_PARA_DECLARAR_PERDA, calcularIdadeVisao } from "./idadeVisao.js";
-import { INTERVALO_RECARGA_PADRAO_MS, INTERVALO_TIQUE_IDADE_MS } from "./recursoRemoto.js";
+import {
+  INTERVALO_RECARGA_PADRAO_MS,
+  INTERVALO_TIQUE_IDADE_MS,
+  TEMPO_LIMITE_PADRAO_MS,
+} from "./recursoRemoto.js";
 
 // ---------------------------------------------------------------------------
 // Dublês
@@ -86,6 +90,23 @@ interface DubleDeGrade {
   readonly chamadas: () => number;
 }
 
+interface OpcoesDuble {
+  /**
+   * Quando `true`, uma chamada PENDURADA rejeita assim que o sinal aborta —
+   * que é o que todo cliente HTTP real faz (`fetch` rejeita com `AbortError`;
+   * `criarLeitorDeProntidaoHttp` PROPAGA o aborto de propósito).
+   *
+   * POR QUE ISTO PRECISA SER OPCIONAL E EXPLÍCITO. O padrão (`false`) devolve
+   * uma Promise que NUNCA assenta; com ela, o `try/catch/finally` de
+   * `executar` jamais roda, e todo o caminho de encerramento do ciclo fica
+   * invisível ao teste. Foi essa cegueira que deixou passar o defeito coberto
+   * pelo ACEITE L1-4 abaixo (revisão adversarial do PR #8): o dublê mudo
+   * escondia o `finally`, e o `finally` era exatamente onde a releitura
+   * periódica morria depois de um tempo esgotado.
+   */
+  readonly rejeitarNoAborto?: boolean;
+}
+
 /**
  * Cliente cuja resposta é decidida por chamada. `responder(n)` recebe o número
  * da chamada (1-based) e devolve a resposta, ou `null` para "esta chamada NÃO
@@ -93,17 +114,30 @@ interface DubleDeGrade {
  */
 function dubleDeGrade(
   responder: (n: number) => RespostaApi<ItemGradeLeito[]> | null,
+  opcoesDuble: OpcoesDuble = {},
 ): DubleDeGrade {
   const sinais: AbortSignal[] = [];
   let n = 0;
 
   const listar = (opcoes?: OpcoesChamada): Promise<RespostaApi<ItemGradeLeito[]>> => {
     n += 1;
-    if (opcoes?.sinal) sinais.push(opcoes.sinal);
+    const sinal = opcoes?.sinal;
+    if (sinal) sinais.push(sinal);
     const resposta = responder(n);
     if (resposta === null) {
-      return new Promise<RespostaApi<ItemGradeLeito[]>>(() => {
-        /* nunca resolve */
+      return new Promise<RespostaApi<ItemGradeLeito[]>>((_resolver, rejeitar) => {
+        if (opcoesDuble.rejeitarNoAborto !== true || sinal === undefined) return;
+        if (sinal.aborted) {
+          rejeitar(sinal.reason);
+          return;
+        }
+        sinal.addEventListener(
+          "abort",
+          () => {
+            rejeitar(sinal.reason);
+          },
+          { once: true },
+        );
       });
     }
     return Promise.resolve(resposta);
@@ -553,6 +587,175 @@ describe("ACEITE L1-3 — falha de recarga AUTOMÁTICA preserva e rotula o conte
       expect(screen.getAllByText(/SYNTH-LEITO-02/).length).toBeGreaterThan(0);
     });
     expect(screen.queryByTestId("rotulo-frescor-visao")).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ACEITE 4 — TEMPO ESGOTADO não pode matar o ciclo de releitura
+// ---------------------------------------------------------------------------
+
+/**
+ * DEFEITO REPRODUZIDO ANTES DA CORREÇÃO (revisão adversarial do PR #8, P1).
+ *
+ * O caminho de TEMPO ESGOTADO é diferente do caminho de resposta de erro
+ * RESOLVIDA — e só o segundo estava coberto (ACEITE L1-3). No primeiro, quando
+ * o `finally` de `executar` rodava, `controlador.signal.aborted` já era `true`
+ * (o próprio temporizador havia abortado), e as duas linhas do `finally`
+ * estavam guardadas por essa condição:
+ *
+ *   - `if (!controlador.signal.aborted) setBuscaEmCurso(false)` — não rodava,
+ *     e "Atualizando…" ficava na tela para sempre, SEM requisição em voo;
+ *   - `agendarProximaRecarga()` — retornava cedo em
+ *     `if (controlador.signal.aborted) return`, e nenhum ciclo seguinte era
+ *     agendado: a releitura periódica morria em definitivo depois de UM único
+ *     tempo esgotado.
+ *
+ * O resultado é a mesma família de HAZ-0025 que LAC-L1 existe para fechar — uma
+ * tela que parece viva ("Atualizando…") sobre um polling morto é pior que uma
+ * tela reconhecidamente parada. A correção distingue aborto por DESMONTAGEM
+ * (não reagenda) de aborto por TEMPO ESGOTADO (reagenda e libera o indicador).
+ *
+ * Este teste só enxerga o defeito porque o dublê HONRA o aborto
+ * (`rejeitarNoAborto`): com uma Promise que nunca assenta, o `finally` não roda
+ * e o caminho inteiro fica invisível.
+ */
+describe("ACEITE L1-4 — um tempo esgotado NÃO mata a releitura periódica", () => {
+  it("depois do tempo esgotado o ciclo seguinte ocorre e 'Atualizando…' desaparece", async () => {
+    const relogio = criarRelogioDeTeste();
+    // 1ª leitura OK; a 2ª PENDURA (e rejeita no aborto, como o `fetch` real);
+    // da 3ª em diante o servidor volta — se ainda houver ciclo para perguntar.
+    const duble = dubleDeGrade((n) => (n === 2 ? null : OK([LEITO])), {
+      rejeitarNoAborto: true,
+    });
+
+    render(
+      <GradeLeitos
+        cliente={duble.cliente}
+        aoSelecionarLeito={() => {}}
+        relogio={relogio}
+        intervaloRecargaMs={INTERVALO}
+      />,
+    );
+    await waitFor(() => {
+      expect(duble.chamadas()).toBe(1);
+    });
+
+    await avancar(relogio, INTERVALO);
+    await waitFor(() => {
+      expect(duble.chamadas()).toBe(2);
+    });
+    // Há requisição em voo AGORA — o indicador é legítimo neste instante.
+    await waitFor(() => {
+      expect(screen.getByTestId("idade-visao-em-curso")).toBeTruthy();
+    });
+
+    // O tempo limite estoura: o aborto é REAL e observável no próprio sinal.
+    await avancar(relogio, TEMPO_LIMITE_PADRAO_MS);
+    await waitFor(() => {
+      expect(screen.getByTestId("rotulo-frescor-visao").getAttribute("data-frescor-visao")).toBe(
+        "desatualizado_apos_falha",
+      );
+    });
+    expect(duble.sinais[1]?.aborted).toBe(true);
+    expect((duble.sinais[1]?.reason as { causaAborto?: string })?.causaAborto).toBe(
+      "tempo_esgotado",
+    );
+
+    // (a) Nenhuma requisição em voo ⇒ nenhum "Atualizando…". Um indicador de
+    //     atividade sobre coisa nenhuma é a mentira mais barata desta tela.
+    expect(
+      screen.queryByTestId("idade-visao-em-curso"),
+      "'Atualizando…' permaneceu sem nenhuma requisição em voo",
+    ).toBeNull();
+
+    // (b) O ciclo seguinte CONTINUA sendo agendado: um servidor que volta
+    //     sozinho não pode exigir clique para a tela voltar à vida.
+    await avancar(relogio, INTERVALO);
+    await waitFor(() => {
+      expect(duble.chamadas(), "a releitura periódica morreu após UM único tempo esgotado").toBe(3);
+    });
+    // E a recuperação chega à tela: o rótulo de desatualizado some sozinho.
+    await waitFor(() => {
+      expect(screen.queryByTestId("rotulo-frescor-visao")).toBeNull();
+    });
+  });
+
+  it("tempo esgotado repetido segue reagendando — o ciclo não decai a uma tentativa só", async () => {
+    const relogio = criarRelogioDeTeste();
+    // 1ª OK; TODAS as seguintes penduram e são abortadas por tempo esgotado.
+    const duble = dubleDeGrade((n) => (n === 1 ? OK([LEITO]) : null), {
+      rejeitarNoAborto: true,
+    });
+
+    render(
+      <GradeLeitos
+        cliente={duble.cliente}
+        aoSelecionarLeito={() => {}}
+        relogio={relogio}
+        intervaloRecargaMs={INTERVALO}
+      />,
+    );
+    await waitFor(() => {
+      expect(duble.chamadas()).toBe(1);
+    });
+
+    // Três ciclos completos (intervalo + tempo limite), um de cada vez: o
+    // relógio precisa deixar as microtarefas correrem entre eles, porque o
+    // reagendamento acontece no `finally`, depois da rejeição.
+    for (const esperado of [2, 3, 4]) {
+      await avancar(relogio, INTERVALO);
+      await waitFor(() => {
+        expect(duble.chamadas()).toBe(esperado);
+      });
+      await avancar(relogio, TEMPO_LIMITE_PADRAO_MS);
+      await waitFor(() => {
+        expect(screen.getByTestId("rotulo-frescor-visao")).toBeTruthy();
+      });
+    }
+
+    // Sem sobreposição: cada ciclo produziu UMA chamada, nunca uma rajada.
+    expect(duble.chamadas()).toBe(4);
+    // E a tela declara a perda de ciclos em vez de fingir atividade.
+    expect(screen.getByTestId("rotulo-idade-visao").getAttribute("data-idade-visao")).toBe(
+      "ciclo_perdido",
+    );
+    expect(screen.queryByTestId("idade-visao-em-curso")).toBeNull();
+  });
+
+  it("desmontar durante o tempo esgotado NÃO ressuscita o ciclo (nenhum temporizador órfão)", async () => {
+    const relogio = criarRelogioDeTeste();
+    const duble = dubleDeGrade((n) => (n === 1 ? OK([LEITO]) : null), {
+      rejeitarNoAborto: true,
+    });
+
+    const { unmount } = render(
+      <GradeLeitos
+        cliente={duble.cliente}
+        aoSelecionarLeito={() => {}}
+        relogio={relogio}
+        intervaloRecargaMs={INTERVALO}
+      />,
+    );
+    await waitFor(() => {
+      expect(duble.chamadas()).toBe(1);
+    });
+    await avancar(relogio, INTERVALO);
+    await waitFor(() => {
+      expect(duble.chamadas()).toBe(2);
+    });
+
+    // Desmonta ANTES de o tempo limite estourar. A limpeza aborta com razão
+    // "desmontagem"; a requisição rejeita e o `finally` roda com o componente
+    // já fora — e não pode agendar nada.
+    unmount();
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(relogio.pendentes, "temporizador sobreviveu à desmontagem").toBe(0);
+    await avancar(relogio, INTERVALO * 5);
+    expect(duble.chamadas()).toBe(2);
   });
 });
 

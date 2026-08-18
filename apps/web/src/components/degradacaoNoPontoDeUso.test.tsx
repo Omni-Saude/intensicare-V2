@@ -22,7 +22,8 @@ import type { LeitorDeProntidao, LeituraDeProntidao } from "../api/prontidao.js"
 import { criarLeitorDeProntidaoHttp, interpretarProntidao } from "../api/prontidao.js";
 import type { ClienteApiIntensiCare, RespostaApi } from "../api/tipos.js";
 import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
-import { criarRelogioDeTeste } from "../teste/relogioDeTeste.js";
+import { INTERVALO_RECARGA_PADRAO_MS, TEMPO_LIMITE_PADRAO_MS } from "../estado/recursoRemoto.js";
+import { criarRelogioDeTeste, type RelogioDeTeste } from "../teste/relogioDeTeste.js";
 import { DetalhePaciente } from "./DetalhePaciente.js";
 import { GradeLeitos } from "./GradeLeitos.js";
 
@@ -88,7 +89,56 @@ function leitor503(): LeitorDeProntidao {
 }
 
 function propsDeTempo() {
-  return { relogio: criarRelogioDeTeste(), intervaloRecargaMs: 30_000 };
+  return { relogio: criarRelogioDeTeste(), intervaloRecargaMs: INTERVALO_RECARGA_PADRAO_MS };
+}
+
+/**
+ * Leitor de prontidão decidido por chamada. `responder(n)` devolve a leitura da
+ * n-ésima chamada (1-based), ou `null` para "esta leitura PENDURA" — e uma
+ * leitura pendurada REJEITA quando o sinal aborta, exatamente como
+ * `criarLeitorDeProntidaoHttp` faz: ele converte falha de rede em
+ * `inalcancavel`, mas PROPAGA o aborto de propósito (é assim que o hook
+ * distingue "cancelei" de "falhou", invariante I5 de `recursoRemoto.ts`).
+ */
+function leitorPorChamada(responder: (n: number) => LeituraDeProntidao | null): {
+  readonly leitor: LeitorDeProntidao;
+  readonly leituras: () => number;
+} {
+  let n = 0;
+  return {
+    leituras: () => n,
+    leitor: {
+      obter: (sinal?: AbortSignal): Promise<LeituraDeProntidao> => {
+        n += 1;
+        const leitura = responder(n);
+        if (leitura !== null) return Promise.resolve(leitura);
+        return new Promise<LeituraDeProntidao>((_resolver, rejeitar) => {
+          if (sinal === undefined) return;
+          if (sinal.aborted) {
+            rejeitar(sinal.reason);
+            return;
+          }
+          sinal.addEventListener(
+            "abort",
+            () => {
+              rejeitar(sinal.reason);
+            },
+            { once: true },
+          );
+        });
+      },
+    },
+  };
+}
+
+const PRONTO: LeituraDeProntidao = interpretarProntidao(200, { veredito: "ready", razoes: [] });
+
+/** Avança o relógio injetado dentro de `act` e deixa as microtarefas correrem. */
+async function avancar(relogio: RelogioDeTeste, ms: number): Promise<void> {
+  await act(async () => {
+    relogio.avancar(ms);
+    await Promise.resolve();
+  });
 }
 
 describe("ACEITE L2-4 — readyz em 503 aparece na tela clínica com o CÓDIGO da razão", () => {
@@ -270,6 +320,144 @@ describe("ACEITE L2-4 — readyz em 503 aparece na tela clínica com o CÓDIGO d
     await screen.findAllByText(/SYNTH-LEITO-01/);
     expect(screen.queryByTestId("aviso-prontidao")).toBeNull();
     expect(screen.queryByTestId("indicador-conectividade")).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ACEITE L2-5 — uma prontidão que já foi lida com SUCESSO e depois morre
+// ---------------------------------------------------------------------------
+
+/**
+ * DEFEITO REPRODUZIDO ANTES DA CORREÇÃO (revisão adversarial do PR #8, P1).
+ *
+ * Todo caso acima observa a prontidão a partir de uma tela que NUNCA teve
+ * leitura boa. O caminho descoberto era o inverso, e é o que acontece de
+ * verdade numa jornada de plantão: `/v1/readyz` responde `ready` uma vez, o
+ * clínico deixa a aba aberta, e a superfície de prontidão PARA de responder.
+ *
+ * `useProntidao` fazia `recurso.dados ?? (ehEstadoDeFalha(...) ? inalcancavel :
+ * null)`. O fail-closed estava DEPOIS do `??`, logo só disparava quando não
+ * havia leitura anterior. Com um `ready` velho em `recurso.dados`, uma falha ou
+ * tempo esgotado posterior mantinha esse `ready` como se fosse o estado
+ * corrente: `prontidaoObrigaDegradacao` devolvia `false`, nenhum aviso era
+ * renderizado e o indicador de conectividade continuava calmo — a tela
+ * "appearing healthy" que `SAF-0025` proíbe literalmente, com a agravante de
+ * que a leitura de prontidão estava MORTA.
+ *
+ * É também o anti-padrão 14 do contrato comum ("exibir dado stale como atual
+ * após erro") aplicado ao insumo cuja função é justamente denunciar degradação.
+ */
+describe("ACEITE L2-5 — prontidão lida com sucesso e depois morta não conta como atual", () => {
+  it("um `ready` anterior NÃO sobrevive a um tempo esgotado — a tela declara não-lida", async () => {
+    const relogio = criarRelogioDeTeste();
+    // 1ª leitura: `ready`. Da 2ª em diante o servidor pendura.
+    const { leitor, leituras } = leitorPorChamada((n) => (n === 1 ? PRONTO : null));
+
+    render(
+      <GradeLeitos
+        cliente={clienteSaudavel()}
+        aoSelecionarLeito={() => {}}
+        leitorProntidao={leitor}
+        relogio={relogio}
+        intervaloRecargaMs={INTERVALO_RECARGA_PADRAO_MS}
+      />,
+    );
+
+    await screen.findAllByText(/SYNTH-LEITO-01/);
+    await waitFor(() => {
+      expect(leituras()).toBe(1);
+    });
+    // Aqui a calma é LEGÍTIMA: o servidor acabou de declarar `ready`.
+    expect(screen.queryByTestId("aviso-prontidao")).toBeNull();
+    expect(screen.queryByTestId("indicador-conectividade")).toBeNull();
+
+    // Ciclo 2 da prontidão começa e pendura; o tempo limite o aborta.
+    await avancar(relogio, INTERVALO_RECARGA_PADRAO_MS);
+    await waitFor(() => {
+      expect(leituras()).toBe(2);
+    });
+    await avancar(relogio, TEMPO_LIMITE_PADRAO_MS);
+
+    const aviso = await screen.findByTestId("aviso-prontidao");
+    expect(
+      aviso.getAttribute("data-prontidao"),
+      "o `ready` da leitura anterior continuou valendo como estado corrente",
+    ).toBe("nao_lida");
+    expect(aviso.getAttribute("data-origem-prontidao")).toBe("inalcancavel");
+    expect(aviso.textContent ?? "").toMatch(/não foi possível ler a declaração de prontidão/i);
+
+    // E a degradação chega ao ponto de uso, não a um painel de operador.
+    await waitFor(() => {
+      expect(screen.getByTestId("indicador-conectividade").getAttribute("data-conectividade")).toBe(
+        "degradado",
+      );
+    });
+  });
+
+  it("a prontidão volta sozinha quando o servidor volta — o ciclo dela não morre", async () => {
+    const relogio = criarRelogioDeTeste();
+    // `ready` → pendura (aborta por tempo esgotado) → `ready` de novo.
+    const { leitor, leituras } = leitorPorChamada((n) => (n === 2 ? null : PRONTO));
+
+    render(
+      <GradeLeitos
+        cliente={clienteSaudavel()}
+        aoSelecionarLeito={() => {}}
+        leitorProntidao={leitor}
+        relogio={relogio}
+        intervaloRecargaMs={INTERVALO_RECARGA_PADRAO_MS}
+      />,
+    );
+    await screen.findAllByText(/SYNTH-LEITO-01/);
+    await waitFor(() => {
+      expect(leituras()).toBe(1);
+    });
+
+    await avancar(relogio, INTERVALO_RECARGA_PADRAO_MS);
+    await avancar(relogio, TEMPO_LIMITE_PADRAO_MS);
+    await screen.findByTestId("aviso-prontidao");
+
+    // Sem clique nenhum: o ciclo de prontidão continua e a leitura boa volta.
+    await avancar(relogio, INTERVALO_RECARGA_PADRAO_MS);
+    await waitFor(() => {
+      expect(leituras(), "a releitura de prontidão morreu após um tempo esgotado").toBe(3);
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId("aviso-prontidao")).toBeNull();
+    });
+    expect(screen.queryByTestId("indicador-conectividade")).toBeNull();
+  });
+
+  it("um `degraded` anterior também não sobrevive: a razão velha some junto com a leitura", async () => {
+    const relogio = criarRelogioDeTeste();
+    const degradado = interpretarProntidao(503, CORPO_503);
+    const { leitor } = leitorPorChamada((n) => (n === 1 ? degradado : null));
+
+    render(
+      <GradeLeitos
+        cliente={clienteSaudavel()}
+        aoSelecionarLeito={() => {}}
+        leitorProntidao={leitor}
+        relogio={relogio}
+        intervaloRecargaMs={INTERVALO_RECARGA_PADRAO_MS}
+      />,
+    );
+
+    const primeiro = await screen.findByTestId("aviso-prontidao");
+    expect(primeiro.textContent ?? "").toContain("rule_bundle_unavailable");
+
+    await avancar(relogio, INTERVALO_RECARGA_PADRAO_MS);
+    await avancar(relogio, TEMPO_LIMITE_PADRAO_MS);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("aviso-prontidao").getAttribute("data-prontidao")).toBe("nao_lida");
+    });
+    // As razões do servidor eram fatos da leitura ANTERIOR. Mantê-las ao lado
+    // de "não consegui ler" faria a tela afirmar duas coisas incompatíveis
+    // sobre o mesmo instante (ADR-0021 F3).
+    expect(screen.getByTestId("aviso-prontidao").textContent ?? "").not.toContain(
+      "rule_bundle_unavailable",
+    );
   });
 });
 

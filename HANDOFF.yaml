@@ -447,9 +447,12 @@ analise_de_lacunas_frontend_2026_08_18:
       tradução desloca o vocabulário (contrato `alerta`/RCP medium vira `alto`).
     L4: "Sem roteamento: sem URL por leito, sem voltar, sem skip-link, sem title dinâmico."
     L5: >-
-      A matriz WCAG enumera 15 dos 56 critérios A+AA. O recorte passou a ser
-      DECLARADO no módulo, na declaração e em teste; a cobertura NÃO foi
-      ampliada. 2.4.1/2.4.2 falham hoje, por consequência de L4.
+      A matriz WCAG enumera 14 dos 55 critérios A+AA (mais 1 AAA como alvo). O
+      recorte passou a ser DECLARADO no módulo, na declaração e em teste; a
+      cobertura NÃO foi ampliada. 2.4.1/2.4.2 falham hoje, por consequência de
+      L4. [CORRIGIDO em vigilancia_despacho_contrato_2026_08_18: o valor
+      original desta entrada (15/56) estava errado — 56 contava um critério
+      removido na WCAG 2.2 — e foi corrigido para 14/55.]
     L6: "1 de 7 comandos de WorkItem tem endpoint — a lacuna é de backend."
     L7: "Sem design system/tokens; badge-tom sem variante escura; i18n pela metade; ISO cru na tela."
     L8: "apps/web/src/domain/news2.ts é uma 2ª fonte de semântica clínica — deve morrer com o mock."
@@ -463,6 +466,97 @@ analise_de_lacunas_frontend_2026_08_18:
     Oito defeitos foram encontrados numa árvore que já passara por seis rodadas
     adversariais e por um gate verde. A taxa de achado não convergiu antes e não
     há razão para supor que convergiu agora.
+
+vigilancia_despacho_contrato_2026_08_18:
+  aviso: >-
+    ESTADO VIVO. Commit b4634d7 (branch codex/lacunas-frontend-a11y, PR #8,
+    ainda NÃO mesclado a esta data) alegou três fechos: recarga autoritativa
+    do board (L1), despacho observável na projeção HTTP (L2) e gate de deriva
+    REST (L3). Uma revisão adversarial independente (ic-revisor-adversarial,
+    sem ter escrito nenhuma linha do diff) REFUTOU partes centrais das três
+    alegações, com reprodução por execução — não por leitura de código. Duas
+    das quatro foram corrigidas NESTA MESMA branch, antes de qualquer merge;
+    duas seguem ABERTAS.
+  pr: "https://github.com/Omni-Saude/intensicare-V2/pull/8"
+  veredito_da_revisao: >-
+    REFUTADO no agregado. Tabela completa (5 alegações, 14 achados numerados
+    P1-P3) no corpo da revisão, não reproduzida aqui; resumo abaixo é o que
+    muda a decisão de merge.
+  achados_p1_corrigidos_nesta_branch:
+    ACH_REV8_1: >-
+      Após um tempo esgotado (não uma rejeição simples), a recarga autoritativa
+      parava para sempre: nenhum novo ciclo era agendado e "Atualizando…"
+      ficava preso indefinidamente — o mesmo modo de falha que L1 alegava ter
+      fechado. Corrigido em apps/web/src/estado/recursoRemoto.ts (distinção
+      entre "efeito encerrado" e "tentativa abortada"; AbortController
+      permanece a fonte de verdade do cancelamento real, I5 intacta). Teste
+      vermelho-antes/verde-depois em recargaAutoritativa.test.tsx.
+    ACH_REV8_2: >-
+      Um /v1/readyz que trava depois de UMA leitura de sucesso deixava a tela
+      clínica com aparência saudável indefinidamente — violação direta de
+      QAS-0023/SAF-0025, a alegação central de L2. Corrigido em
+      apps/web/src/estado/prontidao.ts (leitura de prontidão em estado de
+      falha vira `inalcancavel` mesmo havendo leitura anterior). Teste
+      vermelho-antes/verde-depois em degradacaoNoPontoDeUso.test.tsx.
+  achados_p1_ainda_abertos:
+    ACH_REV8_3: >-
+      `acionavel: true` é publicável a partir de registro forjado coerente ou
+      de linha de banco adulterada competente — a "recalculação" por
+      `ehAcionavel` (apps/api/src/regras/exposicao.ts) é checagem de
+      COERÊNCIA entre campos do mesmo blob controlado pelo atacante, não de
+      AUTORIDADE contra o rule-bundle assinado. Os 5 vetores testados só
+      forjam incompetentemente (assinatura ausente).
+    ACH_REV8_4: >-
+      `exposicao.ts` não tem nenhum chamador de produção — nem rota, nem
+      serializador, nem campo em `ResultadoAvaliacao` (packages/contratos) ou
+      em openapi.yaml. "Despacho não se esconde mais" é falso: nenhum byte do
+      envelope de despacho atravessa a fronteira HTTP nesta branch. QAS-0023
+      permanece com a mesma contagem de antes de b4634d7.
+    nota: >-
+      NÃO corrigidos nesta rodada por decisão deliberada, não por omissão: os
+      arquivos exigidos (apps/api/src/regras/, apps/api/src/composicao/,
+      packages/contratos/, scripts/check_contratos.mjs) estavam sob edição
+      ativa de OUTRA sessão no momento da revisão (evidência: git status
+      mostrando os mesmos caminhos modificados/não commitados, incluindo um
+      arquivo novo apps/api/src/composicao/despacho-visivel.test.ts cujo nome
+      sugere que aquela sessão já endereça ACH_REV8_4 de forma independente).
+      Escrever ali teria sido exatamente o anti-padrão "dois orquestradores na
+      mesma árvore de trabalho". Retomar quando aquela janela fechar; conferir
+      primeiro se despacho-visivel.test.ts já fecha ACH_REV8_3/4 antes de
+      duplicar trabalho.
+  achados_p2_p3_nao_corrigidos: >-
+    Gate de deriva REST emudece 16 de 160 verificações quando dois arquivos
+    opcionais faltam (sem `else`, exit 0 mesmo assim) — mesmo bloqueio de
+    escrita que ACH_REV8_3/4. Teste-guarda "reescrito" do gate não pega a
+    classe de defeito que alega pegar (reproduzido: reintroduzir o defeito
+    original deixa o guarda verde) — mesmo bloqueio. "Vermelho-antes por
+    mutação em três níveis" (L1) não é reproduzível a partir do repositório —
+    nenhum arnês de mutação existe em apps/web; ou o arnês entra no
+    repositório, ou a alegação deve ser rebaixada para "observado durante o
+    desenvolvimento, não reproduzível".
+  achados_p2_p3_corrigidos_nesta_branch: >-
+    TOTAL_CRITERIOS_WCAG_22_AA estava em 56; o valor correto da WCAG 2.2
+    A+AA é 55 (a REC de 05-out-2023 removeu 4.1.1 Parsing). Corrigido para
+    derivação a partir de enumeração literal dos 55 critérios — nunca mais
+    digitado à mão — em apps/web/src/a11y/matrizAcessibilidade.ts; ver L5
+    corrigida acima. Regex da guarda de honestidade (`/\bconforme\b/i`) tinha
+    furo de fronteira de palavra que deixava passar "Conformidade" — corrigido
+    para `/conform/i`. Teste rotulado "guarda de não-vacuidade" provava
+    ausência, não execução — nome e asserção corrigidos para dizer o que de
+    fato provam.
+  verificacao_apos_correcao: >-
+    apps/web isolado: 20 arquivos, 256 testes verdes (era 247; +9 novos), zero
+    regressão. tsc --noEmit exit 0. biome check nos 6 arquivos alterados: sem
+    apontamento. pnpm verify completo NÃO rodado nesta rodada (árvore
+    compartilhada com outra sessão ativa; risco de saturação já medido em
+    ocasiões anteriores). E2E de navegador NÃO reexecutado (porta 3000 ocupada
+    por processo da outra sessão durante a revisão original).
+  nada_foi_declarado: >-
+    Nenhum gate aprovado, nenhum MG-* satisfeito, nenhum hazard fechado.
+    Estado factual duro INALTERADO: 0 vias acionáveis, 47/47 inelegíveis,
+    safety case M0, nenhum dado real. PR #8 NÃO deve ser mesclado enquanto
+    ACH_REV8_3 e ACH_REV8_4 continuarem abertos — ambos tocam a superfície que
+    a própria branch alega ter corrigido (despacho observável, QAS-0023).
 
 consolidacao_final_2026_08_17:
   aviso: >-
