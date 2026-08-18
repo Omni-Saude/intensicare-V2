@@ -20,7 +20,7 @@
     "check:boundaries": "node scripts/check_module_boundaries.mjs",
     "check:docs": "python3 scripts/check_doc_conventions.py",
     "check:forbidden": "python3 scripts/check_forbidden_content.py",
-    "check:contratos": "node scripts/check_contratos.mjs",
+    "check:contratos": "node scripts/check_contratos.mjs && node scripts/check_contratos.mjs autoteste",
     "verify": "pnpm build && pnpm typecheck && pnpm lint && pnpm check:boundaries && pnpm test && pnpm check:generated && pnpm check:contratos && pnpm check:docs && pnpm check:forbidden",
     "check:generated": "node scripts/check_generated_files.mjs",
     "test:fronteira": "IC_FRONTEIRA_PG=obrigatoria pnpm --filter @intensicare/persistencia test:fronteira",

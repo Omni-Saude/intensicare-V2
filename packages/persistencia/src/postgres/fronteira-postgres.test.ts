@@ -42,14 +42,17 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { withTenantTransaction } from "../session.js";
 import { AdaptadorPostgres, type ConfiguracaoPostgres } from "./pool.js";
 import { ErroIdentidadeInsegura, ErroTenantAusente, type ExecutorTenant } from "./porta.js";
 import { ConexaoPostgres, ErroPostgres, opcoesDaUrl, urlCom } from "./protocolo.js";
 import {
   aplicarMigracao,
   type BancoProvisionado,
+  instalarFechoDeRuntime,
   nomeDeBancoDeVerificacao,
   PAPEL_APLICACAO,
+  PAPEL_GUARDIAO_DO_SELO,
   PAPEL_MIGRADOR,
   provisionarBanco,
 } from "./provisionamento.js";
@@ -445,6 +448,30 @@ function exigirRecusaPorPrivilegio(recusas: readonly RecusaObservada[], esperada
     "recusa que NÃO foi por privilégio insuficiente (42501): o comando falhou por outro motivo " +
       "(objeto inexistente, sintaxe, tipo) e o controle de privilégio NÃO foi exercido",
   ).toEqual([]);
+}
+
+/**
+ * Provisiona uma base de ATAQUE: idêntica à de produção, EXCETO pelo fecho de
+ * runtime da `0006_ancora_isolada.sql`, que fica de fora.
+ *
+ * POR QUE DE FORA, E POR QUE ISSO NÃO É AFROUXAR NADA
+ * --------------------------------------------------
+ * Cada uma destas bases existe para provar que uma camada ANTERIOR tem dentes:
+ * a auditoria da migração (`0003`/`0004`/`0005`) e a recusa de identidade no
+ * boot (`AdaptadorPostgres.abrir`). Para prová-lo é preciso CRIAR o objeto
+ * malicioso — view sobre o selo, função SECURITY DEFINER de terceiro, ancestral
+ * sem política. Com o fecho de runtime instalado, o banco recusa o próprio
+ * `CREATE`/`GRANT`, o objeto nunca existe, e as asserções sobre as camadas
+ * anteriores passariam POR VACUIDADE — o mesmo padrão de asserção vazia que
+ * este repositório já corrigiu duas vezes.
+ *
+ * O fecho de runtime é exercitado, com ataque próprio, no bloco `(h)`. A base
+ * principal da suíte (a do `beforeAll`) É provisionada COM ele.
+ */
+function provisionarBaseDeAtaque(
+  opcoes: Parameters<typeof provisionarBanco>[0],
+): ReturnType<typeof provisionarBanco> {
+  return provisionarBanco({ ...opcoes, fechoDeRuntime: false });
 }
 
 // ---------------------------------------------------------------------------
@@ -1479,7 +1506,7 @@ function registrarSuite(urlSuperusuario: string): void {
 
     describe("(g) migrações em instalação limpa e em atualização", () => {
       it(
-        "instalação limpa: as cinco migrações aplicadas pelo papel migrador deixam o invariante de pé",
+        "instalação limpa: as seis migrações aplicadas pelo papel migrador deixam o invariante de pé",
         async () => {
           expect(banco.migracoesAplicadas).toEqual([
             "0001_init.sql",
@@ -1487,6 +1514,10 @@ function registrarSuite(urlSuperusuario: string): void {
             "0003_fronteira_papeis.sql",
             "0004_escopo_selado.sql",
             "0005_fecho_de_privilegio.sql",
+            // A `0006` entra na cadeia do migrador como no-op com `notice` (ela
+            // precisa de CREATE ROLE e CREATE EVENT TRIGGER, que ele não tem);
+            // quem faz o trabalho é o passe de superusuário do provisionamento.
+            "0006_ancora_isolada.sql",
           ]);
           const papel = await porta.comTenant(TENANT_A, (tx) =>
             tx.query<{
@@ -1531,7 +1562,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // cenário anterior criava o banco com dono `intensicare_migrador`,
           // caindo no lado sortudo. Este cenário usa `donoDoBanco:
           // "superusuario"`, que é o estado legado REAL.
-          const legado = await provisionarBanco({
+          const legado = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_legado"),
             ateMigracao: "0002_g7_integration.sql",
@@ -1633,7 +1664,7 @@ function registrarSuite(urlSuperusuario: string): void {
       it(
         "a 0003 RECUSA concluir se alguma tabela do esquema ficar sem isolamento (fail-closed)",
         async () => {
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_falha"),
             recriarBanco: true,
@@ -1665,7 +1696,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // sobre tabela de tenant não suporta política de RLS, é invisível à
           // auditoria, e seu dono era invisível ao contador de papéis — e as
           // duas migrações concluíam exit 0 sobre esse banco.
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_relkind"),
             recriarBanco: true,
@@ -1726,7 +1757,7 @@ function registrarSuite(urlSuperusuario: string): void {
       it(
         "ACHADO-05 — um papel que possui APENAS uma matview também conta como dono alcançável",
         async () => {
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_dono_mv"),
             recriarBanco: true,
@@ -1840,7 +1871,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // nspname='public' — e `intensicare_escopo` está na lista permitida
           // porque o app precisa de USAGE nele para chamar `instalar`. Sobrava
           // um esquema alcançável, permitido e NÃO auditado.
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_mvesc"),
             recriarBanco: true,
@@ -1876,7 +1907,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // privilégio fica sobre a VIEW, invisível às duas funções. Com ela,
           // o app reescrevia `tenant_id` do próprio selo e PIVOTAVA de tenant
           // dentro de uma transação — reabrindo o ACHADO-02.
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_viewselo"),
             recriarBanco: true,
@@ -1920,7 +1951,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // esquema nasce sem RLS, sem FORCE e sem política — e nenhuma das
           // três camadas a via. O invariante correto não é sobre um ESQUEMA:
           // é sobre as relações ALCANÇÁVEIS pelo papel de aplicação.
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_fora"),
             recriarBanco: true,
@@ -1969,7 +2000,7 @@ function registrarSuite(urlSuperusuario: string): void {
       it(
         "ACHADO-11 — o pool RECUSA identidade com USAGE em esquema fora da lista permitida",
         async () => {
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_esquema"),
             recriarBanco: true,
@@ -2043,7 +2074,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // pg_policy — uma tabela SEM política nenhuma passava por vacuidade.
           // Resultado medido pelo revisor: leitura E escrita cross-tenant com
           // as duas migrações em exit 0.
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_part"),
             recriarBanco: true,
@@ -2086,7 +2117,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // em A, e `UPDATE 1` sobre linha de B). Aqui a tabela particionada é
           // formada corretamente e as migrações precisam POLICIÁ-LA — antes,
           // os laços em relkind='r' a ignoravam e ela ficava aberta.
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_part_ok"),
             recriarBanco: true,
@@ -2167,7 +2198,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // GRANT UPDATE (tenant_id) não aparece nele, o detector devolvia
           // false, o pool abria — e a aplicação reescrevia a coluna do selo.
           // UPDATE sem WHERE não exige SELECT.
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_coluna"),
             recriarBanco: true,
@@ -2227,7 +2258,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // qualquer tenant. A checagem por `information_schema` não via isso,
           // porque privilégio herdado de papel predefinido não aparece como
           // concessão direta; `has_table_privilege` vê.
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_ancora"),
             recriarBanco: true,
@@ -2265,7 +2296,7 @@ function registrarSuite(urlSuperusuario: string): void {
           //
           // O invariante correto é: o papel conectado não alcança NENHUM papel
           // que seja dono de tabela do esquema.
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_dono"),
             recriarBanco: true,
@@ -2297,7 +2328,7 @@ function registrarSuite(urlSuperusuario: string): void {
       it(
         "a 0003 e o pool RECUSAM um papel de aplicação que alcance superusuário por SET ROLE",
         async () => {
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_escalada"),
             recriarBanco: true,
@@ -2399,9 +2430,15 @@ function registrarSuite(urlSuperusuario: string): void {
                 order by 1, 2`,
             ),
           );
+          // O DONO do par mudou com a `0006`: era `intensicare_migrador` — o
+          // mesmo papel dono do esquema, e por isso qualquer função SECURITY
+          // DEFINER criada por ele lia e forjava o selo (F1). Agora é o papel
+          // guardião, do qual ninguém é membro. A asserção nomeia o dono de
+          // propósito: se algum dia a propriedade voltar ao dono do esquema,
+          // este teste reprova.
           expect(alcancaveis.rows).toEqual([
-            { esquema: "intensicare_escopo", funcao: "instalar", dono: PAPEL_MIGRADOR },
-            { esquema: "intensicare_escopo", funcao: "tenant_atual", dono: PAPEL_MIGRADOR },
+            { esquema: "intensicare_escopo", funcao: "instalar", dono: PAPEL_GUARDIAO_DO_SELO },
+            { esquema: "intensicare_escopo", funcao: "tenant_atual", dono: PAPEL_GUARDIAO_DO_SELO },
           ]);
         },
         TEMPO_LIMITE_MS,
@@ -2426,7 +2463,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // nele que o EXECUTE padrão para PUBLIC ainda está armado. A 0005
           // desarma o padrão (teste seguinte) — aqui o que se mede é o dano
           // enquanto ele existe, e as duas recusas que passam a fechá-lo.
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_definer"),
             ateMigracao: "0004_escopo_selado.sql",
@@ -2550,7 +2587,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // em toda função nova) é o que transforma um `create function`
           // rotineiro numa concessão de privilégio. A 0005 desarma o padrão
           // para o papel de migração; a auditoria fica como rede.
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_padrao"),
             recriarBanco: true,
@@ -2619,7 +2656,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // nenhum. Medido contra PostgreSQL 16.14 — e é a MESMA propriedade
           // que o teste anterior usa como garantia (o gatilho append-only
           // continua funcionando sem EXECUTE), agora do lado ofensivo.
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_gatilho"),
             recriarBanco: true,
@@ -2718,7 +2755,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // intensicare_escopo.tenant_atual())` sobre a filha). Anexar uma
           // tabela por herança DEPOIS da migração, portanto, NÃO vaza por si —
           // o que vaza é o sentido inverso, no teste seguinte.
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_heranca_ok"),
             recriarBanco: true,
@@ -2790,7 +2827,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // Medido: o diagnóstico de `abrir()` devolvia ZERO em todos os
           // contadores num banco onde a aplicação lia e escrevia todos os
           // tenants.
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_ancestral"),
             recriarBanco: true,
@@ -2862,7 +2899,7 @@ function registrarSuite(urlSuperusuario: string): void {
         async () => {
           // A exposição é transitiva: consultar o AVÔ expande a cadeia inteira
           // e aplica as políticas do AVÔ. Medido contra PostgreSQL 16.14.
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_avo"),
             recriarBanco: true,
@@ -2926,7 +2963,7 @@ function registrarSuite(urlSuperusuario: string): void {
           // `security_invoker` — roda com os direitos do DONO e devolve todos
           // os tenants, com o ancestral inacessível à aplicação. A `0003` já
           // recusava esse objeto em tempo de MIGRAÇÃO; o runtime é que era cego.
-          const alvo = await provisionarBanco({
+          const alvo = await provisionarBaseDeAtaque({
             urlSuperusuario,
             banco: nomeDeBancoDeVerificacao("intensicare_visao"),
             recriarBanco: true,
@@ -2991,6 +3028,520 @@ function registrarSuite(urlSuperusuario: string): void {
             await expect(
               aplicarMigracao(alvo.urlSuperusuarioNoBanco, "0005_fecho_de_privilegio.sql"),
             ).rejects.toThrow(/security_invoker/i);
+          } finally {
+            await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+    });
+
+    // -----------------------------------------------------------------------
+    // (h) Fecho de RUNTIME — o que a 0005 nomeou e deixou aberto
+    //     F1 / F2 / F4 do HANDOFF.yaml, chave SEXTA_REVISAO_NAO_CONCLUIDA
+    //     THR-0050 (P0) | SEC-0009 | ADR-0016 §4.1 | ACHADO-17 | ACHADO-18
+    //
+    // O par vermelho/verde de cada ataque é medido NA MESMA EXECUÇÃO, contra o
+    // MESMO servidor: uma base SEM o fecho (`provisionarBaseDeAtaque`) e uma
+    // base COM ele (`provisionarBanco`, que o instala por padrão). A diferença
+    // é UMA migração, não um instante no tempo — assim "falha antes, passa
+    // depois" deixa de ser afirmação sobre o passado e vira medição.
+    // -----------------------------------------------------------------------
+
+    describe("(h) fecho de runtime: âncora isolada e guarda de DDL", () => {
+      it(
+        "F1 — função SECURITY DEFINER de terceiro LÊ o selo (quais tenants estão sendo servidos); com a âncora isolada o banco recusa",
+        async () => {
+          // ---------- ANTES: base sem o fecho de runtime ----------
+          const antes = await provisionarBaseDeAtaque({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_f1_antes"),
+            recriarBanco: true,
+          });
+          const migradoraAntes = await ConexaoPostgres.conectar(
+            opcoesDaUrl(antes.urlMigrador, "verificacao"),
+          );
+          // Uma SEGUNDA sessão da aplicação, que serve o tenant B e COMMITA.
+          // O commit é essencial e foi medido: a tabela de selo guarda UMA
+          // linha por pid de backend, atualizada no lugar, e ela permanece
+          // depois do commit — de modo que a tabela é um registro vivo de "qual
+          // tenant cada backend atendeu por último". Enquanto a transação da
+          // vítima está aberta, sua linha é invisível a outra sessão (snapshot);
+          // depois do commit, não é. Sem esta sessão o teste provaria apenas que
+          // o chamador lê o próprio escopo — que ele já conhece.
+          const vitima = await ConexaoPostgres.conectar(
+            opcoesDaUrl(antes.urlAplicacao, "SYNTH-vitima"),
+          );
+          try {
+            await vitima.executar("begin");
+            await vitima.consultar("select intensicare_escopo.instalar($1)", [TENANT_B]);
+            await vitima.executar("commit");
+
+            // Função "de diagnóstico" plausível, criada pelo MIGRADOR DEPOIS de
+            // toda migração e de todo boot: nenhuma auditoria roda de novo.
+            await migradoraAntes.executar(
+              `create function public.synth_espiar_selo()
+                 returns table (pid integer, tenant text)
+                 language sql security definer
+                 set search_path = pg_catalog, pg_temp
+                 as $x$ select s.pid, s.tenant_id from intensicare_escopo.selo s $x$`,
+            );
+            // A `0005` desarmou o EXECUTE padrão para PUBLIC — então o ataque
+            // precisa de um GRANT nominal. Isso é registrado, e não escondido:
+            // o que a `0005` NÃO faz é impedir a LEITURA depois do GRANT.
+            await migradoraAntes.executar(
+              `grant execute on function public.synth_espiar_selo() to ${PAPEL_APLICACAO}`,
+            );
+
+            const intrusa = await ConexaoPostgres.conectar(
+              opcoesDaUrl(antes.urlAplicacao, "SYNTH-intrusa"),
+            );
+            try {
+              await intrusa.executar("begin");
+              await intrusa.consultar("select intensicare_escopo.instalar($1)", [TENANT_A]);
+              const espiado = await intrusa.consultar<{ tenant: string }>(
+                "select tenant from public.synth_espiar_selo() order by tenant",
+              );
+              const tenantsVistos = espiado.rows.map((r) => r.tenant);
+              expect(
+                tenantsVistos,
+                "o ataque F1 NÃO teve êxito na base sem o fecho — o cenário perdeu o sentido e precisa ser reescrito, não apagado",
+              ).toContain(TENANT_B);
+              expect(tenantsVistos).toContain(TENANT_A);
+              await intrusa.executar("rollback");
+            } finally {
+              await intrusa.fechar();
+            }
+          } finally {
+            await vitima.fechar();
+            await migradoraAntes.fechar();
+          }
+
+          // ---------- DEPOIS: base com o fecho de runtime ----------
+          const depois = await provisionarBanco({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_f1_depois"),
+            recriarBanco: true,
+          });
+          expect(
+            depois.fechoDeRuntimeInstalado,
+            "o passe de superusuário da 0006 não rodou — sem ele este lado do par não mede nada",
+          ).toBe(true);
+
+          const migradoraDepois = await ConexaoPostgres.conectar(
+            opcoesDaUrl(depois.urlMigrador, "verificacao"),
+          );
+          try {
+            // 1) O dono do esquema não alcança mais a tabela de selo, por
+            //    NENHUM dos caminhos que a `0004` §6.2 não cobria.
+            const caminhos: RecusaObservada[] = [];
+            for (const sql of [
+              "select tenant_id from intensicare_escopo.selo",
+              "update intensicare_escopo.selo set tenant_id = 'SYNTH-FORJADO'",
+              `grant select on intensicare_escopo.selo to ${PAPEL_APLICACAO}`,
+              `set role ${PAPEL_GUARDIAO_DO_SELO}`,
+              `alter table intensicare_escopo.selo owner to ${PAPEL_MIGRADOR}`,
+              "drop schema intensicare_escopo cascade",
+            ]) {
+              const erro = await capturarRejeicao(
+                migradoraDepois.executar(sql),
+                `o dono do esquema AINDA alcança a âncora: ${sql}`,
+              );
+              expect(erro, `a recusa de '${sql}' não veio do servidor`).toBeInstanceOf(
+                ErroPostgres,
+              );
+              caminhos.push({
+                sql,
+                sqlstate: (erro as ErroPostgres).codigo,
+                mensagem: (erro as ErroPostgres).message,
+              });
+            }
+            exigirRecusaPorPrivilegio(caminhos, 6);
+
+            // 2) A função SECURITY DEFINER até pode ser CRIADA — o corpo de uma
+            //    função em SQL não é resolvido na criação —, mas o `GRANT` que
+            //    a tornaria alcançável é abortado pela guarda de DDL, e mesmo se
+            //    não fosse a leitura é impossível: quem executa é o dono da
+            //    função, e ele não alcança o selo.
+            await migradoraDepois.executar(
+              `create function public.synth_espiar_selo()
+                 returns table (pid integer, tenant text)
+                 language sql security definer
+                 set search_path = pg_catalog, pg_temp
+                 as $x$ select s.pid, s.tenant_id from intensicare_escopo.selo s $x$`,
+            );
+            const erroDoGrant = await capturarRejeicao(
+              migradoraDepois.executar(
+                `grant execute on function public.synth_espiar_selo() to ${PAPEL_APLICACAO}`,
+              ),
+              "a guarda de DDL aceitou tornar uma função SECURITY DEFINER de terceiro alcançável",
+            );
+            expect(erroDoGrant).toBeInstanceOf(ErroPostgres);
+            expect((erroDoGrant as ErroPostgres).codigo).toBe(SQLSTATE_PRIVILEGIO_INSUFICIENTE);
+            expect((erroDoGrant as ErroPostgres).message).toMatch(/GUARDA-DDL/);
+
+            // E, executada pelo PRÓPRIO migrador, ela também não lê.
+            const erroDaLeitura = await capturarRejeicao(
+              migradoraDepois.consultar("select * from public.synth_espiar_selo()"),
+              "a função SECURITY DEFINER do dono do esquema AINDA lê o selo",
+            );
+            expect(erroDaLeitura).toBeInstanceOf(ErroPostgres);
+            expect((erroDaLeitura as ErroPostgres).codigo).toBe(SQLSTATE_PRIVILEGIO_INSUFICIENTE);
+          } finally {
+            await migradoraDepois.fechar();
+          }
+
+          // 3) E a aplicação continua funcionando na base endurecida — o fecho
+          //    não é "seguro porque quebrou tudo".
+          const portaDepois = await AdaptadorPostgres.abrir({
+            url: depois.urlAplicacao,
+            exigirFechoDeRuntime: true,
+          });
+          try {
+            const escopo = await portaDepois.comTenant(TENANT_A, (tx) =>
+              tx.query<{ t: string }>("select intensicare_escopo.tenant_atual() as t"),
+            );
+            expect(escopo.rows[0]?.t).toBe(TENANT_A);
+          } finally {
+            await portaDepois.encerrar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "F2 — ALTER TABLE ... INHERIT DEPOIS das migrações escapa da auditoria; com a guarda de DDL o banco aborta o comando",
+        async () => {
+          // ---------- ANTES ----------
+          const antes = await provisionarBaseDeAtaque({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_f2_antes"),
+            recriarBanco: true,
+          });
+          const migradoraAntes = await ConexaoPostgres.conectar(
+            opcoesDaUrl(antes.urlMigrador, "verificacao"),
+          );
+          const administrativaAntes = await ConexaoPostgres.conectar(
+            opcoesDaUrl(antes.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            await administrativaAntes.consultar(
+              "insert into organizations (id, tenant_id, name) values ($1,$1,$3), ($2,$2,$4)",
+              [TENANT_A, TENANT_B, "Org A", "Org B"],
+            );
+            // A aplicação ABRE — a auditoria de boot corre aqui, e nada há.
+            const portaViva = await AdaptadorPostgres.abrir({ url: antes.urlAplicacao });
+            try {
+              const soDoA = await portaViva.comTenant(TENANT_A, (tx) =>
+                tx.query<{ id: string }>("select id from organizations order by id"),
+              );
+              expect(soDoA.rows.map((r) => r.id)).toEqual([TENANT_A]);
+
+              // DDL DEPOIS do boot. Nenhuma das três auditorias roda de novo.
+              await migradoraAntes.executar("create table public.synth_pai (id text)");
+              await migradoraAntes.executar(
+                "alter table public.organizations inherit public.synth_pai",
+              );
+              await migradoraAntes.executar(
+                `grant select on public.synth_pai to ${PAPEL_APLICACAO}`,
+              );
+
+              const vazado = await portaViva.comTenant(TENANT_A, (tx) =>
+                tx.query<{ id: string }>("select id from public.synth_pai order by id"),
+              );
+              expect(
+                vazado.rows.map((r) => r.id),
+                "o ataque F2 NÃO teve êxito na base sem a guarda — o cenário perdeu o sentido",
+              ).toEqual([TENANT_A, TENANT_B]);
+            } finally {
+              await portaViva.encerrar();
+            }
+          } finally {
+            await migradoraAntes.fechar();
+            await administrativaAntes.fechar();
+          }
+
+          // ---------- DEPOIS ----------
+          const depois = await provisionarBanco({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_f2_depois"),
+            recriarBanco: true,
+          });
+          expect(depois.fechoDeRuntimeInstalado).toBe(true);
+          const migradoraDepois = await ConexaoPostgres.conectar(
+            opcoesDaUrl(depois.urlMigrador, "verificacao"),
+          );
+          const administrativaDepois = await ConexaoPostgres.conectar(
+            opcoesDaUrl(depois.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            await administrativaDepois.consultar(
+              "insert into organizations (id, tenant_id, name) values ($1,$1,$3), ($2,$2,$4)",
+              [TENANT_A, TENANT_B, "Org A", "Org B"],
+            );
+            const portaViva = await AdaptadorPostgres.abrir({
+              url: depois.urlAplicacao,
+              exigirFechoDeRuntime: true,
+            });
+            try {
+              // O vetor inteiro é tentado, na mesma ordem. `create table` e
+              // `alter ... inherit` passam (nada ficou alcançável ainda); é o
+              // `grant` que completa o vetor, e é ele que a guarda aborta.
+              await migradoraDepois.executar("create table public.synth_pai (id text)");
+              await migradoraDepois.executar(
+                "alter table public.organizations inherit public.synth_pai",
+              );
+              const erroDoGrant = await capturarRejeicao(
+                migradoraDepois.executar(`grant select on public.synth_pai to ${PAPEL_APLICACAO}`),
+                "a guarda de DDL aceitou tornar um ancestral sem política alcançável pela aplicação",
+              );
+              expect(erroDoGrant).toBeInstanceOf(ErroPostgres);
+              expect((erroDoGrant as ErroPostgres).codigo).toBe(SQLSTATE_PRIVILEGIO_INSUFICIENTE);
+              expect((erroDoGrant as ErroPostgres).message).toMatch(/GUARDA-DDL/);
+
+              // E a ordem INVERSA — conceder antes de anexar — também é abortada.
+              await migradoraDepois.executar("create table public.synth_pai2 (id text)");
+              await migradoraDepois.executar(
+                `grant select on public.synth_pai2 to ${PAPEL_APLICACAO}`,
+              );
+              const erroDoInherit = await capturarRejeicao(
+                migradoraDepois.executar(
+                  "alter table public.organizations inherit public.synth_pai2",
+                ),
+                "a guarda de DDL aceitou anexar uma tabela protegida a um ancestral já alcançável",
+              );
+              expect(erroDoInherit).toBeInstanceOf(ErroPostgres);
+              expect((erroDoInherit as ErroPostgres).codigo).toBe(SQLSTATE_PRIVILEGIO_INSUFICIENTE);
+
+              // Nenhum dos dois caminhos vazou: o processo vivo segue servindo
+              // apenas o tenant escopado.
+              const aindaSoDoA = await portaViva.comTenant(TENANT_A, (tx) =>
+                tx.query<{ id: string }>("select id from organizations order by id"),
+              );
+              expect(aindaSoDoA.rows.map((r) => r.id)).toEqual([TENANT_A]);
+            } finally {
+              await portaViva.encerrar();
+            }
+
+            // A guarda também aborta a REMOÇÃO da proteção — `drop policy` e
+            // `no force row level security` sobre tabela clínica.
+            const remocoes: RecusaObservada[] = [];
+            for (const sql of [
+              "drop policy organizations_tenant_isolation on public.organizations",
+              "alter table public.organizations no force row level security",
+              "alter table public.organizations disable row level security",
+            ]) {
+              const erro = await capturarRejeicao(
+                migradoraDepois.executar(sql),
+                `a guarda de DDL aceitou remover proteção: ${sql}`,
+              );
+              expect(erro).toBeInstanceOf(ErroPostgres);
+              remocoes.push({
+                sql,
+                sqlstate: (erro as ErroPostgres).codigo,
+                mensagem: (erro as ErroPostgres).message,
+              });
+            }
+            exigirRecusaPorPrivilegio(remocoes, 3);
+
+            // E o dono do esquema não desarma a guarda.
+            const desarmes: RecusaObservada[] = [];
+            for (const sql of [
+              "alter event trigger intensicare_guarda_ddl disable",
+              "drop event trigger intensicare_guarda_ddl",
+              "drop schema intensicare_guarda cascade",
+            ]) {
+              const erro = await capturarRejeicao(
+                migradoraDepois.executar(sql),
+                `o dono do esquema DESARMOU a guarda: ${sql}`,
+              );
+              expect(erro).toBeInstanceOf(ErroPostgres);
+              desarmes.push({
+                sql,
+                sqlstate: (erro as ErroPostgres).codigo,
+                mensagem: (erro as ErroPostgres).message,
+              });
+            }
+            exigirRecusaPorPrivilegio(desarmes, 3);
+          } finally {
+            await migradoraDepois.fechar();
+            await administrativaDepois.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "F4 — o escopo É a primeira escrita da transação, e não pode ser trocado depois (medido, não lido)",
+        async () => {
+          // O `0004` registrou este contrato como "verificado por LEITURA de
+          // código, NÃO por teste — trate como NÃO VERIFICADO". Aqui ele é
+          // exercido por TENTATIVA, com três vetores.
+
+          // Vetor 1 — troca de escopo dentro do caminho de transação DO PRODUTO.
+          // Se `comTenant` não tivesse instalado o escopo como primeira
+          // instrução, esta chamada não seria recusada por "já instalado": ela
+          // seria ACEITA (transação sem selo) ou recusada por "já escreveu sem
+          // selo válido". A mensagem discrimina os três estados.
+          const erroDaTroca = await capturarRejeicao(
+            porta.comTenant(TENANT_A, (tx) =>
+              tx.query("select intensicare_escopo.instalar($1)", [TENANT_B]),
+            ),
+            "o caminho de transação do produto ACEITOU trocar o tenant em voo",
+          );
+          expect(erroDaTroca).toBeInstanceOf(ErroPostgres);
+          expect((erroDaTroca as ErroPostgres).codigo).toBe(SQLSTATE_PRIVILEGIO_INSUFICIENTE);
+          expect(
+            (erroDaTroca as ErroPostgres).message,
+            "a recusa não foi por 'escopo já instalado' — o estado da transação não é o que o contrato afirma",
+          ).toMatch(/já instalado nesta transação/i);
+
+          // Vetor 2 — reinstalar o MESMO tenant é aceito, e o retorno é o
+          // escopo vigente. Isto é o que prova que existe selo válido para o
+          // id de transação corrente, isto é, que o escopo FOI a primeira
+          // escrita: se qualquer outra escrita a tivesse precedido, `instalar`
+          // recusaria com "já escreveu sem selo de escopo válido".
+          const reinstalar = await porta.comTenant(TENANT_A, (tx) =>
+            tx.query<{ v: string }>("select intensicare_escopo.instalar($1) as v", [TENANT_A]),
+          );
+          expect(reinstalar.rows[0]?.v).toBe(TENANT_A);
+
+          // Vetor 3 — o MESMO contrato pelo ponto de entrada que `apps/api`
+          // usa de fato (`withTenantTransaction` sobre a porta; 5 pontos de
+          // chamada em `apps/api/src/db.ts`). Sem isto, o vetor 1 provaria o
+          // contrato de `comTenant` e não o do caminho realmente exercido.
+          const erroPelaSessao = await capturarRejeicao(
+            withTenantTransaction(porta, TENANT_A, (tx) =>
+              tx.query("select intensicare_escopo.instalar($1)", [TENANT_B]),
+            ),
+            "withTenantTransaction ACEITOU trocar o tenant em voo",
+          );
+          expect(erroPelaSessao).toBeInstanceOf(ErroPostgres);
+          expect((erroPelaSessao as ErroPostgres).message).toMatch(/já instalado nesta transação/i);
+
+          // NÃO USADO, e registrado para que ninguém o reintroduza:
+          // `pg_stat_xact_user_tables` parecia a medição independente ideal
+          // ("a única tabela de usuário escrita até aqui é a âncora"), e ela
+          // FALHA DE FORMA INTERMITENTE. Medido contra PostgreSQL 16.14: as
+          // contagens pendentes de um backend só são liberadas por
+          // `pgstat_report_stat`, que é limitado por intervalo mínimo; numa
+          // execução rápida, a transação seguinte ainda enxerga as 13 tabelas
+          // escritas pela SEMEADURA anterior e a asserção reprova. Uma asserção
+          // que depende de quanto tempo passou não é evidência.
+
+          // Vetor 4 — controle NEGATIVO, para que os vetores acima não passem
+          // por vacuidade: numa transação CRUA, uma escrita anterior ao
+          // `instalar` é detectada e o escopo é RECUSADO. `pg_current_xact_id()`
+          // atribui o id de topo de forma determinística (ao contrário de
+          // `nextval`, cuja atribuição é intermitente — ACHADO-16), então este
+          // vetor não é sensível à janela de cache de sequência.
+          const crua = await ConexaoPostgres.conectar(
+            opcoesDaUrl(banco.urlAplicacao, "SYNTH-primeira-escrita"),
+          );
+          try {
+            await crua.executar("begin");
+            const atribuiu = await crua.consultar<{ a: boolean }>(
+              "select pg_current_xact_id() is not null as a",
+            );
+            expect(
+              atribuiu.rows[0]?.a,
+              "pg_current_xact_id não atribuiu id de transação — o controle negativo não exerce nada",
+            ).toBe(true);
+            const erroDaOrdem = await capturarRejeicao(
+              crua.consultar("select intensicare_escopo.instalar($1)", [TENANT_A]),
+              "instalar ACEITOU escopo depois de a transação já ter escrito",
+            );
+            expect(erroDaOrdem).toBeInstanceOf(ErroPostgres);
+            expect((erroDaOrdem as ErroPostgres).codigo).toBe(SQLSTATE_PRIVILEGIO_INSUFICIENTE);
+            expect((erroDaOrdem as ErroPostgres).message).toMatch(
+              /já escreveu sem selo de escopo válido/i,
+            );
+            await crua.executar("rollback");
+          } finally {
+            await crua.fechar();
+          }
+        },
+        TEMPO_LIMITE_MS,
+      );
+
+      it(
+        "exigirFechoDeRuntime transforma a ausência do fecho em RECUSA DE PARTIDA, e não em nota de rodapé",
+        async () => {
+          // A objeção registrada no cabeçalho da `0005` — "um controle presente
+          // em alguns ambientes e ausente noutros é pior que um limite
+          // declarado" — só é respondida se a ausência for DETECTÁVEL pelo
+          // processo que depende dela.
+          const semFecho = await provisionarBaseDeAtaque({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_sem_fecho"),
+            recriarBanco: true,
+          });
+          expect(semFecho.fechoDeRuntimeInstalado).toBe(false);
+
+          // Sem exigir, abre (é a topologia das 20 bases de ataque desta suíte).
+          const tolerante = await AdaptadorPostgres.abrir({ url: semFecho.urlAplicacao });
+          await tolerante.encerrar();
+
+          // Exigindo, recusa — e diz os DOIS motivos, nomeando F1 e F2.
+          const erro = await capturarRejeicao(
+            AdaptadorPostgres.abrir({
+              url: semFecho.urlAplicacao,
+              exigirFechoDeRuntime: true,
+            }),
+            "abrir() aceitou um banco sem o fecho de runtime mesmo com exigirFechoDeRuntime",
+          );
+          expect(erro).toBeInstanceOf(ErroIdentidadeInsegura);
+          const motivos = (erro as ErroIdentidadeInsegura).motivos;
+          expect(motivos.some((m) => m.includes("(F1)"))).toBe(true);
+          expect(motivos.some((m) => m.includes("(F2)"))).toBe(true);
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        "o passe de superusuário da 0006 é idempotente e a base principal desta suíte está endurecida",
+        async () => {
+          // A base do `beforeAll` é provisionada COM o fecho: as ~40 asserções
+          // de isolamento desta suíte correm sobre a topologia endurecida, e
+          // não sobre uma topologia paralela que ninguém exercita.
+          expect(banco.fechoDeRuntimeInstalado).toBe(true);
+          const portaExigente = await AdaptadorPostgres.abrir({
+            url: banco.urlAplicacao,
+            exigirFechoDeRuntime: true,
+          });
+          await portaExigente.encerrar();
+
+          // Reaplicar o passe não quebra nada — inclusive com o event trigger
+          // já armado, que audita a própria reaplicação.
+          await instalarFechoDeRuntime(banco.urlSuperusuarioNoBanco);
+          await instalarFechoDeRuntime(banco.urlSuperusuarioNoBanco);
+
+          const administrativa = await ConexaoPostgres.conectar(
+            opcoesDaUrl(banco.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            const estado = await administrativa.consultar<{
+              dono_do_selo: string;
+              gatilhos: number;
+              membros_do_guardiao: number;
+            }>(
+              `select
+                 (select pg_get_userbyid(c.relowner)
+                    from pg_class c join pg_namespace n on n.oid = c.relnamespace
+                   where n.nspname = 'intensicare_escopo' and c.relname = 'selo') as dono_do_selo,
+                 (select count(*)::int from pg_event_trigger
+                   where evtname = 'intensicare_guarda_ddl' and evtenabled <> 'D') as gatilhos,
+                 (select count(*)::int from pg_roles a
+                   where not a.rolsuper and a.rolname <> $1
+                     and pg_has_role(a.oid, $1, 'MEMBER')) as membros_do_guardiao`,
+              [PAPEL_GUARDIAO_DO_SELO],
+            );
+            expect(estado.rows[0]?.dono_do_selo).toBe(PAPEL_GUARDIAO_DO_SELO);
+            expect(estado.rows[0]?.gatilhos).toBe(1);
+            expect(
+              estado.rows[0]?.membros_do_guardiao,
+              "algum papel não-superusuário é MEMBRO do guardião — pode SET ROLE e reassumir a âncora",
+            ).toBe(0);
           } finally {
             await administrativa.fechar();
           }

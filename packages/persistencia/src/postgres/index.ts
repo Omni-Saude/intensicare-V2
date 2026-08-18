@@ -38,9 +38,11 @@ export {
   aplicarMigracao,
   aplicarMigracoes,
   type BancoProvisionado,
+  instalarFechoDeRuntime,
   nomeDeBancoDeVerificacao,
   type OpcoesProvisionamento,
   PAPEL_APLICACAO,
+  PAPEL_GUARDIAO_DO_SELO,
   PAPEL_MIGRADOR,
   provisionarBanco,
 } from "./provisionamento.js";

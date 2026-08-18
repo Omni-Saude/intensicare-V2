@@ -1197,6 +1197,158 @@ components:
         versaoRegra:
           type: string
           description: 'Identificação da regra usada, ex.: RULE-NEWS2@0.2.0.'
+        despacho:
+          description: >-
+            Envelope do MODO DE DESPACHO que governou esta avaliação — a
+            representação VISÍVEL da degradação (QAS-0023, ADR-0020 O5).
+            OPCIONAL no formato, FECHADO na semântica: **ausente ou `null`
+            significa "modo de despacho NÃO registrado", e o consumidor DEVE
+            tratar a avaliação como NÃO acionável**. Nunca significa
+            "acionável por omissão" e nunca significa "não degradado". É
+            opcional apenas porque respostas gravadas antes desta versão do
+            contrato não o carregam (evolução compatível: campo novo
+            opcional), não porque a ausência seja um estado benigno.
+          oneOf:
+            - $ref: "#/components/schemas/ModoDeDespachoAvaliacao"
+            - type: "null"
+
+    ModoDespachoRegra:
+      type: string
+      enum: [sombra, acionavel]
+      description: >-
+        Modo de despacho de regra clínica — espelho pt-BR do `ActivationMode`
+        do artefato de regra (ADR-0007 eixo 4). `sombra`: avaliação computada
+        e explicitamente rotulada como NÃO acionável. `acionavel`: reservado e
+        INALCANÇÁVEL hoje (0 vias clínicas acionáveis; 47/47 inelegíveis). O
+        modo sozinho NÃO autoriza nada: quem decide acionabilidade é
+        `ModoDeDespachoAvaliacao.acionavel`, que é DERIVADO.
+
+    EstadoAssinaturaBundle:
+      type: string
+      enum: [assinatura_verificada, assinatura_ausente, sem_bundle]
+      description: >-
+        Estado da cadeia de assinatura do artefato de regra que governou o
+        despacho (ADR-0007 eixos 2 e 3). `assinatura_ausente` é o estado real
+        do artefato local nesta fatia — ADR-0007 C5 permanece aberta. Só
+        `assinatura_verificada` habilita (junto com modo `acionavel` e zero
+        bloqueios) a derivação de acionabilidade.
+
+    MotivoRecusaDespacho:
+      type: string
+      enum:
+        - regra_nao_registrada
+        - bundle_ausente
+        - bundle_nao_verificado
+        - motor_divergente
+        - regra_nao_ativada
+        - regra_indisponivel
+      description: >-
+        Razões de RECUSA de despacho. Vocabulário FECHADO e legível por
+        máquina — nunca texto livre (texto livre em razão é rota de PHI e é
+        inauditável). O texto pt-BR VISÍVEL de cada recusa viaja em
+        `mensagemRecusaPt`. Recusa nunca é no-fire silencioso (ADR-0008 §8.3).
+
+    ProvenienciaBundlePublicada:
+      type: object
+      required:
+        - versaoBundle
+        - digestManifesto
+        - behaviorHash
+        - assinatura
+        - bloqueiosDeAtivacao
+        - ativoDesde
+      description: >-
+        Proveniência PUBLICÁVEL do artefato de regra que governou o despacho.
+        É a proveniência interna MENOS `autorKeyId`/`aprovadorKeyId`:
+        identificador de chave é material de custódia (ADR-0007 eixos 2 e 3) e
+        não é necessário para representar a degradação. Nenhum campo aqui é
+        derivado de dado de paciente — são metadados do ARTEFATO.
+      properties:
+        versaoBundle:
+          oneOf: [{ type: string }, { type: "null" }]
+          description: Versão do artefato de regra; `null` quando não há artefato.
+        digestManifesto:
+          oneOf: [{ type: string }, { type: "null" }]
+          description: Digest do manifesto do artefato.
+        behaviorHash:
+          oneOf: [{ type: string }, { type: "null" }]
+          description: >-
+            Hash do comportamento pinado no artefato — é o que PROVA um
+            rollback (ADR-0007 eixo 5).
+        assinatura:
+          $ref: "#/components/schemas/EstadoAssinaturaBundle"
+        bloqueiosDeAtivacao:
+          type: array
+          items:
+            type: string
+          description: >-
+            Códigos de bloqueio de prontidão do artefato; lista vazia significa
+            ausência de bloqueio. Qualquer bloqueio impede a derivação de
+            acionabilidade.
+        ativoDesde:
+          oneOf: [{ type: string, format: date-time }, { type: "null" }]
+          description: Instante de ativação do artefato; `null` quando nunca ativado.
+
+    ModoDeDespachoAvaliacao:
+      type: object
+      required:
+        - desfecho
+        - modo
+        - acionavel
+        - rotuloPt
+        - motivoRecusa
+        - mensagemRecusaPt
+        - versaoRegra
+        - despachadoEm
+        - bundle
+      description: >-
+        MODO DE DESPACHO exposto à superfície. Enquanto `acionavel` for
+        `false`, nenhuma recomendação, ordem ou conduta clínica decorre da
+        avaliação que o acompanha. `modo` sozinho NÃO autoriza nada — quem
+        decide acionabilidade é `acionavel`, que é DERIVADO e cumulativo
+        (assinatura verificada + modo `acionavel` + zero bloqueios) e jamais
+        atribuível por chamador. `correlacaoId`, digest de entradas e razões
+        internas ficam RETIDOS no registro durável de auditoria e não viajam
+        aqui.
+      properties:
+        desfecho:
+          type: string
+          enum: [avaliada, nao_avaliada]
+          description: >-
+            `avaliada`: houve despacho e resultado de kernel. `nao_avaliada`:
+            recusa — sem escore e sem banda (HAZ-0005: ausência de resultado
+            nunca vira zero e nunca significa ausência de risco).
+        modo:
+          oneOf:
+            - $ref: "#/components/schemas/ModoDespachoRegra"
+            - type: "null"
+          description: '`null` quando o despacho foi recusado antes de haver modo de ativação.'
+        acionavel:
+          type: boolean
+          description: >-
+            DERIVADO na projeção — nunca copiado do registro, nunca atribuível
+            por chamador. `false` em todo o perfil atual.
+        rotuloPt:
+          type: string
+          description: >-
+            Rótulo pt-BR obrigatório da saída (sombra rotulada ou não
+            avaliado) — é o texto que a superfície exibe.
+        motivoRecusa:
+          oneOf:
+            - $ref: "#/components/schemas/MotivoRecusaDespacho"
+            - type: "null"
+          description: '`null` quando houve avaliação.'
+        mensagemRecusaPt:
+          oneOf: [{ type: string }, { type: "null" }]
+          description: Texto pt-BR VISÍVEL da recusa; `null` quando houve avaliação.
+        versaoRegra:
+          type: string
+          description: '`<ruleId>@<ruleVersion>` — igual a `ResultadoAvaliacao.versaoRegra`.'
+        despachadoEm:
+          type: string
+          format: date-time
+        bundle:
+          $ref: "#/components/schemas/ProvenienciaBundlePublicada"
 
     EstadoItemTrabalho:
       type: string
@@ -1349,6 +1501,22 @@ components:
         alerta:
           oneOf:
             - $ref: "#/components/schemas/ResumoItemTrabalho"
+            - type: "null"
+        modoAvaliacao:
+          description: >-
+            Modo de despacho da avaliação que produziu `escore`/`banda` desta
+            linha. Mesma semântica fechada de `ResultadoAvaliacao.despacho`:
+            **ausente ou `null` significa "modo NÃO registrado" e a linha DEVE
+            ser tratada como NÃO acionável** — nunca acionável por omissão. O
+            leitor da grade obtém `null` também quando a linha persistida é
+            ilegível ou incoerente (`acionavel` divergente da derivação):
+            leitura honesta, jamais valor "corrigido". Descreve o MODO DE
+            ATIVAÇÃO do artefato, e não o frescor do dado — a reavaliação em
+            tempo de leitura (`frescor`/`statusAvaliacao`) não o altera.
+            Opcional pelo mesmo motivo do outro campo: linhas gravadas antes
+            desta versão do contrato não o carregam.
+          oneOf:
+            - $ref: "#/components/schemas/ModoDeDespachoAvaliacao"
             - type: "null"
 
     GradeLeitosResposta:

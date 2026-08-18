@@ -253,6 +253,105 @@ export interface ResultadoAvaliacao {
   parametroVermelho: boolean;
   /** Identificação da regra usada (rastreabilidade), ex.: `RULE-NEWS2@0.2.0`. */
   versaoRegra: string;
+  /**
+   * Envelope do MODO DE DESPACHO que governou esta avaliação — a
+   * representação visível da degradação (QAS-0023, ADR-0020 O5).
+   *
+   * OPCIONAL no formato, FECHADO na semântica: **ausente ou `null` significa
+   * "modo de despacho NÃO registrado", e o consumidor DEVE tratar a avaliação
+   * como NÃO acionável.** Nunca significa "acionável por omissão" e nunca
+   * significa "não degradado". O campo é opcional porque respostas gravadas
+   * antes desta versão do contrato não o carregam (evolução compatível:
+   * campo novo opcional — ver `POLITICA_EVOLUCAO_EVENTOS`), não porque a
+   * ausência seja um estado benigno.
+   */
+  despacho?: ModoDeDespachoAvaliacao | null;
+}
+
+// ---------------------------------------------------------------------------
+// Modo de despacho de regra clínica (ADR-0007 eixo 4; ADR-0008 §8.3; QAS-0023)
+// ---------------------------------------------------------------------------
+//
+// Este bloco é o espelho PUBLICÁVEL do vocabulário de despacho que vive em
+// `apps/api/src/regras/tipos.ts` (registro imutável) e é projetado por
+// `apps/api/src/regras/exposicao.ts`. Ele existe aqui porque o envelope
+// ATRAVESSA a fronteira HTTP: enquanto os tipos estavam declarados só dentro
+// da API, havia duas definições estruturalmente idênticas e nenhum gate entre
+// elas — deriva à espera de acontecer. `scripts/check_contratos.mjs` (Seção F)
+// agora confronta os enums desta seção com os de `apps/api/src/regras/tipos.ts`
+// e, quando o `openapi.yaml` os publicar, também com o documento.
+//
+// NADA aqui promove nada a acionável: `acionavel` é DERIVADO na projeção
+// (assinatura verificada + modo acionável + zero bloqueios) e nunca é copiado
+// de um chamador. Estado factual preservado: 0 vias clínicas acionáveis.
+
+/**
+ * Modo de despacho — espelha `ActivationMode` do `rule-bundle` (ADR-0007
+ * eixo 4). `sombra`: avaliação computada e explicitamente rotulada como NÃO
+ * acionável. `acionavel`: reservado, inalcançável hoje.
+ */
+export type ModoDespachoRegra = "sombra" | "acionavel";
+
+/** Estado da cadeia de assinatura do artefato que governou o despacho. */
+export type EstadoAssinaturaBundle = "assinatura_verificada" | "assinatura_ausente" | "sem_bundle";
+
+/**
+ * Razões de recusa de despacho. Vocabulário FECHADO e legível por máquina —
+ * nunca texto livre (texto livre em razão é rota de PHI e é inauditável). O
+ * texto pt-BR VISÍVEL de cada recusa viaja em `mensagemRecusaPt`.
+ */
+export type MotivoRecusaDespacho =
+  | "regra_nao_registrada"
+  | "bundle_ausente"
+  | "bundle_nao_verificado"
+  | "motor_divergente"
+  | "regra_nao_ativada"
+  | "regra_indisponivel";
+
+/**
+ * Proveniência PUBLICÁVEL do artefato de regra que governou o despacho.
+ *
+ * É a proveniência interna MENOS `autorKeyId` e `aprovadorKeyId`:
+ * identificador de chave é material de custódia (ADR-0007 eixos 2 e 3) e não
+ * é necessário para representar a degradação. Nenhum campo aqui é derivado de
+ * dado de paciente: são metadados do ARTEFATO.
+ */
+export interface ProvenienciaBundlePublicada {
+  readonly versaoBundle: string | null;
+  readonly digestManifesto: string | null;
+  /** Hash do comportamento pinado no artefato — é o que PROVA um rollback. */
+  readonly behaviorHash: string | null;
+  readonly assinatura: EstadoAssinaturaBundle;
+  /** Códigos de bloqueio de prontidão do artefato; vazio ⇒ sem bloqueio. */
+  readonly bloqueiosDeAtivacao: readonly string[];
+  readonly ativoDesde: string | null;
+}
+
+/**
+ * MODO DE DESPACHO exposto à superfície. Enquanto `acionavel` for `false`,
+ * nenhuma recomendação, ordem ou conduta clínica decorre da avaliação que o
+ * acompanha.
+ *
+ * `modo` sozinho NÃO autoriza nada — ele espelha o modo de ativação do
+ * livro-razão; quem decide acionabilidade é `acionavel`, que é DERIVADO e
+ * cumulativo (assinatura verificada + modo `acionavel` + zero bloqueios) e
+ * jamais atribuível por chamador.
+ */
+export interface ModoDeDespachoAvaliacao {
+  readonly desfecho: "avaliada" | "nao_avaliada";
+  /** `null` quando o despacho foi recusado antes de haver modo de ativação. */
+  readonly modo: ModoDespachoRegra | null;
+  /** DERIVADO na projeção — nunca copiado, nunca atribuível por chamador. */
+  readonly acionavel: boolean;
+  /** Rótulo pt-BR obrigatório da saída (sombra rotulada ou não avaliado). */
+  readonly rotuloPt: string;
+  readonly motivoRecusa: MotivoRecusaDespacho | null;
+  /** Texto pt-BR VISÍVEL da recusa; `null` quando houve avaliação. */
+  readonly mensagemRecusaPt: string | null;
+  /** `<ruleId>@<ruleVersion>` — igual a `ResultadoAvaliacao.versaoRegra`. */
+  readonly versaoRegra: string;
+  readonly despachadoEm: string;
+  readonly bundle: ProvenienciaBundlePublicada;
 }
 
 // ---------------------------------------------------------------------------
@@ -325,6 +424,17 @@ export interface EntradaGradeLeitos {
   frescor: Frescor;
   atualizadoEm: string | null;
   alerta: ResumoItemTrabalho | null;
+  /**
+   * Modo de despacho da avaliação que produziu `escore`/`banda` desta linha.
+   *
+   * Mesma semântica fechada de `ResultadoAvaliacao.despacho`: **ausente ou
+   * `null` ⇒ modo NÃO registrado ⇒ a linha NÃO é acionável.** O leitor da
+   * grade obtém `null` também quando a linha persistida é ilegível ou
+   * incoerente (`acionavel` divergente da derivação) — leitura honesta, jamais
+   * valor "corrigido". Opcional pelo mesmo motivo do outro campo: linhas
+   * gravadas antes desta versão do contrato não o carregam.
+   */
+  modoAvaliacao?: ModoDeDespachoAvaliacao | null;
 }
 
 export interface GradeLeitosResposta {
@@ -373,4 +483,140 @@ export interface EventoFluxo {
 
 export interface HealthzResposta {
   status: "ok";
+}
+
+// ---------------------------------------------------------------------------
+// Prontidão (GET /v1/readyz) — SAF-0025, QAS-0023, ADR-0020 O4
+// ---------------------------------------------------------------------------
+//
+// Estes tipos já eram publicados pelo `openapi.yaml` e NÃO eram exportados
+// daqui; por isso `apps/web/src/api/prontidao.ts` mantinha um espelho manual
+// dos sete códigos de razão, sem nenhum gate entre ele e o documento
+// (LAC-L3). A Seção F de `scripts/check_contratos.mjs` agora confronta
+// `CODIGOS_RAZAO_PRONTIDAO` e `VereditoProntidao` com o `openapi.yaml`;
+// divergência FALHA o gate.
+//
+// Nenhum valor abaixo foi cunhado aqui: todos são cópia do `openapi.yaml`
+// (schemas `VereditoProntidao`, `CodigoRazaoProntidao`, `RazaoDeProntidao`,
+// `RelatorioProntidao` e seus componentes), na MESMA ordem.
+
+/**
+ * Veredito de prontidão. Ordem de severidade: `not_ready` > `degraded` >
+ * `ready`. Vocabulário FECHADO — espelha `READINESS_VERDICT_LABELS` da
+ * observabilidade. Ausência de veredito legível NUNCA é lida como `ready`.
+ */
+export type VereditoProntidao = "ready" | "degraded" | "not_ready";
+
+/**
+ * Vocabulário FECHADO de razões de prontidão (`READINESS_REASON_CODES`), na
+ * ordem do `openapi.yaml`. É uma tupla `as const` — e não só um union — para
+ * que o gate possa confrontá-la valor a valor com o documento, e para que o
+ * consumidor possa iterar o vocabulário sem redigitá-lo.
+ *
+ * Um código FORA desta lista não pode ser descartado pelo consumidor: razão
+ * desconhecida precisa APARECER (degradação sem representação visível é o
+ * defeito que QAS-0023 exige que seja zero). A lista serve para RECONHECER,
+ * nunca para filtrar.
+ */
+export const CODIGOS_RAZAO_PRONTIDAO = [
+  "rule_bundle_unavailable",
+  "required_dependency_unavailable",
+  "identity_not_configured",
+  "projection_stale",
+  "projection_freshness_threshold_unvalidated",
+  "degradation_active",
+  "degradation_unsurfaced",
+] as const;
+
+export type CodigoRazaoProntidao = (typeof CODIGOS_RAZAO_PRONTIDAO)[number];
+
+export interface RazaoDeProntidao {
+  codigo: CodigoRazaoProntidao;
+  /**
+   * Texto pt-BR de console operacional, redigido pelo BACKEND. NOMEIA o
+   * subsistema que faltou; jamais o endereço dele, jamais dado de paciente.
+   */
+  detalhe: string;
+}
+
+/** Perfil declarado do processo que respondeu à sonda. */
+export interface PerfilDeclarado {
+  /**
+   * `true` quando o processo opera exclusivamente sobre dados sintéticos e
+   * não está conectado a nenhuma fonte clínica real.
+   */
+  somenteSintetico: boolean;
+  declaracaoPt: string;
+}
+
+/** Projeções para as quais um limite de frescor é declarado (ADR-0011 P6). */
+export type ProjecaoDeFrescor = "grade_leitos" | "avaliacoes_paciente" | "fluxo_eventos";
+
+export interface LimiteDeFrescorDeclarado {
+  projecao: ProjecaoDeFrescor;
+  /**
+   * `null` = **VALIDATION REQUIRED** (Gate G1): nenhum alvo numérico de
+   * frescor foi decidido. `null` é impedimento a `ready` — NUNCA "sem
+   * limite". Nenhum número aqui é inventado por código.
+   */
+  limiteMs: number | null;
+}
+
+/** Modo de degradação exposto (vocabulário fechado da observabilidade). */
+export type ModoDegradacao =
+  | "regra_clinica_desligada"
+  | "projecao_atrasada"
+  | "outbox_acumulando"
+  | "entrega_tempo_real_indisponivel"
+  | "insumo_sem_frescor"
+  | "dependencia_indisponivel"
+  | "telemetria_indisponivel";
+
+/** Domínio afetado pela degradação. */
+export type DominioDegradacao =
+  | "dependency"
+  | "rule"
+  | "freshness"
+  | "event"
+  | "projection"
+  | "delivery"
+  | "telemetry";
+
+/** Canal em que uma degradação já foi tornada VISÍVEL. */
+export type CanalDeExibicao = "api_contract" | "ui" | "operational_console";
+
+export interface DegradacaoExposta {
+  modo: ModoDegradacao;
+  dominio: DominioDegradacao;
+  /** Instante de entrada no modo, em milissegundos do relógio injetado. */
+  desdeMs: number;
+  mensagemUi: string;
+  comportamentoSeguro: string;
+  fallbackManual: string;
+  condicaoSaida: string;
+  /**
+   * Degradação ativa que nenhum canal exibiu derruba a prontidão — é assim
+   * que a proibição de degradação silenciosa tem dente (SAF-0025).
+   */
+  exibidaEm: CanalDeExibicao[];
+}
+
+export interface RelatorioProntidao {
+  veredito: VereditoProntidao;
+  razoes: RazaoDeProntidao[];
+  perfil: PerfilDeclarado;
+  degradacoes: DegradacaoExposta[];
+  limitesDeFrescorDeclarados: LimiteDeFrescorDeclarado[];
+}
+
+/**
+ * Forma devolvida quando a PRÓPRIA avaliação de prontidão falhou.
+ * Fail-closed: sem veredito utilizável, a instância NÃO é declarada pronta.
+ * A exceção não é ecoada (SAF-0026/SEC-0015).
+ */
+export interface ProntidaoNaoAvaliada {
+  veredito: "not_ready";
+  /** Sempre vazia — o documento declara `maxItems: 0`. */
+  razoes: RazaoDeProntidao[];
+  erroDeAvaliacao: string;
 }

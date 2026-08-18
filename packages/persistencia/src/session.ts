@@ -51,7 +51,24 @@ export const ARQUIVOS_DE_MIGRACAO = [
   "0003_fronteira_papeis.sql",
   "0004_escopo_selado.sql",
   "0005_fecho_de_privilegio.sql",
+  "0006_ancora_isolada.sql",
 ] as const;
+
+/**
+ * A migração que precisa de um SEGUNDO passe, com credencial de SUPERUSUÁRIO.
+ *
+ * A `0006` faz duas coisas que o papel de migração NÃO pode fazer por desenho
+ * (`0003`: sem `CREATEROLE`, sem `SUPERUSER`): criar o papel guardião da âncora
+ * de escopo e criar o `EVENT TRIGGER` que fecha a janela de DDL entre boots.
+ * Aplicada pelo migrador ela só registra `notice`; aplicada pelo superusuário
+ * ela faz o trabalho. É idempotente nos dois passes.
+ *
+ * Quem orquestra os dois passes é `./postgres/provisionamento.ts`. Sob o
+ * SIMULADOR PGlite as migrações já rodam como superusuário, então o passe único
+ * basta — e a guarda de DDL não é instalada lá, porque ela é pedida
+ * explicitamente por parâmetro (`intensicare.instalar_guarda_ddl`).
+ */
+export const MIGRACAO_COM_PASSE_DE_SUPERUSUARIO = "0006_ancora_isolada.sql" as const;
 
 export interface MigracaoLida {
   readonly nome: string;
