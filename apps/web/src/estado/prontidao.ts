@@ -17,6 +17,7 @@ import {
   buscaDeProntidao,
   type LeitorDeProntidao,
   type LeituraDeProntidao,
+  leituraInalcancavel,
   prontidaoObrigaDegradacao,
 } from "../api/prontidao.js";
 import type { RespostaApi } from "../api/tipos.js";
@@ -64,16 +65,36 @@ export function useProntidao(opcoes: OpcoesProntidao): ProntidaoObservada {
     ...(relogio !== undefined ? { relogio } : {}),
   });
 
-  // FAIL-CLOSED na borda que o leitor não cobre. `criarLeitorDeProntidaoHttp`
-  // converte falha de rede em `inalcancavel` e só propaga ABORTO — mas o hook
-  // é genérico e um leitor injetado pode rejeitar por outro motivo. Se a
-  // máquina de rede terminou em falha e não há leitura, a tela declara "não
-  // consegui ler a prontidão", jamais silêncio (SAF-0025).
-  const leitura: LeituraDeProntidao | null =
-    recurso.dados ??
-    (ehEstadoDeFalha(recurso.estadoTela)
-      ? { veredito: null, razoes: [], origem: "inalcancavel", statusHttp: null }
-      : null);
+  // FAIL-CLOSED, E ANTES DO DADO ANTERIOR — a ordem é o defeito P1 corrigido
+  // aqui (revisão adversarial do PR #8).
+  //
+  // A versão anterior era `recurso.dados ?? (ehEstadoDeFalha(...) ? ... : null)`:
+  // o fail-closed vinha DEPOIS do `??` e, portanto, só disparava quando não
+  // havia NENHUMA leitura anterior. Bastava um `ready` bem-sucedido no
+  // carregamento para que toda falha ou tempo esgotado posterior fosse
+  // absorvido em silêncio — `recurso.dados` continuava sendo aquele `ready`,
+  // `prontidaoObrigaDegradacao` devolvia `false`, e a tela seguia calma com a
+  // leitura de prontidão MORTA. É literalmente o "appear healthy" que SAF-0025
+  // proíbe, e o anti-padrão 14 do contrato comum ("exibir dado stale como atual
+  // após erro") aplicado justamente ao insumo que existe para denunciar
+  // degradação.
+  //
+  // POR QUE `inalcancavel` E NÃO O DADO ROTULADO. Para a projeção clínica, a
+  // resposta certa a uma falha de recarga é preservar o conteúdo MARCADO como
+  // desatualizado (invariante I2 de `recursoRemoto.ts`): o clínico ainda tira
+  // valor de um NEWS2 de três minutos atrás, desde que saiba a idade dele. A
+  // prontidão é o contrário: ela é uma AFIRMAÇÃO SOBRE O AGORA ("o serviço tem
+  // capacidade segura neste instante"), e uma afirmação dessas envelhecida não
+  // é informação parcial — é informação errada. Então a leitura velha não é
+  // exibida rotulada; ela deixa de contar, e a tela declara o que de fato sabe:
+  // não conseguiu ler a prontidão.
+  //
+  // `ehEstadoDeFalha` cobre `erro` (rejeição não-abortada), `tempo_esgotado`,
+  // `indisponivel` e `proibido`. Aborto NÃO produz nenhum desses (I5), então
+  // desmontar ou trocar de recurso não gera aviso espúrio.
+  const leitura: LeituraDeProntidao | null = ehEstadoDeFalha(recurso.estadoTela)
+    ? leituraInalcancavel()
+    : recurso.dados;
 
   return { leitura, degradada: prontidaoObrigaDegradacao(leitura) };
 }

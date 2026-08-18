@@ -336,17 +336,32 @@ transição entre telas, nem skip-link.
 Três disso são falhas WCAG diretas — 2.4.1 (Bypass Blocks), 2.4.2 (Page Titled)
 e, quando a sessão real chegar (ADR-0015), 2.2.1 (Timing Adjustable).
 
-### LAC-L5 — A matriz WCAG cobre 15 de 56 critérios A+AA
+### LAC-L5 — A matriz WCAG cobre 14 de 55 critérios A+AA (mais 1 AAA como alvo)
 
 `apps/web/src/a11y/matrizAcessibilidade.ts` enumera 15 critérios; a WCAG 2.2
-nível A+AA tem 56. A matriz é honesta no que declara, e `declaracaoDeAcessibilidade()`
-retorna "NÃO VALIDADA" sob proteção de teste — mas o subconjunto não estava
-declarado como subconjunto, e ao menos dois dos ausentes falham hoje (LAC-L4).
+nível A+AA tem 55 (a REC de 05-out-2023 removeu 4.1.1 Parsing e acrescentou 9
+critérios — 2 nível A, 4 nível AA, 3 nível AAA). Dos 15 enumerados na matriz,
+14 são A+AA e 1 (2.3.3, alvo AAA já decidido em
+`docs/10-ux-and-accessibility/arquitetura-de-informacao.md` §2.2) é AAA — por
+isso ficam **41** critérios A+AA fora do recorte, não 40. A matriz é honesta
+no que declara, e `declaracaoDeAcessibilidade()` retorna "NÃO VALIDADA" sob
+proteção de teste — mas o subconjunto não estava declarado como subconjunto,
+e ao menos dois dos ausentes falham hoje (LAC-L4).
 
 **Ação tomada neste ciclo:** o recorte passou a ser explícito no módulo e na
-declaração, com teste que verifica a razão 15/56 e teste de não-vacuidade que
-impede 2.4.1/2.4.2/2.2.1 de aparecerem como "executado" enquanto a lacuna de
-navegação não fechar. A cobertura em si **não** foi ampliada.
+declaração, com enumeração literal dos 55 critérios A+AA em
+`CRITERIOS_WCAG_22_A_E_AA` — da qual `TOTAL_CRITERIOS_WCAG_22_AA` é
+**derivado**, nunca digitado — e teste que afirma a AUSÊNCIA de
+2.4.1/2.4.2/2.2.1 na matriz, servindo de estopim de regressão caso algum deles
+entre como "executado" antes da lacuna de navegação fechar (o nome anterior,
+"teste de não-vacuidade", era enganoso: a checagem passa por ausência, não por
+execução — corrigido). A cobertura em si **não** foi ampliada.
+
+Correção de rodada anterior: o total de 56 e a razão 15/56 citados numa versão
+anterior deste documento estavam errados (56 contava 4.1.1 Parsing, removido
+na WCAG 2.2) e o teste que dizia "verificar a razão" não verificava o valor do
+total — mutar `TOTAL_CRITERIOS_WCAG_22_AA` para 999 ainda passava. Achado por
+revisão adversarial independente sobre o PR #8; fechado com a derivação acima.
 
 Permanece registrada a limitação já conhecida do campo `execucao`, que
 conflaciona "a automação rodou" com "a validação manual ocorreu".

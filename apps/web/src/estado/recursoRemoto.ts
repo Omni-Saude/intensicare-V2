@@ -465,6 +465,21 @@ export function useRecursoRemoto<T>(opcoes: OpcoesRecursoRemoto<T>): RecursoRemo
     if (!habilitado) return;
 
     const controlador = new AbortController();
+    // `true` a partir do instante em que a LIMPEZA deste efeito roda — ou seja,
+    // desmontagem do componente ou troca de dependência (nova busca).
+    //
+    // POR QUE NÃO BASTA OLHAR `controlador.signal.aborted` (P1, revisão
+    // adversarial do PR #8). O sinal é abortado por DUAS causas muito
+    // diferentes, e `AbortController.abort()` é IDEMPOTENTE: a primeira razão
+    // prevalece. Um ciclo já abortado por `tempo_esgotado` que depois é
+    // desmontado continua reportando `causaAborto === "tempo_esgotado"`, então
+    // nem `signal.aborted` nem `signal.reason` conseguem responder "este efeito
+    // ainda é o corrente?". Esta variável responde, e é local a cada execução
+    // do efeito — não é uma flag que descarta resultado de requisição (o
+    // cancelamento continua sendo REAL, no `AbortController`, invariante I5);
+    // ela governa apenas quem tem direito de agendar o PRÓXIMO ciclo e de
+    // mexer no indicador de busca em curso.
+    let efeitoEncerrado = false;
     const recarga = jaBuscouRef.current;
     const rotina = proximaEhRotinaRef.current;
     proximaEhRotinaRef.current = false;
@@ -481,9 +496,16 @@ export function useRecursoRemoto<T>(opcoes: OpcoesRecursoRemoto<T>): RecursoRemo
     let idRecarga: number | null = null;
     function agendarProximaRecarga(): void {
       if (intervaloRecargaMs === null || intervaloRecargaMs <= 0) return;
-      // Abortado = desmontagem ou troca de recurso. Agendar aqui manteria um
-      // temporizador vivo apontando para um componente que já saiu.
-      if (controlador.signal.aborted) return;
+      // Efeito encerrado = desmontagem ou troca de recurso. Agendar aqui
+      // manteria um temporizador vivo apontando para um componente que já saiu.
+      //
+      // A condição era `controlador.signal.aborted`, e ela era ERRADA para o
+      // caminho de TEMPO ESGOTADO: quando o próprio temporizador aborta a
+      // requisição, o sinal fica `aborted` com o componente perfeitamente
+      // montado — e a releitura periódica morria em definitivo depois de UM
+      // único tempo esgotado (LAC-L1 desfeito em silêncio, HAZ-0025). Tempo
+      // esgotado é um RESULTADO do ciclo, não o fim do ciclo de vida da tela.
+      if (efeitoEncerrado) return;
       idRecarga = relogioRef.current.agendar(() => {
         proximaEhRotinaRef.current = true;
         setPedidoDeBusca((anterior) => anterior + 1);
@@ -525,14 +547,27 @@ export function useRecursoRemoto<T>(opcoes: OpcoesRecursoRemoto<T>): RecursoRemo
         despachar({ tipo: "rejeitado", problema: problemaDeRejeicao(erro) });
       } finally {
         relogioRef.current.cancelar(temporizador);
-        // `finally` também roda no caminho abortado — e as duas chamadas abaixo
-        // são seguras nele: `agendarProximaRecarga` recusa quando o sinal está
-        // abortado, e `setBuscaEmCurso` num componente desmontado é no-op no
-        // React 18. O agendamento fica AQUI, e não no caminho de sucesso, para
-        // que uma falha também seja seguida de nova tentativa: um servidor que
-        // volta sozinho não pode exigir clique para a tela voltar à vida.
-        if (!controlador.signal.aborted) setBuscaEmCurso(false);
-        agendarProximaRecarga();
+        // ENCERRAMENTO DO CICLO. A guarda é "este efeito ainda é o corrente?",
+        // e não "o sinal foi abortado?" — a diferença é o defeito P1 corrigido
+        // aqui. No caminho de TEMPO ESGOTADO o sinal está abortado E o
+        // componente está montado; com a guarda antiga, nenhuma das duas linhas
+        // abaixo rodava, e o resultado era uma tela que anunciava "Atualizando…"
+        // para sempre sobre um polling morto (pior que uma tela reconhecidamente
+        // parada — HAZ-0025).
+        //
+        // Continua correto NÃO rodar quando o efeito foi encerrado: se houve
+        // desmontagem, não há tela; se houve troca de dependência, o efeito
+        // NOVO já chamou `setBuscaEmCurso(true)` e já é dono do próximo ciclo —
+        // liberar o indicador aqui apagaria o "Atualizando…" de uma requisição
+        // que está de fato em voo.
+        //
+        // O agendamento fica AQUI, e não no caminho de sucesso, para que uma
+        // falha também seja seguida de nova tentativa: um servidor que volta
+        // sozinho não pode exigir clique para a tela voltar à vida.
+        if (!efeitoEncerrado) {
+          setBuscaEmCurso(false);
+          agendarProximaRecarga();
+        }
       }
     }
 
@@ -544,6 +579,11 @@ export function useRecursoRemoto<T>(opcoes: OpcoesRecursoRemoto<T>): RecursoRemo
     });
 
     return () => {
+      // Primeiro ato da limpeza: declarar o efeito encerrado. Precisa vir ANTES
+      // do aborto, porque abortar pode fazer a requisição rejeitar de imediato
+      // (é o que o `fetch` real faz), e o `finally` que roda em seguida precisa
+      // já enxergar `efeitoEncerrado === true` para não agendar um ciclo órfão.
+      efeitoEncerrado = true;
       relogioRef.current.cancelar(temporizador);
       // O ciclo seguinte já agendado é cancelado JUNTO com o aborto: sem isto,
       // um componente desmontado deixaria um temporizador vivo que acordaria
