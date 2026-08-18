@@ -24,6 +24,7 @@ import type { ContextoDespacho, Despacho } from "./registro.js";
 import { RegistroDeRegras } from "./registro.js";
 
 export * from "./bundle.js";
+export * from "./exposicao.js";
 export * from "./gcs.js";
 export * from "./news2.js";
 export * from "./registro.js";

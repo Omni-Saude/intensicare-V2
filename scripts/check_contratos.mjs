@@ -44,6 +44,15 @@
  *    (anti-padrão §10-12): parâmetro `in: query` com nome de credencial,
  *    tenant ou identificador de sujeito FALHA o gate; esquema de
  *    segurança `in: query` FALHA o gate.
+ * F. COERÊNCIA DOS ENUMS REST entre `packages/contratos/openapi.yaml` e
+ *    `packages/contratos/src/index.ts` (o espelho manual do contrato REST
+ *    para a UI — ADR-0021). Diferente da parte C (eventos), aqui a regra É
+ *    "as duas listas são idênticas, na mesma ordem": `StatusAvaliacao`,
+ *    `BandaRisco`, `Frescor` e `EstadoItemTrabalho` são enums fechados que
+ *    o TS deve espelhar byte a byte, porque `src/index.ts` não é gerado —
+ *    é escrito à mão e ninguém o confrontava com o YAML antes desta parte
+ *    do gate (achado LAC-L3 / tabela-contrato-ui-backend.md §5). Um valor
+ *    acrescentado, removido ou renomeado em qualquer lado agora FALHA aqui.
  *
  * Por que PyYAML via `python3`, e não uma biblioteca JS
  * ----------------------------------------------------
@@ -63,12 +72,22 @@
  *
  * Uso:
  *   node scripts/check_contratos.mjs [--raiz <diretório>]
+ *   node scripts/check_contratos.mjs autoteste
  *
  * Saída: exit 0 quando tudo passa; exit 1 listando TODAS as falhas.
+ *
+ * `autoteste`: prova, a partir do repositório, que o gate REPROVA o que deve
+ * reprovar — não só "aceita o conforme" (o problema conhecido: eficácia
+ * relatada pelo autor, não reproduzível). Copia o subconjunto de arquivos
+ * que a parte F lê para um diretório temporário, aplica UMA mutação por vez
+ * (valor a mais no YAML; valor a mais no TS; valor renomeado; enum inteiro
+ * removido) e afirma que `verificarContratos` reprova cada cópia mutada —
+ * no espírito de `scripts/verificar-artefato.mjs autoteste`.
  */
 
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -166,6 +185,20 @@ function extrairConstanteTs(fonte, nome) {
   return encontrado ? encontrado[1] : undefined;
 }
 
+/**
+ * Extrai `export type NOME = "a" | "b" | ...;` de um fonte TypeScript — em
+ * uma linha (`StatusAvaliacao`, `BandaRisco`, `Frescor`) ou quebrado em
+ * várias com `|` líder (`EstadoItemTrabalho`). Devolve `undefined` quando o
+ * tipo não existe no fonte — inclusive quando um enum inteiro foi removido,
+ * caso que a parte F precisa detectar como falha, não como lista vazia.
+ */
+function extrairUniaoTipoTs(fonte, nome) {
+  const padrao = new RegExp(`export type ${nome}\\s*=\\s*([\\s\\S]*?);`, "m");
+  const encontrado = padrao.exec(fonte);
+  if (!encontrado) return undefined;
+  return [...encontrado[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+}
+
 /** Resolve um `$ref` de JSON Pointer local (`#/a/b/c`). */
 function resolverRef(documento, ref) {
   if (typeof ref !== "string" || !ref.startsWith("#/")) return undefined;
@@ -207,6 +240,36 @@ function mesmaLista(a, b) {
 /**
  * @returns {{falhas: string[], verificacoes: number}}
  */
+/**
+ * Arquivos cuja AUSÊNCIA reprova o gate — são os documentos de contrato
+ * propriamente ditos.
+ *
+ * Declarados aqui, e não embutidos na função, porque quem exercita o gate
+ * sobre uma cópia do repositório (`packages/contratos/src/asyncapi.test.ts`)
+ * precisa saber o que copiar. Enquanto essa lista viveu duplicada nos dois
+ * lados, acrescentar uma entrada ao gate quebrou 12 testes de uma vez: o gate
+ * passou a exigir `src/index.ts`, a cópia não o levava, e todas as asserções
+ * sobre mensagens específicas de falha passaram a receber "arquivo ausente".
+ * Uma fonte só elimina a classe do defeito em vez de remendar a ocorrência.
+ */
+export const ARQUIVOS_DE_CONTRATO_OBRIGATORIOS = Object.freeze([
+  "packages/contratos/openapi.yaml",
+  "packages/contratos/asyncapi.yaml",
+  "packages/contratos/src/asyncapi.ts",
+  "packages/contratos/src/index.ts",
+]);
+
+/**
+ * TUDO que o gate lê. Superconjunto do obrigatório: o catálogo em prosa e o
+ * mapa de eventos da API são lidos quando existem, e a sua ausência é tratada
+ * como falha específica mais adiante, não como arquivo de contrato faltando.
+ */
+export const ARQUIVOS_LIDOS_PELO_GATE = Object.freeze([
+  ...ARQUIVOS_DE_CONTRATO_OBRIGATORIOS,
+  "docs/09-api-events-and-mcp/catalogo-de-eventos.md",
+  "apps/api/src/db.ts",
+]);
+
 export function verificarContratos(raiz) {
   const falhas = [];
   let verificacoes = 0;
@@ -219,10 +282,12 @@ export function verificarContratos(raiz) {
   const caminhoOpenapi = join(raiz, "packages/contratos/openapi.yaml");
   const caminhoAsyncapi = join(raiz, "packages/contratos/asyncapi.yaml");
   const caminhoTsCanal = join(raiz, "packages/contratos/src/asyncapi.ts");
+  const caminhoTsIndex = join(raiz, "packages/contratos/src/index.ts");
   const caminhoCatalogo = join(raiz, "docs/09-api-events-and-mcp/catalogo-de-eventos.md");
   const caminhoDb = join(raiz, "apps/api/src/db.ts");
 
-  for (const caminho of [caminhoOpenapi, caminhoAsyncapi, caminhoTsCanal]) {
+  for (const relativo of ARQUIVOS_DE_CONTRATO_OBRIGATORIOS) {
+    const caminho = join(raiz, relativo);
     if (!existsSync(caminho)) reprovar(`Arquivo de contrato ausente: ${caminho}`);
   }
   if (falhas.length > 0) return { falhas, verificacoes };
@@ -481,7 +546,177 @@ export function verificarContratos(raiz) {
     `Nome do cookie de ticket divergente: TS='${String(cookieTs)}', AsyncAPI='${String(cookieYaml)}'.`,
   );
 
+  // --- F. Coerência dos enums REST (openapi.yaml × src/index.ts) ---------
+  //
+  // `src/index.ts` espelha `openapi.yaml` à mão (376 linhas TS para 1.380
+  // linhas YAML) e não é gerado — ADR-0021 exige que seja "gerado a partir
+  // de, ou validado contra" o contrato de API. Isto é a metade "validado
+  // contra" para os quatro enums fechados do domínio clínico/operacional.
+  // Regra: as duas listas devem ser IDÊNTICAS, na mesma ordem — ao
+  // contrário da parte C (eventos), aqui não há terceira fonte com
+  // vocabulário parcial a conciliar.
+
+  const fonteTsIndex = readFileSync(caminhoTsIndex, "utf8");
+
+  const paresDeEnumRest = [
+    ["StatusAvaliacao", "StatusAvaliacao"],
+    ["BandaRisco", "BandaRisco"],
+    ["Frescor", "Frescor"],
+    ["EstadoItemTrabalho", "EstadoItemTrabalho"],
+  ];
+  for (const [nomeTipoTs, nomeSchemaYaml] of paresDeEnumRest) {
+    const doTs = extrairUniaoTipoTs(fonteTsIndex, nomeTipoTs);
+    const doYaml = openapi.components?.schemas?.[nomeSchemaYaml]?.enum;
+    verificar(
+      doTs !== undefined,
+      `packages/contratos/src/index.ts: tipo '${nomeTipoTs}' não encontrado (enum REST sem espelho TS).`,
+    );
+    verificar(
+      Array.isArray(doYaml) && doYaml.length > 0,
+      `openapi.yaml: schema '${nomeSchemaYaml}' sem 'enum' (ou vazio).`,
+    );
+    if (doTs !== undefined && Array.isArray(doYaml) && doYaml.length > 0) {
+      verificar(
+        mesmaLista(doTs, doYaml),
+        `Enum REST divergente entre openapi.yaml e src/index.ts para '${nomeSchemaYaml}'.\n      openapi.yaml : ${JSON.stringify(doYaml)}\n      src/index.ts : ${JSON.stringify(doTs)}`,
+      );
+    }
+  }
+
   return { falhas, verificacoes };
+}
+
+// ---------------------------------------------------------------------------
+// Autoteste — prova nos dois sentidos (arquivos reais, mutados em cópia)
+// ---------------------------------------------------------------------------
+
+/** Arquivos que a parte F lê — o subconjunto mínimo para reproduzir o gate. */
+const ARQUIVOS_AUTOTESTE = [
+  "packages/contratos/openapi.yaml",
+  "packages/contratos/asyncapi.yaml",
+  "packages/contratos/src/asyncapi.ts",
+  "packages/contratos/src/index.ts",
+];
+
+/**
+ * Copia `ARQUIVOS_AUTOTESTE` do repositório real para um diretório
+ * temporário e aplica as mutações pedidas. Cada mutação PRECISA localizar
+ * seu texto-alvo verbatim no arquivo real — se não localizar (porque o
+ * arquivo mudou desde que a mutação foi escrita), a função FALHA
+ * ruidosamente. Sem essa guarda, uma mutação que nunca se aplica faz o
+ * autoteste "passar" sem jamais ter mutado nada — falso-verde silencioso,
+ * exatamente o que este autoteste existe para impedir.
+ *
+ * @param {{arquivo: string, nome: string, de: string, para: string}[]} mutacoes
+ * @returns {string} a raiz da cópia mutada.
+ */
+function criarCopiaMutada(raizOrigem, mutacoes) {
+  const raizDestino = mkdtempSync(join(tmpdir(), "check-contratos-autoteste-"));
+  for (const relativo of ARQUIVOS_AUTOTESTE) {
+    let conteudo = readFileSync(join(raizOrigem, relativo), "utf8");
+    for (const mutacao of mutacoes.filter((m) => m.arquivo === relativo)) {
+      if (!conteudo.includes(mutacao.de)) {
+        rmSync(raizDestino, { recursive: true, force: true });
+        throw new Error(
+          `autoteste: mutação "${mutacao.nome}" não encontrou o texto-alvo em '${relativo}' — ` +
+            "o arquivo real mudou; atualize o texto-alvo da mutação antes de confiar no autoteste.",
+        );
+      }
+      conteudo = conteudo.replace(mutacao.de, mutacao.para);
+    }
+    const destino = join(raizDestino, relativo);
+    mkdirSync(dirname(destino), { recursive: true });
+    writeFileSync(destino, conteudo, "utf8");
+  }
+  return raizDestino;
+}
+
+/**
+ * Um gate nunca visto reprovando é uma linha de log, não um gate. Cada
+ * mutação abaixo ataca exatamente a parte F (enums REST): valor a mais no
+ * YAML sem par no TS; valor a mais no TS sem par no YAML; valor renomeado
+ * de um lado só; enum inteiro removido de um lado. As quatro DEVEM reprovar
+ * uma cópia do repositório que, sem mutação, é aceita hoje (caso base).
+ */
+function autoteste() {
+  const casos = [];
+  const registrar = (nome, esperado, obtido, detalhe = "") =>
+    casos.push({ nome, esperado, obtido, ok: esperado === obtido, detalhe });
+
+  // Caso base: o repositório real, sem mutação, é aceito — e produz
+  // verificações de fato (guarda de não-vacuidade: um gate que não checou
+  // nada não prova que checaria uma mutação).
+  const base = verificarContratos(RAIZ_PADRAO);
+  registrar(
+    "repositório real (sem mutação) é ACEITO",
+    0,
+    base.falhas.length,
+    base.falhas.join(" | "),
+  );
+  registrar("repositório real produz verificações não-vazias", true, base.verificacoes > 0);
+
+  const mutacoesRest = [
+    {
+      nome: "valor a mais em StatusAvaliacao (YAML) sem par no TS",
+      arquivo: "packages/contratos/openapi.yaml",
+      de: "enum: [valido, parcial, indisponivel, desatualizado, invalido]",
+      para: "enum: [valido, parcial, indisponivel, desatualizado, invalido, bugado]",
+    },
+    {
+      nome: "valor a mais em BandaRisco (TS) sem par no YAML",
+      arquivo: "packages/contratos/src/index.ts",
+      de: 'export type BandaRisco = "normal" | "atencao" | "alerta" | "critico";',
+      para: 'export type BandaRisco = "normal" | "atencao" | "alerta" | "critico" | "bugado";',
+    },
+    {
+      nome: "valor renomeado em Frescor (YAML) diverge do TS",
+      arquivo: "packages/contratos/openapi.yaml",
+      de: "enum: [atual, envelhecendo, desatualizado]",
+      para: "enum: [atual, envelhecendo2, desatualizado]",
+    },
+    {
+      nome: "enum EstadoItemTrabalho inteiro removido do TS",
+      arquivo: "packages/contratos/src/index.ts",
+      de:
+        'export type EstadoItemTrabalho =\n  | "nao-atribuido"\n  | "atribuido"\n  | "reconhecido"' +
+        '\n  | "escalado"\n  | "sobreposto"\n  | "resolvido"\n  | "suprimido"\n  | "reaberto";',
+      para: "",
+    },
+  ];
+
+  for (const mutacao of mutacoesRest) {
+    let raizTemp;
+    try {
+      raizTemp = criarCopiaMutada(RAIZ_PADRAO, [mutacao]);
+      const resultado = verificarContratos(raizTemp);
+      registrar(
+        `mutação REPROVADA pelo gate: ${mutacao.nome}`,
+        true,
+        resultado.falhas.length > 0,
+        `${String(resultado.falhas.length)} falha(s)`,
+      );
+    } finally {
+      if (raizTemp) rmSync(raizTemp, { recursive: true, force: true });
+    }
+  }
+
+  const falhos = casos.filter((c) => !c.ok);
+  console.log(`\n=== check_contratos autoteste — ${String(casos.length)} caso(s) ===`);
+  for (const c of casos) {
+    console.log(
+      `  ${c.ok ? "ok  " : "FALHOU"} ${c.nome}` +
+        (c.ok ? "" : ` (esperado=${String(c.esperado)} obtido=${String(c.obtido)} ${c.detalhe})`),
+    );
+  }
+  if (falhos.length > 0) {
+    console.error(`\nautoteste: ${String(falhos.length)} caso(s) falharam.`);
+    return 1;
+  }
+  console.log(
+    `\nautoteste: OK — ${String(casos.length)} casos; o gate aceita o conforme e reprova ` +
+      "cada mutação de enum REST testada.",
+  );
+  return 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -502,6 +737,10 @@ function lerRaizDosArgumentos(argumentos) {
 const executadoDiretamente =
   process.argv[1] !== undefined &&
   resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
+
+if (executadoDiretamente && process.argv[2] === "autoteste") {
+  process.exit(autoteste());
+}
 
 if (executadoDiretamente) {
   const raiz = lerRaizDosArgumentos(process.argv.slice(2));

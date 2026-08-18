@@ -1,10 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
+import type { LeitorDeProntidao } from "../api/prontidao.js";
 import type { ClienteApiIntensiCare, ModoDemonstracao } from "../api/tipos.js";
 import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
 import { combinarConectividade, useConectividadeNavegador } from "../estado/conectividade.js";
-import { useRecursoRemoto } from "../estado/recursoRemoto.js";
+import { useProntidao } from "../estado/prontidao.js";
+import { INTERVALO_RECARGA_PADRAO_MS, useRecursoRemoto } from "../estado/recursoRemoto.js";
+import type { Relogio } from "../estado/relogio.js";
 import { ehPerfilDesenvolvimento } from "../perfil.js";
-import { IndicadorConectividade, RotuloFrescorVisao } from "./AvisosDeEstado.js";
+import {
+  AvisoProntidao,
+  IndicadorConectividade,
+  RotuloFrescorVisao,
+  RotuloIdadeVisao,
+} from "./AvisosDeEstado.js";
 import { CartaoLeito } from "./CartaoLeito.js";
 import { ControleDemonstracao } from "./ControleDemonstracao.js";
 import { EstadoTela } from "./EstadoTela.js";
@@ -14,6 +22,16 @@ import { RegiaoAoVivoAlertas } from "./RegiaoAoVivoAlertas.js";
 interface GradeLeitosProps {
   cliente: ClienteApiIntensiCare;
   aoSelecionarLeito: (leitoId: string) => void;
+  /**
+   * Leitor de `GET /v1/readyz`. `null`/ausente = esta montagem NÃO observa
+   * prontidão e, portanto, não afirma nada sobre ela (`AvisoProntidao` não
+   * renderiza). `App` sempre fornece um leitor real.
+   */
+  leitorProntidao?: LeitorDeProntidao | null;
+  /** Cadência da recarga autoritativa. `null` desliga (usado só em teste). */
+  intervaloRecargaMs?: number | null;
+  /** Porta de tempo injetável (`../estado/relogio.ts`). */
+  relogio?: Relogio;
 }
 
 const ESTADOS_ALERTA_PENDENTE = new Set(["nao_atribuido", "atribuido", "escalado", "reaberto"]);
@@ -32,7 +50,13 @@ function alertasPendentes(itens: ItemGradeLeito[]): Alerta[] {
  * aborta a requisição de fato, e o dado anterior sobrevive a uma falha de
  * recarga SEMPRE rotulado como não-atual.
  */
-export function GradeLeitos({ cliente, aoSelecionarLeito }: GradeLeitosProps) {
+export function GradeLeitos({
+  cliente,
+  aoSelecionarLeito,
+  leitorProntidao = null,
+  intervaloRecargaMs = INTERVALO_RECARGA_PADRAO_MS,
+  relogio,
+}: GradeLeitosProps) {
   const [modoDemo, setModoDemo] = useState<ModoDemonstracao | null>(null);
   const [mensagemAoVivo, setMensagemAoVivo] = useState<string | null>(null);
   const emDesenvolvimento = ehPerfilDesenvolvimento();
@@ -55,13 +79,31 @@ export function GradeLeitos({ cliente, aoSelecionarLeito }: GradeLeitosProps) {
   const recurso = useRecursoRemoto<ItemGradeLeito[]>({
     buscar,
     habilitado: !demonstrandoCarregando,
+    intervaloRecargaMs,
+    ...(relogio !== undefined ? { relogio } : {}),
+  });
+
+  const prontidao = useProntidao({
+    leitor: leitorProntidao,
+    intervaloRecargaMs,
+    ...(relogio !== undefined ? { relogio } : {}),
   });
 
   const conectividadeNavegador = useConectividadeNavegador();
   const marcarLeituraBemSucedida = conectividadeNavegador.marcarLeituraBemSucedida;
+  /*
+    Três origens alimentam `degradado`, e nenhuma delas pode ocultar a outra:
+    a última leitura falhou (frescor da visão), a releitura automática parou de
+    produzir dado novo (idade da visão, LAC-L1), ou o próprio SERVIÇO declarou
+    não ter capacidade segura (`/v1/readyz`, LAC-L2). A precedência
+    offline > reconectando > degradado > online continua sendo de
+    `combinarConectividade`.
+  */
   const conectividade = combinarConectividade(
     conectividadeNavegador.estado,
-    recurso.exibindoDadoDesatualizado,
+    recurso.exibindoDadoDesatualizado ||
+      recurso.idadeVisao?.classe === "ciclo_perdido" ||
+      prontidao.degradada,
   );
 
   const [itens, setItens] = useState<ItemGradeLeito[] | null>(null);
@@ -124,6 +166,7 @@ export function GradeLeitos({ cliente, aoSelecionarLeito }: GradeLeitosProps) {
       </div>
 
       <IndicadorConectividade estado={conectividade} />
+      <AvisoProntidao leitura={prontidao.leitura} />
       {/*
         `import.meta.env.DEV` é substituído por um LITERAL pelo Vite, então em
         produção este ramo vira código morto e o empacotador remove o módulo
@@ -140,6 +183,11 @@ export function GradeLeitos({ cliente, aoSelecionarLeito }: GradeLeitosProps) {
       )}
       <RegiaoAoVivoAlertas mensagem={mensagemAoVivo} />
       <RotuloFrescorVisao frescor={recurso.frescorVisao} obtidoEm={recurso.obtidoEm} />
+      <RotuloIdadeVisao
+        idade={recurso.idadeVisao}
+        obtidoEm={recurso.obtidoEm}
+        buscaEmCurso={recurso.buscaEmCurso}
+      />
 
       <EstadoTela
         estado={estadoExibido}

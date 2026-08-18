@@ -8,11 +8,25 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
+// O gate é um `.mjs` de `scripts/`; importá-lo aqui é deliberado — é a única
+// forma de a suíte usar a MESMA declaração de entradas que o gate usa.
+import {
+  ARQUIVOS_DE_CONTRATO_OBRIGATORIOS,
+  ARQUIVOS_LIDOS_PELO_GATE,
+} from "../../../scripts/check_contratos.mjs";
 import {
   ACOES_RECONCILIACAO,
   ASYNCAPI_CONTRACT_VERSION,
@@ -37,13 +51,17 @@ import {
 const RAIZ_REPO = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const SCRIPT = join(RAIZ_REPO, "scripts/check_contratos.mjs");
 
-const ARQUIVOS_DO_GATE = [
-  "packages/contratos/openapi.yaml",
-  "packages/contratos/asyncapi.yaml",
-  "packages/contratos/src/asyncapi.ts",
-  "docs/09-api-events-and-mcp/catalogo-de-eventos.md",
-  "apps/api/src/db.ts",
-];
+/**
+ * O que a raiz temporária precisa conter é declarado PELO PRÓPRIO GATE, não
+ * espelhado aqui.
+ *
+ * Esta lista já foi um espelho manual, e derivou em silêncio: quando o gate
+ * passou a exigir `packages/contratos/src/index.ts`, a cópia continuou sem
+ * ele e os 12 testes abaixo falharam de uma vez — todos recebendo "arquivo de
+ * contrato ausente" no lugar da mensagem específica que cada um afirma. O
+ * espelho não é remendado; ele deixa de existir.
+ */
+const ARQUIVOS_DO_GATE = ARQUIVOS_LIDOS_PELO_GATE;
 
 const temporarios: string[] = [];
 
@@ -187,6 +205,37 @@ describe("check_contratos: o gate APROVA os documentos reais", () => {
     const { status, saida } = rodarGate(montarRaizTemporaria());
     expect(saida).toContain("OK");
     expect(status).toBe(0);
+  }, 60_000);
+
+  /**
+   * GUARDA CONTRA A CLASSE DE DEFEITO QUE ESTA SUÍTE JÁ SOFREU.
+   *
+   * Enquanto a lista de arquivos a copiar foi um espelho manual do que o gate
+   * lê, ela derivou em silêncio: o gate passou a exigir
+   * `packages/contratos/src/index.ts`, a cópia continuou sem ele, e os 12
+   * testes de reprovação falharam de uma vez — todos recebendo "arquivo de
+   * contrato ausente" no lugar da mensagem específica que cada um afirma. O
+   * sintoma escondia a causa.
+   *
+   * A asserção é sobre o SISTEMA DE ARQUIVOS da raiz montada, não sobre
+   * álgebra de listas: comparar as duas constantes entre si seria tautológico,
+   * porque uma é construída a partir da outra. O que pode de fato quebrar é a
+   * CÓPIA — um caminho que existe na lista e não chega ao disco (diretório não
+   * criado, arquivo movido no repositório, `cpSync` silenciosamente pulado).
+   */
+  it("a raiz temporária contém, em disco, cada arquivo que o gate exige", () => {
+    expect(
+      ARQUIVOS_DE_CONTRATO_OBRIGATORIOS.length,
+      "lista de exigidos vazia — o laço abaixo não provaria nada",
+    ).toBeGreaterThan(0);
+
+    const raiz = montarRaizTemporaria();
+    for (const relativo of ARQUIVOS_DE_CONTRATO_OBRIGATORIOS) {
+      expect(
+        existsSync(join(raiz, relativo)),
+        `o gate exige ${relativo}, e a raiz temporária não o recebeu`,
+      ).toBe(true);
+    }
   }, 60_000);
 });
 

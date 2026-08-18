@@ -17,6 +17,13 @@
  * O que o hook produz de verdade: `online`, `offline`, `reconectando` e
  * `degradado`.
  *
+ * ATUALIZAÇÃO (fechamento de LAC-L1/LAC-L2). O que passou a existir NÃO é
+ * push: é o caminho de VERDADE que `ADR-0011 P8` exige — recarga autoritativa
+ * periódica da projeção (`./recursoRemoto.ts`) e consumo de `GET /v1/readyz`
+ * (`../api/prontidao.ts`). O parágrafo acima continua valendo integralmente:
+ * o push segue inexistente, e `reproduzindo`/`reconciliado` seguem sem
+ * transporte que os origine.
+ *
  * Rastreio: ADR-0011, ADR-0021 F4, service-blueprint F2/F10, ACH-07.
  */
 import { useCallback, useEffect, useState } from "react";
@@ -33,10 +40,22 @@ export type ConectividadeNavegador = "online" | "offline" | "reconectando";
  * Um estado mais grave nunca é ocultado por um mais brando — a regra espelha
  * a precedência de avaliação da ADR-0008 (P-a) aplicada a transporte.
  *
- * `degradado` significa: a conexão existe, mas a última leitura falhou e a
- * tela está exibindo conteúdo anterior. O modelo de estados §6 é explícito —
- * "a degradação aparece no ponto de uso clínico" e "tela calma sem dado é
- * proibida".
+ * `degradado` significa: a conexão existe, mas há algo que impede tratar o que
+ * está na tela como retrato corrente. O parâmetro é um BOOLEANO COMPOSTO pelo
+ * chamador, e desde o fechamento de LAC-L1/LAC-L2 ele tem três origens, sem
+ * que uma esconda a outra (ver `../components/GradeLeitos.tsx`):
+ *
+ *   1. a última leitura FALHOU e a tela exibe conteúdo anterior
+ *      (`exibindoDadoDesatualizado`, frescor da visão);
+ *   2. a releitura automática parou de produzir dado novo
+ *      (`idadeVisao.classe === "ciclo_perdido"`, LAC-L1);
+ *   3. o próprio SERVIÇO declarou não ter capacidade segura
+ *      (`GET /v1/readyz`, `../api/prontidao.ts`, LAC-L2).
+ *
+ * A composição fica no chamador de propósito: esta função é pura e não sabe
+ * de rede, de relógio nem de sonda. O modelo de estados §6 é explícito — "a
+ * degradação aparece no ponto de uso clínico" e "tela calma sem dado é
+ * proibida"; SAF-0025 acrescenta que painel de operador NÃO satisfaz.
  */
 export function combinarConectividade(
   navegador: ConectividadeNavegador,

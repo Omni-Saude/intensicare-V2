@@ -299,6 +299,8 @@ main {
 }
 
 .rotulo-frescor-visao,
+.rotulo-idade-visao,
+.aviso-prontidao,
 .indicador-conectividade,
 .aviso-sessao {
   border: 1px solid #d7dce2;
@@ -320,9 +322,26 @@ main {
   border-left-color: #0b3d66;
   background: #f2f7fc;
 }
+/* Idade da visão: neutra em regime; o realce vem do seletor de atributo abaixo,
+   que é reforço da BADGE textual — nunca o único sinal (WCAG 1.4.1). */
+.rotulo-idade-visao {
+  border-left-color: #4a5561;
+  background: #f6f8fa;
+}
+.rotulo-idade-visao[data-idade-visao="ciclo_perdido"],
+.rotulo-idade-visao[data-idade-visao="sem_leitura"] {
+  border-left-color: #7a1010;
+  background: #fff5f5;
+}
+.aviso-prontidao {
+  border-left-color: #6b4400;
+  background: #fff9ef;
+}
 
 @media (prefers-color-scheme: dark) {
   .rotulo-frescor-visao,
+  .rotulo-idade-visao,
+  .aviso-prontidao,
   .indicador-conectividade,
   .aviso-sessao {
     border-color: #2b3542;
@@ -336,12 +355,52 @@ main {
   .aviso-sessao {
     background: #121c26;
   }
+  .rotulo-idade-visao {
+    background: #171c22;
+  }
+  .rotulo-idade-visao[data-idade-visao="ciclo_perdido"],
+  .rotulo-idade-visao[data-idade-visao="sem_leitura"] {
+    background: #2a1414;
+  }
+  .aviso-prontidao {
+    background: #241d0f;
+  }
 }
 
 .rotulo-frescor-visao p,
+.rotulo-idade-visao p,
+.aviso-prontidao p,
 .indicador-conectividade p,
 .aviso-sessao p {
   margin: 0.4rem 0 0;
+}
+
+/* Lista de razões codificadas de `/v1/readyz`. O código aparece em `<code>`
+   porque é identificador de vocabulário fechado, não prosa: quem o lê precisa
+   poder copiá-lo para telemetria e para o console operacional. */
+.aviso-prontidao__razoes {
+  margin: 0.4rem 0 0;
+  padding-left: 1.5rem;
+}
+/*
+  `overflow-wrap: anywhere` é REQUISITO, não estética. OBSERVED em navegador
+  real (`e2e/reflow.spec.ts`, projeto `chromium-reflow-320`): sem ele, um
+  código de razão longo como `projection_freshness_threshold_unvalidated`
+  empurrava a largura do conteúdo para 445 px numa janela de 320 px e criava
+  ROLAGEM EM DOIS EIXOS — violação direta de WCAG 1.4.10 (reflow), justamente
+  no bloco que precisa ser lido quando o serviço se declara degradado.
+
+  O identificador NÃO é encurtado nem truncado com reticências: ele é
+  vocabulário fechado, precisa ser copiável para telemetria e para o console
+  operacional, e truncar apagaria informação (ADR-0021 F1).
+*/
+.aviso-prontidao__razoes li {
+  overflow-wrap: anywhere;
+}
+.aviso-prontidao__razoes code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95em;
+  overflow-wrap: anywhere;
 }
 
 /* A grade repetida após falha de recarga é visualmente atenuada E precedida

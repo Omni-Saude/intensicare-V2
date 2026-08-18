@@ -13,8 +13,19 @@
  * Rastreio: ADR-0021 F3/F4, ADR-0029 (texto provisório), HAZ-0037, SAF-0034,
  * WF-05, ACH-07.
  */
+import type { LeituraDeProntidao } from "../api/prontidao.js";
+import { chavearRazoes, prontidaoObrigaDegradacao } from "../api/prontidao.js";
 import type { EstadoConectividade, EstadoSessao, FrescorVisao } from "../domain/estados.js";
-import { textoConectividade, textoFrescorVisao, textoSessao } from "../domain/linguagem.js";
+import {
+  type SituacaoProntidao,
+  textoConectividade,
+  textoFrescorVisao,
+  textoIdadeDecorrida,
+  textoIdadeVisao,
+  textoProntidao,
+  textoSessao,
+} from "../domain/linguagem.js";
+import type { ResumoIdadeVisao } from "../estado/idadeVisao.js";
 import { BadgeTom } from "./BadgeTom.js";
 
 // ---------------------------------------------------------------------------
@@ -53,6 +64,173 @@ export function RotuloFrescorVisao({ frescor, obtidoEm }: RotuloFrescorVisaoProp
     >
       <BadgeTom texto={texto} tom={tom} />
       {obtidoEm !== null && <p>Última leitura bem-sucedida: {obtidoEm}.</p>}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Idade da visão (LAC-L1)
+// ---------------------------------------------------------------------------
+
+interface RotuloIdadeVisaoProps {
+  /** `null` quando esta montagem não tem recarga automática — nada é afirmado. */
+  idade: ResumoIdadeVisao | null;
+  /** Instante ISO da última leitura bem-sucedida, quando conhecido. */
+  obtidoEm: string | null;
+  /** `true` enquanto uma leitura está em voo (inclusive a periódica). */
+  buscaEmCurso?: boolean;
+}
+
+/**
+ * Idade da visão — o rótulo que faltava para a tela deixar de ser um
+ * instantâneo (LAC-L1; ADR-0011 P6 "estado de conexão e frescor no contrato",
+ * P8 "polling é o caminho de verdade"; HAZ-0025 "clinicians trust a frozen
+ * board"; SAF-0025 "the interface MUST never appear healthy…").
+ *
+ * DUAS REGIÕES, DE PROPÓSITO — e é a decisão de acessibilidade mais importante
+ * deste componente. O NÚMERO da idade muda a cada tique
+ * (`INTERVALO_TIQUE_IDADE_MS`); se ele vivesse dentro de uma `aria-live`, um
+ * leitor de tela anunciaria "há 5 segundos… há 10 segundos… há 15 segundos"
+ * indefinidamente — a rajada que IA-P2/HAZ-0037 proíbem, ocupando o canal que
+ * o alerta clínico precisa. Então:
+ *
+ *   - o número fica FORA de qualquer live region (visível, lido sob demanda);
+ *   - só a CLASSE (`no_ciclo` → `ciclo_perdido`) vive numa `role="status"`,
+ *     e o texto dela muda apenas na transição — logo é anunciada uma vez.
+ *
+ * `no_ciclo` não produz selo permanente, pela mesma economia de sinal aplicada
+ * a `online` em `IndicadorConectividade`; a idade em texto continua visível.
+ */
+export function RotuloIdadeVisao({ idade, obtidoEm, buscaEmCurso = false }: RotuloIdadeVisaoProps) {
+  if (idade === null) return null;
+
+  const { texto, tom } = textoIdadeVisao(idade.classe);
+  const declara = idade.classe !== "no_ciclo";
+
+  return (
+    <div
+      className="rotulo-idade-visao"
+      data-testid="rotulo-idade-visao"
+      data-idade-visao={idade.classe}
+      data-idade-ms={idade.idadeMs ?? ""}
+      data-ciclos-vencidos={idade.ciclosVencidos}
+    >
+      {/* Só a classe é anunciada — ver a nota de duas regiões acima. */}
+      <div role="status" aria-live="polite">
+        {declara && <BadgeTom texto={texto} tom={tom} />}
+      </div>
+
+      {idade.idadeMs === null ? (
+        <p data-testid="idade-visao-texto">Ainda não houve leitura bem-sucedida nesta tela.</p>
+      ) : (
+        <p data-testid="idade-visao-texto">
+          Última leitura bem-sucedida há {textoIdadeDecorrida(idade.idadeMs)}
+          {obtidoEm === null ? "" : ` (${obtidoEm})`}. Releitura automática a cada{" "}
+          {textoIdadeDecorrida(idade.intervaloRecargaMs)}.
+        </p>
+      )}
+
+      {idade.classe === "ciclo_perdido" && (
+        <p data-testid="idade-visao-ciclos">
+          Ciclos de releitura vencidos sem dado novo: {idade.ciclosVencidos}.
+        </p>
+      )}
+
+      {/*
+        "Atualizando…" é informação de transporte e nunca substitui o rótulo
+        acima: durante a releitura o conteúdo em tela CONTINUA sendo o anterior,
+        e continua rotulado como tal.
+      */}
+      {buscaEmCurso && <p data-testid="idade-visao-em-curso">Atualizando…</p>}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Prontidão do serviço (`GET /v1/readyz`)
+// ---------------------------------------------------------------------------
+
+interface AvisoProntidaoProps {
+  /** `null` quando esta montagem não observa prontidão — nada é afirmado. */
+  leitura: LeituraDeProntidao | null;
+}
+
+function situacaoDe(leitura: LeituraDeProntidao): SituacaoProntidao {
+  if (leitura.origem === "relatorio" && leitura.veredito !== null) return leitura.veredito;
+  if (leitura.origem === "nao_avaliada") return "not_ready";
+  return "nao_lida";
+}
+
+/**
+ * Declaração de prontidão do serviço NO PONTO DE USO CLÍNICO — fechamento do
+ * lado frontend de LAC-L2.
+ *
+ * POR QUE AQUI E NÃO NUM PAINEL DE OPERADOR. `SAF-0025` é literal: "Operator-only
+ * dashboards do not satisfy this requirement". `QAS-0023` mede "count of
+ * degradations with no user-visible representation: must be zero" — e enquanto
+ * `/v1/readyz` respondia 503 permanente sem nenhuma superfície clínica
+ * consumindo-o, essa contagem era ≥ 1.
+ *
+ * O TEXTO DAS RAZÕES É DO SERVIDOR. Cada linha mostra o `codigo` do vocabulário
+ * fechado (literal, auditável, referenciável por telemetria — ADR-0021 F1) e o
+ * `detalhe` pt-BR redigido pelo backend, verbatim. Este componente não redige
+ * frase própria por razão: seriam duas descrições divergentes do mesmo fato
+ * (ADR-0008 N3). Um código que esta versão não conhece aparece assim mesmo,
+ * marcado — degradação descartada por desconhecimento é degradação silenciosa.
+ *
+ * `ready` não produz selo permanente: um "tudo certo" fixo é ruído que treina
+ * o olho a ignorar a região.
+ *
+ * Anúncio POLIDO (`role="status"`), não assertivo: este banner qualifica a tela
+ * inteira, é persistente e pode coexistir por horas com o alerta clínico de
+ * `RegiaoAoVivoAlertas`. Reservar o canal assertivo ao clinicamente urgente é a
+ * mesma decisão já tomada em `IndicadorConectividade` (IA-P2/HAZ-0037).
+ */
+export function AvisoProntidao({ leitura }: AvisoProntidaoProps) {
+  if (leitura === null) return null;
+  if (!prontidaoObrigaDegradacao(leitura)) return null;
+
+  const situacao = situacaoDe(leitura);
+  const { texto, tom } = textoProntidao(situacao);
+
+  return (
+    <div
+      className="aviso-prontidao"
+      data-testid="aviso-prontidao"
+      data-prontidao={situacao}
+      data-origem-prontidao={leitura.origem}
+      data-status-http={leitura.statusHttp ?? ""}
+      role="status"
+      aria-live="polite"
+    >
+      <BadgeTom texto={texto} tom={tom} />
+
+      {leitura.razoes.length > 0 ? (
+        <>
+          <p>Razões declaradas pelo servidor:</p>
+          {/*
+            `chavearRazoes` (não o código sozinho): OBSERVED contra a API real
+            (E2E `recarga-autoritativa.spec.ts`, 2026-08-18) que `/v1/readyz`
+            repete o mesmo código com `detalhe` diferente, uma vez por projeção
+            sem alvo de frescor validado. São fatos distintos, e nenhum é
+            deduplicado — colapsá-los esconderia quantas projeções estão sem
+            alvo (QAS-0023 exige contagem ZERO de degradação sem representação).
+          */}
+          <ul className="aviso-prontidao__razoes">
+            {chavearRazoes(leitura.razoes).map(({ chave, razao }) => (
+              <li key={chave} data-codigo-razao={razao.codigo}>
+                <code>{razao.codigo}</code>
+                {razao.detalhe === "" ? "" : ` — ${razao.detalhe}`}
+                {razao.reconhecido ? "" : " (código não reconhecido por esta versão da interface)"}
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <p>
+          O servidor não devolveu razões codificadas nesta leitura. Nenhuma razão é suposta aqui.
+        </p>
+      )}
     </div>
   );
 }

@@ -99,6 +99,36 @@ export type EstadoSessao =
 export type FrescorVisao = "atual" | "desatualizado_apos_falha";
 
 /**
+ * IDADE DA VISÃO — segundo eixo do frescor da tela, ortogonal a `FrescorVisao`
+ * e introduzido para fechar LAC-L1.
+ *
+ * POR QUE UM TIPO NOVO, E NÃO UM TERCEIRO VALOR DE `FrescorVisao`. Aquele tipo
+ * responde "a última tentativa de leitura FALHOU?"; este responde "quanto tempo
+ * faz desde a última leitura BEM-SUCEDIDA?". São perguntas independentes: uma
+ * tela pode estar `atual` (nenhuma falha) e mesmo assim exibir conteúdo de
+ * horas atrás, porque ninguém clicou em "Atualizar" — que era exatamente o
+ * estado do produto antes desta mudança, e é o modo de falha de HAZ-0025
+ * ("clinicians trust a frozen board").
+ *
+ * FRONTEIRA CLÍNICA (o ponto mais delicado deste tipo). `ciclo_perdido` NÃO é
+ * um juízo de frescor CLÍNICO: ele não diz que o dado do paciente está velho.
+ * Ele diz apenas que a RECARGA AUTOMÁTICA desta tela — cuja cadência é uma
+ * premissa reversível de engenharia (`INTERVALO_RECARGA_PADRAO_MS` em
+ * `../estado/recursoRemoto.ts`) — deixou de produzir leitura nova. Janelas e
+ * horizontes de frescor clínico são conteúdo de rule release (VAL-0023) e
+ * permanecem `VALIDATION REQUIRED`; nada aqui os antecipa. O frescor do insumo
+ * clínico continua sendo `EstadoFrescor`, originado no backend (ADR-0008 N5,
+ * ADR-0011 P7).
+ *
+ *   - `sem_leitura`   — nenhuma leitura bem-sucedida ocorreu ainda;
+ *   - `no_ciclo`      — a última leitura bem-sucedida é mais recente que dois
+ *                       intervalos de recarga (a recarga em voo explica a idade);
+ *   - `ciclo_perdido` — pelo menos um ciclo inteiro de recarga venceu sem
+ *                       produzir leitura bem-sucedida.
+ */
+export type IdadeVisao = "sem_leitura" | "no_ciclo" | "ciclo_perdido";
+
+/**
  * Banda de risco clínico — sempre exibida com rótulo textual, nunca só
  * cor (ADR-0029 lista de ambiguidade proibida; prompt §11 "non-color-only
  * cues"). Quatro faixas, no espírito da "clear four-tier prioritization"
