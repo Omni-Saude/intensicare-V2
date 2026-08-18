@@ -30,11 +30,20 @@
  * PARTITION`, `CREATE FUNCTION ... SECURITY DEFINER` ou um `GRANT` avulso —
  * NÃO é reavaliada enquanto o processo viver: ela só será vista no próximo boot
  * (ou na próxima migração, cujas auditorias são as mesmas). Isso é "fechado até
- * o próximo deploy", não "fechado", e está declarado assim de propósito em
- * `../README.md` e no cabeçalho de `../migrations/0005_fecho_de_privilegio.sql`.
- * Fechar a janela exigiria EVENT TRIGGER de DDL, que no PostgreSQL 16 só
- * superusuário pode criar — privilégio que o papel de migração, por desenho
- * (`0003`), não tem.
+ * o próximo deploy", não "fechado".
+ *
+ * ISSO MUDOU PARCIALMENTE com `../migrations/0006_ancora_isolada.sql`, e a
+ * mudança é opcional por TOPOLOGIA, não por conveniência:
+ *   - a `0006` §1 tira a âncora de escopo da propriedade do dono do esquema, o
+ *     que fecha F1 por ESTRUTURA — não há instante "entre verificações";
+ *   - a `0006` §2 instala um EVENT TRIGGER de DDL que reexecuta os invariantes
+ *     ao fim de cada comando e ABORTA o que os viole, fechando a janela entre
+ *     boots (F2). Criar event trigger exige SUPERUSUÁRIO no PostgreSQL 16 —
+ *     privilégio que o papel de migração, por desenho (`0003`), não tem —, e é
+ *     por isso que a instalação vive no PROVISIONAMENTO.
+ * Quando o fecho não está instalado, o retrato de boot continua sendo tudo o
+ * que existe. `ConfiguracaoPostgres.exigirFechoDeRuntime` transforma essa
+ * ausência de "limite declarado num README" em RECUSA DE PARTIDA.
  */
 
 import type { Transaction } from "@electric-sql/pglite";
@@ -54,6 +63,22 @@ export interface ConfiguracaoPostgres {
   readonly tamanhoMaximo?: number;
   readonly nomeAplicacao?: string;
   readonly tempoLimiteMs?: number;
+  /**
+   * Exige o FECHO DE RUNTIME da `0006_ancora_isolada.sql`: âncora de escopo
+   * isolada num papel guardião, e `EVENT TRIGGER` de DDL instalado e habilitado.
+   *
+   * Com `true`, abrir contra um banco sem esse fecho é RECUSADO na partida. É
+   * o modo que responde à objeção registrada no cabeçalho da `0005` — "um
+   * controle presente em alguns ambientes e ausente noutros é pior que um
+   * limite declarado": aqui a ausência não é silenciosa, é uma recusa.
+   *
+   * Padrão `false`, e isso NÃO é opinião de segurança: ligar ou não é escolha
+   * de TOPOLOGIA (exige superusuário no provisionamento, o que nem todo serviço
+   * gerenciado concede), e escolha de topologia não é decisão deste pacote
+   * (contrato de agentes §3). O padrão preserva os bancos de verificação que
+   * existem justamente para provar as camadas de migração e de boot.
+   */
+  readonly exigirFechoDeRuntime?: boolean;
 }
 
 interface DiagnosticoIdentidade {
@@ -72,6 +97,15 @@ interface DiagnosticoIdentidade {
   readonly funcoes_definer_de_terceiro: number;
   readonly visoes_alcancaveis_sem_invocador: number;
   readonly esquemas_fora_da_lista: number;
+  /**
+   * `true` quando a âncora de escopo pertence a um papel guardião do qual
+   * NENHUM papel alcançável pelo dono do esquema é membro (`0006` §1). Enquanto
+   * a âncora pertencia ao dono do esquema, qualquer função `SECURITY DEFINER`
+   * criada por ele lia e forjava o selo — F1, reproduzido contra 16.14.
+   */
+  readonly ancora_isolada: boolean;
+  /** `true` quando o `EVENT TRIGGER` da `0006` §2 existe e não está desabilitado. */
+  readonly guarda_ddl_ativa: boolean;
 }
 
 /**
@@ -301,12 +335,43 @@ const SQL_DIAGNOSTICO_IDENTIDADE = `
         and exists (
           select 1 from pg_roles alvo
            where pg_has_role(session_user, alvo.oid, 'MEMBER')
-             and has_schema_privilege(alvo.oid, n.oid, 'USAGE'))) as esquemas_fora_da_lista
+             and has_schema_privilege(alvo.oid, n.oid, 'USAGE'))) as esquemas_fora_da_lista,
+    -- FECHO DE RUNTIME (0006). Diagnostico, nao recusa por padrao: ver
+    -- ConfiguracaoPostgres.exigirFechoDeRuntime.
+    -- A ancora esta isolada quando o dono da tabela de selo NAO e alcancavel
+    -- (por MEMBER, isto e, por SET ROLE) nem a partir do papel de MIGRACAO nem
+    -- a partir do papel conectado. Reparar so no NOME do dono seria frágil; o
+    -- que importa e a alcancabilidade.
+    (select coalesce((
+       select not (
+         pg_has_role(session_user, c.relowner, 'MEMBER')
+         or (to_regrole('intensicare_migrador') is not null
+             and pg_has_role('intensicare_migrador', c.relowner, 'MEMBER'))
+       )
+       from pg_class c join pg_namespace ns on ns.oid = c.relnamespace
+        where ns.nspname = 'intensicare_escopo' and c.relname = 'selo'
+     ), false)) as ancora_isolada,
+    (select exists (
+       select 1 from pg_event_trigger et
+        join pg_proc p on p.oid = et.evtfoid
+        join pg_namespace n on n.oid = p.pronamespace
+       where et.evtname = 'intensicare_guarda_ddl'
+         and et.evtenabled <> 'D'
+         and n.nspname = 'intensicare_guarda')) as guarda_ddl_ativa
   from pg_roles papel
   where papel.rolname = session_user`;
 
-/** Avalia o diagnóstico e devolve a lista de motivos de recusa (vazia = ok). */
-export function motivosDeRecusaDeIdentidade(d: DiagnosticoIdentidade): string[] {
+/**
+ * Avalia o diagnóstico e devolve a lista de motivos de recusa (vazia = ok).
+ *
+ * `exigirFechoDeRuntime` acrescenta os dois motivos da `0006`. Ele é parâmetro
+ * e não constante porque instalar aquele fecho exige superusuário no
+ * provisionamento — condição de TOPOLOGIA, não de código.
+ */
+export function motivosDeRecusaDeIdentidade(
+  d: DiagnosticoIdentidade,
+  exigirFechoDeRuntime = false,
+): string[] {
   const motivos: string[] = [];
   if (d.rolsuper) {
     motivos.push(`o papel conectado '${d.usuario_sessao}' é SUPERUSUÁRIO (ignora RLS)`);
@@ -362,6 +427,16 @@ export function motivosDeRecusaDeIdentidade(d: DiagnosticoIdentidade): string[] 
   if (d.esquemas_fora_da_lista > 0) {
     motivos.push(
       `o papel conectado alcança ${d.esquemas_fora_da_lista} esquema(s) fora da lista permitida (public, intensicare_escopo)`,
+    );
+  }
+  if (exigirFechoDeRuntime && !d.ancora_isolada) {
+    motivos.push(
+      "a âncora de escopo (intensicare_escopo.selo) pertence a um papel alcançável pelo dono do esquema — qualquer função SECURITY DEFINER criada por ele lê o selo (quais tenants estão sendo servidos agora) e o forja; aplique o passe de superusuário de 0006_ancora_isolada.sql (F1)",
+    );
+  }
+  if (exigirFechoDeRuntime && !d.guarda_ddl_ativa) {
+    motivos.push(
+      "a guarda de DDL (event trigger intensicare_guarda_ddl) está ausente ou desabilitada — sem ela, um ALTER TABLE ... INHERIT, um GRANT ou um DROP POLICY executado DEPOIS deste boot não é reavaliado por ninguém até o próximo deploy; aplique o passe de superusuário de 0006_ancora_isolada.sql (F2)",
     );
   }
   if (d.usuario_atual !== d.usuario_sessao) {
@@ -652,7 +727,10 @@ export class AdaptadorPostgres implements PortaBancoDeDados {
           "não foi possível ler os atributos do papel conectado em pg_roles",
         ]);
       }
-      const motivos = motivosDeRecusaDeIdentidade(diagnostico);
+      const motivos = motivosDeRecusaDeIdentidade(
+        diagnostico,
+        configuracao.exigirFechoDeRuntime === true,
+      );
       if (motivos.length > 0) {
         throw new ErroIdentidadeInsegura(motivos);
       }

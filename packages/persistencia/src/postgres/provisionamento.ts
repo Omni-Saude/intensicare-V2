@@ -22,7 +22,7 @@
  */
 
 import { randomBytes } from "node:crypto";
-import { lerMigracoes } from "../session.js";
+import { lerMigracoes, MIGRACAO_COM_PASSE_DE_SUPERUSUARIO } from "../session.js";
 import { ConexaoPostgres, opcoesDaUrl, urlCom } from "./protocolo.js";
 
 /** Papel dono do esquema, que aplica migrações. Nunca usado pelo runtime. */
@@ -30,6 +30,14 @@ export const PAPEL_MIGRADOR = "intensicare_migrador" as const;
 
 /** Papel da aplicação — o único que o runtime conhece. */
 export const PAPEL_APLICACAO = "intensicare_app" as const;
+
+/**
+ * Papel guardião da âncora de escopo (`0006_ancora_isolada.sql`). `NOLOGIN`:
+ * não é identidade de conexão, é só proprietário. Ninguém é membro dele — nem
+ * o migrador, nem a aplicação — e é isso que impede que uma função
+ * `SECURITY DEFINER` criada pelo dono do esquema leia ou forje o selo (F1).
+ */
+export const PAPEL_GUARDIAO_DO_SELO = "intensicare_selo" as const;
 
 export interface OpcoesProvisionamento {
   /** URL de um superusuário num banco de manutenção (tipicamente `postgres`). */
@@ -59,6 +67,20 @@ export interface OpcoesProvisionamento {
    * possível exercitar de verdade o caminho de atualização.
    */
   readonly donoDoBanco?: "migrador" | "superusuario";
+  /**
+   * Aplica o SEGUNDO passe da `0006_ancora_isolada.sql`, com a credencial de
+   * superusuário — o que isola a âncora de escopo num papel guardião e instala
+   * o `EVENT TRIGGER` que fecha a janela de DDL entre boots. Padrão: `true`.
+   *
+   * `false` reproduz DELIBERADAMENTE o estado ANTERIOR a essa migração, em que
+   * o dono do esquema ainda alcança o selo e o DDL pós-boot não é auditado por
+   * ninguém. Não é um atalho de conveniência: as bases de ataque que provam que
+   * as camadas de MIGRAÇÃO (`0005`) e de BOOT (`AdaptadorPostgres.abrir`) têm
+   * dentes PRECISAM conseguir criar o objeto malicioso. Instalar o fecho de
+   * runtime em todas elas tornaria aqueles testes vácuos — que é exatamente o
+   * anti-padrão de asserção vazia que este repositório já corrigiu duas vezes.
+   */
+  readonly fechoDeRuntime?: boolean;
 }
 
 export interface BancoProvisionado {
@@ -70,6 +92,13 @@ export interface BancoProvisionado {
   /** Superusuário apontando para o banco provisionado (uso administrativo). */
   readonly urlSuperusuarioNoBanco: string;
   readonly migracoesAplicadas: readonly string[];
+  /**
+   * `true` quando o segundo passe da `0006` rodou com superusuário — isto é,
+   * quando a âncora foi isolada no papel guardião e a guarda de DDL foi
+   * instalada. Registrado no retorno para que nenhum teste (nem nenhum
+   * operador) precise SUPOR em que topologia está.
+   */
+  readonly fechoDeRuntimeInstalado: boolean;
 }
 
 /**
@@ -211,13 +240,56 @@ export async function provisionarBanco(opcoes: OpcoesProvisionamento): Promise<B
     opcoes.ateMigracao,
   );
 
+  // Segundo passe da `0006`, com superusuário. Só faz sentido se a `0006` já
+  // entrou na cadeia aplicada (o caminho de ATUALIZAÇÃO provisiona até `0002`).
+  const fechoDeRuntimeInstalado =
+    opcoes.fechoDeRuntime !== false &&
+    migracoesAplicadas.includes(MIGRACAO_COM_PASSE_DE_SUPERUSUARIO);
+  if (fechoDeRuntimeInstalado) {
+    await instalarFechoDeRuntime(urlSuperusuarioNoBanco);
+  }
+
   return {
     banco: opcoes.banco,
     urlAplicacao,
     urlMigrador,
     urlSuperusuarioNoBanco,
     migracoesAplicadas,
+    fechoDeRuntimeInstalado,
   };
+}
+
+/**
+ * Reaplica a `0006` com credencial de SUPERUSUÁRIO, pedindo explicitamente a
+ * guarda de DDL.
+ *
+ * Por que um passe separado, e não um passo dentro da cadeia: a `0006` precisa
+ * de `CREATE ROLE` (para o papel guardião) e de `CREATE EVENT TRIGGER` (que no
+ * PostgreSQL 16 só superusuário pode executar). O papel de migração não tem
+ * nenhum dos dois — por desenho da `0003` —, e conceder-lhe qualquer um deles
+ * anularia a separação de identidades que este pacote inteiro existe para
+ * sustentar. Aplicada pelo migrador, a `0006` só registra `notice`; aplicada
+ * aqui, ela faz o trabalho. Os dois passes são idempotentes.
+ */
+export async function instalarFechoDeRuntime(urlSuperusuarioNoBanco: string): Promise<void> {
+  const migracao = lerMigracoes(MIGRACAO_COM_PASSE_DE_SUPERUSUARIO).find(
+    (m) => m.nome === MIGRACAO_COM_PASSE_DE_SUPERUSUARIO,
+  );
+  if (!migracao) {
+    throw new Error(`migração ausente: ${MIGRACAO_COM_PASSE_DE_SUPERUSUARIO}`);
+  }
+  const conexao = await ConexaoPostgres.conectar(
+    opcoesDaUrl(urlSuperusuarioNoBanco, "intensicare-fecho-runtime"),
+  );
+  try {
+    // O pedido da guarda é um PARÂMETRO, não um privilégio: assim o simulador
+    // PGlite (que também migra como superusuário) não ganha um event trigger
+    // por acidente, e a instalação fica visível no ponto de chamada.
+    await conexao.executar("set intensicare.instalar_guarda_ddl = 'sim'");
+    await conexao.executar(migracao.sql);
+  } finally {
+    await conexao.fechar();
+  }
 }
 
 /**

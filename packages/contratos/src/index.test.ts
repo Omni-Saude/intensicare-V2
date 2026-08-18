@@ -3,7 +3,10 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   type AvaliacoesPacienteResposta,
+  CODIGOS_RAZAO_PRONTIDAO,
+  type CodigoRazaoProntidao,
   type EntradaGradeLeitos,
+  type EstadoAssinaturaBundle,
   type EstadoItemTrabalho,
   type EventoFluxo,
   type GradeLeitosResposta,
@@ -14,14 +17,21 @@ import {
   type IngestaoObservacoesRequisicao,
   type IngestaoObservacoesResposta,
   type ItemTrabalho,
+  type ModoDeDespachoAvaliacao,
+  type ModoDespachoRegra,
+  type MotivoRecusaDespacho,
   type ObservacaoEmQuarentena,
   PROBLEM_JSON_MIME_TYPE,
   type ProblemDetails,
   type ProblemDetailsConflitoVersao,
+  type ProvenienciaBundlePublicada,
   packageVersion,
+  type RazaoDeProntidao,
   type ReconhecerAlertaRequisicao,
   type ReconhecerAlertaResposta,
+  type RelatorioProntidao,
   type ResultadoAvaliacao,
+  type VereditoProntidao,
 } from "./index.js";
 
 // Caminho do YAML relativo a este arquivo de teste (packages/contratos/src/../openapi.yaml).
@@ -225,6 +235,216 @@ describe("tipos do contrato SPR-G7-2 (checagem de forma em tempo de compilação
       alerta: null,
     };
     expect(resposta.alerta).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Modo de despacho — o envelope que atravessa a fronteira HTTP
+// ---------------------------------------------------------------------------
+
+/** Proveniência de um despacho sem qualquer artefato de regra associado. */
+const BUNDLE_INEXISTENTE: ProvenienciaBundlePublicada = {
+  versaoBundle: null,
+  digestManifesto: null,
+  behaviorHash: null,
+  assinatura: "sem_bundle",
+  bloqueiosDeAtivacao: [],
+  ativoDesde: null,
+};
+
+const DESPACHO_EM_SOMBRA: ModoDeDespachoAvaliacao = {
+  desfecho: "avaliada",
+  modo: "sombra",
+  acionavel: false,
+  rotuloPt:
+    "SOMBRA — avaliação consultiva sobre dados sintéticos, NÃO acionável: nenhuma recomendação, ordem ou conduta clínica decorre deste resultado.",
+  motivoRecusa: null,
+  mensagemRecusaPt: null,
+  versaoRegra: "RULE-NEWS2@0.2.0",
+  despachadoEm: "2026-08-16T12:00:00.000Z",
+  bundle: BUNDLE_INEXISTENTE,
+};
+
+describe("modo de despacho (QAS-0023 / ADR-0007 eixo 4 / ADR-0008 §8.3)", () => {
+  it("o envelope de sombra é composível e NÃO é acionável", () => {
+    expect(DESPACHO_EM_SOMBRA.acionavel).toBe(false);
+    expect(DESPACHO_EM_SOMBRA.rotuloPt).toContain("NÃO acionável");
+    expect(DESPACHO_EM_SOMBRA.bundle.assinatura).toBe("sem_bundle");
+    // Estado factual: 0 vias clínicas acionáveis. Um envelope publicável só
+    // poderia dizer `acionavel: true` com assinatura verificada, modo
+    // acionável e zero bloqueios — e a derivação vive na API, não aqui.
+    expect(DESPACHO_EM_SOMBRA.bundle.bloqueiosDeAtivacao).toEqual([]);
+  });
+
+  it("cobre a RECUSA, que é o ramo que mais fácil se esquece de rotular", () => {
+    const recusado: ModoDeDespachoAvaliacao = {
+      desfecho: "nao_avaliada",
+      modo: null,
+      acionavel: false,
+      rotuloPt:
+        "NÃO AVALIADO — nenhuma avaliação clínica foi produzida; a ausência de resultado não é ausência de risco.",
+      motivoRecusa: "bundle_ausente",
+      mensagemRecusaPt:
+        "Não há pacote de regra (bundle) verificável para esta regra: as avaliações NÃO foram calculadas. Isto não significa ausência de risco.",
+      versaoRegra: "RULE-GCS@0.1.0",
+      despachadoEm: "2026-08-16T12:00:00.000Z",
+      bundle: BUNDLE_INEXISTENTE,
+    };
+    expect(recusado.modo).toBeNull();
+    expect(recusado.mensagemRecusaPt).not.toBeNull();
+    expect(recusado.acionavel).toBe(false);
+  });
+
+  it("os enums de despacho têm valores e são fechados", () => {
+    const modos: ModoDespachoRegra[] = ["sombra", "acionavel"];
+    const assinaturas: EstadoAssinaturaBundle[] = [
+      "assinatura_verificada",
+      "assinatura_ausente",
+      "sem_bundle",
+    ];
+    const motivos: MotivoRecusaDespacho[] = [
+      "regra_nao_registrada",
+      "bundle_ausente",
+      "bundle_nao_verificado",
+      "motor_divergente",
+      "regra_nao_ativada",
+      "regra_indisponivel",
+    ];
+    expect(modos).toHaveLength(2);
+    expect(assinaturas).toHaveLength(3);
+    expect(motivos).toHaveLength(6);
+    expect(new Set(motivos).size).toBe(motivos.length);
+  });
+
+  it("ResultadoAvaliacao e EntradaGradeLeitos aceitam o envelope — e sobrevivem sem ele", () => {
+    const comDespacho: ResultadoAvaliacao = {
+      status: "indisponivel",
+      parametrosAusentes: ["PAS"],
+      parametros: [],
+      escore: null,
+      banda: null,
+      avaliadoEm: "2026-08-16T12:00:00Z",
+      motivos: ["missing_required_input:sbp"],
+      anotacoes: [],
+      explicacao: "NEWS2 não avaliado — PAS ausente; ausência nunca significa normalidade.",
+      parametroVermelho: false,
+      versaoRegra: "RULE-NEWS2@0.2.0",
+      despacho: DESPACHO_EM_SOMBRA,
+    };
+    expect(comDespacho.despacho?.acionavel).toBe(false);
+
+    const linha: EntradaGradeLeitos = {
+      leitoId: "SYNTH-LEITO-03",
+      encontroId: "SYNTH-ENC-0003",
+      pacienteRef: "SYNTH-PSR-0003",
+      escore: null,
+      banda: null,
+      statusAvaliacao: "indisponivel",
+      frescor: "atual",
+      atualizadoEm: "2026-08-16T12:00:00Z",
+      alerta: null,
+      modoAvaliacao: DESPACHO_EM_SOMBRA,
+    };
+    expect(linha.modoAvaliacao?.modo).toBe("sombra");
+
+    // AUSENTE é um estado legítimo do formato (linha gravada antes desta
+    // versão do contrato) — e, por contrato, NÃO acionável.
+    const semDespacho: ResultadoAvaliacao = { ...comDespacho, despacho: undefined };
+    const linhaSemModo: EntradaGradeLeitos = { ...linha, modoAvaliacao: null };
+    expect(semDespacho.despacho).toBeUndefined();
+    expect(linhaSemModo.modoAvaliacao).toBeNull();
+  });
+
+  it("a semântica 'ausente ou null ⇒ NÃO acionável' está no COMENTÁRIO do tipo, não no formato", () => {
+    // O formato não consegue expressar isto (o campo é opcional de propósito:
+    // torná-lo obrigatório quebraria literais existentes). Se a regra não
+    // estiver escrita onde o consumidor lê, ela não existe — por isso este
+    // teste guarda o texto normativo dos dois campos.
+    const fonte = readFileSync(fileURLToPath(new URL("./index.ts", import.meta.url)), "utf-8");
+    // A quebra de linha do comentário pode cair entre "ou" e "`null`".
+    const ocorrencias = fonte.match(/ausente ou[\s*]+`null`/g) ?? [];
+    expect(ocorrencias.length).toBeGreaterThanOrEqual(2);
+    expect(fonte).toContain("DEVE tratar a avaliação\n   * como NÃO acionável");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Prontidão — o vocabulário que `apps/web` espelhava à mão (LAC-L3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Extrai a lista de valores de um enum YAML em bloco
+ * (`Nome:` … `enum:` … `- valor`), preservando a ORDEM do documento.
+ */
+function enumEmBlocoDoYaml(conteudo: string, nomeSchema: string): string[] {
+  const inicio = conteudo.indexOf(`\n    ${nomeSchema}:\n`);
+  if (inicio === -1) return [];
+  const resto = conteudo.slice(inicio + 1);
+  const fim = resto.search(/\n {4}\w+:\n/);
+  const bloco = fim === -1 ? resto : resto.slice(0, fim);
+  const posEnum = bloco.indexOf("enum:");
+  if (posEnum === -1) return [];
+  return [...bloco.slice(posEnum).matchAll(/^\s+- ([a-z0-9_]+)$/gm)].map((m) => m[1] as string);
+}
+
+describe("prontidão (GET /v1/readyz) — SAF-0025 / QAS-0023", () => {
+  const conteudoOpenapi = readFileSync(openapiPath, "utf-8");
+
+  it("os sete códigos de razão são exatamente os do openapi.yaml, na mesma ordem", () => {
+    const doYaml = enumEmBlocoDoYaml(conteudoOpenapi, "CodigoRazaoProntidao");
+    expect(doYaml.length, "enum vazio — a comparação abaixo não provaria nada").toBeGreaterThan(0);
+    expect([...CODIGOS_RAZAO_PRONTIDAO]).toEqual(doYaml);
+    expect(new Set(CODIGOS_RAZAO_PRONTIDAO).size).toBe(CODIGOS_RAZAO_PRONTIDAO.length);
+  });
+
+  it("VereditoProntidao espelha o documento e não presume 'ready'", () => {
+    const vereditos: VereditoProntidao[] = ["ready", "degraded", "not_ready"];
+    expect(vereditos).toHaveLength(3);
+    expect(conteudoOpenapi).toContain("enum: [ready, degraded, not_ready]");
+  });
+
+  it("RelatorioProntidao carrega razões codificadas e degradações exibidas", () => {
+    const razao: RazaoDeProntidao = {
+      codigo: "rule_bundle_unavailable",
+      detalhe: "Nenhum pacote de regra verificável está ativo neste processo.",
+    };
+    const relatorio: RelatorioProntidao = {
+      veredito: "not_ready",
+      razoes: [razao],
+      perfil: {
+        somenteSintetico: true,
+        declaracaoPt: "Processo opera exclusivamente sobre dados sintéticos (prefixo SYNTH-).",
+      },
+      degradacoes: [
+        {
+          modo: "regra_clinica_desligada",
+          dominio: "rule",
+          desdeMs: 0,
+          mensagemUi: "Avaliação clínica indisponível — as avaliações NÃO foram calculadas.",
+          comportamentoSeguro: "Nenhuma avaliação é publicada como válida.",
+          fallbackManual: "Avaliação clínica à beira do leito, pelo processo habitual do serviço.",
+          condicaoSaida: "Pacote de regra verificável e ativado.",
+          exibidaEm: ["api_contract"],
+        },
+      ],
+      // `null` = VALIDATION REQUIRED (Gate G1): nenhum alvo numérico de
+      // frescor foi decidido, e nenhum é inventado aqui.
+      limitesDeFrescorDeclarados: [{ projecao: "grade_leitos", limiteMs: null }],
+    };
+    expect(relatorio.veredito).toBe("not_ready");
+    expect(relatorio.razoes[0]?.codigo).toBe("rule_bundle_unavailable");
+    expect(relatorio.limitesDeFrescorDeclarados[0]?.limiteMs).toBeNull();
+    expect(relatorio.degradacoes[0]?.exibidaEm).toContain("api_contract");
+  });
+
+  it("um código conhecido é reconhecível pela tupla, sem redigitá-la", () => {
+    const codigo: CodigoRazaoProntidao = "projection_freshness_threshold_unvalidated";
+    expect((CODIGOS_RAZAO_PRONTIDAO as readonly string[]).includes(codigo)).toBe(true);
+    // A tupla RECONHECE; ela não filtra. Código desconhecido precisa APARECER
+    // na tela (QAS-0023) — quem decide isso é o consumidor, não o contrato.
+    expect((CODIGOS_RAZAO_PRONTIDAO as readonly string[]).includes("codigo_de_versao_futura")).toBe(
+      false,
+    );
   });
 });
 

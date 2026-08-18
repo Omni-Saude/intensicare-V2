@@ -75,9 +75,11 @@ import {
 import { canonicalUnitFor, PARAM_TO_CONCEPT, PARAM_TO_KERNEL, requerAlerta } from "./avaliacao.js";
 import type { ConfiguracaoRuntime } from "./config/index.js";
 import {
+  type ComModoDeDespacho,
   despacharNews2,
+  modoDeDespachoDoResultadoPersistido,
   type RegistroDeRegras,
-  resultadoNaoAvaliadoNews2,
+  resultadoNews2Publicavel,
 } from "./regras/index.js";
 
 // Limiares de frescor ilustrativos — VALIDATION REQUIRED no ADR-0011 §3
@@ -411,10 +413,17 @@ export async function ingestObservations(
       { instanteIso: agoraIso, correlacaoId: envelopeId },
     );
     const record = despacho.tipo === "avaliada" ? despacho.resultado.registroKernel : null;
-    const avaliacao: ResultadoAvaliacao =
-      despacho.tipo === "avaliada"
-        ? despacho.resultado.resultado
-        : resultadoNaoAvaliadoNews2(despacho.registro);
+    // `resultadoNews2Publicavel` é o ponto ÚNICO que cobre os DOIS desfechos
+    // (avaliada e recusada) e anexa o envelope de MODO DE DESPACHO ao
+    // resultado. Antes daqui o registro era computado, gravado no outbox e
+    // então DESCARTADO da resposta: a degradação mais estrutural do sistema
+    // (0 vias acionáveis; artefato sem cadeia de assinatura, ADR-0007 C5
+    // aberta) ficava invisível para quem olha a tela — exatamente o que
+    // QAS-0023 exige que seja zero.
+    //
+    // `acionavel` NÃO é copiado do registro: a projeção o RECALCULA por
+    // `ehAcionavel`. Nada aqui promove nada.
+    const avaliacao: ComModoDeDespacho<ResultadoAvaliacao> = resultadoNews2Publicavel(despacho);
 
     const evaluationId = `SYNTH-AVAL-${randomUUID()}`;
     await insertEvaluationRecord(tx, {
@@ -568,6 +577,11 @@ export async function projectBedGrid(
           frescor: "desatualizado",
           atualizadoEm: null,
           alerta: null,
+          // Leito desocupado: não há avaliação e portanto não há modo de
+          // despacho registrado. `null` — nunca ausência por esquecimento —
+          // porque o contrato define `null` como "modo NÃO registrado, trate
+          // a linha como NÃO acionável" (QAS-0023).
+          modoAvaliacao: null,
         };
       }
 
@@ -589,10 +603,21 @@ export async function projectBedGrid(
           frescor: "desatualizado",
           atualizadoEm: null,
           alerta,
+          // Encontro ativo sem nenhuma avaliação persistida — mesma leitura
+          // fail-closed do ramo acima.
+          modoAvaliacao: null,
         };
       }
 
       const evaluatedAtIso = toIsoOrNull(evaluation.evaluatedAt);
+      // Lido do `result` PERSISTIDO, fail-closed: forma inválida, campo
+      // ausente (linha gravada antes desta versão do contrato) ou `acionavel`
+      // divergente da derivação devolvem `null`, e nunca um valor
+      // "corrigido". Deliberadamente calculado ANTES da reavaliação em tempo
+      // de leitura e NÃO tocado por ela: a reavaliação descreve FRESCOR do
+      // dado, não o MODO DE ATIVAÇÃO do artefato que governou o despacho —
+      // um escore que envelheceu continua tendo sido despachado em sombra.
+      const modoAvaliacao = modoDeDespachoDoResultadoPersistido(evaluation.result);
       let statusAvaliacao = evaluation.status as StatusAvaliacao;
       let escore = evaluation.totalScore;
       let banda = evaluation.riskTier as BandaRisco | null;
@@ -628,6 +653,7 @@ export async function projectBedGrid(
         frescor: calcularFrescor(evaluatedAtIso, agora),
         atualizadoEm: evaluatedAtIso,
         alerta,
+        modoAvaliacao,
       };
     });
 

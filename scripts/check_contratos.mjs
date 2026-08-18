@@ -53,6 +53,26 @@
  *    é escrito à mão e ninguém o confrontava com o YAML antes desta parte
  *    do gate (achado LAC-L3 / tabela-contrato-ui-backend.md §5). Um valor
  *    acrescentado, removido ou renomeado em qualquer lado agora FALHA aqui.
+ *    F1 cobre os enums que o `openapi.yaml` JÁ publica — os quatro acima
+ *    mais os de PRONTIDÃO (`VereditoProntidao` e `CodigoRazaoProntidao`),
+ *    que `apps/web/src/api/prontidao.ts` espelhava à mão sem gate nenhum.
+ *    F2 cobre o vocabulário de MODO DE DESPACHO (`ModoDespachoRegra`,
+ *    `EstadoAssinaturaBundle`, `MotivoRecusaDespacho`), que tem TRÊS lados
+ *    possíveis e hoje só dois existem:
+ *      1. `packages/contratos/src/index.ts` — o espelho publicável;
+ *      2. `apps/api/src/regras/tipos.ts` — o vocabulário do REGISTRO
+ *         imutável, de onde a projeção `regras/exposicao.ts` deriva; e
+ *      3. `packages/contratos/openapi.yaml` — AINDA NÃO publica esses
+ *         schemas (o integrador os acrescenta em onda posterior).
+ *    Enquanto (3) não existir, o confronto 1×2 é STRICT e vale hoje — é
+ *    justamente a deriva que motivou trazer os tipos para o contrato. A
+ *    ausência de (3) NÃO reprova o gate somente porque cada schema faltante
+ *    está NOMEADO em `SCHEMAS_DESPACHO_PENDENTES_NO_OPENAPI` e é IMPRESSO a
+ *    cada execução como pendência: não é silêncio, é dívida declarada.
+ *    Schema de despacho ausente e NÃO listado ali reprova com mensagem
+ *    própria; e no instante em que o YAML passar a publicar o schema, o
+ *    confronto 1×3 entra em vigor sozinho, sem editar este arquivo — se
+ *    divergir, FALHA (há caso de autoteste provando exatamente isso).
  *
  * Por que PyYAML via `python3`, e não uma biblioteca JS
  * ----------------------------------------------------
@@ -268,10 +288,60 @@ export const ARQUIVOS_LIDOS_PELO_GATE = Object.freeze([
   ...ARQUIVOS_DE_CONTRATO_OBRIGATORIOS,
   "docs/09-api-events-and-mcp/catalogo-de-eventos.md",
   "apps/api/src/db.ts",
+  // Vocabulário do registro imutável de despacho — a OUTRA definição dos
+  // enums que a Seção F2 confronta com o contrato. Lido, nunca escrito.
+  "apps/api/src/regras/tipos.ts",
 ]);
+
+/**
+ * Enums de MODO DE DESPACHO e os três lados de cada um (ver F2 no cabeçalho).
+ *
+ * `tipoOrigemApi` é o nome do MESMO enum em `apps/api/src/regras/tipos.ts`.
+ * Os nomes diferem de propósito: no contrato eles precisam dizer de que
+ * domínio falam (`ModoDespachoRegra`, e não `ModoDespacho`, que num contrato
+ * de API poderia ser lido como despacho de mensagem). Nomes diferentes com
+ * valores iguais é exatamente o caso em que a deriva passa despercebida sem
+ * gate — por isso o par é declarado aqui, e não inferido.
+ */
+export const ENUMS_DE_DESPACHO = Object.freeze([
+  Object.freeze({
+    tipoContrato: "ModoDespachoRegra",
+    tipoOrigemApi: "ModoDespacho",
+    schemaOpenapi: "ModoDespachoRegra",
+  }),
+  Object.freeze({
+    tipoContrato: "EstadoAssinaturaBundle",
+    tipoOrigemApi: "EstadoAssinatura",
+    schemaOpenapi: "EstadoAssinaturaBundle",
+  }),
+  Object.freeze({
+    tipoContrato: "MotivoRecusaDespacho",
+    tipoOrigemApi: "MotivoRecusa",
+    schemaOpenapi: "MotivoRecusaDespacho",
+  }),
+]);
+
+/**
+ * Schemas de despacho que o `openapi.yaml` AINDA não publica.
+ *
+ * Esta lista é a ÚNICA forma de desligar o confronto contra o documento, ela
+ * é explícita, é impressa a cada execução e desliga apenas a exigência de
+ * EXISTÊNCIA — nunca a de igualdade. Um schema que apareça no YAML volta a
+ * ser confrontado sozinho, mesmo continuando listado aqui; a entrada então
+ * vira ruído e deve ser removida (ver EM ABERTO do handoff).
+ *
+ * Vazia = nenhuma pendência: todo enum de despacho tem schema no documento.
+ */
+export const SCHEMAS_DESPACHO_PENDENTES_NO_OPENAPI = Object.freeze([]);
 
 export function verificarContratos(raiz) {
   const falhas = [];
+  /**
+   * Dívida DECLARADA: checagem que este gate deixou de fazer e por quê. Não
+   * reprova, mas é impressa em toda execução — "desligado e visível" é o
+   * único desligamento aceitável; "desligado e calado" seria verde vácuo.
+   */
+  const pendencias = [];
   let verificacoes = 0;
   const reprovar = (mensagem) => falhas.push(mensagem);
   const verificar = (condicao, mensagem) => {
@@ -290,19 +360,19 @@ export function verificarContratos(raiz) {
     const caminho = join(raiz, relativo);
     if (!existsSync(caminho)) reprovar(`Arquivo de contrato ausente: ${caminho}`);
   }
-  if (falhas.length > 0) return { falhas, verificacoes };
+  if (falhas.length > 0) return { falhas, verificacoes, pendencias };
 
   // --- A/B. Estrutura e chaves duplicadas ---------------------------------
 
   const openapiCarregado = carregarYaml(caminhoOpenapi);
   if (openapiCarregado.erro !== undefined) {
     reprovar(`openapi.yaml não é YAML válido — ${openapiCarregado.erro}`);
-    return { falhas, verificacoes };
+    return { falhas, verificacoes, pendencias };
   }
   const asyncapiCarregado = carregarYaml(caminhoAsyncapi);
   if (asyncapiCarregado.erro !== undefined) {
     reprovar(`asyncapi.yaml não é YAML válido — ${asyncapiCarregado.erro}`);
-    return { falhas, verificacoes };
+    return { falhas, verificacoes, pendencias };
   }
   const openapi = openapiCarregado.documento;
   const asyncapi = asyncapiCarregado.documento;
@@ -315,7 +385,7 @@ export function verificarContratos(raiz) {
     typeof asyncapi === "object" && asyncapi !== null,
     "asyncapi.yaml não produziu um documento de mapeamento.",
   );
-  if (falhas.length > 0) return { falhas, verificacoes };
+  if (falhas.length > 0) return { falhas, verificacoes, pendencias };
 
   verificar(
     typeof openapi.openapi === "string" && openapi.openapi.startsWith("3.1"),
@@ -546,14 +616,13 @@ export function verificarContratos(raiz) {
     `Nome do cookie de ticket divergente: TS='${String(cookieTs)}', AsyncAPI='${String(cookieYaml)}'.`,
   );
 
-  // --- F. Coerência dos enums REST (openapi.yaml × src/index.ts) ---------
+  // --- F1. Coerência dos enums REST publicados (openapi.yaml × index.ts) --
   //
-  // `src/index.ts` espelha `openapi.yaml` à mão (376 linhas TS para 1.380
-  // linhas YAML) e não é gerado — ADR-0021 exige que seja "gerado a partir
-  // de, ou validado contra" o contrato de API. Isto é a metade "validado
-  // contra" para os quatro enums fechados do domínio clínico/operacional.
-  // Regra: as duas listas devem ser IDÊNTICAS, na mesma ordem — ao
-  // contrário da parte C (eventos), aqui não há terceira fonte com
+  // `src/index.ts` espelha `openapi.yaml` à mão e não é gerado — ADR-0021
+  // exige que seja "gerado a partir de, ou validado contra" o contrato de
+  // API. Isto é a metade "validado contra" para os enums fechados do domínio
+  // clínico/operacional. Regra: as duas listas devem ser IDÊNTICAS, na mesma
+  // ordem — ao contrário da parte C (eventos), aqui não há terceira fonte com
   // vocabulário parcial a conciliar.
 
   const fonteTsIndex = readFileSync(caminhoTsIndex, "utf8");
@@ -563,7 +632,15 @@ export function verificarContratos(raiz) {
     ["BandaRisco", "BandaRisco"],
     ["Frescor", "Frescor"],
     ["EstadoItemTrabalho", "EstadoItemTrabalho"],
+    // Prontidão: o `openapi.yaml` já publicava estes schemas e o contrato TS
+    // não os exportava, o que obrigou `apps/web/src/api/prontidao.ts` a
+    // manter um espelho manual sem gate (LAC-L3).
+    ["VereditoProntidao", "VereditoProntidao"],
   ];
+  verificar(
+    paresDeEnumRest.length > 0,
+    "check_contratos: a lista de enums REST está vazia — o laço abaixo não verificaria nada (guarda de não-vacuidade).",
+  );
   for (const [nomeTipoTs, nomeSchemaYaml] of paresDeEnumRest) {
     const doTs = extrairUniaoTipoTs(fonteTsIndex, nomeTipoTs);
     const doYaml = openapi.components?.schemas?.[nomeSchemaYaml]?.enum;
@@ -583,20 +660,127 @@ export function verificarContratos(raiz) {
     }
   }
 
-  return { falhas, verificacoes };
+  // Códigos de razão de prontidão: no TS são uma TUPLA `as const` (e não um
+  // union), porque o consumidor precisa iterar o vocabulário — reconhecer um
+  // código, nunca filtrar os que não conhece.
+  const codigosProntidaoTs = extrairTuplaTs(fonteTsIndex, "CODIGOS_RAZAO_PRONTIDAO");
+  const codigosProntidaoYaml = openapi.components?.schemas?.CodigoRazaoProntidao?.enum;
+  verificar(
+    codigosProntidaoTs !== undefined && codigosProntidaoTs.length > 0,
+    "packages/contratos/src/index.ts: tupla CODIGOS_RAZAO_PRONTIDAO não encontrada (ou vazia) — sem ela, o espelho manual de códigos de razão em apps/web volta a não ter gate (LAC-L3).",
+  );
+  verificar(
+    Array.isArray(codigosProntidaoYaml) && codigosProntidaoYaml.length > 0,
+    "openapi.yaml: schema 'CodigoRazaoProntidao' sem 'enum' (ou vazio).",
+  );
+  if (
+    codigosProntidaoTs !== undefined &&
+    codigosProntidaoTs.length > 0 &&
+    Array.isArray(codigosProntidaoYaml) &&
+    codigosProntidaoYaml.length > 0
+  ) {
+    verificar(
+      mesmaLista(codigosProntidaoTs, codigosProntidaoYaml),
+      `Códigos de razão de prontidão divergentes entre openapi.yaml e src/index.ts.\n      openapi.yaml : ${JSON.stringify(codigosProntidaoYaml)}\n      src/index.ts : ${JSON.stringify(codigosProntidaoTs)}`,
+    );
+  }
+
+  // --- F2. Vocabulário de MODO DE DESPACHO (três lados; hoje só dois) -----
+
+  verificar(
+    ENUMS_DE_DESPACHO.length > 0,
+    "check_contratos: ENUMS_DE_DESPACHO está vazia — o laço abaixo não verificaria nada (guarda de não-vacuidade).",
+  );
+  for (const nomeSchema of SCHEMAS_DESPACHO_PENDENTES_NO_OPENAPI) {
+    verificar(
+      ENUMS_DE_DESPACHO.some((entrada) => entrada.schemaOpenapi === nomeSchema),
+      `check_contratos: SCHEMAS_DESPACHO_PENDENTES_NO_OPENAPI nomeia '${nomeSchema}', que não é schema de nenhum enum de despacho declarado. Pendência que não corresponde a nada esconde erro de digitação e desligaria a checagem errada.`,
+    );
+  }
+
+  const caminhoTiposRegras = join(raiz, "apps/api/src/regras/tipos.ts");
+  const fonteTiposRegras = existsSync(caminhoTiposRegras)
+    ? readFileSync(caminhoTiposRegras, "utf8")
+    : undefined;
+  verificar(
+    fonteTiposRegras !== undefined,
+    `apps/api/src/regras/tipos.ts não encontrado em '${caminhoTiposRegras}' — sem ele o gate não confronta o vocabulário de despacho do contrato com o do REGISTRO imutável que o produz, e a seção F2 ficaria verde sem checar nada.`,
+  );
+
+  for (const { tipoContrato, tipoOrigemApi, schemaOpenapi } of ENUMS_DE_DESPACHO) {
+    const doContrato = extrairUniaoTipoTs(fonteTsIndex, tipoContrato);
+    verificar(
+      doContrato !== undefined && doContrato.length > 0,
+      `packages/contratos/src/index.ts: tipo '${tipoContrato}' não encontrado (ou sem valores) — o envelope de modo de despacho atravessa a fronteira HTTP e precisa de espelho no contrato, senão as duas definições voltam a divergir em silêncio.`,
+    );
+
+    if (fonteTiposRegras !== undefined) {
+      const daApi = extrairUniaoTipoTs(fonteTiposRegras, tipoOrigemApi);
+      verificar(
+        daApi !== undefined && daApi.length > 0,
+        `apps/api/src/regras/tipos.ts: tipo '${tipoOrigemApi}' não encontrado (ou sem valores) — é a origem do enum '${tipoContrato}' do contrato.`,
+      );
+      if (
+        doContrato !== undefined &&
+        doContrato.length > 0 &&
+        daApi !== undefined &&
+        daApi.length > 0
+      ) {
+        verificar(
+          mesmaLista(doContrato, daApi),
+          `Enum de despacho divergente entre o contrato e o registro imutável: '${tipoContrato}' (contrato) × '${tipoOrigemApi}' (apps/api/src/regras/tipos.ts).\n      contrato : ${JSON.stringify(doContrato)}\n      registro : ${JSON.stringify(daApi)}`,
+        );
+      }
+    }
+
+    const doYaml = openapi.components?.schemas?.[schemaOpenapi]?.enum;
+    const pendente = SCHEMAS_DESPACHO_PENDENTES_NO_OPENAPI.includes(schemaOpenapi);
+
+    if (!Array.isArray(doYaml) || doYaml.length === 0) {
+      verificar(
+        pendente,
+        `openapi.yaml: schema '${schemaOpenapi}' ausente ou sem 'enum', e ele NÃO está declarado em SCHEMAS_DESPACHO_PENDENTES_NO_OPENAPI. O contrato TypeScript publica '${tipoContrato}' e o documento não o descreve — ou o schema entra no YAML, ou a pendência é declarada por nome.`,
+      );
+      if (pendente) {
+        pendencias.push(
+          `openapi.yaml ainda não publica o schema '${schemaOpenapi}' (espelho de '${tipoContrato}'): o confronto contrato × documento está DESLIGADO para este enum. Ativa-se sozinho quando o schema existir.`,
+        );
+      }
+      continue;
+    }
+
+    if (pendente) {
+      pendencias.push(
+        `openapi.yaml JÁ publica '${schemaOpenapi}': a pendência foi resolvida e o confronto está ATIVO. Remova '${schemaOpenapi}' de SCHEMAS_DESPACHO_PENDENTES_NO_OPENAPI.`,
+      );
+    }
+    if (doContrato !== undefined && doContrato.length > 0) {
+      verificar(
+        mesmaLista(doContrato, doYaml),
+        `Enum de despacho divergente entre openapi.yaml e src/index.ts para '${schemaOpenapi}'.\n      openapi.yaml : ${JSON.stringify(doYaml)}\n      src/index.ts : ${JSON.stringify(doContrato)}`,
+      );
+    }
+  }
+
+  return { falhas, verificacoes, pendencias };
 }
 
 // ---------------------------------------------------------------------------
 // Autoteste — prova nos dois sentidos (arquivos reais, mutados em cópia)
 // ---------------------------------------------------------------------------
 
-/** Arquivos que a parte F lê — o subconjunto mínimo para reproduzir o gate. */
-const ARQUIVOS_AUTOTESTE = [
-  "packages/contratos/openapi.yaml",
-  "packages/contratos/asyncapi.yaml",
-  "packages/contratos/src/asyncapi.ts",
-  "packages/contratos/src/index.ts",
-];
+/**
+ * Arquivos copiados para a cópia mutada: TUDO que o gate lê, e não um
+ * subconjunto escolhido à mão.
+ *
+ * Era um espelho manual de quatro caminhos, e espelho manual deriva — foi
+ * assim que a suíte irmã (`packages/contratos/src/asyncapi.test.ts`) quebrou
+ * 12 testes de uma vez. Aqui a consequência seria pior e mais silenciosa: um
+ * arquivo lido pelo gate e ausente da cópia faz a checagem correspondente
+ * simplesmente não rodar, e o autoteste declara vitória sobre um gate que não
+ * verificou nada.
+ */
+const ARQUIVOS_AUTOTESTE = ARQUIVOS_LIDOS_PELO_GATE;
 
 /**
  * Copia `ARQUIVOS_AUTOTESTE` do repositório real para um diretório
@@ -633,10 +817,12 @@ function criarCopiaMutada(raizOrigem, mutacoes) {
 
 /**
  * Um gate nunca visto reprovando é uma linha de log, não um gate. Cada
- * mutação abaixo ataca exatamente a parte F (enums REST): valor a mais no
- * YAML sem par no TS; valor a mais no TS sem par no YAML; valor renomeado
- * de um lado só; enum inteiro removido de um lado. As quatro DEVEM reprovar
- * uma cópia do repositório que, sem mutação, é aceita hoje (caso base).
+ * mutação abaixo ataca exatamente a parte F: valor a mais no YAML sem par no
+ * TS; valor a mais no TS sem par no YAML; valor renomeado de um lado só;
+ * enum inteiro removido de um lado; e, na F2, deriva entre o contrato e o
+ * registro imutável da API. Todas DEVEM reprovar uma cópia do repositório
+ * que, sem mutação, é aceita hoje (caso base) — e há duas contraprovas
+ * positivas, para que "reprova sempre" não passe por "reprova o certo".
  */
 function autoteste() {
   const casos = [];
@@ -684,7 +870,73 @@ function autoteste() {
     },
   ];
 
-  for (const mutacao of mutacoesRest) {
+  /**
+   * Mutações da Seção F1 (prontidão) e F2 (modo de despacho). As de
+   * prontidão atacam o par documento × contrato que substituiu o espelho
+   * manual de `apps/web`; as de despacho atacam os DOIS lados que existem
+   * hoje — o contrato e o registro imutável de `apps/api/src/regras/tipos.ts`
+   * — e também o caso em que o `openapi.yaml` passa a publicar o schema.
+   */
+  const mutacoesProntidaoEDespacho = [
+    {
+      nome: "código a mais em CodigoRazaoProntidao (YAML) sem par no TS",
+      arquivo: "packages/contratos/openapi.yaml",
+      de: "        - degradation_unsurfaced\n",
+      para: "        - degradation_unsurfaced\n        - razao_que_ninguem_publica\n",
+    },
+    {
+      nome: "valor renomeado em VereditoProntidao (TS) diverge do YAML",
+      arquivo: "packages/contratos/src/index.ts",
+      de: 'export type VereditoProntidao = "ready" | "degraded" | "not_ready";',
+      para: 'export type VereditoProntidao = "ready" | "degradado" | "not_ready";',
+    },
+    {
+      nome: "tupla CODIGOS_RAZAO_PRONTIDAO com um código a menos que o YAML",
+      arquivo: "packages/contratos/src/index.ts",
+      de: '  "degradation_unsurfaced",\n] as const;',
+      para: "] as const;",
+    },
+    {
+      nome: "motivo de recusa a mais no contrato, sem par no registro da API",
+      arquivo: "packages/contratos/src/index.ts",
+      de: '  | "regra_indisponivel";',
+      para: '  | "regra_indisponivel"\n  | "motivo_que_o_registro_nao_conhece";',
+    },
+    {
+      nome: "enum ModoDespachoRegra inteiro removido do contrato",
+      arquivo: "packages/contratos/src/index.ts",
+      de: 'export type ModoDespachoRegra = "sombra" | "acionavel";',
+      para: "",
+    },
+    {
+      nome: "estado de assinatura renomeado no registro (apps/api/src/regras/tipos.ts)",
+      arquivo: "apps/api/src/regras/tipos.ts",
+      de: 'export type EstadoAssinatura = "assinatura_verificada" | "assinatura_ausente" | "sem_bundle";',
+      para: 'export type EstadoAssinatura = "assinatura_verificada" | "assinatura_faltando" | "sem_bundle";',
+    },
+    {
+      /**
+       * MUTAÇÃO IN LOCO, e a razão importa.
+       *
+       * Este caso INJETAVA um bloco `ModoDespachoRegra:` novo antes de
+       * `VereditoProntidao:`. Funcionou enquanto o documento não publicava o
+       * schema; no instante em que o integrador o publicou, a injeção passou
+       * a produzir CHAVE YAML DUPLICADA — e o gate reprova antes de parsear,
+       * por um motivo que não é o que este caso afirma testar. O caso
+       * continuava `ok`, provando detecção de chave duplicada em vez de
+       * detecção de divergência de enum: verde pelo motivo errado.
+       *
+       * Mutar o valor onde ele já está mantém o documento válido e força a
+       * comparação F2 a de fato rodar.
+       */
+      nome: "openapi.yaml publica ModoDespachoRegra DIVERGENTE do contrato",
+      arquivo: "packages/contratos/openapi.yaml",
+      de: "      enum: [sombra, acionavel]\n",
+      para: "      enum: [sombra, promovido]\n",
+    },
+  ];
+
+  for (const mutacao of [...mutacoesRest, ...mutacoesProntidaoEDespacho]) {
     let raizTemp;
     try {
       raizTemp = criarCopiaMutada(RAIZ_PADRAO, [mutacao]);
@@ -700,6 +952,102 @@ function autoteste() {
     }
   }
 
+  /**
+   * O MECANISMO DE PENDÊNCIA CONTINUA SOB TESTE MESMO SEM PENDÊNCIA ABERTA.
+   *
+   * Estes dois casos afirmavam propriedades da CIRCUNSTÂNCIA (havia schema
+   * pendente, e o gate o anunciava ao ser resolvido). Resolvidas as três
+   * pendências, `SCHEMAS_DESPACHO_PENDENTES_NO_OPENAPI` ficou vazia e as duas
+   * afirmações viraram insatisfazíveis por construção — nunca mais poderiam
+   * falhar nem passar por mérito.
+   *
+   * O que precisa continuar provado é o MECANISMO: com a lista vazia, um
+   * schema que suma do documento tem de reprovar com mensagem nomeada, em vez
+   * de desligar a checagem em silêncio. É a diferença entre "não há dívida
+   * hoje" e "dívida não declarada passa".
+   */
+  {
+    let raizTemp;
+    try {
+      raizTemp = criarCopiaMutada(RAIZ_PADRAO, [
+        {
+          nome: "openapi.yaml deixa de publicar o enum de ModoDespachoRegra",
+          arquivo: "packages/contratos/openapi.yaml",
+          de: "      enum: [sombra, acionavel]\n",
+          para: "      enum: []\n",
+        },
+      ]);
+      const resultado = verificarContratos(raizTemp);
+      registrar(
+        "schema de despacho vazio no documento REPROVA (não desliga a checagem)",
+        true,
+        resultado.falhas.length > 0,
+        `${String(resultado.falhas.length)} falha(s)`,
+      );
+      registrar(
+        "a reprovação NOMEIA o enum, para o mantenedor saber o que corrigir",
+        true,
+        resultado.falhas.some((f) => f.includes("ModoDespachoRegra")),
+        resultado.falhas.join(" | "),
+      );
+    } finally {
+      if (raizTemp) rmSync(raizTemp, { recursive: true, force: true });
+    }
+  }
+
+  /**
+   * NÃO-VACUIDADE DA PRÓPRIA SEÇÃO F2.
+   *
+   * A primeira versão desta contraprova afirmava `verificacoes >= 190` — um
+   * número mágico, lido de uma execução anterior. Ele quebrou no mesmo dia em
+   * que foi escrito: resolver as três pendências REMOVEU três verificações (a
+   * contagem foi a 187), e a asserção falhou sem que nada estivesse errado.
+   * Contagem absoluta é espelho manual do comportamento do gate — a mesma
+   * classe de defeito que esta seção existe para eliminar.
+   *
+   * A propriedade que interessa não precisa de número: com a lista de
+   * pendências VAZIA, "zero pendências E zero falhas" só é verdade se cada
+   * enum de despacho tiver schema publicado E igual. Um schema ausente
+   * reprovaria (provado logo acima); um divergente reprovaria (idem). Logo o
+   * par abaixo é exatamente "F2 rodou sobre o documento e concordou".
+   */
+  {
+    const real = verificarContratos(RAIZ_PADRAO);
+    registrar(
+      "o repositório real não tem pendência de despacho por resolver",
+      0,
+      real.pendencias.length,
+      real.pendencias.join(" | "),
+    );
+    registrar(
+      "com pendência vazia, F2 confrontou o documento e concordou",
+      0,
+      real.falhas.length,
+      real.falhas.join(" | "),
+    );
+  }
+
+  // Guardas de não-vacuidade das listas novas: um laço vazio "passa" sem ter
+  // provado nada, e essa é justamente a classe de verde vácuo em auditoria.
+  registrar(
+    "há mutações de prontidão/despacho declaradas",
+    true,
+    mutacoesProntidaoEDespacho.length > 0,
+  );
+  registrar("ENUMS_DE_DESPACHO não está vazia", true, ENUMS_DE_DESPACHO.length > 0);
+  registrar(
+    "toda pendência declarada nomeia um enum de despacho real",
+    true,
+    SCHEMAS_DESPACHO_PENDENTES_NO_OPENAPI.every((nome) =>
+      ENUMS_DE_DESPACHO.some((entrada) => entrada.schemaOpenapi === nome),
+    ),
+  );
+  registrar(
+    "a cópia do autoteste leva TUDO que o gate lê",
+    true,
+    ARQUIVOS_LIDOS_PELO_GATE.every((caminho) => ARQUIVOS_AUTOTESTE.includes(caminho)),
+  );
+
   const falhos = casos.filter((c) => !c.ok);
   console.log(`\n=== check_contratos autoteste — ${String(casos.length)} caso(s) ===`);
   for (const c of casos) {
@@ -714,7 +1062,7 @@ function autoteste() {
   }
   console.log(
     `\nautoteste: OK — ${String(casos.length)} casos; o gate aceita o conforme e reprova ` +
-      "cada mutação de enum REST testada.",
+      "cada mutação de enum REST, de prontidão e de despacho testada.",
   );
   return 0;
 }
@@ -744,7 +1092,12 @@ if (executadoDiretamente && process.argv[2] === "autoteste") {
 
 if (executadoDiretamente) {
   const raiz = lerRaizDosArgumentos(process.argv.slice(2));
-  const { falhas, verificacoes } = verificarContratos(raiz);
+  const { falhas, verificacoes, pendencias } = verificarContratos(raiz);
+
+  // Pendências são impressas ANTES do veredito e nos dois desfechos: uma
+  // checagem desligada que ninguém vê é indistinguível de uma checagem que
+  // não existe.
+  for (const pendencia of pendencias) console.error(`  ⚠ PENDÊNCIA: ${pendencia}`);
 
   if (falhas.length > 0) {
     console.error(`check_contratos: ${String(falhas.length)} falha(s) de contrato.\n`);
@@ -756,6 +1109,7 @@ if (executadoDiretamente) {
   }
 
   console.log(
-    `check_contratos: OK — ${String(verificacoes)} verificações sobre openapi.yaml e asyncapi.yaml.`,
+    `check_contratos: OK — ${String(verificacoes)} verificações sobre openapi.yaml e asyncapi.yaml` +
+      ` (${String(pendencias.length)} pendência(s) declarada(s)).`,
   );
 }

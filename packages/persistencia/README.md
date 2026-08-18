@@ -92,6 +92,12 @@ as migrações e exercita, de forma **bloqueante**:
 - nenhuma relação alcançável é **ancestral** por herança/partição sem ter ela
   própria RLS+FORCE+política ancorada: numa consulta ao ancestral valem as
   políticas **dele**, e as das descendentes são ignoradas (ACHADO-18);
+- **DDL executado depois do boot** não escapa: com o fecho de runtime da `0006`
+  armado, o próprio banco aborta o `GRANT`/`INHERIT`/`DROP POLICY` que quebraria
+  o invariante, e o dono do esquema não alcança nem desarma a âncora de escopo
+  (F1/F2 — ver a seção da `0006`);
+- o escopo **é a primeira escrita** da transação e não pode ser trocado depois,
+  também pelo ponto de entrada que `apps/api` usa (F4);
 - migrações em instalação limpa **e** em atualização de banco legado.
 
 Sem PostgreSQL na máquina, a suíte é **pulada com aviso ruidoso** em
@@ -226,9 +232,28 @@ topologia:
   (`SEQ_LOG_VALS` = 32) não atribui. Um `nextval` antes do `instalar` portanto
   quebra o contrato **de forma intermitente**, cerca de 1 vez em 32. O que
   ancora o contrato é a atribuição de id por **escrita**, não `nextval` em si.
-  Que os quatro caminhos de transação do produto instalem o escopo como
-  primeira instrução após `begin` foi verificado por **leitura de código, não
-  por teste** — está registrado como **NÃO VERIFICADO**.
+
+**O contrato "o escopo é a primeira escrita" deixou de ser NÃO VERIFICADO.**
+Ele era, até aqui, leitura de código. Hoje é exercido por tentativa, contra
+PostgreSQL real, com quatro vetores: (1) dentro de `comTenant`, um
+`instalar(B)` é recusado com `42501` e a mensagem **"já instalado nesta
+transação"** — mensagem que discrimina os três estados possíveis e prova que o
+escopo foi instalado **antes** de o corpo da transação rodar; (2) reinstalar o
+mesmo tenant devolve o escopo vigente, o que só é possível se existir selo
+válido para o id de transação corrente; (3) o mesmo pelo ponto de entrada que
+`apps/api/src/db.ts` de fato usa (`withTenantTransaction` sobre a porta); (4)
+controle **negativo**: numa transação crua, `pg_current_xact_id()` antes do
+`instalar` faz o instalador recusar com "já escreveu sem selo de escopo
+válido". `pg_current_xact_id()` atribui o id de forma determinística, ao
+contrário de `nextval`.
+
+**Medição descartada, registrada para que ninguém a reintroduza:**
+`pg_stat_xact_user_tables` parecia a evidência independente ideal ("a única
+tabela de usuário escrita até aqui é a âncora") e **falha de forma
+intermitente** — as contagens pendentes de um backend só são liberadas por
+`pgstat_report_stat`, limitado por intervalo mínimo, de modo que numa execução
+rápida a transação seguinte ainda enxerga as 13 tabelas escritas pela semeadura
+anterior. Uma asserção que depende de quanto tempo passou não é evidência.
 
 ### Fecho de privilégio: função de terceiro e herança (`0005_fecho_de_privilegio.sql`)
 
@@ -270,16 +295,85 @@ diagnóstico de `abrir()` devolvia **zero em todos os contadores** num banco ond
 a aplicação lia e escrevia todos os tenants. A exposição é transitiva
 (avô → pai → tabela protegida) e o elo do meio não precisa ser alcançável.
 
-**Limite de TEMPO — leia antes de chamar isto de "fechado".** As auditorias de
-migração rodam quando a **migração** roda; a guarda de identidade roda quando o
-processo **abre** o pool. Um `ALTER TABLE ... INHERIT`, um `CREATE FUNCTION ...
-SECURITY DEFINER` ou um `GRANT` avulso executado por superusuário **no meio da
-vida de um processo já aberto** não é reavaliado por nenhuma das duas: só será
-visto no próximo boot ou na próxima migração. Isso é **"fechado até o próximo
-deploy"**, não "fechado". Fechar a janela exigiria `EVENT TRIGGER` de DDL, que
-no PostgreSQL 16 só **superusuário** pode criar — privilégio que o papel de
-migração, por desenho (`0003`), não tem; um controle presente em alguns
-ambientes e ausente noutros seria pior que este limite declarado.
+**Limite de TEMPO da `0005`.** As auditorias de migração rodam quando a
+**migração** roda; a guarda de identidade roda quando o processo **abre** o
+pool. Um `ALTER TABLE ... INHERIT`, um `CREATE FUNCTION ... SECURITY DEFINER`
+ou um `GRANT` avulso executado **no meio da vida de um processo já aberto** não
+é reavaliado por nenhuma das duas. Isso era **"fechado até o próximo deploy"**,
+não "fechado" — e é o que a `0006` endereça.
+
+### Âncora isolada e guarda de DDL (`0006_ancora_isolada.sql`)
+
+Os dois limites acima foram **atacados contra PostgreSQL 16.14 real** antes de
+serem fechados, e os dois ataques tiveram êxito:
+
+- **F1** — como `intensicare_migrador`, pós-migração e pós-boot, uma função
+  `SECURITY DEFINER` que faz `select ... from intensicare_escopo.selo`, com
+  `GRANT EXECUTE` para a aplicação, devolveu a **tabela de selo inteira**: `pid`
+  e `tenant_id` de todos os backends, isto é, **qual tenant cada conexão do pool
+  atendeu por último**. O fecho da `0004` §6.2 é transitivo por `pg_rewrite` e
+  cobre view/matview — **não cobre função**;
+- **F2** — como `intensicare_migrador`, pós-boot: `create table synth_pai` +
+  `alter table organizations inherit synth_pai` + `grant select on synth_pai`.
+  Os três comandos passaram e o processo **já aberto** passou a devolver as
+  linhas dos dois tenants.
+
+O fecho tem duas naturezas diferentes, de propósito:
+
+1. **Âncora isolada (estrutura, não auditoria).** O selo e as duas funções
+   seladas deixam de pertencer ao dono do esquema e passam a pertencer a
+   `intensicare_selo` — papel `NOLOGIN`, sem atributos, do qual **ninguém é
+   membro**. Medido: a partir do migrador, passam a ser recusados **pelo banco**
+   o `select` direto, o `update`, o `grant`, o `set role`, o
+   `alter table ... owner to` e o `drop schema ... cascade`; a função
+   `SECURITY DEFINER` até pode ser criada, mas **nunca lê**. Não existe instante
+   "entre verificações". Vale contra qualquer papel que não seja superusuário.
+   O migrador conserva apenas `USAGE` no esquema — necessário e suficiente para
+   ele seguir criando políticas que citam `intensicare_escopo.tenant_atual()`.
+2. **Guarda de DDL (`EVENT TRIGGER` em `ddl_command_end`).** Reexecuta os
+   invariantes ao fim de **cada** comando de DDL e **aborta** o que os viole.
+   Medido: aborta o `GRANT` que completa o vetor F2 (nas duas ordens), o `GRANT
+   EXECUTE` sobre função `SECURITY DEFINER` de terceiro, o `DROP POLICY`, o
+   `NO FORCE ROW LEVEL SECURITY` e o `DISABLE ROW LEVEL SECURITY` sobre tabela
+   clínica. Criar event trigger exige **superusuário** — e é isso que o torna
+   resistente ao próprio migrador, que recebe `must be owner of event trigger`
+   ao tentar `DISABLE`/`DROP` e `must be owner of schema` ao tentar derrubar o
+   esquema que hospeda a função.
+
+A `0005` recusou o event trigger por ser "um controle presente em alguns
+ambientes e ausente noutros". A objeção é respondida por **detecção**, não por
+decreto: `AdaptadorPostgres.abrir({ exigirFechoDeRuntime: true })` **recusa
+partir** contra um banco sem a âncora isolada ou sem a guarda armada, nomeando
+F1 e F2 nos motivos. Ligar ou não é decisão de **topologia** (exige superusuário
+no provisionamento), e por isso o padrão é `false` — não porque o controle seja
+opcional.
+
+**Como instalar.** O papel de migração não pode: `CREATE ROLE` e
+`CREATE EVENT TRIGGER` estão fora do desenho da `0003`. Por isso a `0006` é
+aplicada **duas vezes** — no passe do migrador ela só registra `notice`, e o
+trabalho é feito por `instalarFechoDeRuntime(urlSuperusuarioNoBanco)`, que
+`provisionarBanco` chama por padrão (`fechoDeRuntime: true`).
+
+**Limites honestos da `0006`:**
+
+1. **Superusuário** continua fora do modelo: lê o selo, desarma a guarda e
+   ignora RLS.
+2. **Reaplicar a cadeia inteira** (`0001..0006`) sobre um banco que já está em
+   `0006` **falha, de propósito, dentro da `0004`** — ela contém
+   `alter schema/table ... owner to intensicare_migrador` e
+   `create or replace function intensicare_escopo.tenant_atual()`, e o migrador
+   deixou de ser dono desses objetos. Reaplicar a `0006` sozinha é idempotente
+   (asserido na suíte). O caminho suportado é provisionar do zero ou aplicar
+   migrações novas. A `0004` **não** foi alterada retroativamente.
+3. **Contrato novo para migrações futuras:** com a guarda armada, um `GRANT`
+   para a aplicação sobre uma relação só passa **depois** de a relação ter
+   `ROW LEVEL SECURITY` + `FORCE` + política ancorada. A ordem "cria, concede,
+   protege" deixa de ser aceita; a correta é "cria, protege, concede".
+4. As ~20 bases de ataque desta suíte são provisionadas **sem** o fecho
+   (`fechoDeRuntime: false`), porque com ele o banco recusa o próprio `CREATE`
+   do objeto malicioso e as asserções sobre as camadas de migração e de boot
+   passariam **por vacuidade**. O fecho tem ataque próprio, no bloco `(h)`, com
+   o par vermelho/verde medido na **mesma execução**.
 
 ### Contexto vazio ≠ contexto ausente (OBSERVED, PostgreSQL 16 real)
 
@@ -312,15 +406,18 @@ adaptador de PostgreSQL real.
 
 ## Testes
 
-60 testes Vitest, todos contra motor de verdade (sem mocks) e **sem nenhum
-`expected fail`**:
+97 testes Vitest, todos contra motor de verdade (sem mocks) e **sem nenhum
+`expected fail`** (medido: `pnpm --filter @intensicare/persistencia test` →
+5 arquivos, 97 testes, 0 pulados):
 
-- 34 sobre o simulador PGlite: migração, RLS por tenant, outbox transacional,
+- 36 sobre o simulador PGlite: migração, RLS por tenant, outbox transacional,
   auditoria append-only, transição de `WorkItem` e a suíte adversarial de
   `seguranca.test.ts` — incluindo dois testes que **afirmam positivamente** a
   limitação do simulador descrita acima;
-- 26 sobre PostgreSQL real e efêmero (`src/postgres/fronteira-postgres.test.ts`),
-  descritos na seção "Fronteira de isolamento verificada" acima.
+- 61 sobre PostgreSQL real e efêmero (`src/postgres/fronteira-postgres.test.ts`),
+  descritos na seção "Fronteira de isolamento verificada" acima — dos quais 5
+  no bloco `(h)`, que ataca o fecho de runtime da `0006` com o par
+  vermelho/verde medido na mesma execução.
 
 ## Integração SPR-G7-2 (PENDÊNCIA anterior resolvida)
 
