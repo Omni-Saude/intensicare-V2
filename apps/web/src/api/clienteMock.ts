@@ -20,6 +20,7 @@ import type {
   ClienteApiIntensiCare,
   ModoDemonstracao,
   OpcoesChamada,
+  OpcoesReconhecer,
   ProblemaLocal,
   RespostaApi,
 } from "./tipos.js";
@@ -160,7 +161,7 @@ export function criarClienteMock(ambiente: AmbienteBuild = ambienteAtual()): Cli
     async reconhecerAlerta(
       alertaId: string,
       chaveIdempotencia: string,
-      opcoes?: OpcoesChamada,
+      opcoes: OpcoesReconhecer,
     ): Promise<RespostaApi<Alerta>> {
       await esperar(opcoes?.atrasoMs ?? ATRASO_PADRAO_MS, opcoes?.sinal);
 
@@ -208,16 +209,44 @@ export function criarClienteMock(ambiente: AmbienteBuild = ambienteAtual()): Cli
         };
       }
 
+      /**
+       * CONCORRÊNCIA OTIMISTA (ADR-0009 W3) — o dublê passa a produzir 412.
+       *
+       * Enquanto o mock aceitava qualquer comando, o caminho de conflito era
+       * inalcançável em teste e a ausência da tela de conflito parecia uma
+       * lacuna sem consequência. Um dublê que só sabe o caminho feliz produz
+       * verde vácuo: ele não prova que a UI trata o conflito, prova que o
+       * conflito nunca acontece.
+       */
+      if (opcoes.versaoVista !== alertaAtual.versao) {
+        return {
+          estadoCarregamento: "erro",
+          dados: null,
+          problema: problemaPadrao(
+            412,
+            "Conflito de versão",
+            "Este alerta mudou depois que você o abriu. Nada foi registrado.",
+          ),
+          conflito: { versaoAtual: alertaAtual.versao, estadoAtual: alertaAtual.estado },
+        };
+      }
+
       const alertaAtualizado: Alerta = {
         ...alertaAtual,
         estado: "reconhecido",
+        versao: alertaAtual.versao + 1,
         reconhecidoPor: "SYNTH-PROFISSIONAL-ATUAL",
         reconhecidoEm: new Date().toISOString(),
       };
       dados.alertas[indiceAlerta] = alertaAtualizado;
       cacheIdempotencia.set(chaveIdempotencia, alertaAtualizado);
 
-      return { estadoCarregamento: "pronto", dados: alertaAtualizado, problema: null };
+      return {
+        estadoCarregamento: "pronto",
+        dados: alertaAtualizado,
+        problema: null,
+        conflito: null,
+      };
     },
   };
 }

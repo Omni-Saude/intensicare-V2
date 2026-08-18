@@ -1,5 +1,6 @@
 import type { ClienteApiIntensiCare } from "../api/tipos.js";
 import type { Alerta } from "../domain/clinico.js";
+import { apelidoDePaciente } from "../domain/clinico.js";
 import { textoBandaRisco, textoItemTrabalho } from "../domain/linguagem.js";
 import { BadgeTom } from "./BadgeTom.js";
 import { ReconhecerAlerta } from "./ReconhecerAlerta.js";
@@ -37,8 +38,26 @@ export function PainelAlertas({
         {alertas.map((alerta) => (
           <li key={alerta.alertaId} className="contribuicao-parametro">
             <div className="contribuicao-parametro__cabecalho">
-              <span>{alerta.leitoId}</span>
-              <BadgeTom {...textoBandaRisco(alerta.severidade)} />
+              {/*
+                IA-N10: a referência de paciente é parte IRREMOVÍVEL da linha
+                do alerta. Identificar o item só pelo leito falha exatamente
+                onde a atribuição errada mais dói — numa transferência, o leito
+                é o que muda (HAZ-0001/HAZ-0002).
+              */}
+              <span>
+                {alerta.leitoId} · {apelidoDePaciente(alerta.pacienteRef)}
+              </span>
+              {/*
+                Severidade só é exibida quando o BACKEND a atribuiu. Ausência
+                de banda é declarada como ausência — nunca preenchida com um
+                nível da escala, que faria um item sem avaliação computável
+                parecer um item grave (ADR-0008 N7; ADR-0011 P7; QAS-0017).
+              */}
+              {alerta.severidade === null ? (
+                <BadgeTom texto="Severidade não atribuída." tom="inconclusivo" />
+              ) : (
+                <BadgeTom {...textoBandaRisco(alerta.severidade)} />
+              )}
               <BadgeTom {...textoItemTrabalho(alerta.estado)} />
             </div>
             <p>{alerta.descricao}</p>

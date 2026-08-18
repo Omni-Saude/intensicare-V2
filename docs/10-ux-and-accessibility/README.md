@@ -34,6 +34,12 @@ titular); a validação com usuários é SPR-G4-5 e retroalimenta tudo aqui.
 | [`tabela-contrato-ui-backend.md`](./tabela-contrato-ui-backend.md) | Tabela de contrato UI↔backend por elemento da fatia SPR-G7-2 (fonte, estado, erro, authz, auditoria), alinhada a `packages/contratos/openapi.yaml`, com divergências observadas registradas |
 | [`requisito-registro-limitado-instituicao.md`](./requisito-registro-limitado-instituicao.md) | HAZ-0046/ADR-0004 §6.2 decomposto em requisito de UI verificável (cláusulas RLI-* documento-locais) |
 
+## Análise posterior (não faz parte de SPR-G4-3)
+
+| Artefato | Conteúdo |
+|---|---|
+| [`analise-de-lacunas-frontend.md`](./analise-de-lacunas-frontend.md) | Confronto entre `apps/web` e as cláusulas vinculantes deste diretório: oito defeitos de correção verificados e corrigidos (LAC-D1..D8) e nove lacunas de escopo registradas (LAC-L1..L9), entre elas a ausência total de atualização automática na tela de vigilância |
+
 ## Regras transversais do diretório
 
 - **WCAG 2.2 AA é critério de projeto em todo artefato** (prompt §11;

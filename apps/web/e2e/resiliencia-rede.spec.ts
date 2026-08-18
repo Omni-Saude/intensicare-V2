@@ -306,9 +306,26 @@ test.describe("modo offline", () => {
     await expect(indicador).toContainText(/procedimento institucional/i);
 
     // Nenhum comando permanece acionável offline (§6: "comandos bloqueados...
-    // nunca sucesso aparente").
+    // nunca sucesso aparente") — E o motivo do bloqueio precisa ser
+    // ALCANÇÁVEL. O botão usa `aria-disabled` em vez de `disabled` de
+    // propósito: um botão nativamente desabilitado sai da ordem de foco, e
+    // quem navega por teclado ou leitor de tela nunca chega ao texto que
+    // explica por que o comando sumiu (SAF-0034; HAZ-0037).
     for (let i = 0; i < total; i += 1) {
-      await expect(botoes.nth(i)).toBeDisabled();
+      const botao = botoes.nth(i);
+      await expect(botao).toHaveAttribute("aria-disabled", "true");
+
+      // Continua focável — a prova de que o bloqueio não é uma parede muda.
+      await botao.focus();
+      await expect(botao).toBeFocused();
+
+      // E o `aria-describedby` aponta para um elemento que EXISTE e explica.
+      // O defeito corrigido aqui era exatamente um id pendurado no vazio.
+      const idDescricao = await botao.getAttribute("aria-describedby");
+      expect(idDescricao, "botão bloqueado sem aria-describedby").toBeTruthy();
+      const descricao = page.locator(`#${idDescricao}`);
+      await expect(descricao).toHaveCount(1);
+      await expect(descricao).toContainText(/procedimento institucional/i);
     }
 
     await context.setOffline(false);

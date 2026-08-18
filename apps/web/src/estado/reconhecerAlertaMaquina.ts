@@ -11,12 +11,23 @@
  * de ação disponível, nunca trava a tela).
  */
 
+import type { EstadoItemTrabalho } from "../domain/estados.js";
+
 export type EstadoReconhecerAlerta =
   | { fase: "ocioso" }
   | { fase: "confirmando" }
   | { fase: "enviando" }
   | { fase: "sucesso"; reconhecidoEm: string }
-  | { fase: "falha"; mensagem: string };
+  | { fase: "falha"; mensagem: string }
+  /**
+   * Conflito de concorrência otimista (ADR-0009 W3): outro ator mudou o item
+   * entre o momento em que este usuário o viu e o momento da confirmação.
+   * É fase PRÓPRIA, e não uma variante de `falha`, porque a recuperação é
+   * diferente: "tentar novamente" às cegas reintroduziria a última-escrita-
+   * vence que W3 proíbe. A saída é humana e informada — o usuário vê o estado
+   * corrente e decide de novo sobre ele.
+   */
+  | { fase: "conflito"; mensagem: string; versaoAtual: number; estadoAtual: EstadoItemTrabalho };
 
 export type AcaoReconhecerAlerta =
   | { tipo: "iniciar" }
@@ -24,7 +35,15 @@ export type AcaoReconhecerAlerta =
   | { tipo: "confirmar" }
   | { tipo: "sucesso"; reconhecidoEm: string }
   | { tipo: "falha"; mensagem: string }
-  | { tipo: "tentar_novamente" };
+  | {
+      tipo: "conflito";
+      mensagem: string;
+      versaoAtual: number;
+      estadoAtual: EstadoItemTrabalho;
+    }
+  | { tipo: "tentar_novamente" }
+  /** Descarta o conflito depois que o usuário viu o estado corrente. */
+  | { tipo: "descartar_conflito" };
 
 /**
  * Reduz `(estado, ação) -> novoEstado`. Transições não previstas
@@ -49,8 +68,23 @@ export function reduzirReconhecerAlerta(
         : estado;
     case "falha":
       return estado.fase === "enviando" ? { fase: "falha", mensagem: acao.mensagem } : estado;
+    case "conflito":
+      return estado.fase === "enviando"
+        ? {
+            fase: "conflito",
+            mensagem: acao.mensagem,
+            versaoAtual: acao.versaoAtual,
+            estadoAtual: acao.estadoAtual,
+          }
+        : estado;
     case "tentar_novamente":
       return estado.fase === "falha" ? { fase: "confirmando" } : estado;
+    case "descartar_conflito":
+      // Volta a `ocioso`, NUNCA direto a `confirmando`: o item mudou, e a
+      // decisão precisa recomeçar a partir do estado que o usuário acabou de
+      // ver. Reoferecer "confirmar" aqui seria reintroduzir, com um clique a
+      // mais, a escrita cega que o conflito interrompeu.
+      return estado.fase === "conflito" ? { fase: "ocioso" } : estado;
     default:
       return estado;
   }

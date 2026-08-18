@@ -46,6 +46,7 @@ const alertaPendente: Alerta = {
   descricao: "Descrição sintética de teste.",
   criadoEm: "2026-08-16T10:00:00Z",
   estado: "nao_atribuido",
+  versao: 0,
 };
 
 const alertaResolvido: Alerta = {
@@ -88,6 +89,10 @@ const itemLeitoCompleto: ItemGradeLeito = {
     ],
     insumosAusentes: ["nivel_consciencia"],
     insumosVelhos: [],
+    motivos: [],
+    anotacoes: [],
+    explicacao: "SYNTH — explicação agregada do backend.",
+    parametroVermelho: false,
     calculadoEm: "2026-08-16T12:00:00Z",
     versaoRegra: "news2-ilustrativo-0.0.1-synth",
   },
@@ -104,6 +109,10 @@ const itemLeitoNaoAvaliado: ItemGradeLeito = {
     contribuicoes: [],
     insumosAusentes: ["saturacao_oxigenio", "uso_oxigenio_suplementar"],
     insumosVelhos: [],
+    motivos: [],
+    anotacoes: [],
+    explicacao: "SYNTH — explicação agregada do backend.",
+    parametroVermelho: false,
     calculadoEm: null,
     versaoRegra: "news2-ilustrativo-0.0.1-synth",
   },

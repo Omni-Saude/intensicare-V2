@@ -35,6 +35,7 @@ import {
   criteriosQueExigemValidacaoManual,
   declaracaoDeAcessibilidade,
   MATRIZ_ACESSIBILIDADE,
+  TOTAL_CRITERIOS_WCAG_22_AA,
 } from "./matrizAcessibilidade.js";
 
 /**
@@ -79,6 +80,10 @@ const LEITO: ItemGradeLeito = {
     contribuicoes: [],
     insumosAusentes: ["saturacao_oxigenio"],
     insumosVelhos: [],
+    motivos: [],
+    anotacoes: [],
+    explicacao: "SYNTH — explicação agregada do backend.",
+    parametroVermelho: false,
     calculadoEm: null,
     versaoRegra: "RULE-NEWS2@0.2.0",
   },
@@ -373,5 +378,35 @@ describe("matriz de acessibilidade — honestidade de estado", () => {
     expect(declaracao).toMatch(/NÃO EXECUTADA/);
     expect(declaracao).not.toMatch(/\bconforme\b/i);
     expect(declaracao).not.toMatch(/\bacessível\b/i);
+  });
+
+  /**
+   * O RECORTE precisa aparecer na própria declaração. Uma matriz de 15
+   * critérios sob o rótulo "WCAG 2.2 AA" lê como se cobrisse o padrão, que
+   * tem 56 no nível A+AA — e um recorte não declarado é a forma silenciosa de
+   * alegar conformidade que ninguém verificou (encargo §4.6).
+   */
+  it("a declaração informa que a matriz é um recorte, não o padrão inteiro", () => {
+    expect(MATRIZ_ACESSIBILIDADE.length).toBeLessThan(TOTAL_CRITERIOS_WCAG_22_AA);
+    const declaracao = declaracaoDeAcessibilidade();
+    expect(declaracao).toContain(String(MATRIZ_ACESSIBILIDADE.length));
+    expect(declaracao).toContain(String(TOTAL_CRITERIOS_WCAG_22_AA));
+    expect(declaracao).toMatch(/recorte declarado/i);
+  });
+
+  /**
+   * Guarda de não-vacuidade: os três critérios com lacuna conhecida (2.4.1,
+   * 2.4.2, 2.2.1) NÃO podem aparecer na matriz como se estivessem cobertos.
+   * Se algum dia forem tratados, entram com cobertura e execução próprias — e
+   * este teste falha, obrigando a decisão a ser explícita.
+   */
+  it("os critérios de navegação com lacuna conhecida não são declarados cobertos", () => {
+    for (const sc of ["2.4.1", "2.4.2", "2.2.1"]) {
+      const criterio = MATRIZ_ACESSIBILIDADE.find((c) => c.sc === sc);
+      expect(
+        criterio?.execucao,
+        `${sc} apareceu na matriz como "executado" sem que a lacuna de navegação tenha sido fechada`,
+      ).not.toBe("executado");
+    }
   });
 });

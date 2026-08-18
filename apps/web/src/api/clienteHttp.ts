@@ -49,6 +49,7 @@ import type {
   ItemGradeLeito,
   ParametroId,
 } from "../domain/clinico.js";
+import { apelidoDePaciente } from "../domain/clinico.js";
 import type {
   BandaRisco,
   EstadoAvaliacao,
@@ -61,8 +62,10 @@ import { exigirPerfilDesenvolvimento } from "../perfil.js";
 import type { ProvedorSessao } from "./sessao.js";
 import type {
   ClienteApiIntensiCare,
+  ConflitoVersao,
   ModoDemonstracao,
   OpcoesChamada,
+  OpcoesReconhecer,
   RespostaApi,
 } from "./tipos.js";
 import { CABECALHO_IDEMPOTENCIA } from "./tipos.js";
@@ -154,6 +157,17 @@ export function mapearContribuicao(c: ContribuicaoContrato): ContribuicaoParamet
   };
 }
 
+/**
+ * Contrato → domínio da UI, PRESERVANDO o racional do backend.
+ *
+ * `motivos`, `anotacoes`, `explicacao` e `parametroVermelho` eram descartados
+ * aqui. O efeito não era estético: sem eles, o estado fail-closed passava a
+ * exibir um parágrafo genérico redigido pelo FRONTEND no lugar das razões
+ * codificadas do backend (ADR-0008 N3), e o parâmetro vermelho isolado de
+ * INV-B ficava invisível justamente quando o total não é computável. ADR-0021
+ * F8 é explícita: a camada de apresentação decide COMO apresentar o racional,
+ * nunca SE ele aparece.
+ */
 export function mapearAvaliacao(resultado: ResultadoAvaliacao): AvaliacaoPaciente {
   return {
     estadoAvaliacao: mapearStatusAvaliacao(resultado.status),
@@ -164,6 +178,10 @@ export function mapearAvaliacao(resultado: ResultadoAvaliacao): AvaliacaoPacient
     insumosVelhos: resultado.parametros
       .filter((p) => p.statusParametro === "stale" || p.statusParametro === "expired")
       .map((p) => mapearParametro(p.parametro)),
+    motivos: resultado.motivos,
+    anotacoes: resultado.anotacoes,
+    explicacao: resultado.explicacao,
+    parametroVermelho: resultado.parametroVermelho,
     calculadoEm: resultado.avaliadoEm,
     versaoRegra: resultado.versaoRegra,
   };
@@ -173,9 +191,38 @@ export function mapearEstadoItem(estado: EstadoItemContrato): EstadoItemTrabalho
   return estado.replaceAll("-", "_") as EstadoItemTrabalho;
 }
 
-function apelidoDe(pacienteRef: string): string {
-  const sufixo = pacienteRef.split(":").at(-1) ?? pacienteRef;
-  return `Paciente ${sufixo}`;
+/** Os oito estados de item de trabalho da ADR-0009 W1, na grafia da UI. */
+const ESTADOS_ITEM_TRABALHO: ReadonlySet<string> = new Set<EstadoItemTrabalho>([
+  "nao_atribuido",
+  "atribuido",
+  "reconhecido",
+  "escalado",
+  "sobreposto",
+  "resolvido",
+  "suprimido",
+  "reaberto",
+]);
+
+/**
+ * Extrai o contexto de conflito de um corpo `problem+json` de 412.
+ *
+ * Fail-closed de propósito: se o corpo não trouxer os dois campos na forma
+ * esperada, devolve `null` em vez de um objeto meio preenchido. Meio contexto
+ * é pior que nenhum — a tela afirmaria conhecer o estado corrente sem
+ * conhecê-lo, e a redecisão humana de W3 se apoiaria em invenção.
+ */
+export function lerConflito(corpo: unknown): ConflitoVersao | null {
+  if (typeof corpo !== "object" || corpo === null) return null;
+  const bruto = corpo as { versaoAtual?: unknown; estadoAtual?: unknown };
+  const versaoAtual = bruto.versaoAtual;
+  const estadoAtual = bruto.estadoAtual;
+  if (typeof versaoAtual !== "number" || !Number.isInteger(versaoAtual) || versaoAtual < 0) {
+    return null;
+  }
+  if (typeof estadoAtual !== "string") return null;
+  const normalizado = estadoAtual.replaceAll("-", "_");
+  if (!ESTADOS_ITEM_TRABALHO.has(normalizado)) return null;
+  return { versaoAtual, estadoAtual: normalizado as EstadoItemTrabalho };
 }
 
 export function mapearEntradaGrade(entrada: EntradaGradeLeitos): ItemGradeLeito {
@@ -187,7 +234,13 @@ export function mapearEntradaGrade(entrada: EntradaGradeLeitos): ItemGradeLeito 
             alertaId: entrada.alerta.id,
             leitoId: entrada.leitoId,
             pacienteRef: entrada.pacienteRef,
-            severidade: mapearBanda(entrada.banda) ?? "alto",
+            // SEM `?? "alto"`. A banda é do backend ou não existe: ADR-0011 P7
+            // ("o cliente não a deriva") e ADR-0021 F3 ("nunca promove
+            // severidade"). O `??` anterior fazia um item sem avaliação
+            // computável renderizar como severidade alta, tornando-o
+            // indistinguível de um item genuinamente grave — o inverso de
+            // QAS-0017 e de VAL-0027.
+            severidade: mapearBanda(entrada.banda),
             descricao: "Alerta consultivo NEWS2 — a decisão clínica permanece com o profissional.",
             criadoEm: entrada.atualizadoEm ?? "",
             estado: mapearEstadoItem(entrada.alerta.estado),
@@ -205,14 +258,22 @@ export function mapearEntradaGrade(entrada: EntradaGradeLeitos): ItemGradeLeito 
           contribuicoes: [],
           insumosAusentes: [],
           insumosVelhos: [],
+          // A projeção da grade é um resumo: não publica racional nem versão
+          // de regra. Preenchê-los com literais escritos no cliente exibiria
+          // rastreabilidade inventada, correta apenas por coincidência e
+          // silenciosamente falsa na primeira troca de bundle (ADR-0021 F8).
+          motivos: [],
+          anotacoes: [],
+          explicacao: "",
+          parametroVermelho: false,
           calculadoEm: entrada.atualizadoEm,
-          versaoRegra: "RULE-NEWS2@0.2.0",
+          versaoRegra: null,
         };
 
   return {
     leitoId: entrada.leitoId,
     pacienteRef: entrada.pacienteRef,
-    pacienteApelido: entrada.pacienteRef === null ? null : apelidoDe(entrada.pacienteRef),
+    pacienteApelido: entrada.pacienteRef === null ? null : apelidoDePaciente(entrada.pacienteRef),
     avaliacao,
     alertas,
   };
@@ -223,7 +284,7 @@ export function mapearItemTrabalho(item: ItemTrabalho): Alerta {
     alertaId: item.id,
     leitoId: item.leitoId,
     pacienteRef: item.pacienteRef,
-    severidade: mapearBanda(item.banda) ?? "alto",
+    severidade: mapearBanda(item.banda),
     descricao: item.motivo,
     criadoEm: item.criadoEm,
     estado: mapearEstadoItem(item.estado),
@@ -304,6 +365,13 @@ interface RespostaHttp<T> {
   status: number;
   corpo: T | null;
   problema: ProblemDetails | null;
+  /**
+   * Corpo cru, preservado TAMBÉM em falha. Um `problem+json` de erro pode
+   * carregar extensões que a UI precisa — o 412 de ADR-0009 W3 traz
+   * `versaoAtual`/`estadoAtual`, e descartá-los deixaria o clínico sabendo
+   * que falhou sem saber contra o quê.
+   */
+  corpoBruto: unknown;
 }
 
 /** Problema devolvido quando o provedor de sessão não fornece credencial (S2). */
@@ -349,7 +417,13 @@ export function criarClienteHttp(opcoes: OpcoesClienteHttp): ClienteApiIntensiCa
       const autorizacao = await sessao.cabecalhoAutorizacao(sinal);
       if (autorizacao === null) {
         // S2: ausência de sessão NUNCA vira requisição anônima.
-        return { ok: false, status: 401, corpo: null, problema: PROBLEMA_SEM_SESSAO };
+        return {
+          ok: false,
+          status: 401,
+          corpo: null,
+          problema: PROBLEMA_SEM_SESSAO,
+          corpoBruto: null,
+        };
       }
 
       const resposta = await executarFetch(`${baseUrl}${caminho}`, {
@@ -375,9 +449,16 @@ export function criarClienteHttp(opcoes: OpcoesClienteHttp): ClienteApiIntensiCa
           status: resposta.status,
           corpo: null,
           problema: problemaDe(resposta.status, corpo, "Falha na chamada à API"),
+          corpoBruto: corpo,
         };
       }
-      return { ok: true, status: resposta.status, corpo: corpo as T, problema: null };
+      return {
+        ok: true,
+        status: resposta.status,
+        corpo: corpo as T,
+        problema: null,
+        corpoBruto: corpo,
+      };
     } catch (erro) {
       // CANCELAMENTO PROPAGA. Traduzir um aborto em "API indisponível" faria
       // a tela declarar uma falha que não houve — e esconderia do chamador
@@ -393,6 +474,7 @@ export function criarClienteHttp(opcoes: OpcoesClienteHttp): ClienteApiIntensiCa
           status: 503,
           detail: "Não foi possível falar com a API (apps/api). O serviço está no ar?",
         },
+        corpoBruto: null,
       };
     }
   }
@@ -402,7 +484,19 @@ export function criarClienteHttp(opcoes: OpcoesClienteHttp): ClienteApiIntensiCa
       estadoCarregamento: estadoDeFalhaHttp(resposta.status),
       dados: null,
       problema: resposta.problema,
+      conflito: null,
     };
+  }
+
+  /**
+   * Falha de concorrência otimista (412). O comando falhou como qualquer
+   * outro — a família de carregamento do §11 continua com nove valores, e o
+   * conflito NÃO vira um décimo. O que muda é o contexto anexado: `conflito`
+   * carrega o estado corrente do recurso para que a redecisão seja humana e
+   * informada (ADR-0009 W3), em vez de "tente de novo" sem explicação.
+   */
+  function falhaDeConflito<T>(resposta: RespostaHttp<unknown>): RespostaApi<T> {
+    return { ...falha<T>(resposta), conflito: lerConflito(resposta.corpoBruto) };
   }
 
   /**
@@ -484,7 +578,7 @@ export function criarClienteHttp(opcoes: OpcoesClienteHttp): ClienteApiIntensiCa
     async reconhecerAlerta(
       alertaId: string,
       chaveIdempotencia: string,
-      opcoes?: OpcoesChamada,
+      opcoes: OpcoesReconhecer,
     ): Promise<RespostaApi<Alerta>> {
       const forcada = forcarOuNulo<Alerta>(opcoes);
       if (forcada) return forcada;
@@ -498,27 +592,50 @@ export function criarClienteHttp(opcoes: OpcoesClienteHttp): ClienteApiIntensiCa
             status: 400,
             detail: "Toda ação de reconhecer alerta exige uma chave de idempotência.",
           },
+          conflito: null,
         };
       }
 
-      // A versão vista (If-Match) vem da projeção corrente — concorrência
-      // otimista de ponta a ponta: conflito 412 aparece como erro explícito.
-      const grade = await buscarGrade(opcoes?.sinal);
-      const versao =
-        grade.corpo?.leitos.map((l) => l.alerta).find((a) => a?.id === alertaId)?.versao ?? 0;
+      // A VERSÃO VISTA vem do chamador — do que o ator humano tinha na tela
+      // quando decidiu (ADR-0009 W3). Antes, este ponto relia a grade para
+      // extrair a versão CORRENTE, o que anulava o controle inteiro: toda
+      // mudança feita por outro clínico entre a renderização e a confirmação
+      // era absorvida em silêncio, o 412 nunca ocorria e a `AuditEvidence`
+      // gravava uma versão que ninguém viu.
+      //
+      // Ausência de versão é recusa, jamais um valor fabricado. O `?? 0`
+      // anterior enviava `If-Match: 0` quando o alerta sumia da grade —
+      // um token de concorrência inventado sobre um recurso desconhecido.
+      const versaoVista = opcoes.versaoVista;
+      if (typeof versaoVista !== "number" || !Number.isInteger(versaoVista) || versaoVista < 0) {
+        return {
+          estadoCarregamento: "erro",
+          dados: null,
+          problema: {
+            type: "about:blank",
+            title: "Versão vista ausente",
+            status: 428,
+            detail:
+              "O reconhecimento exige a versão do alerta que estava na tela quando você " +
+              "decidiu. Nada foi enviado. Recarregue a lista e repita a ação.",
+          },
+          conflito: null,
+        };
+      }
 
       const resposta = await chamar<ReconhecerAlertaResposta>(
         `/v1/alertas/${encodeURIComponent(alertaId)}/reconhecer`,
-        opcoes?.sinal,
+        opcoes.sinal,
         {
           method: "POST",
           headers: {
             [CABECALHO_IDEMPOTENCIA]: chaveIdempotencia,
-            [IF_MATCH_HEADER]: String(versao),
+            [IF_MATCH_HEADER]: String(versaoVista),
           },
           body: JSON.stringify({}),
         },
       );
+      if (resposta.status === 412) return falhaDeConflito(resposta);
       if (!resposta.ok || resposta.corpo === null) return falha(resposta);
       return {
         estadoCarregamento: "pronto",

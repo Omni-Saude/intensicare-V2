@@ -352,6 +352,32 @@ main {
   border-top: 2px dashed #7a1010;
 }
 
+/*
+  Mesmo tratamento visual no detalhe do paciente. A opacidade é reforço, nunca
+  o sinal: quem transmite "isto não é atual" é o rótulo textual de frescor
+  acima do bloco (WCAG 1.4.1 — nada depende só de cor ou só de contraste).
+  A borda tracejada em 2px sobrevive ao tema escuro e ao zoom.
+*/
+.detalhe-paciente--desatualizado {
+  opacity: 0.75;
+  border-top: 2px dashed #7a1010;
+  padding-top: 0.5rem;
+}
+
+/*
+  As duas divulgações do banner são parágrafos irmãos (uma temporária, outra
+  permanente — ver BannerContexto.tsx). Sem esta regra herdariam a margem
+  padrão de parágrafo e o banner cresceria; o espaçamento entre elas é
+  deliberado e pequeno, para que leiam como um bloco só sem se fundirem.
+*/
+.banner-contexto p {
+  margin: 0;
+}
+
+.banner-contexto p + p {
+  margin-top: 0.35rem;
+}
+
 /* ---------------------------------------------------------------------------
    Galeria de estados (revisão de UI, apenas desenvolvimento).
    --------------------------------------------------------------------------- */

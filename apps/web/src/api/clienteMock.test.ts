@@ -4,6 +4,13 @@ import { gerarChaveIdempotencia } from "./idempotencia.js";
 
 const SEM_ATRASO = { atrasoMs: 0 } as const;
 
+/**
+ * Opções do comando com a VERSÃO VISTA (ADR-0009 W3). `SYNTH-ALERTA-0001`
+ * nasce na versão 0 nas fixtures; passar a versão vista é o que faz o dublê
+ * aceitar o comando — e passar outra é o que faz ele produzir 412.
+ */
+const RECONHECER = (versaoVista: number) => ({ atrasoMs: 0, versaoVista }) as const;
+
 describe("clienteMock — listarGradeLeitos", () => {
   it("retorna 'pronto' com leitos, incluindo ao menos um leito vago e um fail-closed", async () => {
     const cliente = criarClienteMock();
@@ -67,7 +74,7 @@ describe("clienteMock — obterAvaliacaoPaciente", () => {
 describe("clienteMock — reconhecerAlerta", () => {
   it("exige chave de idempotência", async () => {
     const cliente = criarClienteMock();
-    const resposta = await cliente.reconhecerAlerta("SYNTH-ALERTA-0001", "", SEM_ATRASO);
+    const resposta = await cliente.reconhecerAlerta("SYNTH-ALERTA-0001", "", RECONHECER(0));
     expect(resposta.estadoCarregamento).toBe("erro");
     expect(resposta.problema?.title).toMatch(/idempotência/i);
   });
@@ -75,7 +82,7 @@ describe("clienteMock — reconhecerAlerta", () => {
   it("reconhece um alerta pendente e reflete a mudança na grade em seguida", async () => {
     const cliente = criarClienteMock();
     const chave = gerarChaveIdempotencia("SYNTH-ALERTA-0001");
-    const resposta = await cliente.reconhecerAlerta("SYNTH-ALERTA-0001", chave, SEM_ATRASO);
+    const resposta = await cliente.reconhecerAlerta("SYNTH-ALERTA-0001", chave, RECONHECER(0));
     expect(resposta.estadoCarregamento).toBe("pronto");
     expect(resposta.dados?.estado).toBe("reconhecido");
 
@@ -88,8 +95,8 @@ describe("clienteMock — reconhecerAlerta", () => {
   it("é idempotente: repetir a mesma chave não gera um segundo efeito nem erro", async () => {
     const cliente = criarClienteMock();
     const chave = gerarChaveIdempotencia("SYNTH-ALERTA-0001");
-    const primeira = await cliente.reconhecerAlerta("SYNTH-ALERTA-0001", chave, SEM_ATRASO);
-    const segunda = await cliente.reconhecerAlerta("SYNTH-ALERTA-0001", chave, SEM_ATRASO);
+    const primeira = await cliente.reconhecerAlerta("SYNTH-ALERTA-0001", chave, RECONHECER(0));
+    const segunda = await cliente.reconhecerAlerta("SYNTH-ALERTA-0001", chave, RECONHECER(0));
     expect(segunda.estadoCarregamento).toBe("pronto");
     expect(segunda.dados?.reconhecidoEm).toBe(primeira.dados?.reconhecidoEm);
   });
@@ -99,7 +106,7 @@ describe("clienteMock — reconhecerAlerta", () => {
     const resposta = await cliente.reconhecerAlerta(
       "SYNTH-ALERTA-INEXISTENTE",
       "SYNTH-idem-x",
-      SEM_ATRASO,
+      RECONHECER(0),
     );
     expect(resposta.estadoCarregamento).toBe("erro");
   });

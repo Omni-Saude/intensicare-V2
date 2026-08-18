@@ -45,11 +45,33 @@ export interface CriterioAcessibilidade {
 }
 
 /**
+ * Quantos critérios A+AA existem na WCAG 2.2, no total. Declarado aqui para
+ * que a razão entre o enumerado e o universo fique visível e verificada por
+ * teste, em vez de subentendida.
+ */
+export const TOTAL_CRITERIOS_WCAG_22_AA = 56;
+
+/**
  * A matriz. Os critérios foram escolhidos a partir das obrigações já escritas
  * em `docs/10-ux-and-accessibility/arquitetura-de-informacao.md` §2.2 e
  * `requisito-registro-limitado-instituicao.md` RLI-3, MAIS os critérios de
  * contraste (1.4.3/1.4.11) — que estavam ausentes da matriz daquele
  * documento, uma lacuna que esta fatia registra em vez de herdar em silêncio.
+ *
+ * RECORTE, DITO ÀS CLARAS. Esta lista enumera 15 critérios; a WCAG 2.2 nível
+ * A+AA tem 56. "WCAG 2.2 AA" aqui é, portanto, um SUBCONJUNTO deliberado —
+ * os critérios com obrigação já escrita nos artefatos do §11 — e não uma
+ * varredura do padrão inteiro. Ao menos três dos 41 não enumerados têm lacuna
+ * conhecida hoje, todas consequência da ausência de roteamento por URL:
+ *
+ *   - 2.4.1 (Bypass Blocks): não há link de pular para o conteúdo;
+ *   - 2.4.2 (Page Titled): o `<title>` é estático em todas as telas;
+ *   - 2.2.1 (Timing Adjustable): pertinente quando a sessão real chegar
+ *     (ADR-0015), porque expiração sem ajuste é barreira de acessibilidade.
+ *
+ * Elas ficam registradas aqui, e não corrigidas, porque a correção pertence a
+ * um pacote de navegação que esta fatia não tem — e porque um recorte não
+ * declarado leria como conformidade que ninguém verificou.
  */
 export const MATRIZ_ACESSIBILIDADE: readonly CriterioAcessibilidade[] = [
   {
@@ -219,6 +241,9 @@ export function declaracaoDeAcessibilidade(): string {
     "NÃO VALIDADA. Automação WCAG 2.2 AA executada parcialmente; validação com " +
     "usuários de tecnologia assistiva é dependência humana e permanece NÃO EXECUTADA " +
     `(${criteriosQueExigemValidacaoManual().length} critérios exigem validação manual; ` +
-    `${criteriosNaoExecutados().length} ainda não executados).`
+    `${criteriosNaoExecutados().length} ainda não executados). ` +
+    // Sem esta frase, a declaração leria como se a matriz cobrisse o padrão.
+    `A matriz enumera ${MATRIZ_ACESSIBILIDADE.length} dos ${TOTAL_CRITERIOS_WCAG_22_AA} ` +
+    "critérios A+AA da WCAG 2.2 — é um recorte declarado, não uma varredura do padrão."
   );
 }
