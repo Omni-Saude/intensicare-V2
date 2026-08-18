@@ -165,6 +165,18 @@ function montarAvaliacao(
       contribuicoes,
       insumosAusentes: parametrosAusentes,
       insumosVelhos,
+      // O dublê imita a FORMA do racional que a API real produz (razões
+      // codificadas de ADR-0008 N3 + explicação agregada), para que a tela
+      // exercite o mesmo caminho de renderização. O conteúdo é sintético e
+      // rotulado como tal — nunca terminologia clínica ratificada.
+      motivos: parametrosAusentes.map((p) => `missing_required_input:${p}`),
+      anotacoes: [
+        "SYNTH — ausência de escore não significa normalidade (HAZ-0005); verifique o paciente.",
+      ],
+      explicacao:
+        "NEWS2 não avaliado: insumos obrigatórios ausentes. A ausência de pontuação não " +
+        "significa normalidade.",
+      parametroVermelho: algumParametroPontuouMaximo,
       calculadoEm: null,
       versaoRegra: VERSAO_REGRA_NEWS2_ILUSTRATIVA,
     };
@@ -181,6 +193,13 @@ function montarAvaliacao(
     contribuicoes,
     insumosAusentes: parametrosAusentes,
     insumosVelhos,
+    motivos: parametrosAusentes.map((p) => `missing_required_input:${p}`),
+    anotacoes:
+      estadoAvaliacao === "parcial"
+        ? ["SYNTH — avaliação parcial: um insumo obrigatório está ausente e está declarado abaixo."]
+        : [],
+    explicacao: `SYNTH — escore composto por ${contribuicoesPresentes.length} parâmetro(s) com leitura registrada.`,
+    parametroVermelho: algumParametroPontuouMaximo,
     calculadoEm,
     versaoRegra: VERSAO_REGRA_NEWS2_ILUSTRATIVA,
   };
@@ -467,6 +486,7 @@ function alertasSinteticos(): Alerta[] {
       descricao: "NEWS2 em faixa de risco alto — reavaliação sugerida.",
       criadoEm: "2026-08-16T11:45:00Z",
       estado: "nao_atribuido",
+      versao: 0,
     },
     {
       alertaId: "SYNTH-ALERTA-0002",
@@ -476,6 +496,7 @@ function alertasSinteticos(): Alerta[] {
       descricao: "NEWS2 em faixa de risco crítico, com dado de origem desatualizado.",
       criadoEm: "2026-08-16T08:05:00Z",
       estado: "escalado",
+      versao: 1,
     },
     {
       alertaId: "SYNTH-ALERTA-0003",
@@ -485,6 +506,7 @@ function alertasSinteticos(): Alerta[] {
       descricao: "Verificação de rotina concluída sem novos achados.",
       criadoEm: "2026-08-16T09:00:00Z",
       estado: "resolvido",
+      versao: 2,
       reconhecidoPor: "SYNTH-PROFISSIONAL-01",
       reconhecidoEm: "2026-08-16T09:05:00Z",
     },

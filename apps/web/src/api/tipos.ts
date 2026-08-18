@@ -10,7 +10,7 @@
  */
 import { IDEMPOTENCY_KEY_HEADER, type ProblemDetails } from "@intensicare/contratos";
 import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
-import type { EstadoCarregamento } from "../domain/estados.js";
+import type { EstadoCarregamento, EstadoItemTrabalho } from "../domain/estados.js";
 
 /** Nome do cabeçalho de idempotência — re-export do contrato real. */
 export const CABECALHO_IDEMPOTENCIA = IDEMPOTENCY_KEY_HEADER;
@@ -27,6 +27,21 @@ export interface RespostaApi<T> {
   estadoCarregamento: EstadoCarregamento;
   dados: T | null;
   problema: ProblemaLocal | null;
+  /**
+   * Contexto de um conflito de concorrência otimista (HTTP 412 — ADR-0009
+   * W3), quando houver. Deliberadamente NÃO é um décimo valor da família de
+   * carregamento do §11: o conflito pertence ao item de trabalho, não ao
+   * carregamento da tela. Sem estes dois campos o clínico saberia que falhou,
+   * mas não contra o quê — e W3 exige que a redecisão seja humana e
+   * informada, nunca última-escrita-vence silenciosa.
+   */
+  conflito?: ConflitoVersao | null;
+}
+
+/** Estado corrente do recurso no servidor, para redecisão humana (ADR-0009 W3). */
+export interface ConflitoVersao {
+  readonly versaoAtual: number;
+  readonly estadoAtual: EstadoItemTrabalho;
 }
 
 /**
@@ -56,6 +71,23 @@ export interface OpcoesChamada {
   sinal?: AbortSignal;
 }
 
+/**
+ * Opções do comando de reconhecimento. `versaoVista` é OBRIGATÓRIA e é a
+ * razão de este tipo existir separado: ADR-0009 W3 exige que o `If-Match`
+ * carregue a versão que o ator humano VIU quando decidiu — não a versão
+ * corrente no servidor.
+ *
+ * A diferença decide se o controle funciona. Lendo a versão corrente no
+ * instante do envio, o cliente adota em silêncio qualquer mudança feita por
+ * outro clínico entre a renderização e a confirmação: o 412 nunca acontece, a
+ * "última-escrita-vence silenciosa" que W3 proíbe volta pela porta dos fundos
+ * (HAZ-0023), e a `AuditEvidence` de W6 grava uma "versão vista" que ninguém
+ * viu. Exigir o parâmetro aqui torna a omissão um erro de compilação.
+ */
+export interface OpcoesReconhecer extends OpcoesChamada {
+  readonly versaoVista: number;
+}
+
 /** Porta do cliente de API consumida pelas telas desta fatia. */
 export interface ClienteApiIntensiCare {
   listarGradeLeitos(opcoes?: OpcoesChamada): Promise<RespostaApi<ItemGradeLeito[]>>;
@@ -66,6 +98,6 @@ export interface ClienteApiIntensiCare {
   reconhecerAlerta(
     alertaId: string,
     chaveIdempotencia: string,
-    opcoes?: OpcoesChamada,
+    opcoes: OpcoesReconhecer,
   ): Promise<RespostaApi<Alerta>>;
 }

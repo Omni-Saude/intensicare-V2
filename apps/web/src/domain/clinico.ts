@@ -60,10 +60,47 @@ export interface AvaliacaoPaciente {
   insumosAusentes: ParametroId[];
   /** Insumos presentes, mas envelhecidos/desatualizados, DECLARADOS. */
   insumosVelhos: ParametroId[];
+  /**
+   * Razões legíveis por máquina, originadas no backend (ADR-0008 N3 —
+   * `missing_required_input:<insumo>` e similares). O frontend EXIBE estas
+   * razões; jamais redige um substituto genérico no lugar delas (ADR-0021 F3).
+   */
+  motivos: string[];
+  /**
+   * Anotações obrigatórias visíveis (N-2/N-3/N-4/N-6), em pt-BR, vindas do
+   * backend. O contrato as declara obrigatórias na UI — omiti-las é defeito,
+   * não simplificação.
+   */
+  anotacoes: string[];
+  /** Explicação agregada pt-BR do backend (spec §7) — o racional de ADR-0021 F8. */
+  explicacao: string;
+  /**
+   * Um parâmetro isolado pontuou o máximo (INV-B, ADR-0026). Sobrevive ao
+   * total não computável: IA-N4 exige exibir as duas informações "sem que uma
+   * esconda a outra".
+   */
+  parametroVermelho: boolean;
   /** Horário (ISO 8601) em que o cálculo foi realizado — `null` se nunca calculado. */
   calculadoEm: string | null;
-  /** Versão da regra/tabela de pontuação usada (rastreabilidade). */
-  versaoRegra: string;
+  /**
+   * Versão da regra usada (rastreabilidade — ADR-0021 F8). `null` quando a
+   * superfície consultada NÃO publica o campo: a projeção da grade não o
+   * publica, e afirmar uma versão que não veio do backend é inventar
+   * rastreabilidade.
+   */
+  versaoRegra: string | null;
+}
+
+/**
+ * Rótulo de exibição de um paciente a partir da referência pseudonimizada
+ * (`amh:psr:v1:<id>`). Exibe apenas o sufixo — o mínimo que identifica o
+ * sujeito na tela sem trafegar a referência inteira em cada superfície
+ * (QAS-0028). Nunca é um nome: esta fatia opera exclusivamente sobre dados
+ * sintéticos `SYNTH-`.
+ */
+export function apelidoDePaciente(pacienteRef: string): string {
+  const sufixo = pacienteRef.split(":").at(-1) ?? pacienteRef;
+  return `Paciente ${sufixo}`;
 }
 
 /** Um item da grade de leitos da UTI. */
@@ -120,16 +157,26 @@ export interface Alerta {
   alertaId: string;
   leitoId: string;
   pacienteRef: string;
-  severidade: BandaRisco;
+  /**
+   * Severidade ORIGINADA NO BACKEND. `null` quando o backend não atribuiu
+   * banda — o que acontece sempre que a avaliação não é `valida`. Nunca
+   * preenchida por omissão: ADR-0011 P7 é explícita em que "nenhuma projeção,
+   * gateway ou cliente promove status", e um item sem avaliação computável
+   * jamais pode ficar indistinguível de um item genuinamente grave
+   * (ADR-0008 N7; QAS-0017).
+   */
+  severidade: BandaRisco | null;
   descricao: string;
   criadoEm: string;
   estado: EstadoItemTrabalho;
   /**
-   * Versão do recurso para concorrência otimista (If-Match — ADR-0009
-   * Q2-A). Presente quando o alerta veio da API real (integração
-   * SPR-G7-2); o mock local não versiona.
+   * Versão do recurso para concorrência otimista (If-Match — ADR-0009 W3).
+   * OBRIGATÓRIA: é a "versão vista" pelo ator humano, e é ela que o comando
+   * de reconhecimento carrega. Torná-la opcional convidava o chamador a
+   * omiti-la e o cliente a fabricar um valor — que foi exatamente o defeito
+   * corrigido aqui.
    */
-  versao?: number;
+  versao: number;
   reconhecidoPor?: string;
   reconhecidoEm?: string;
 }

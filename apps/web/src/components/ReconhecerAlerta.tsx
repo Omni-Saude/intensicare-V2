@@ -2,11 +2,13 @@ import { useEffect, useReducer, useRef } from "react";
 import { gerarChaveIdempotencia } from "../api/idempotencia.js";
 import type { ClienteApiIntensiCare } from "../api/tipos.js";
 import type { Alerta } from "../domain/clinico.js";
+import { textoItemTrabalho } from "../domain/linguagem.js";
 import {
   ESTADO_INICIAL_RECONHECER_ALERTA,
   reduzirReconhecerAlerta,
 } from "../estado/reconhecerAlertaMaquina.js";
 import { MotivoAborto } from "../estado/recursoRemoto.js";
+import { BadgeTom } from "./BadgeTom.js";
 
 interface ReconhecerAlertaProps {
   alerta: Alerta;
@@ -88,6 +90,10 @@ export function ReconhecerAlerta({
     try {
       const resposta = await cliente.reconhecerAlerta(alerta.alertaId, chaveRef.current, {
         sinal: controlador.signal,
+        // A VERSÃO VISTA: exatamente a que este componente tem na tela, não a
+        // que o servidor tem agora (ADR-0009 W3). É este valor que faz o 412
+        // acontecer quando alguém mudou o item enquanto o usuário decidia.
+        versaoVista: alerta.versao,
       });
 
       if (controlador.signal.aborted) return;
@@ -97,6 +103,18 @@ export function ReconhecerAlerta({
         dispatch({
           tipo: "sucesso",
           reconhecidoEm: resposta.dados.reconhecidoEm ?? new Date().toISOString(),
+        });
+        return;
+      }
+
+      if (resposta.conflito) {
+        dispatch({
+          tipo: "conflito",
+          mensagem:
+            resposta.problema?.detail ??
+            "Este alerta mudou depois que você o abriu. Nada foi registrado.",
+          versaoAtual: resposta.conflito.versaoAtual,
+          estadoAtual: resposta.conflito.estadoAtual,
         });
         return;
       }
@@ -182,14 +200,59 @@ export function ReconhecerAlerta({
     );
   }
 
+  // Conflito de concorrência (ADR-0009 W3): a falha é explícita, o estado
+  // CORRENTE é exibido, e não há "tentar novamente" — repetir às cegas seria
+  // a última-escrita-vence que a cláusula proíbe. O usuário retoma a partir
+  // do que acabou de ver.
+  if (estado.fase === "conflito") {
+    const { texto, tom } = textoItemTrabalho(estado.estadoAtual);
+    return (
+      <div role="alert" data-testid={`conflito-${alerta.alertaId}`}>
+        <p>{estado.mensagem}</p>
+        <p>
+          Estado atual deste alerta: <BadgeTom texto={texto} tom={tom} /> (versão{" "}
+          {estado.versaoAtual}; você viu a versão {alerta.versao}). Nada foi registrado.
+        </p>
+        <button
+          type="button"
+          className="botao"
+          onClick={() => dispatch({ tipo: "descartar_conflito" })}
+        >
+          Entendi — revisar o alerta atualizado
+        </button>
+      </div>
+    );
+  }
+
+  const idBloqueio = `bloqueio-${alerta.alertaId}`;
+  if (comandosBloqueados) {
+    // NÃO usa `disabled`: um botão desabilitado sai da ordem de foco, e quem
+    // navega por teclado ou leitor de tela nunca chega ao elemento que
+    // explica o bloqueio. O botão permanece focável, anuncia-se como
+    // indisponível (`aria-disabled`) e aponta para um motivo que EXISTE no
+    // DOM — o `aria-describedby` anterior referenciava um `id` inexistente
+    // (SAF-0034; HAZ-0037).
+    return (
+      <>
+        <button
+          type="button"
+          className="botao"
+          aria-disabled="true"
+          aria-describedby={idBloqueio}
+          onClick={(evento) => evento.preventDefault()}
+        >
+          Reconhecer alerta
+        </button>
+        <p id={idBloqueio}>
+          Indisponível sem conexão: o reconhecimento não pode ser registrado agora e não foi
+          enfileirado. Use o procedimento institucional e repita quando a conexão voltar.
+        </p>
+      </>
+    );
+  }
+
   return (
-    <button
-      type="button"
-      className="botao"
-      onClick={() => dispatch({ tipo: "iniciar" })}
-      disabled={comandosBloqueados}
-      {...(comandosBloqueados ? { "aria-describedby": `bloqueio-${alerta.alertaId}` } : {})}
-    >
+    <button type="button" className="botao" onClick={() => dispatch({ tipo: "iniciar" })}>
       Reconhecer alerta
     </button>
   );

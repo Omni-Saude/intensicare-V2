@@ -366,11 +366,111 @@ ciclo_6_construcao_2026_08_16:
     capacidade sem gate a vista acumula trabalho que o dado real pode
     contradizer (SR-3 aplicado ao produto inteiro).
 
+analise_de_lacunas_frontend_2026_08_18:
+  aviso: >-
+    ESTADO VIVO. Trabalho POSTERIOR à consolidação: a main já contém o PR
+    (HEAD 7eef8c0), ao contrário do que a seção abaixo afirma sobre main
+    intacta e PR aberto. Esta seção não supersede nada além disso; o estado
+    factual duro segue INALTERADO.
+  branch_atual: codex/lacunas-frontend-ux (a partir de main @ 7eef8c0)
+  main_alterada: "NÃO — nenhum commit foi feito na main"
+  encargo: >-
+    Aprofundar a análise de lacunas de frontend/UI/UX sobre um relatório de
+    estado, e corrigir o que fosse defeito de correção (não escopo pendente).
+  produto:
+    - docs/10-ux-and-accessibility/analise-de-lacunas-frontend.md (LAC-D1..D8, LAC-L1..L9)
+  achado_central: >-
+    Sob a honestidade declarada do frontend havia OITO defeitos de correção —
+    comportamento implementado contrariando cláusula vinculante já aceita, não
+    escopo pendente. Três viviam em caminhos que NENHUM teste da fatia
+    percorria. Todos corrigidos com teste que falha antes e passa depois.
+  medicao_antes_da_correcao: >-
+    Com os testes escritos e NENHUMA correção aplicada: 13 de 14 falharam
+    (188 verdes / 201 no pacote web). O 14º ("leito diferente nunca exibe o
+    paciente anterior") passava VACUAMENTE, porque a tela não exibia nada
+    naquele estado — ele existe para não regredir depois da correção de D4.
+  defeitos_corrigidos:
+    D1: >-
+      P0. If-Match carregava a versão CORRENTE (relida no envio), não a versão
+      VISTA. Efeito: 412 inalcançável pela UI, última-escrita-vence silenciosa
+      de volta (ADR-0009 W3; HAZ-0023), AuditEvidence de W6 gravando versão que
+      ninguém viu, e `?? 0` fabricando If-Match sobre recurso desconhecido.
+      Corrigido: versaoVista obrigatória na porta (omissão = erro de
+      compilação), releitura removida, 428 em vez de valor fabricado, dublê
+      passou a PRODUZIR 412, e fase `conflito` própria sem "tentar novamente".
+    D2: >-
+      P0. motivos/anotacoes/explicacao/parametroVermelho descartados no
+      mapeamento — e no lugar das razões codificadas do backend a tela exibia
+      parágrafo REDIGIDO PELO FRONTEND, no estado fail-closed (ADR-0008 N3;
+      ADR-0021 F3/F8; ADR-0026 INV-B).
+    D3: >-
+      P0. `mapearBanda(...) ?? "alto"` fabricava severidade que o backend
+      recusou a emitir, tornando item sem avaliação computável indistinguível
+      de item grave (ADR-0011 P7; QAS-0017 exige contagem zero).
+    D4: >-
+      P1. Detalhe perdia todo o conteúdo na recarga que falha enquanto o rótulo
+      afirmava exibi-lo. A correção precisou de GUARDA DE IDENTIDADE: preservar
+      dado desatualizado atravessando leitos seria HAZ-0001/0002.
+    D5: >-
+      P1. `disabled` + `aria-describedby` apontando para id INEXISTENTE: o
+      motivo do bloqueio era inalcançável por teclado e leitor de tela
+      (SAF-0034; HAZ-0037). Atravessou toda a automação existente, incluindo
+      axe em navegador real com contraste ligado.
+    D6: 'P1. versaoRegra literal "RULE-NEWS2@0.2.0" no cliente (ADR-0021 F8).'
+    D7: "P1. Linha de alerta sem referência de paciente (IA-N10)."
+    D8: >-
+      P1. Banner fundia divulgação TEMPORÁRIA (sintético) com obrigação
+      PERMANENTE (registro limitado à instituição, ADR-0004 §6.2/HAZ-0046):
+      remover a primeira levaria a segunda. Sem identificador estável, RLI-5
+      não era atendido.
+  verificacao:
+    pnpm_verify: "exit 0 — 1.513 testes verdes, ZERO pulados, ZERO falhas (1.497 antes; +16)"
+    e2e_navegador: "22/22 verdes, incluindo o cenário offline reescrito para provar focabilidade e o alvo do aria-describedby"
+    gates_de_documento: "check_doc_conventions OK (250 arquivos); check_forbidden_content OK (595 arquivos)"
+    biome: "sem erro em apps/web"
+  lacunas_registradas_e_NAO_corrigidas:
+    L1: >-
+      A MAIS GRAVE. Não há SSE, polling nem refetch — de espécie alguma. A
+      grade só muda por clique. O rótulo de frescor envelhece com a tela, e
+      `desatualizado_apos_falha` exige uma recarga que falhou, que nunca ocorre
+      se nenhuma é tentada. É HAZ-0025 ("clinicians trust a frozen board") e
+      contraria SAF-0025. Recomendação de sequência: relógio de idade da visão
+      ANTES de qualquer SSE — o backend já entrega heartbeat, cursor, replay e
+      instrucao-reconciliacao prontos.
+    L2: >-
+      A UI não consegue dizer que a regra está em modo sombra: RegistroDeAvaliacao
+      é omitido de OUTBOX_TO_CONTRACT_EVENT e de toda resposta HTTP. Viola
+      QAS-0023 de forma mensurável. Correção é de BACKEND, não de apps/web.
+    L3: >-
+      Tipos REST escritos à mão sem gate de deriva — check_contratos.mjs
+      confronta apenas os enums de EVENTO. BandaRisco segue traduzida à mão e a
+      tradução desloca o vocabulário (contrato `alerta`/RCP medium vira `alto`).
+    L4: "Sem roteamento: sem URL por leito, sem voltar, sem skip-link, sem title dinâmico."
+    L5: >-
+      A matriz WCAG enumera 15 dos 56 critérios A+AA. O recorte passou a ser
+      DECLARADO no módulo, na declaração e em teste; a cobertura NÃO foi
+      ampliada. 2.4.1/2.4.2 falham hoje, por consequência de L4.
+    L6: "1 de 7 comandos de WorkItem tem endpoint — a lacuna é de backend."
+    L7: "Sem design system/tokens; badge-tom sem variante escura; i18n pela metade; ISO cru na tela."
+    L8: "apps/web/src/domain/news2.ts é uma 2ª fonte de semântica clínica — deve morrer com o mock."
+    L9: "VAL-0027/0029/0031/0033 e as condições C2/C3 da ADR-0021 seguem ABERTAS. C3 é da engenharia."
+  nada_foi_declarado: >-
+    Nenhum gate aprovado, nenhum MG-* satisfeito, nenhum hazard fechado,
+    nenhuma alegação de acessibilidade validada. Estado factual duro
+    INALTERADO: 0 vias acionáveis, 47/47 inelegíveis, Observation não
+    consumível, safety case M0, nenhum dado real acessado.
+  nao_presuma_convergencia: >-
+    Oito defeitos foram encontrados numa árvore que já passara por seis rodadas
+    adversariais e por um gate verde. A taxa de achado não convergiu antes e não
+    há razão para supor que convergiu agora.
+
 consolidacao_final_2026_08_17:
   aviso: >-
     ESTADO VIVO — SUPERSEDE a seção ciclo_6_construcao_2026_08_16 no que toca ao
     estado do código. As afirmações de regime, decisões e estado factual duro
-    daquela seção continuam valendo integralmente.
+    daquela seção continuam valendo integralmente. ATENÇÃO: o que esta seção diz
+    sobre "main intacta" e "PR #5 aberto" ficou OBSOLETO — a main está em
+    7eef8c0 e já contém o trabalho (ver analise_de_lacunas_frontend_2026_08_18).
   branch_atual: codex/finalizacao-plataforma-v2 (a partir de main @ ecd32d555291a6ab75e6bb2c3227ad557d87a368)
   main_alterada: "NÃO — nenhum commit foi feito na main"
   leitura_obrigatoria_na_retomada:
