@@ -715,6 +715,153 @@ consolidacao_final_2026_08_17:
     segue NAO VERIFICADO — e' leitura de codigo, nao teste; (F5) acima.
   comandos_de_retomada: "ver docs/15-release-evidence/final-implementation-report.md §14"
 
+ondas_1_e_2_2026_08_18:
+  aviso: >-
+    ESTADO VIVO E MAIS RECENTE desta branch. SUPERSEDE, no que toca ao código,
+    as seções analise_de_lacunas_frontend_2026_08_18 e
+    vigilancia_despacho_contrato_2026_08_18. O estado factual duro segue
+    INALTERADO. Encargo da próxima sessão: PROMPT_PROXIMO_ORQUESTRADOR.md.
+  branch: codex/lacunas-frontend-a11y
+  head: ec97f61
+  main: 7eef8c0 — NÃO alterada; merge do PR #8 é ato do titular (GDEC-0014)
+  pr: https://github.com/Omni-Saude/intensicare-V2/pull/8
+  encargo_da_proxima_sessao: PROMPT_PROXIMO_ORQUESTRADOR.md
+
+  metodo: >-
+    Seis especialistas estreitos de escopo de escrita DISJUNTO, em duas ondas,
+    com verificação serial SÓ com a máquina ociosa. Nenhum agente genérico.
+
+  o_que_fechou:
+    ACH_REV8_4: >-
+      FECHADO. A revisão adversarial estava certa: exposicao.ts não tinha
+      chamador de produção e nenhum byte do envelope atravessava a fronteira
+      HTTP. Agora db.ts compõe por resultadoNews2Publicavel no ponto único
+      (cobre os dois desfechos) e projectBedGrid anexa modoAvaliacao nos três
+      ramos; openapi.yaml publica os cinco schemas; os testes afirmam VALORES
+      na resposta, não forma. QAS-0023 deixa de ter contagem maior que zero
+      para esta degradação.
+    F1: >-
+      FECHADO, e era EXPLORÁVEL DE VERDADE — medido contra PostgreSQL 16.14
+      com o ataque funcionando ANTES do fecho. Uma função SECURITY DEFINER
+      criada pelo migrador lia a tabela de selo inteira (pid + tenant_id de
+      todos os backends), revelando qual tenant cada conexão do pool atendeu
+      por último. O fecho da 0004 é transitivo por pg_rewrite, que cobre
+      view/matview e NÃO alcança função.
+    F2: >-
+      FECHADO, também explorável: ALTER TABLE ... INHERIT pós-boot fez o
+      processo VIVO devolver linhas dos DOIS tenants. Fecho na migração 0006 —
+      âncora sai da propriedade do dono do esquema para papel NOLOGIN sem
+      membros, mais event trigger que recusa a DDL do ataque. Todas as recusas
+      medidas são 42501 DO BANCO, não da aplicação.
+    F4: >-
+      FECHADO. O contrato "escopo é a primeira escrita" NÃO era explorável; o
+      que faltava era teste, e agora existe, com os vetores tentados
+      registrados.
+    deriva_de_contrato_rest: >-
+      FECHADA. Os enums REST (376 linhas de TS à mão espelhando 1.380 de YAML)
+      não eram confrontados com nada. O especialista achou um TERCEIRO lado que
+      o despacho não previa: apps/api/src/regras/tipos.ts, o vocabulário do
+      registro imutável. MEDIDO — renomear um valor só ali passava com
+      "OK — 160 verificações"; agora sai exit 1 com mensagem nomeada.
+    autoteste_do_gate_bloqueante: >-
+      O autoteste que prova que o gate serve NÃO era executado por script nem
+      workflow algum. `check:contratos` agora roda gate + autoteste; a prova
+      passou de decorativa a bloqueante.
+
+  verde_vacuo_corrigido_dentro_do_gate_novo: >-
+    Um caso do autoteste continuava `ok` PELO MOTIVO ERRADO: injetava um schema
+    que o documento passou a publicar, o YAML virava chave duplicada, o gate
+    reprovava antes de parsear e a comparação de enum NUNCA rodava. Trocado por
+    mutação in loco.
+
+  erros_do_orquestrador_registrados:
+    - >-
+      Disse "despachando a onda 2" sem despachar. Nada estava rodando quando o
+      relato foi feito.
+    - >-
+      Rodou `pnpm verify` com a máquina em load 14 e concluiu VERMELHO. As
+      quatro falhas eram `Hook timed out` — contenção, não defeito. É a mesma
+      armadilha que ele impôs a todos os agentes.
+    - >-
+      Escreveu TOTAL_CRITERIOS_WCAG_22_AA = 56 (são 55) e um teste que só
+      comparava grandezas relativas — 999 também passaria. Teste vácuo escrito
+      enquanto caçava testes vácuos; encontrado por revisão adversarial
+      independente, não por ele.
+    - >-
+      Escreveu contraprova de não-vacuidade como `verificacoes >= 190`, número
+      mágico de leitura anterior. Quebrou no mesmo minuto: resolver as
+      pendências REDUZIU a contagem para 187. Trocada pela propriedade.
+    - >-
+      ENDOSSOU como "derivação fail-closed" a recalculação de `acionavel` que a
+      revisão depois refutou. Ver ACH_REV8_3 abaixo — o revisor estava certo.
+
+  premissas_numericas_novas_todas_reversiveis:
+    INTERVALO_RECARGA_PADRAO_MS: "30_000 — apps/web/src/estado/recursoRemoto.ts"
+    INTERVALO_TIQUE_IDADE_MS: "5_000 — mesmo arquivo; recomputa o rótulo, não emite requisição"
+    CICLOS_PARA_DECLARAR_PERDA: "2 — apps/web/src/estado/idadeVisao.ts; regra sobre o agendamento, não clínica"
+    nota: >-
+      NENHUMA é limiar clínico de frescor (VAL-0023, VALIDATION REQUIRED). Quem
+      decide cadência de releitura de superfície clínica é AUTH-CLINSAFETY,
+      acoplado ao alvo do G1 (ADR-0011 C4).
+
+  verificacao_maquina_ociosa:
+    pnpm_verify: "exit 0 — 1.604 testes, ZERO pulados, ZERO falhas"
+    e2e_navegador: "26/26"
+    fronteira_tenant: "97/97 contra PostgreSQL 16.14 real, IC_FRONTEIRA_PG=obrigatoria"
+    check_contratos: "187 verificações + autoteste 21 casos, 0 pendências"
+    demais_gates: "doc_conventions, forbidden_content, module_boundaries, generated_files — verdes"
+
+  ABERTO_leia_antes_de_alegar_fecho:
+    ACH_REV8_3: >-
+      P1, ÚNICO da revisão do PR #8 ainda aberto. `acionavel: true` é
+      publicável a partir de registro forjado COERENTE ou linha de banco
+      adulterada competente: a recalculação por `ehAcionavel` prova COERÊNCIA
+      entre campos do mesmo blob controlado pelo atacante, não AUTORIDADE
+      contra o bundle assinado. Os 5 vetores testados só forjam
+      incompetentemente. Fechar exige verificar assinatura contra chave
+      custodiada — ADR-0007 C5 SEGUE ABERTA, então pode estar bloqueado por
+      decisão humana e não por engenharia. Diagnostique antes de prometer.
+    F3: "ABERTO — outras asserções derivadas do próprio dado sob teste; o padrão circular foi corrigido em 2 lugares, pode haver irmãos."
+    F5: >-
+      ABERTO E CONTRADITÓRIO. Esta seção do HANDOFF diz "MEDIDA e LIMPA"; o
+      PROMPT_IMPLEMENTACAO_FINAL §16 diz "não medida". RECONCILIE antes de agir
+      — uma das duas está errada.
+    P2_gate_emudece: >-
+      O gate de deriva REST emudece 16 de 160 verificações quando dois arquivos
+      opcionais faltam — sem `else`, saindo 0 mesmo assim. Gate que se cala por
+      ausência de entrada aprova por omissão.
+    duplicacoes_estruturais_vivas: >-
+      apps/api/src/regras/exposicao.ts declara localmente tipos que agora
+      existem em @intensicare/contratos, e apps/web/src/api/prontidao.ts mantém
+      espelho manual dos códigos de razão. O gate cobre os ENUMS, não a FORMA
+      das interfaces: campo acrescentado só de um lado passa.
+    fiacao_pedida_e_nao_aplicada:
+      - "apps/api: passar exigirFechoDeRuntime: true onde AdaptadorPostgres.abrir({url}) roda no perfil PostgreSQL real. SEM ISSO o fecho de F1/F2 existe mas a ausência dele não é detectada em runtime."
+      - "Banco pré-existente: rodar uma vez instalarFechoDeRuntime(urlSuperusuario), exportado de @intensicare/persistencia. Idempotente."
+      - "docs: a 0005 declara em verificacao-de-controles-fatia-g7.md que a janela de DDL é 'fechada até o próximo deploy'. Isso MUDOU com a 0006."
+      - "Contrato de migração: com a guarda armada, a ordem passa a ser cria, protege, concede — um GRANT antes de RLS+FORCE+política é abortado pelo banco."
+
+  lacuna_consciente_nao_resolvida: >-
+    Duas requisições a cada 30 s POR ABA (projeção + prontidão), sem jitter,
+    sem coalescência entre abas e sem backoff após falha repetida. Numa UTI com
+    N abas a carga cresce linear e todas batem no mesmo instante. Também não
+    endereçado: aba em segundo plano (o navegador estrangula temporizadores —
+    o ciclo espaça sem a tela dizer por quê) e retomada após sleep do SO.
+    CUIDADO: backoff que espaça a releitura PRECISA aparecer na tela, senão é a
+    mesma classe de HAZ-0025 que a onda 1 fechou.
+
+  nada_foi_declarado: >-
+    Nenhum gate aprovado, nenhum MG-* satisfeito, nenhum hazard fechado,
+    nenhuma alegação de acessibilidade validada. Estado factual duro
+    INALTERADO: 0 vias acionáveis, 47/47 inelegíveis, Observation não
+    consumível, safety case M0, nenhum dado real acessado.
+
+  nao_presuma_convergencia: >-
+    A taxa de achado NUNCA convergiu neste projeto: 8, 6, 9, 12, 12 nas rodadas
+    anteriores; a quinta reabriu classe que a quarta declarava fechada; e a
+    revisão do PR #8 achou 4 P1 numa branch com CI VERDE. Duas ondas de
+    correção não mudam isso.
+
 rules_for_any_resuming_agent:
   - Read docs/00-governance/evidence-notation.md before writing anything; front-matter is CI-enforced
   - Never name an owner, mark DECIDED, accept a risk, or resolve a contradiction — humans do that
