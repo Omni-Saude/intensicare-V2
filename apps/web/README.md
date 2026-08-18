@@ -51,8 +51,11 @@ em `src/domain/linguagem.test.ts`).
 Desde o ACH-07 as SEIS famílias do §11 têm superfície de renderização:
 conectividade e sessão ganharam componentes
 (`src/components/AvisosDeEstado.tsx`) e há uma **galeria de estados**
-(`/?estados`, apenas em desenvolvimento) que renderiza os 43 identificadores
-lado a lado — a varredura de contraste mais densa da fatia.
+(`/?estados`, apenas em desenvolvimento) que renderiza os 51 identificadores
+lado a lado — a varredura de contraste mais densa da fatia. Ao fechar LAC-L1
+e LAC-L2 a galeria ganhou duas famílias de TRANSPORTE (não do §11): **idade da
+visão** (`sem_leitura`/`no_ciclo`/`ciclo_perdido`) e **prontidão do serviço**
+(`ready`/`degraded`/`not_ready`/`nao_lida`).
 
 Honestidade de capacidade: `reproduzindo` e `reconciliado` são
 renderizáveis mas **não são produzidos por transporte real** — esta fatia
@@ -215,9 +218,17 @@ log.
 - Sem biblioteca de rotas (nenhuma navegação por URL) — a troca entre
   grade e detalhe é só estado de React (`App.tsx`). Suficiente para as
   duas telas desta fatia; uma URL por leito (deep link) fica para depois.
-- Sem SSE/tempo real (ADR-0011 é política, não implementação nesta
-  fatia) — a "Região ao vivo" de alertas novos reage a mudanças de estado
-  local (busca inicial, reconhecimento), não a push do servidor.
+- Sem SSE/push (ADR-0011 P4 pendente). O que EXISTE desde o fechamento de
+  LAC-L1 é o **caminho de verdade** que ADR-0011 P8 exige: recarga
+  autoritativa periódica da projeção (`INTERVALO_RECARGA_PADRAO_MS = 30_000`,
+  premissa reversível de engenharia — não é SLO nem limiar clínico), sem
+  sobreposição, cancelável, com idade da visão exibida de forma factual. O
+  push, quando vier, é otimização SOBRE esse caminho — nunca o contrário.
+  A "Região ao vivo" de alertas continua reagindo a mudanças de estado local
+  e é coalescida por `obtidoEm`: uma releitura periódica com a mesma contagem
+  de alertas NÃO reanuncia nada.
+- `reproduzindo`/`reconciliado` continuam sem transporte que os origine e
+  seguem apenas no catálogo — nada nesta fatia os emite.
 - Mutação (Stryker) não configurada — mesma pendência já registrada para
   o restante do monorepo.
 - Vocabulário pt-BR desta fatia é provisório (ADR-0029 condição C2 segue

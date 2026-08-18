@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { criarLeitorDeProntidaoHttp, type LeitorDeProntidao } from "./api/prontidao.js";
 import type { ProvedorSessao } from "./api/sessao.js";
 import type { ClienteApiIntensiCare } from "./api/tipos.js";
 import { AvisoSessao } from "./components/AvisosDeEstado.js";
@@ -30,11 +31,23 @@ interface AppProps {
   sessao: ProvedorSessao;
   /** `window.location.search`; injetável em teste. */
   busca?: string;
+  /**
+   * Leitor de prontidão (`GET /v1/readyz`). Injetável em teste; no caminho
+   * real a casca cria o leitor HTTP. Ele é criado AQUI, e não em
+   * `resolverCliente`, porque a superfície é ANÔNIMA por contrato
+   * (`security: []`) e não depende da sessão — é justamente quando a sessão
+   * falha que a tela mais precisa poder declarar a situação do serviço.
+   */
+  leitorProntidao?: LeitorDeProntidao;
 }
 
-export function App({ cliente, sessao, busca = "" }: AppProps) {
+export function App({ cliente, sessao, busca = "", leitorProntidao }: AppProps) {
   const [leitoSelecionado, setLeitoSelecionado] = useState<string | null>(null);
   const [estadoSessao, setEstadoSessao] = useState<EstadoSessao>(() => sessao.estadoAtual());
+  // Estável entre renderizações: um leitor recriado a cada render entraria na
+  // lista de dependências do efeito de busca e provocaria um laço.
+  const leitorPadrao = useMemo(() => criarLeitorDeProntidaoHttp(), []);
+  const leitor = leitorProntidao ?? leitorPadrao;
 
   // O estado de sessão é ORIGINADO no provedor (S3) — a tela assina, nunca
   // deduz expiração contando tempo por conta própria.
@@ -95,9 +108,14 @@ export function App({ cliente, sessao, busca = "" }: AppProps) {
             leitoId={leitoSelecionado}
             cliente={cliente}
             aoVoltar={() => setLeitoSelecionado(null)}
+            leitorProntidao={leitor}
           />
         ) : (
-          <GradeLeitos cliente={cliente} aoSelecionarLeito={setLeitoSelecionado} />
+          <GradeLeitos
+            cliente={cliente}
+            aoSelecionarLeito={setLeitoSelecionado}
+            leitorProntidao={leitor}
+          />
         )}
       </main>
     </div>

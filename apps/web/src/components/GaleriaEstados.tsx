@@ -7,7 +7,9 @@
  *
  * POR QUE EXISTE. ADR-0021 F4: "a ausência de um estado obrigatório é defeito
  * bloqueante de revisão, não uma melhoria futura". Sem uma superfície que
- * mostre os 43 identificadores lado a lado, a única forma de verificar
+ * mostre os 51 identificadores lado a lado (as sete famílias anteriores somam 44 —
+ * o "43" que este comentário trazia estava um a menos, recontado ao acrescentar as
+ * famílias 8 e 9), a única forma de verificar
  * cobertura era ler o union type — e um tipo declarado não prova que existe
  * texto, tom, glifo e marcação acessível para cada valor. A galeria também é
  * o alvo mais denso do axe: uma varredura aqui cobre todas as combinações de
@@ -29,14 +31,18 @@ import type {
   EstadoItemTrabalho,
   EstadoSessao,
   FrescorVisao,
+  IdadeVisao,
 } from "../domain/estados.js";
 import {
+  type SituacaoProntidao,
   textoAvaliacao,
   textoCarregamento,
   textoConectividade,
   textoFrescor,
   textoFrescorVisao,
+  textoIdadeVisao,
   textoItemTrabalho,
+  textoProntidao,
   textoSessao,
 } from "../domain/linguagem.js";
 import { BadgeTom } from "./BadgeTom.js";
@@ -102,6 +108,10 @@ const SESSAO: EstadoSessao[] = [
 ];
 
 const FRESCOR_VISAO: FrescorVisao[] = ["atual", "desatualizado_apos_falha"];
+
+const IDADE_VISAO: IdadeVisao[] = ["sem_leitura", "no_ciclo", "ciclo_perdido"];
+
+const PRONTIDAO: SituacaoProntidao[] = ["ready", "degraded", "not_ready", "nao_lida"];
 
 interface FamiliaProps<T extends string> {
   titulo: string;
@@ -199,6 +209,22 @@ export function GaleriaEstados() {
         nota="Introduzido no ACH-07 e SEPARADO da família 2: descreve apenas se o conteúdo em tela é anterior a uma falha de recarga. Não é juízo clínico."
         valores={FRESCOR_VISAO}
         traduzir={textoFrescorVisao}
+      />
+
+      <Familia
+        titulo="8. Idade da visão (transporte)"
+        idSecao="galeria-idade-visao"
+        nota="Introduzida ao fechar LAC-L1 e ORTOGONAL à família 7: aquela responde 'a última tentativa falhou?', esta responde 'há quanto tempo foi a última leitura bem-sucedida?'. `ciclo_perdido` fala do CICLO DE RECARGA desta tela (premissa reversível de engenharia), jamais de frescor clínico — janelas e horizontes são conteúdo de rule release (VAL-0023, VALIDATION REQUIRED)."
+        valores={IDADE_VISAO}
+        traduzir={textoIdadeVisao}
+      />
+
+      <Familia
+        titulo="9. Prontidão do serviço (GET /v1/readyz)"
+        idSecao="galeria-prontidao"
+        nota="Veredito ORIGINADO no backend (ADR-0020 O4). Nesta instalação a superfície responde 503 permanente — retrato honesto do safety case M0, não defeito. As RAZÕES não aparecem aqui porque não são traduzidas pelo frontend: o código é vocabulário fechado e o texto pt-BR vem do servidor (ADR-0008 N3). `nao_lida` é o caso fail-closed em que o frontend não obteve veredito algum."
+        valores={PRONTIDAO}
+        traduzir={textoProntidao}
       />
     </section>
   );

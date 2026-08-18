@@ -225,7 +225,21 @@ export function mapTier(tier: RiskTier | null): BandaRisco | null {
   return tier === null ? null : TIER_MAP[tier];
 }
 
-/** Traduz o registro do kernel para o `ResultadoAvaliacao` do contrato. */
+/**
+ * Traduz o registro do kernel para o `ResultadoAvaliacao` do contrato.
+ *
+ * ONDE O MODO DE DESPACHO ENTRA — e por que NÃO é aqui (LAC-L2/QAS-0023).
+ * Esta função é chamada de dentro do provedor (`src/regras/news2.ts`,
+ * `avaliar`), ou seja, ANTES de o despachante existir como registro: o
+ * `RegistroDeAvaliacao` — com `modo`, `acionavel`, `rotuloPt`, proveniência
+ * do bundle e `motivoRecusa` — só é congelado depois que a avaliação
+ * retorna. Anexar o envelope aqui exigiria adivinhá-lo, e adivinhar modo de
+ * ativação é exatamente o defeito que se quer impedir.
+ *
+ * O envelope é anexado em `src/regras/exposicao.ts`, por
+ * `resultadoNews2Publicavel(despacho)`, que cobre os DOIS desfechos
+ * (avaliada e recusada) num ponto único. Nada aqui deve replicá-lo.
+ */
 export function toResultadoAvaliacao(record: EvaluationRecord): ResultadoAvaliacao {
   const status = mapStatusNews2(record.status);
   const valido = status === "valido";

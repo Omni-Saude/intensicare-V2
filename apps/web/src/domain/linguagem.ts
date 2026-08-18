@@ -31,6 +31,7 @@ import {
   type EstadoItemTrabalho,
   type EstadoSessao,
   type FrescorVisao,
+  type IdadeVisao,
   type Tom,
 } from "./estados.js";
 
@@ -244,6 +245,116 @@ export function textoFrescorVisao(frescor: FrescorVisao): TextoComTom {
       };
     default:
       return casoImpossivel(frescor, "textoFrescorVisao");
+  }
+}
+
+/**
+ * Texto da IDADE DA VISÃO (LAC-L1). Note o que estas frases NÃO dizem: nenhuma
+ * delas afirma que o dado clínico está velho, envelhecendo ou fora de janela.
+ * Elas falam apenas do CICLO DE RECARGA DESTA TELA, cuja cadência é premissa
+ * reversível de engenharia (`INTERVALO_RECARGA_PADRAO_MS`). O frescor do
+ * insumo clínico é `textoFrescor` acima, e vem do backend (ADR-0008 N5,
+ * ADR-0011 P7).
+ *
+ * `no_ciclo` devolve tom `neutro` e NÃO é renderizado como selo permanente
+ * (ver `../components/AvisosDeEstado.tsx`): um "está tudo atualizado" fixo
+ * numa tela clínica treina o olho a ignorar a região onde o aviso real
+ * apareceria — a mesma economia de sinal já aplicada a `online`.
+ *
+ * VALIDATION REQUIRED (ADR-0029 C2 ABERTA) — redação provisória de engenharia.
+ */
+export function textoIdadeVisao(idade: IdadeVisao): TextoComTom {
+  switch (idade) {
+    case "sem_leitura":
+      return {
+        texto: "Nenhuma leitura bem-sucedida ainda — nada nesta tela foi confirmado pelo servidor.",
+        tom: "inconclusivo",
+      };
+    case "no_ciclo":
+      return { texto: "Releitura automática em regime.", tom: "neutro" };
+    case "ciclo_perdido":
+      // P8 (ADR-0029): nunca redigido como "indisponível"; e nunca como
+      // "dado desatualizado", que é afirmação clínica que esta tela não faz.
+      return {
+        texto:
+          "A releitura automática não está produzindo dado novo — o conteúdo abaixo é " +
+          "anterior ao último ciclo de atualização e pode não refletir o estado atual.",
+        tom: "alerta",
+      };
+    default:
+      return casoImpossivel(idade, "textoIdadeVisao");
+  }
+}
+
+/**
+ * Idade decorrida em pt-BR, FACTUAL e sem adjetivo. Deliberadamente sem
+ * "há pouco", "recente" ou "há muito tempo": qualquer um desses seria um juízo
+ * de suficiência que ninguém ratificou (VAL-0023, `VALIDATION REQUIRED`).
+ *
+ * A precisão cai com a magnitude (segundos → minutos → horas) porque o número
+ * é lido de relance numa tela clínica; a magnitude exata continua disponível
+ * em `data-idade-ms` para teste e para telemetria.
+ */
+export function textoIdadeDecorrida(idadeMs: number): string {
+  const segundosTotais = Math.max(0, Math.floor(idadeMs / 1000));
+  if (segundosTotais < 60) return `${segundosTotais} s`;
+
+  const minutosTotais = Math.floor(segundosTotais / 60);
+  if (minutosTotais < 60) {
+    const segundos = segundosTotais % 60;
+    return segundos === 0 ? `${minutosTotais} min` : `${minutosTotais} min ${segundos} s`;
+  }
+
+  const horas = Math.floor(minutosTotais / 60);
+  const minutos = minutosTotais % 60;
+  return minutos === 0 ? `${horas} h` : `${horas} h ${minutos} min`;
+}
+
+/**
+ * Situação de prontidão do serviço (`GET /v1/readyz`). Os identificadores são
+ * do BACKEND (`VereditoProntidao` do contrato) — ADR-0021 F1: identificador do
+ * backend, texto do frontend. `nao_lida` é o caso em que o frontend não
+ * conseguiu obter veredito algum, e é fail-closed: nunca é redigido como
+ * "provavelmente tudo bem".
+ *
+ * As RAZÕES não são traduzidas aqui, de propósito. Elas são vocabulário
+ * fechado (`CodigoRazaoProntidao`) e o contrato já obriga o servidor a enviar,
+ * em `detalhe`, o texto pt-BR de operação correspondente. Redigir uma segunda
+ * versão dessas frases no frontend criaria duas descrições divergentes do
+ * mesmo fato (ADR-0008 N3: as razões são do backend).
+ *
+ * VALIDATION REQUIRED (ADR-0029 C2 ABERTA) — redação provisória de engenharia.
+ * Nenhuma destas frases afirma estado clínico: elas descrevem o serviço.
+ */
+export type SituacaoProntidao = "ready" | "degraded" | "not_ready" | "nao_lida";
+
+export function textoProntidao(situacao: SituacaoProntidao): TextoComTom {
+  switch (situacao) {
+    case "ready":
+      return { texto: "Serviço declarou capacidade segura.", tom: "positivo" };
+    case "degraded":
+      return {
+        texto:
+          "Serviço declarou capacidade DEGRADADA. Esta tela é consultiva e pode não refletir " +
+          "o estado atual; use o procedimento institucional de vigilância.",
+        tom: "atencao",
+      };
+    case "not_ready":
+      return {
+        texto:
+          "Serviço declarou NÃO ter capacidade clínica segura. Esta tela é consultiva e pode " +
+          "não refletir o estado atual; use o procedimento institucional de vigilância.",
+        tom: "alerta",
+      };
+    case "nao_lida":
+      return {
+        texto:
+          "Não foi possível ler a declaração de prontidão do serviço — não há como afirmar " +
+          "que ele está apto. Trate esta tela como não confirmada.",
+        tom: "inconclusivo",
+      };
+    default:
+      return casoImpossivel(situacao, "textoProntidao");
   }
 }
 

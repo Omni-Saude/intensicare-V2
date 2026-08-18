@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
+import type { LeitorDeProntidao } from "../api/prontidao.js";
 import type { ClienteApiIntensiCare } from "../api/tipos.js";
 import type { Alerta, AvaliacaoPaciente, ItemGradeLeito } from "../domain/clinico.js";
 import { textoAvaliacao, textoBandaRisco } from "../domain/linguagem.js";
 import { ROTULO_PARAMETRO } from "../domain/news2.js";
 import { combinarConectividade, useConectividadeNavegador } from "../estado/conectividade.js";
-import { useRecursoRemoto } from "../estado/recursoRemoto.js";
-import { IndicadorConectividade, RotuloFrescorVisao } from "./AvisosDeEstado.js";
+import { useProntidao } from "../estado/prontidao.js";
+import { INTERVALO_RECARGA_PADRAO_MS, useRecursoRemoto } from "../estado/recursoRemoto.js";
+import type { Relogio } from "../estado/relogio.js";
+import {
+  AvisoProntidao,
+  IndicadorConectividade,
+  RotuloFrescorVisao,
+  RotuloIdadeVisao,
+} from "./AvisosDeEstado.js";
 import { BadgeTom } from "./BadgeTom.js";
 import { ContribuicaoParametroLinha } from "./ContribuicaoParametroLinha.js";
 import { EstadoTela } from "./EstadoTela.js";
@@ -15,6 +23,10 @@ interface DetalhePacienteProps {
   leitoId: string;
   cliente: ClienteApiIntensiCare;
   aoVoltar: () => void;
+  /** Ver a nota equivalente em `GradeLeitos.tsx`. */
+  leitorProntidao?: LeitorDeProntidao | null;
+  intervaloRecargaMs?: number | null;
+  relogio?: Relogio;
 }
 
 const ESTADOS_FAIL_CLOSED = new Set(["nao_avaliada", "invalida"]);
@@ -31,18 +43,40 @@ const ESTADOS_FAIL_CLOSED = new Set(["nao_avaliada", "invalida"]);
  * flag, deixando a nova tela em "carregando" enquanto a antiga já havia
  * respondido.
  */
-export function DetalhePaciente({ leitoId, cliente, aoVoltar }: DetalhePacienteProps) {
+export function DetalhePaciente({
+  leitoId,
+  cliente,
+  aoVoltar,
+  leitorProntidao = null,
+  intervaloRecargaMs = INTERVALO_RECARGA_PADRAO_MS,
+  relogio,
+}: DetalhePacienteProps) {
   const buscar = useCallback(
     (sinal: AbortSignal) => cliente.obterAvaliacaoPaciente(leitoId, { sinal }),
     [cliente, leitoId],
   );
 
-  const recurso = useRecursoRemoto<ItemGradeLeito>({ buscar });
+  const recurso = useRecursoRemoto<ItemGradeLeito>({
+    buscar,
+    intervaloRecargaMs,
+    ...(relogio !== undefined ? { relogio } : {}),
+  });
+
+  const prontidao = useProntidao({
+    leitor: leitorProntidao,
+    intervaloRecargaMs,
+    ...(relogio !== undefined ? { relogio } : {}),
+  });
+
   const conectividadeNavegador = useConectividadeNavegador();
   const marcarLeituraBemSucedida = conectividadeNavegador.marcarLeituraBemSucedida;
+  // Mesma composição de `GradeLeitos`: falha de leitura, ciclo de releitura
+  // perdido e prontidão do serviço, sem que uma esconda a outra.
   const conectividade = combinarConectividade(
     conectividadeNavegador.estado,
-    recurso.exibindoDadoDesatualizado,
+    recurso.exibindoDadoDesatualizado ||
+      recurso.idadeVisao?.classe === "ciclo_perdido" ||
+      prontidao.degradada,
   );
 
   const [item, setItem] = useState<ItemGradeLeito | null>(null);
@@ -187,7 +221,13 @@ export function DetalhePaciente({ leitoId, cliente, aoVoltar }: DetalhePacienteP
       <h2 id="detalhe-paciente-titulo">{leitoId}</h2>
 
       <IndicadorConectividade estado={conectividade} />
+      <AvisoProntidao leitura={prontidao.leitura} />
       <RotuloFrescorVisao frescor={recurso.frescorVisao} obtidoEm={recurso.obtidoEm} />
+      <RotuloIdadeVisao
+        idade={recurso.idadeVisao}
+        obtidoEm={recurso.obtidoEm}
+        buscaEmCurso={recurso.buscaEmCurso}
+      />
 
       <EstadoTela
         estado={recurso.estadoTela}

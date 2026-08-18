@@ -75,18 +75,43 @@ test.describe("sessão autenticada", () => {
 
     expect(requisicoes.length).toBeGreaterThan(0);
 
-    // `POST /v1/dev/sessao` é a ÚNICA exceção legítima: é o endpoint que
-    // EMITE o bearer, então por definição não pode portá-lo. Listá-lo
-    // explicitamente (em vez de afrouxar a regra) mantém o teste capaz de
-    // pegar qualquer OUTRA requisição anônima.
-    const emissoes = requisicoes.filter((r) => r.url().includes("/v1/dev/sessao"));
-    const chamadasDeDados = requisicoes.filter((r) => !r.url().includes("/v1/dev/sessao"));
+    // DUAS exceções legítimas, ambas listadas NOMINALMENTE (nunca por
+    // afrouxamento da regra), para que o teste continue capaz de pegar
+    // qualquer OUTRA requisição anônima:
+    //
+    //  - `POST /v1/dev/sessao` — é o endpoint que EMITE o bearer, então por
+    //    definição não pode portá-lo;
+    //  - `GET /v1/readyz` — é sonda, e o contrato a declara `security: []`
+    //    (um balanceador não porta credencial clínica). Mais que permitido,
+    //    ser anônima é OBRIGATÓRIO aqui: é justamente quando a sessão falha
+    //    que a tela precisa poder declarar a prontidão do serviço (LAC-L2,
+    //    SAF-0025). Por isso a asserção abaixo é INVERTIDA para ela.
+    const ehEmissao = (url: string) => url.includes("/v1/dev/sessao");
+    const ehSonda = (url: string) => url.includes("/v1/readyz");
+
+    const emissoes = requisicoes.filter((r) => ehEmissao(r.url()));
+    const sondas = requisicoes.filter((r) => ehSonda(r.url()));
+    const chamadasDeDados = requisicoes.filter((r) => !ehEmissao(r.url()) && !ehSonda(r.url()));
 
     expect(emissoes.length).toBeGreaterThan(0);
     for (const emissao of emissoes) {
       expect(emissao.method()).toBe("POST");
       // A rota não aceita entrada: nada do chamador escolhe tenant ou ator.
       expect(emissao.postData()).toBeFalsy();
+    }
+
+    // A exceção da sonda não é um buraco: ela é EXERCIDA (a tela consulta
+    // readyz) e a ausência de credencial é afirmada, não tolerada.
+    expect(
+      sondas.length,
+      "a tela clínica não consultou /v1/readyz — a exceção abaixo não foi exercida",
+    ).toBeGreaterThan(0);
+    for (const sonda of sondas) {
+      const cabecalhos = await sonda.allHeaders();
+      expect(
+        cabecalhos["authorization"],
+        `sonda anônima com credencial: ${sonda.url()}`,
+      ).toBeUndefined();
     }
 
     expect(chamadasDeDados.length).toBeGreaterThan(0);
