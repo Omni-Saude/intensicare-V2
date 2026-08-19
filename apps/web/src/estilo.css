@@ -79,6 +79,46 @@ button {
 }
 
 /*
+ * LINK DE PULAR — WCAG 2.2 SC 2.4.1 (Bypass Blocks), lacuna de LAC-L4.
+ *
+ * NÃO usa `.sr-only`. A técnica de recorte (`clip` + 1×1 px) deixa o elemento
+ * com caixa de 1 px mesmo quando focado, e um atalho que recebe foco sem
+ * aparecer é armadilha para quem enxerga e navega por teclado. Aqui o link tem
+ * caixa REAL o tempo todo (≥ 24×24 CSS px, SC 2.5.8) e é apenas posicionado
+ * fora da área visível enquanto não tem foco.
+ *
+ * `left: -9999px` e não `display: none`/`visibility: hidden`: estes dois
+ * removem o elemento da ordem de tabulação, que é justamente o que o atalho
+ * precisa ter. Deslocamento negativo à esquerda não cria rolagem horizontal em
+ * escrita da esquerda para a direita — verificado pelo spec de reflow a 320 px.
+ *
+ * `:focus` (não `:focus-visible`): o atalho precisa aparecer também quando o
+ * foco chega por via programática ou por tecnologia assistiva, não só quando a
+ * heurística do navegador decide mostrar o anel.
+ *
+ * Contraste do par #ffffff sobre #0b3d66 = 11,2:1 — CONFERIDO À MÃO aqui e
+ * medido por axe em navegador real (`e2e/acessibilidade.spec.ts`).
+ */
+.link-pular {
+  position: absolute;
+  top: 0;
+  left: -9999px;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  background: #0b3d66;
+  color: #ffffff;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.link-pular:focus {
+  left: 0;
+}
+
+/*
  * DEFEITO CORRIGIDO NO ACH-07 (WCAG 2.2 SC 1.4.10, Reflow).
  *
  * Este seletor tinha `white-space: nowrap` e `border-radius: 999px` — forma

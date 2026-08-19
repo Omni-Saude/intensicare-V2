@@ -81,6 +81,40 @@ Garantias que o contrato declara (ADR-0011, aceito em GDEC-0008, Opção A):
 O contrato de cliente está declarado como dado em
 `CONTRATO_CLIENTE_EVENTOS` — o frontend implementa aqueles sete passos.
 
+### O que o servidor ANUNCIA na abertura
+
+O primeiro quadro da assinatura (`estado-conexao: replaying`) carrega dois
+campos **opcionais** que fecham lacunas medidas no consumo de push do
+navegador — não são melhorias especulativas:
+
+- `intervaloPulsacaoMs` (também em `MensagemPulsacao`). Este contrato afirma
+  que "a ausência de pulsação dentro do intervalo anunciado é o sinal de que
+  a conexão morreu", e até então **nenhum campo carregava o intervalo**: ele
+  só existia em `LimitesConexao`, do lado do servidor. Entre a abertura e a
+  primeira pulsação o cliente não tinha referência para armar vigia algum, e
+  uma conexão meio-aberta nessa janela ficava indistinguível de uma saudável
+  (HAZ-0025; SAF-0025).
+- `reconexao` (`PoliticaReconexao`, a mesma estrutura da instrução). Antes, a
+  política só viajava no **encerramento**; uma queda de transporte anterior à
+  primeira instrução deixava o cliente sem política, e um cliente conforme
+  não inventa backoff próprio — o push simplesmente parava.
+
+Ambos são acréscimos **compatíveis** (`x-politica-evolucao`): um consumidor
+que não os receba continua conforme. Os números continuam sendo configuração
+do servidor e `VALIDATION REQUIRED` (ADR-0011 §3 D6) — não são SLO, alvo de
+latência nem limiar clínico.
+
+### Rotas publicadas
+
+`CAMINHO_TICKET_EVENTOS` e `CAMINHO_FLUXO_EVENTOS` são exportados por
+`src/asyncapi.ts`. A fronteira de módulo permite `apps/web -> SOMENTE
+contratos`, então o frontend não pode importar as rotas de
+`apps/api/src/eventos/stream.ts` — sem publicá-las aqui, todo consumidor de
+navegador é obrigado a redigitá-las. `apps/api` consome as mesmas constantes
+(`CAMINHO_STREAM`/`CAMINHO_TICKET` são re-exportações), e o teste do pacote
+prova que `CAMINHO_FLUXO_EVENTOS` é exatamente o `address` do canal no
+`asyncapi.yaml` e que ambos são rotas do `openapi.yaml`.
+
 ### Validação (gate bloqueante)
 
 `node scripts/check_contratos.mjs` valida `openapi.yaml` **e**

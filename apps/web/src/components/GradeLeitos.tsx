@@ -1,15 +1,26 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { LeitorDeProntidao } from "../api/prontidao.js";
 import type { ClienteApiIntensiCare, ModoDemonstracao } from "../api/tipos.js";
 import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
-import { combinarConectividade, useConectividadeNavegador } from "../estado/conectividade.js";
+import type { EstadoConectividade } from "../domain/estados.js";
+import {
+  combinarConectividade,
+  refinarComEstadoDoPush,
+  useConectividadeNavegador,
+} from "../estado/conectividade.js";
 import { useProntidao } from "../estado/prontidao.js";
-import { INTERVALO_RECARGA_PADRAO_MS, useRecursoRemoto } from "../estado/recursoRemoto.js";
+import { type RelatoDeLeitura, useRelatorioDeLeitura } from "../estado/reconciliacaoObservada.js";
+import {
+  ehEstadoDeFalha,
+  INTERVALO_RECARGA_PADRAO_MS,
+  useRecursoRemoto,
+} from "../estado/recursoRemoto.js";
 import type { Relogio } from "../estado/relogio.js";
 import { ehPerfilDesenvolvimento } from "../perfil.js";
 import {
   AvisoProntidao,
   IndicadorConectividade,
+  RotuloCadenciaRecarga,
   RotuloFrescorVisao,
   RotuloIdadeVisao,
 } from "./AvisosDeEstado.js";
@@ -32,6 +43,47 @@ interface GradeLeitosProps {
   intervaloRecargaMs?: number | null;
   /** Porta de tempo injetável (`../estado/relogio.ts`). */
   relogio?: Relogio;
+  /**
+   * Fonte de aleatoriedade do JITTER da recarga periódica
+   * (`../estado/cadenciaDeRecarga.ts`). Injetável pela mesma razão do relógio:
+   * sem ela a espera agendada dependeria de `Math.random` e nenhum teste
+   * poderia afirmar quando o próximo ciclo ocorre. `0.5` devolve exatamente o
+   * intervalo base.
+   */
+  sortear?: () => number;
+  /**
+   * Contador de sinais de releitura vindos do PUSH (`../eventos/`). Quando ele
+   * AVANÇA, esta tela relê a projeção autoritativa.
+   *
+   * É um número, e não um callback, de propósito: o hook de push vive em
+   * `App.tsx` (uma conexão por aba) e a tela pode montar depois de vários
+   * sinais já terem ocorrido. Comparar com o último valor VISTO por esta
+   * montagem torna a releitura idempotente — montar não dispara requisição
+   * extra, e um mesmo sinal nunca é consumido duas vezes.
+   */
+  sinalDeReleitura?: number;
+  /**
+   * Relata ao pedinte o RESULTADO de cada leitura da projeção
+   * (`../estado/reconciliacaoObservada.ts`). Ausente = esta montagem não relata
+   * a ninguém.
+   *
+   * É esta prop que torna verdadeira a afirmação `reconciliado`: sem ela, quem
+   * pediu a releitura não tem como saber se ela ocorreu, e o cliente acabava
+   * declarando reconciliação com a requisição ainda em voo (ACH-O3-9).
+   */
+  aoRelatarLeitura?: (relato: RelatoDeLeitura) => void;
+  /**
+   * QUARTA origem do booleano de degradação (`../eventos/maquina.ts`,
+   * `pushDegradaATela`). Aditiva: `false` significa "o push não acusa nada",
+   * jamais "a tela está em dia".
+   */
+  degradadoPeloPush?: boolean;
+  /**
+   * Estado de conectividade originado no FIO. Só `reproduzindo` e
+   * `reconciliado` chegam à tela por aqui, e só quando não há nada mais grave a
+   * declarar — ver `refinarComEstadoDoPush`.
+   */
+  conectividadeDoPush?: EstadoConectividade | null;
 }
 
 const ESTADOS_ALERTA_PENDENTE = new Set(["nao_atribuido", "atribuido", "escalado", "reaberto"]);
@@ -56,6 +108,11 @@ export function GradeLeitos({
   leitorProntidao = null,
   intervaloRecargaMs = INTERVALO_RECARGA_PADRAO_MS,
   relogio,
+  sortear,
+  sinalDeReleitura = 0,
+  aoRelatarLeitura,
+  degradadoPeloPush = false,
+  conectividadeDoPush = null,
 }: GradeLeitosProps) {
   const [modoDemo, setModoDemo] = useState<ModoDemonstracao | null>(null);
   const [mensagemAoVivo, setMensagemAoVivo] = useState<string | null>(null);
@@ -81,12 +138,14 @@ export function GradeLeitos({
     habilitado: !demonstrandoCarregando,
     intervaloRecargaMs,
     ...(relogio !== undefined ? { relogio } : {}),
+    ...(sortear !== undefined ? { sortear } : {}),
   });
 
   const prontidao = useProntidao({
     leitor: leitorProntidao,
     intervaloRecargaMs,
     ...(relogio !== undefined ? { relogio } : {}),
+    ...(sortear !== undefined ? { sortear } : {}),
   });
 
   const conectividadeNavegador = useConectividadeNavegador();
@@ -99,12 +158,52 @@ export function GradeLeitos({
     offline > reconectando > degradado > online continua sendo de
     `combinarConectividade`.
   */
-  const conectividade = combinarConectividade(
-    conectividadeNavegador.estado,
-    recurso.exibindoDadoDesatualizado ||
-      recurso.idadeVisao?.classe === "ciclo_perdido" ||
-      prontidao.degradada,
+  const conectividade = refinarComEstadoDoPush(
+    combinarConectividade(
+      conectividadeNavegador.estado,
+      recurso.exibindoDadoDesatualizado ||
+        recurso.idadeVisao?.classe === "ciclo_perdido" ||
+        prontidao.degradada ||
+        // QUARTA origem: o push se provou vivo e se perdeu, ou o servidor
+        // declarou entrega atrasada. Vem DEPOIS das três anteriores e não pode
+        // apagar nenhuma — é `||`, não substituição (ADR-0011 P6/P8).
+        degradadoPeloPush,
+    ),
+    conectividadeDoPush,
   );
+
+  /**
+   * O SINAL DE RELEITURA VIRA UMA LEITURA DA PROJEÇÃO — e nada mais.
+   *
+   * O evento nunca traz dado clínico (ADR-0011 P7): ele diz QUE releia. A
+   * comparação com o último sinal VISTO por esta montagem é o que impede duas
+   * coisas distintas: montar a tela com o contador já adiantado disparando uma
+   * requisição espúria, e um mesmo sinal ser consumido duas vezes por um
+   * re-render.
+   */
+  // ROTINA, não nova tentativa do usuário: um sinal de push não pode fazer a
+  // grade desmontar e piscar "Tentando novamente…" (invariante I6).
+  const reconciliar = recurso.reconciliar;
+  const sinalVistoRef = useRef(sinalDeReleitura);
+  useEffect(() => {
+    if (sinalDeReleitura === sinalVistoRef.current) return;
+    sinalVistoRef.current = sinalDeReleitura;
+    reconciliar();
+  }, [sinalDeReleitura, reconciliar]);
+
+  /*
+    O CAMINHO DE VOLTA. Quem pediu a releitura precisa saber se ela ACONTECEU —
+    é o fato de leitura que autoriza a máquina de push a declarar `reconciliado`
+    (ADR-0011 P8; ACH-O3-9). Sem este relato, o pedinte só sabia que o contador
+    mudou, o que não é evidência de nada.
+  */
+  useRelatorioDeLeitura({
+    buscaEmCurso: recurso.buscaEmCurso,
+    obtidoEm: recurso.obtidoEm,
+    falhou: ehEstadoDeFalha(recurso.estadoTela),
+    sinal: sinalDeReleitura,
+    relatar: aoRelatarLeitura,
+  });
 
   const [itens, setItens] = useState<ItemGradeLeito[] | null>(null);
 
@@ -187,7 +286,9 @@ export function GradeLeitos({
         idade={recurso.idadeVisao}
         obtidoEm={recurso.obtidoEm}
         buscaEmCurso={recurso.buscaEmCurso}
+        cadencia={recurso.cadencia}
       />
+      <RotuloCadenciaRecarga cadencia={recurso.cadencia} visibilidade={recurso.visibilidadeDaAba} />
 
       <EstadoTela
         estado={estadoExibido}

@@ -460,6 +460,14 @@ describe("§6.6 — a telemetria de packages/observabilidade tem consumidor real
   it("o mapa de rotas instrumentadas não pode ficar obsoleto em relação ao servidor real", async () => {
     const servidor: FastifyInstance = await buildServer();
     const tabela = servidor.printRoutes({ commonPrefix: false });
+    // Guarda de não-vacuidade: sem ela, esvaziar TEMPLATES_INSTRUMENTADOS (o
+    // próprio "envelhecer em silêncio" que este teste existe para impedir,
+    // ver comentário acima da constante em telemetria.ts) faria o laço abaixo
+    // rodar zero vezes e o teste passar sem checar rota alguma.
+    expect(
+      Object.keys(TEMPLATES_INSTRUMENTADOS).length,
+      "TEMPLATES_INSTRUMENTADOS está vazio — o laço abaixo não provaria nada",
+    ).toBeGreaterThan(0);
     for (const template of Object.keys(TEMPLATES_INSTRUMENTADOS)) {
       const caminho = template.split(" ")[1] as string;
       expect(tabela).toContain(caminho);

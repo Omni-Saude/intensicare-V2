@@ -20,6 +20,11 @@ source: >
   packages/contratos/openapi.yaml, asyncapi.yaml, src/index.ts, src/asyncapi.ts
 date_collected: 2026-08-18
 last_updated: 2026-08-18
+addenda:
+  - "§0 (2026-08-18): aviso de que a tabela dos oito LAC-D* é da PRIMEIRA rodada e não contém os achados da quarta onda"
+  - "LAC-L1 (2026-08-18): conferência de obsolescência contra apps/web/README.md + quarto defeito da fiação (tempestade de requisição)"
+  - "§5 (2026-08-18): ACH-O3-9 a ACH-O3-14 — seis achados de apresentação da quarta onda adversarial"
+  - "§6 (2026-08-18): três pendências humanas criadas pelos fechos de §5, sem dono e sem DECIDED"
 provenance:
   source_repo: intensicare-V2
   path_or_url: docs/10-ux-and-accessibility/analise-de-lacunas-frontend.md
@@ -78,6 +83,18 @@ que **nenhum teste da fatia percorria**.
 | LAC-D6 | Versão de regra literal no cliente | ADR-0021 F8 | **CORRIGIDO** |
 | LAC-D7 | Linha de alerta sem referência de paciente | IA-N10; HAZ-0001/0002 | **CORRIGIDO** |
 | LAC-D8 | Divulgação temporária e obrigação permanente fundidas | ADR-0004 §6.2; HAZ-0046; RLI-5 | **CORRIGIDO** |
+
+**Adendo 2026-08-18 (fim da sessão) — uma SEGUNDA leva de achados existe, e
+não está nesta tabela.** A tabela acima é o registro fechado dos **oito**
+defeitos `LAC-D*` da primeira rodada e **não foi alterada**: mexer nela
+falsificaria a contagem que o próprio texto abaixo afirma. Uma quarta onda de
+revisão adversarial, posterior, produziu mais seis achados de apresentação —
+`ACH-O3-9` a `ACH-O3-14` —, registrados em **§5**, com as pendências humanas
+que eles criaram em **§6**. Entre eles está `ACH-O3-12`, cujo alcance medido
+é maior que o de qualquer `LAC-D*`: *"✓ Dado atual." era o rótulo de **cada**
+cartão da UTI, sempre, a partir de zero evidência.* Quem estiver contando
+defeitos deste frontend precisa somar §1 e §5, e nem essa soma pode ser lida
+como convergência (§3 item 1).
 
 ## 1. Os oito defeitos
 
@@ -248,40 +265,147 @@ até o processo ADR-0029 (condição C2 ABERTA).
 
 ## 2. Lacunas de escopo — registradas, não corrigidas
 
-### LAC-L1 — Não há atualização automática de espécie alguma (a mais grave)
+### LAC-L1 — Atualização automática: CORRIGIDA (SSE fiado, polling resiliente) — três defeitos achados e corrigidos na fiação
 
-**Não há SSE, não há polling, não há refetch.** Verificado por ausência total de
-`EventSource`, `WebSocket`, `setInterval` e biblioteca de dados em
-`apps/web/src`; o único `setTimeout` é o tempo-limite de 15 s da requisição. A
-grade só muda se alguém clicar em "Atualizar".
+**Permanece registrada em §2, por continuidade de numeração e de citação
+cruzada** — mesmo regime já usado em LAC-L4/LAC-L5 (uma entrada desta seção
+pode registrar "correção" sem mudar de seção nem de identificador).
 
-Duas consequências que a documentação já antecipa:
+**Estado que motivou o registro original (histórico — não é mais o estado
+atual):** não havia SSE, não havia polling, não havia refetch. Verificado, à
+época, por ausência total de `EventSource`, `WebSocket`, `setInterval` e
+biblioteca de dados em `apps/web/src`; o único `setTimeout` era o tempo-limite
+de 15 s da requisição. A grade só mudava se alguém clicasse em "Atualizar", o
+rótulo de frescor envelhecia com a tela sem nunca declarar isso, e a
+"Recomendação de sequência" registrada aqui pedia, no mínimo, um relógio de
+idade da visão antes de qualquer SSE. Isto era `HAZ-0025` (S5/L4) — *"clinicians
+trust a frozen board"* — e contrariava `SAF-0025`: *"The interface MUST never
+appear healthy when feeds, workers, rules, identity, or freshness are
+impaired."*
 
-- **ADR-0011 P8** define o polling server-authoritative como "o caminho de
-  verdade de recuperação de **TODA** superfície" e o push como otimização sobre
-  ele. Hoje não existe nem o caminho de verdade — a falta não é de otimização,
-  é de fundação.
-- **O rótulo de frescor envelhece com a tela.** `frescor` é recomputado pelo
-  servidor a cada leitura (ADR-0008 N5: "recomputado na leitura, nunca
-  congelado"). Sem releitura, "Dado atual" permanece na tela indefinidamente.
-  `FrescorVisao` tem só dois valores — `atual` e `desatualizado_apos_falha` — e
-  o segundo exige uma recarga que **falhou**, o que nunca ocorre se nenhuma
-  recarga é tentada.
+**Correção (2026-08-18).**
 
-Isto é HAZ-0025 (S5/L4) — *"clinicians trust a frozen board"* — e contraria
-SAF-0025: *"The interface MUST never appear healthy when feeds, workers, rules,
-identity, or freshness are impaired."*
+- **Polling autoritativo ganhou cadência resiliente.** À releitura periódica
+  que já fechava a "Recomendação de sequência" somaram-se **jitter** (±20% —
+  `FRACAO_DE_JITTER=0.2`, para que N abas do mesmo plantão não relancem no
+  mesmo instante) e **espaçamento progressivo após falhas consecutivas**
+  (`FALHAS_ATE_ESPACAR=2`, `FATOR_DE_ESPACAMENTO=2`, `ESPACAMENTO_MAXIMO=8` —
+  `estado/cadenciaDeRecarga.ts`), mais releitura imediata no retorno da aba a
+  primeiro plano (`estado/visibilidade.ts`, Page Visibility). **Nenhum destes
+  números é limiar clínico** — são premissas reversíveis de ENGENHARIA
+  (GDEC-0015/0017), no mesmo regime de `INTERVALO_RECARGA_PADRAO_MS`;
+  `VAL-0023` (janela/alvo de frescor como conteúdo de rule release) segue
+  `VALIDATION REQUIRED`, e nenhum agente os decidiu.
+- **O backoff aparece na tela**, e não em silêncio: `RotuloCadenciaRecarga`
+  (`components/AvisosDeEstado.tsx`) declara a cadência espaçada por falha e a
+  aba oculta — espaçar sem declarar seria a mesma classe de falha que
+  `HAZ-0025`/`SAF-0025` que este item existe para fechar.
+- **Transporte SSE real existe e está fiado na árvore** (`apps/web/src/eventos/**`,
+  uma única conexão por aba, montada em `App.tsx` — a casca documenta por que
+  precisa ser ali: "duas telas montando `useFluxoDeEventos` abririam dois
+  fluxos e queimariam dois tickets"). Antes desta sessão o módulo existia com
+  testes verdes e **zero consumidores** — código morto verde; agora tem
+  consumidor real.
+- **`reproduzindo` e `reconciliado` passaram a ter transporte real que os
+  origina.** A nota de honestidade em `estado/conectividade.ts` e
+  `components/GaleriaEstados.tsx`, que dizia o oposto ("esta fatia NÃO tem
+  canal de eventos em tempo real"), já foi corrigida no próprio código; este
+  parágrafo é o documento acompanhando essa correção, não anunciando uma nova.
+  O que continua valendo, sem mudança: o push **nunca** traz dado clínico —
+  ele diz QUE releia, quem lê é a projeção autoritativa (P7/P8); e replay
+  finito não é chamado de "tempo real" (anti-padrão 11).
+- `apps/web` está em **423 testes** (era 373) e **38** E2E — contagem por
+  arquivo (número de declarações `it(`/`test(` de nível superior), não uma
+  execução da suíte por este agente (ver NÃO TESTADO no handoff desta sessão).
 
-**Recomendação de sequência.** Antes de qualquer SSE, um relógio de idade da
-visão que degrade a tela quando a última leitura bem-sucedida envelhece — é o
-`degradado` de ADR-0011 P6 aplicado ao tempo, e não à falha. É barato e fecha a
-parte da lacuna que mais se parece com o defeito do sistema legado.
+**Três defeitos que a fiação revelou — nenhum previsto no registro original,
+todos reproduzidos E corrigidos na mesma rodada:**
 
-O SSE, quando vier, é caminho curto: o backend já entrega heartbeat, cursor,
-replay, backpressure, `instrucao-reconciliacao` e reautorização por evento, com
-`DESCRICAO_ESTADO_CONEXAO` e `DESCRICAO_MOTIVO_ENCERRAMENTO` exportados em
-pt-BR. Os estados `reproduzindo`/`reconciliado` já existem, traduzidos e
-renderizáveis — falta-lhes transporte que os origine.
+1. **`POST /v1/eventos/ticket` saía anônimo do lado do cliente.** A sessão
+   desta fatia é um *bearer* em memória, não um cookie, e o emissor de ticket
+   confiava só em `credentials: "include"`. **O servidor não é complacente —
+   dito com todas as letras para que ninguém leia isto como falha de
+   autorização do backend:** ele **exige** sessão
+   (`apps/api/src/eventos/stream.ts`, `verificarSessao` → 401 sem ela). O
+   defeito era inteiramente do cliente, que não anexava `Authorization` ao
+   pedido do ticket; sem correção, o push pararia sempre com
+   `ticket-recusado` — explicando o motivo, mas nunca funcionando. Corrigido
+   em `eventos/adaptadorNavegador.ts`: a credencial da sessão agora atravessa
+   o handshake.
+2. **`EventSource` ausente derrubava a aplicação inteira — o achado mais
+   grave dos três.** A construção de `EventSource` lançava de dentro do
+   efeito de abertura; a exceção subia pela árvore React e derrubava com ela
+   o **polling**, que é o caminho de verdade de `ADR-0011` P8 e **não
+   depende de push nenhum**. Uma otimização de push matando a recuperação
+   sobre a qual ela se apoia é exatamente a inversão que P8 proíbe. Corrigido
+   com `try/catch` ao redor da construção do transporte: a falha é reportada
+   como falha de TRANSPORTE, e a máquina reage como reagiria a qualquer
+   queda — reconecta se há política anunciada, ou para declarando o motivo —
+   nunca em silêncio.
+3. **O sinal de push era tratado como nova tentativa do usuário.** Isso levava
+   a tela a `retentando`, estado em que `EstadoTela` não renderiza filhos:
+   **a grade inteira desmontava a cada evento do servidor.** Um teste de
+   navegador chegou a não conseguir clicar em "Tentar novamente" porque o
+   botão era destacado do DOM entre a tentativa e o clique. Corrigido
+   distinguindo releitura de ROTINA (push, retorno da aba) de recarga
+   EXPLÍCITA do usuário (`estado/recursoRemoto.ts::reconciliar`, invariante
+   I6: nada visível muda ao INICIAR uma releitura de rotina — só o resultado
+   dela muda a tela).
+
+Nenhum dos três foi antecipado no registro original desta lacuna: os três só
+apareceram quando o transporte foi de fato ligado na árvore de UI — o
+argumento, já conhecido de LAC-D1/D4, a favor de fiar cedo sob teste
+adversarial em vez de deixar para depois.
+
+**Verificação de obsolescência (2026-08-18, fim da sessão) — este documento
+foi conferido contra as duas passagens corrigidas em `apps/web/README.md`.**
+Um agente corrigiu naquele README duas afirmações que haviam ficado
+obsoletas: que `reproduzindo`/`reconciliado` "não são produzidos por
+transporte real" e que "esta fatia não tem SSE". **Resultado da conferência
+neste arquivo: as mesmas afirmações NÃO estão presentes aqui como estado
+corrente.** Elas aparecem em dois lugares, ambos já datados e rotulados:
+
+- no parágrafo *"Estado que motivou o registro original (histórico — não é
+  mais o estado atual)"* acima — é registro histórico explicitamente marcado
+  como tal, e **deve permanecer**: apagá-lo seria reescrita silenciosa do
+  que se sabia à época;
+- no quarto marcador de "Correção (2026-08-18)" acima, que já **descreve a
+  correção daquela nota de honestidade** em vez de repetir a afirmação.
+
+Nenhuma edição de conteúdo foi necessária em LAC-L1 por conta disso; esta
+nota registra que a conferência foi feita, e quando, para que a pergunta não
+precise ser refeita do zero. **Fora da fronteira deste agente, e portanto
+apenas relatado:** `apps/web/README.md` ainda contém, em "Outras pendências
+registradas", um marcador que começa com "Sem SSE/push (ADR-0011 P4
+pendente)" — texto que contradiz o parágrafo corrigido do mesmo arquivo. É
+arquivo fora de `docs/**`; fica no handoff para quem tem a fronteira.
+
+**Quarto defeito que a fiação revelou — TEMPESTADE DE REQUISIÇÃO, registrado
+agora porque não estava nesta lista.** A máquina de push já suprimia, de
+propósito, a releitura por evento durante o catch-up (`replaying`): ela sai
+**uma única vez**, quando o servidor declara `online` (anti-tempestade,
+`ADR-0011` P5). **A fiação desfazia isso.** A tela recebia
+`eventos.sinalDeReleitura + pedidosDeReconciliacao`, e o primeiro contador
+avança a **cada** evento de dados — inclusive durante o catch-up. Resultado
+medido: **6 requisições para um catch-up de 5 eventos; 1 depois da
+correção** (5 durante o replay, mais a legítima da transição para `online`).
+
+Os dois contadores se sobrepõem e não medem a mesma coisa: um mede **sinais
+recebidos do fio**, o outro mede **pedidos que a máquina de fato decidiu
+fazer**. Somá-los reintroduzia, na camada de fiação, exatamente a rajada que
+a camada de máquina existe para evitar — e em silêncio, porque nenhuma das
+duas camadas estava errada isoladamente. Corrigido: desce só o contador de
+**pedidos**; `sinalDeReleitura` permanece como observabilidade
+(`apps/web/src/App.tsx:189-197`). Fixado por teste no nível da árvore fiada
+(`apps/web/src/eventos/fiacaoNaArvore.test.tsx:279-313`, *"o catch-up
+inteiro produz UMA releitura NA TELA, não uma por evento"*), com asserção nos
+dois lados: nenhuma releitura durante a rajada, e **exatamente uma** — não
+"pelo menos uma" — depois de `online`.
+
+Isto é da mesma família dos três acima e reforça a mesma conclusão: **o
+defeito não estava em nenhuma das duas camadas, mas na costura entre elas**,
+e só um teste que monta a árvore inteira o alcança. Ver `ACH-O3-14` (§5.6),
+que é o achado sobre a defesa que deveria tê-lo pego.
 
 ### LAC-L2 — A UI não consegue dizer que a regra está em modo sombra
 
@@ -326,36 +450,111 @@ abertas, agora com consequência verificada:
   não sobreviver por esquecimento; o caminho do detalhe do paciente, que tem o
   campo, já usa o motivo do backend.
 
-### LAC-L4 — Sem roteamento: sem URL, sem voltar, sem link de plantão
+### LAC-L4 — Roteamento: CORRIGIDO nesta rodada, exceto 2.2.1 (Timing Adjustable)
 
-Navegação é um `useState<string|null>` em `App.tsx`. Não há rota, URL por leito,
-deep link, histórico do navegador (o "voltar" sai da aplicação), preservação de
-contexto no recarregamento, `document.title` dinâmico, gestão de foco na
-transição entre telas, nem skip-link.
+**Permanece registrada em §2, por continuidade de numeração e de citação
+cruzada** — não porque ainda seja, em substância, uma lacuna não corrigida.
+Mesmo regime já usado em LAC-L5 (uma entrada desta seção pode registrar "ação
+tomada"/"correção" sem mudar de seção nem de identificador).
 
-Três disso são falhas WCAG diretas — 2.4.1 (Bypass Blocks), 2.4.2 (Page Titled)
-e, quando a sessão real chegar (ADR-0015), 2.2.1 (Timing Adjustable).
+**Estado que motivou o registro original (histórico — não é mais o estado
+atual):** a navegação era um `useState<string|null>` em `App.tsx`. Não havia
+rota, URL por leito, deep link, histórico do navegador (o "voltar" saía da
+aplicação), preservação de contexto no recarregamento, `document.title`
+dinâmico, gestão de foco na transição entre telas, nem skip-link. Três disso
+eram falhas WCAG diretas — 2.4.1 (Bypass Blocks), 2.4.2 (Page Titled) e,
+quando a sessão real chegar (ADR-0015), 2.2.1 (Timing Adjustable).
 
-### LAC-L5 — A matriz WCAG cobre 14 de 55 critérios A+AA (mais 1 AAA como alvo)
+**Correção (2026-08-18).** Passaram a existir: URL por leito
+(`/leitos/:leitoId`, `roteamento/rotas.ts`), deep link, recarregamento que
+preserva contexto (a rota é derivada da URL a cada montagem, não de estado de
+aplicação), histórico do navegador de fato — o "voltar" volta para a grade e
+**não sai mais da aplicação** —, `document.title` dinâmico e distinto por tela
+(WCAG 2.4.2, `roteamento/tituloDocumento.ts`), gestão de foco na transição
+entre telas (`roteamento/foco.ts`: move o foco ao `<main>` a cada navegação,
+nunca na primeira pintura nem num re-render por recarga automática), skip-link
+como primeiro nó focável do documento, visível ao receber foco (WCAG 2.4.1,
+`components/LinkPular.tsx`), e rota desconhecida como **estado explícito** que
+preserva a URL na barra de endereço em vez de redirecionar em silêncio
+(`components/TelaEnderecoNaoReconhecido.tsx`). Implementado com **History API
+nativa, sem nenhuma dependência de runtime nova** — instalar biblioteca de
+rotas seria decisão de cadeia de suprimentos (ADR-0022), não desta camada, e
+duas telas não a exigem.
 
-`apps/web/src/a11y/matrizAcessibilidade.ts` enumera 15 critérios; a WCAG 2.2
-nível A+AA tem 55 (a REC de 05-out-2023 removeu 4.1.1 Parsing e acrescentou 9
-critérios — 2 nível A, 4 nível AA, 3 nível AAA). Dos 15 enumerados na matriz,
-14 são A+AA e 1 (2.3.3, alvo AAA já decidido em
+Permanece aberto **apenas 2.2.1** (Timing Adjustable): depende de sessão real
+com expiração por tempo ajustável, e o provedor de sessão desta fatia é
+sintético e não expira — `ADR-0015` segue `not-started`, ato do titular. Nada
+nesta correção pode encerrá-lo.
+
+**Achado que a implementação produziu, registrado com todas as letras.** A
+navegação direta entre leitos — que passou a existir com esta correção —
+**teria introduzido atribuição errada de paciente** (`HAZ-0001`/`HAZ-0002`) se
+não tivesse sido corrigida na mesma rodada. `DetalhePaciente` preserva o dado
+anterior numa recarga que falha (invariante I2), e uma troca de leito por URL
+não desmonta o componente — é a MESMA instância React, ao contrário da
+navegação grade↔detalhe anterior. A guarda de identidade já existente
+suprimia corretamente o *conteúdo* do leito anterior, mas os **rótulos**
+(`RotuloFrescorVisao`, `RotuloIdadeVisao` — frescor, idade da visão,
+conectividade) continuavam sob o cabeçalho do leito novo, afirmando recência
+com o carimbo de tempo do leito anterior: um rótulo dizendo "conteúdo anterior
+a essa falha" sobre uma tela sem conteúdo nenhum, ou "última leitura
+bem-sucedida há N s" atribuída ao leito errado. Foi **reproduzido em vermelho
+antes da correção** e fixado por teste dedicado
+(`components/atribuicaoEntreLeitos.test.tsx`, dois casos: a supressão
+cross-leito dos rótulos E a preservação intacta dentro do mesmo leito, I2). É
+exatamente o risco que o próprio LAC-D4 antecipava — *"a navegação atual não
+alcança esse caminho (grade↔detalhe desmonta o componente), mas nada o impede
+assim que houver navegação direta entre leitos"* — vale dizer que a
+antecipação se confirmou.
+
+### LAC-L5 — A matriz WCAG cobre 16 de 55 critérios A+AA, mais 1 AAA como alvo
+
+`apps/web/src/a11y/matrizAcessibilidade.ts` enumera **17** critérios (14 mais
+2.4.1/2.4.2, ver "Correção" abaixo — antes eram 15); a WCAG 2.2 nível A+AA tem
+55 (a REC de 05-out-2023 removeu 4.1.1 Parsing e acrescentou 9 critérios — 2
+nível A, 4 nível AA, 3 nível AAA). Dos 17 enumerados na matriz, **16** são
+A+AA e 1 (2.3.3, alvo AAA já decidido em
 `docs/10-ux-and-accessibility/arquitetura-de-informacao.md` §2.2) é AAA — por
-isso ficam **41** critérios A+AA fora do recorte, não 40. A matriz é honesta
-no que declara, e `declaracaoDeAcessibilidade()` retorna "NÃO VALIDADA" sob
-proteção de teste — mas o subconjunto não estava declarado como subconjunto,
-e ao menos dois dos ausentes falham hoje (LAC-L4).
+isso ficam **39** critérios A+AA fora do recorte (55 − 16), não 38. A matriz é
+honesta no que declara, e `declaracaoDeAcessibilidade()` retorna "NÃO
+VALIDADA" sob proteção de teste — mas o subconjunto não estava declarado como
+subconjunto quando este item foi registrado, e ao menos dois dos ausentes
+falhavam naquele momento (LAC-L4).
 
-**Ação tomada neste ciclo:** o recorte passou a ser explícito no módulo e na
-declaração, com enumeração literal dos 55 critérios A+AA em
-`CRITERIOS_WCAG_22_A_E_AA` — da qual `TOTAL_CRITERIOS_WCAG_22_AA` é
-**derivado**, nunca digitado — e teste que afirma a AUSÊNCIA de
-2.4.1/2.4.2/2.2.1 na matriz, servindo de estopim de regressão caso algum deles
-entre como "executado" antes da lacuna de navegação fechar (o nome anterior,
-"teste de não-vacuidade", era enganoso: a checagem passa por ausência, não por
-execução — corrigido). A cobertura em si **não** foi ampliada.
+**Correção (2026-08-18) — dois dos ausentes deixaram de faltar, porque o
+comportamento passou a existir primeiro.** LAC-L4 fechou o roteamento (URL por
+leito, skip-link, título dinâmico) e, com ele, o comportamento que 2.4.1
+(Bypass Blocks) e 2.4.2 (Page Titled) exigem — `criteriosAeAANaoEnumerados()`
+caiu de 41 para 39, e é por isso que a conta acima não é mais "14 de 55" nem
+"41 fora do recorte". Os dois critérios **entraram na matriz como
+`execucao: "executado"`, já com pendência de validação manual declarada**
+(`cobertura` inclui `manual_obrigatorio` nos dois): a automação prova que o
+atalho é o primeiro ponto de tabulação do documento e ativa por Enter, e que o
+`document.title` muda por tela, é distinto e carrega a divulgação de contexto
+— mas **não** prova que o bloco pulado é o que de fato atrapalha, nem que o
+título descreve tópico e propósito de forma útil; isso é juízo de quem usa.
+Consequência direta: a lista de critérios que exigem validação humana
+(`criteriosQueExigemValidacaoManual()`) passou de **cinco para sete** — eram
+2.1.1, 2.4.3, 2.4.7, 2.4.11 e 4.1.3; agora inclui também 2.4.1 e 2.4.2.
+**2.2.1 (Timing Adjustable) continua sozinho, ausente da matriz**: depende de
+sessão real, que esta fatia não tem (`ADR-0015`, `not-started`) — marcá-lo
+executado seria alegar cobertura sobre um componente inexistente. Há teste
+dedicado que barra especificamente essa regressão em qualquer direção
+(`a11y/acessibilidade.test.tsx`: um caso prova que 2.2.1 segue ausente da
+matriz, outro prova que 2.4.1/2.4.2 só podem estar `executado` com a
+pendência manual presa ao rótulo).
+
+**Ação tomada em rodada anterior (preservada; o alcance do teste descrito
+mudou como consequência da correção acima).** O recorte passou a ser
+explícito no módulo e na declaração, com enumeração literal dos 55 critérios
+A+AA em `CRITERIOS_WCAG_22_A_E_AA` — da qual `TOTAL_CRITERIOS_WCAG_22_AA` é
+**derivado**, nunca digitado. O teste que então afirmava a AUSÊNCIA conjunta
+de 2.4.1/2.4.2/2.2.1 na matriz passou, com o fechamento de dois deles, a se
+dividir: um caso continua provando que **2.2.1** segue ausente (estopim de
+regressão, caso ele um dia entre como "executado" sem sessão real para
+justificá-lo), e um caso novo prova que **2.4.1/2.4.2** só podem estar
+presentes com a pendência manual amarrada ao rótulo. A cobertura em si, além
+desses dois critérios, **não** foi ampliada nesta rodada.
 
 Correção de rodada anterior: o total de 56 e a razão 15/56 citados numa versão
 anterior deste documento estavam errados (56 contava 4.1.1 Parsing, removido
@@ -364,7 +563,8 @@ total — mutar `TOTAL_CRITERIOS_WCAG_22_AA` para 999 ainda passava. Achado por
 revisão adversarial independente sobre o PR #8; fechado com a derivação acima.
 
 Permanece registrada a limitação já conhecida do campo `execucao`, que
-conflaciona "a automação rodou" com "a validação manual ocorreu".
+conflaciona "a automação rodou" com "a validação manual ocorreu" — e agora se
+aplica a sete critérios em vez de cinco.
 
 ### LAC-L6 — Superfícies de workflow: 1 de 7 comandos tem endpoint
 
@@ -423,9 +623,19 @@ pré-requisito duro de entrada do G8.
    foram corrigidos e que nove lacunas nomeadas permanecem. Nada indica que a
    taxa de achado tenha convergido; a rodada anterior de revisões adversariais
    registrou explicitamente que **não convergiu**.
+   **Emenda 2026-08-18 (fim da sessão):** a frase acima fica como está, e a
+   evidência a favor dela só aumentou. Aos oito defeitos de §1 somam-se agora
+   **seis** de §5 (`ACH-O3-9` a `ACH-O3-14`), achados por uma quarta onda
+   adversarial que **refutou** as três teses que lhe foram apresentadas, sobre
+   uma branch com `pnpm verify` **exit 0** e **1.883 testes**. É o **sexto**
+   ciclo consecutivo em que a taxa de achado não converge. Ler a soma "8 + 6"
+   como progresso rumo a zero seria exatamente o erro que este item proíbe.
 2. Não fecha HAZ-0046, HAZ-0037, HAZ-0025, HAZ-0023 nem qualquer outro hazard.
    Uma mitigação só conta quando implementada, testada **e validada com
-   humanos** (ADR-0004 V10).
+   humanos** (ADR-0004 V10). **Emenda 2026-08-18:** isto vale integralmente
+   para os fechos de §5 — `ACH-O3-9` toca o **núcleo** de `HAZ-0025` e não o
+   fecha; `ACH-O3-10`/`ACH-O3-11`/`ACH-O3-12` tocam `QAS-0023`/`QAS-0017` e
+   não os fecham. Reduzem exposição medida, e é só isso.
 3. Não declara acessibilidade validada. A automação encontra uma fração das
    barreiras reais; LAC-D5 é prova disso — um `aria-describedby` apontando para
    o vazio atravessou toda a automação existente, incluindo axe em navegador
@@ -447,3 +657,304 @@ pré-requisito duro de entrada do G8.
   permanece dependência humana.
 - `service-blueprint.md` §3 — F1/F2/F6/F10 são os pontos de falha que LAC-D3,
   LAC-D4, LAC-D1 e LAC-L1 tocam respectivamente.
+
+## 5. Achados da quarta onda de revisão adversarial (2026-08-18) — `ACH-O3-9` a `ACH-O3-14`
+
+**Por que estes achados moram aqui, e por que numa seção nova.** Todos os
+seis são de **apresentação** — o que a tela afirma, quando cala e o que ela
+prova sobre si mesma —, que é a matéria deste documento. Ficam numa seção
+nova, e não dentro de §1 ou §2, por dois motivos: §1 é o registro fechado dos
+**oito** defeitos `LAC-D*` da primeira rodada (mexer na tabela dele
+falsificaria a contagem que ele afirma), e §2 é de **lacunas de escopo**, que
+não é o que estes são. As seções §3 e §4 mantêm sua numeração intacta.
+
+**A onda que os produziu.** Três revisores adversariais somente-leitura, com
+lentes distintas, contra árvore congelada. Os três **refutaram** a tese que
+lhes foi apresentada. Isso ocorreu sobre uma branch com `pnpm verify`
+**exit 0** e **1.883 testes** (medição do orquestrador, máquina ociosa — este
+agente não executou nenhuma suíte). Pelo sexto ciclo consecutivo, **a taxa de
+achado deste repositório não convergiu**; §3 item 1 já dizia isso e continua
+verdadeiro.
+
+**Identificadores.** `ACH-O3-9` a `ACH-O3-14` são **documento-locais,
+pendentes de ratificação em `docs/00-governance/traceability-policy.md`
+§1.1** — mesmo regime dos rótulos `LAC-*` declarado no topo deste documento.
+**Nenhum prefixo novo de taxonomia é cunhado.**
+
+| ID | Achado | Cláusula tocada | Disposição |
+|---|---|---|---|
+| `ACH-O3-9` | "Sincronizado" afirmado com a releitura **ainda em voo** | HAZ-0025 (núcleo); SAF-0025; ADR-0011 P8 | **FECHADO** (estruturalmente) |
+| `ACH-O3-10` | Push permanentemente morto produzia **zero pixels** | QAS-0023; ADR-0011 P6 | **FECHADO** |
+| `ACH-O3-11` | Precedência **invertida**: o pior estado do fio calava, o mais brando falava | QAS-0023; ADR-0008 N3 | **FECHADO** |
+| `ACH-O3-12` | "✓ Dado atual." em **todo** cartão da grade, a partir de zero evidência | ADR-0011 P7; QAS-0017 | **FECHADO na engenharia**; ordem e ausência de selo pendem de ratificação clínica (§6.1, §6.2) |
+| `ACH-O3-13` | Duas cadências contraditórias afirmadas ao mesmo tempo | ADR-0008 N3 | **FECHADO** |
+| `ACH-O3-14` | Os testes provavam o **dublê**, não o produto | ADR-0021 V1; §3 item 1 | **FECHADO** |
+
+### 5.1 `ACH-O3-9` — FECHADO: "Sincronizado" com a releitura ainda em voo
+
+A tela afirmava **"Sincronizado — dados reconciliados após reconexão."** no
+instante em que o cliente **sabe** ter perdido um evento, com a releitura
+**ainda em voo**. A causa era de assinatura, não de lógica: a porta de
+reconciliação devolvia `void`, e `await undefined` resolve **na microtarefa
+seguinte** — a máquina dava a reconciliação por concluída **antes de qualquer
+requisição sair**.
+
+Isto é o **núcleo de `HAZ-0025`** (*"clinicians trust a frozen board"*) e o
+oposto exato de `SAF-0025` (*"the interface MUST never appear healthy when
+feeds, workers, rules, identity, or freshness are impaired"*). Não era
+questão de desempenho; era veracidade.
+
+**Fecho estrutural, e a distinção importa.** A porta **não aceita mais
+`void`**: quem não leu nada só pode devolver `null`, e devolver outra coisa é
+**erro de compilação** (`apps/web/src/eventos/porta.ts:146`;
+`apps/web/src/estado/reconciliacaoObservada.ts`). `reconciliado` passou a
+exigir um **fato de leitura** — uma leitura bem-sucedida da projeção,
+iniciada **depois** do pedido —, não um contador incrementado. Um fecho que
+depende de o próximo autor lembrar da regra não é um fecho; este depende do
+compilador.
+
+### 5.2 `ACH-O3-10` — FECHADO: push permanentemente morto produzia zero pixels
+
+Um push que abriu, recebeu o primeiro quadro do servidor e **caiu antes da
+primeira pulsação** não produzia **pixel algum** na tela clínica. Duas causas
+somadas: a guarda de prova de vida estava sobre o predicado errado
+(`pulsacoesRecebidas === 0`), e `motivoDeParada` **não era consumido por
+superfície alguma** — a razão da parada existia no estado e não chegava a
+lugar nenhum.
+
+Violação **mensurável** de `QAS-0023`: *"count of degradations with no
+user-visible representation (**must be zero**)"*. A contagem medida era
+**≥ 1**.
+
+**Fecho:** a prova de vida passou a ser **fluxo aberto / primeiro quadro do
+servidor**, não a primeira pulsação (`apps/web/src/eventos/maquina.ts:261-304`).
+Parada explícita — `ticket-recusado`, `sem-politica-de-reconexao` — passou a
+contar como degradação declarada: ela é **definitiva** (a máquina não
+ressuscita por evento atrasado), e a tela deixa de ter push sem voltar a tê-lo
+sem nova montagem. `desmontado` é a única parada excluída, porque ali não há
+tela para declarar coisa alguma.
+
+### 5.3 `ACH-O3-11` — FECHADO: a precedência estava invertida
+
+Antes da primeira pulsação, `offline` e `reconnecting` do fio eram **mudos**,
+enquanto `replaying` — informativo, menos grave — **exibia banner**. O mesmo
+estado de fio afirmava coisas diferentes conforme já ter chegado, ou não, uma
+pulsação: os dois piores estados calavam e o mais brando falava.
+
+**Fecho:** `degraded` é declaração do **servidor** de que a entrega está
+atrasada e vale **mesmo antes da primeira pulsação**; os estados informativos
+(`replaying`, `reconciled`) têm representação **própria**, e não como
+degradação — degradá-los apagaria os dois únicos estados que este transporte
+origina, porque `degradado` tem precedência sobre a promoção. E agora isso
+vale em **toda** janela, não só depois da primeira pulsação
+(`maquina.ts:279-304`).
+
+### 5.4 `ACH-O3-12` — FECHADO NA ENGENHARIA (pré-existente, não desta sessão): "✓ Dado atual." em todo cartão, a partir de nada
+
+**Este é o achado de maior alcance dos seis, e foi subdimensionado como
+"caso de borda" antes de ser medido.**
+
+Duas falhas na mesma função (`ORDEM_SEVERIDADE_FRESCOR`,
+`apps/web/src/domain/clinico.ts:143-191`):
+
+1. a lista **omitia `ausente` e `invalido`** — os dois piores estados.
+   `indexOf` devolve `-1` para o que não está na lista, e `-1 > 0` é
+   **sempre falso**: os dois piores frescores **nunca elevavam a
+   severidade**, exatamente ao contrário do que a função existe para fazer;
+2. **lista vazia devolvia `"atual"`** — frescor afirmado a partir de zero
+   contribuições.
+
+**Por que não é borda.** A projeção da grade é um resumo e publica
+`contribuicoes: []` para **TODO** leito (`mapearEntradaGrade`,
+`apps/web/src/api/clienteHttp.ts`). Combinado com a falha 2, isso significa
+que **"✓ Dado atual." era o rótulo de CADA cartão da UTI, sempre, desde a
+primeira pintura, a partir de evidência nenhuma.** Não é um valor errado num
+caso raro; é o caminho comum. É **cliente promovendo status**, contra
+`ADR-0011` P7 (*"nenhuma projeção, gateway ou cliente promove status"*), e
+toca `QAS-0017`.
+
+**Fecho na engenharia — e só a direção foi decisão de engenharia.** Frescor
+desconhecido por esta versão da interface passou a ser tratado como **o pior
+possível**, nunca descartado em silêncio (`clinico.ts:180-188`); e lista
+vazia passou a devolver **`null`** — *nada é afirmado* —, com o consumidor
+renderizando nada (`apps/web/src/components/CartaoLeito.tsx:22`). Não
+afirmar é o resultado correto quando não há evidência: a ausência de
+afirmação é fail-closed, a afirmação otimista não.
+
+**O que NÃO foi decidido por engenharia, e permanece pendente de ratificação
+clínica:** a **ordem relativa** exibida (§6.1) e a **ausência de selo de
+frescor em todo cartão da grade** (§6.2). Ver §6.
+
+### 5.5 `ACH-O3-13` — FECHADO: duas cadências contraditórias na mesma tela
+
+`RotuloIdadeVisao` imprimia **sempre** o intervalo **base** ("Releitura
+automática a cada 30 s"), enquanto, três linhas abaixo,
+`RotuloCadenciaRecarga` declarava o backoff em vigor ("ESPAÇADA — 8× o
+intervalo normal, agora a cada 4 min"). Duas descrições divergentes **do
+mesmo fato**, simultaneamente na tela — o padrão que `ADR-0008` N3 proíbe, e
+que este mesmo código cita ao proibi-lo em outro lugar.
+
+**Fecho: uma frase por fato.** A correção **não** foi repetir o número nos
+dois lugares (seriam duas fontes a manter em acordo, e a próxima divergência
+seria questão de tempo): quando a cadência sai do regime, quem a declara é
+`RotuloCadenciaRecarga`, com o fator e a razão — e o outro rótulo **cala**
+(`apps/web/src/components/AvisosDeEstado.tsx:86-100`).
+
+### 5.6 `ACH-O3-14` — FECHADO: os testes provavam o dublê, não o produto
+
+**Este é o achado sobre a defesa, e é o mais importante dos seis para quem lê
+resultado de teste deste repositório.**
+
+O dublê de teste devolvia `Promise`; a **fiação real** devolvia `void`. Os
+testes exercitavam o dublê e passavam — provando uma propriedade do **dublê**,
+não do produto. Consequência direta: **esta era a defesa que deveria ter
+pego o `ACH-O3-9`, e ela não podia**, porque nunca tocou o objeto que tinha o
+defeito.
+
+**Fecho:** asserção no nível da **árvore fiada** — o teste monta a árvore
+real e observa o que o produto faz
+(`apps/web/src/eventos/fiacaoNaArvore.test.tsx`). Junto com ele, quatro
+famílias de verde vácuo foram fechadas na mesma passagem:
+
+| Padrão encontrado | Por que passava sem provar nada |
+|---|---|
+| `rejects.toThrow()` **sem tipo** | qualquer rejeição satisfaz, inclusive a errada — a identidade do erro passou a ser a asserção (`adaptadorNavegador.test.ts:403`) |
+| meta-teste de cobertura que só **contava elementos de array** | contava o registro, não o teste; passou a confrontar os **títulos registrados** (`maquina.test.ts:910`) |
+| laço **sem guarda de não-vacuidade** | laço sobre lista vazia é verde; a contagem virou asserção explícita |
+| teste cujo **nome prometia mais que a asserção** | ex.: nome dizia "limitado à fração declarada" sem impor teto algum (`cadenciaDeRecarga.test.ts:51,156`) |
+
+Um teste removido também foi **removido explicitamente e com razão escrita**
+(`cadenciaDeRecarga.test.ts:186`), em vez de silenciosamente esquecido —
+apagar teste sem deixar rastro é como um verde vácuo nasce.
+
+**Ligação com o método.** Este achado é a face de tela do achado de método
+registrado em `docs/14-devsecops-and-delivery/ci-policy.md` §5: uma defesa
+que só foi exercitada contra a entrada que o próprio autor imaginou não é
+defesa, é amostra.
+
+### 5.7 O que a §5 NÃO afirma
+
+1. **Nenhum hazard foi fechado.** `ACH-O3-9` toca o núcleo de `HAZ-0025` e
+   `ACH-O3-10`/`ACH-O3-11`/`ACH-O3-12` tocam `QAS-0023`/`QAS-0017` — e
+   **nenhum deles fecha nada disso**. Reduzem exposição medida, e é só isso
+   que este documento pode escrever. `HAZ-0025`, `SAF-0025`, `QAS-0023`,
+   `HAZ-0001` e `HAZ-0002` seguem abertos. Uma mitigação só conta quando
+   implementada, testada **e validada com humanos** (`ADR-0004` V10).
+2. **Acessibilidade continua NÃO VALIDADA.** `VAL-0033` é ato humano, com
+   piso de 3 participantes reais, jamais simulado. Nada em §5 a aproxima.
+3. **Nenhum gate foi aprovado, nenhum `MG-*` alterado, nenhuma ADR promovida
+   a `implemented`/`verified`.**
+4. **Estado factual duro inalterado:** 0 vias clínicas acionáveis; 47/47
+   inelegíveis; `Observation` da AMH não consumível; safety case **M0**;
+   nenhum dado real acessado.
+5. **Nenhum texto clínico novo foi redigido** por estes fechos, e nenhuma
+   taxonomia foi decidida. Onde havia texto a escolher, ver §6.
+
+## 6. O que passou a ser ato humano por causa deste trabalho (2026-08-18)
+
+Três pendências **novas ou recém-nomeadas**, todas **sem dono, sem
+`DECIDED`**. Elas existem porque os fechos de §5 tornaram explícita uma
+escolha que antes estava implícita num defeito — o que é progresso, mas
+transfere a escolha para quem tem autoridade sobre ela. Estas somam-se a
+LAC-L9 (`VAL-0027`, `VAL-0029`, `VAL-0031`, `VAL-0033`, `ADR-0021` C2/C3),
+que permanece válida sem alteração.
+
+### 6.1 Ordem de severidade de frescor exibida ao clínico — PROVISÓRIA
+
+A ordem hoje em vigor (`ORDEM_SEVERIDADE_FRESCOR`,
+`apps/web/src/domain/clinico.ts:143-153`) é:
+
+```text
+atual < corrigido < substituido < conflitante < envelhecendo
+      < desatualizado < expirado < ausente < invalido
+```
+
+**O que foi decisão de engenharia, e apenas isto:** a **direção** —
+fail-closed, isto é, o desconhecido é tratado como o pior e a lista vazia não
+afirma nada (§5.4). Essa direção é derivável de `ADR-0011` P7 e de
+`SAF-0025`, e não exige juízo clínico.
+
+**O que NÃO foi decidido, e é o que está pendente:** a **ordem relativa**
+entre os nove estados. Que `conflitante` seja pior que `substituido`, ou que
+`expirado` seja pior que `desatualizado`, é afirmação sobre o que compromete
+mais uma decisão à beira do leito — juízo clínico, não de engenharia
+(Contrato de Agentes §3: "taxonomia de razões de status" está fora da
+autoridade de qualquer agente).
+
+> *Quem decide:* a autoridade clínica que ratifica a taxonomia de frescor —
+> matéria de `ADR-0029` (vocabulário pt-BR) e do §11 do prompt, que define os
+> nove estados sem ordená-los por gravidade. *Que evidência fecharia:* a
+> ordem ratificada por escrito, com a justificativa clínica de cada
+> comparação que não for óbvia, mais teste que trave a ordem contra
+> regressão. *Efeito bloqueante hoje:* nenhum gate; mas todo rótulo de
+> frescor exibido carrega uma ordenação que ninguém ratificou.
+> `owner: UNASSIGNED — VALIDATION REQUIRED`.
+
+### 6.2 Ausência de selo de frescor em TODO cartão da grade — aceitável ou não?
+
+Consequência direta do fecho de `ACH-O3-12`: como a projeção da grade publica
+`contribuicoes: []` para todo leito, e como afirmar frescor a partir de nada
+deixou de ser permitido, **nenhum cartão da grade exibe selo de frescor
+hoje**.
+
+**Não afirmar é correto** — antes se afirmava "✓ Dado atual." a partir de
+nada, o que era pior em todos os aspectos. Mas "correto" aqui significa
+"honesto", não "suficiente": falta decidir se a **ausência** é aceitável numa
+tela clínica de UTI, onde o clínico varre a grade justamente para saber onde
+olhar.
+
+**As duas saídas não são equivalentes, e a diferença é de contrato:**
+
+| Saída | O que exige | Quem decide |
+|---|---|---|
+| A ausência é aceitável na grade; o frescor por insumo vive só no detalhe | nada de novo — é o estado atual, ratificado | autoridade clínica/UX |
+| A grade deve exibir frescor | a **projeção** passa a publicar frescor por leito — **mudança de contrato** (`packages/contratos`, projeção da grade), não de tela | dono de `ADR-0011` (forma da projeção) + autoridade clínica |
+
+Registrar isso como escolha aberta é deliberado: um agente que "resolvesse"
+pela saída A por ela ser a mais barata estaria decidindo conteúdo de tela
+clínica por conveniência de escopo.
+
+> *Quem decide:* autoridade clínica/UX quanto à suficiência, e o dono de
+> `ADR-0011` se a saída for mudar a projeção. *Que evidência fecharia:*
+> decisão registrada; se for a saída B, o contrato de projeção atualizado
+> mais teste provando que o cliente **não** deriva o frescor que recebe
+> (`ADR-0011` P7). *Efeito bloqueante hoje:* nenhum gate; é lacuna de
+> informação na tela primária. `owner: UNASSIGNED — VALIDATION REQUIRED`.
+
+### 6.3 Texto para "entrega em tempo quase-real interrompida em definitivo"
+
+O fecho de `ACH-O3-10` fez a parada definitiva do push virar degradação
+declarada — e, com isso, ela precisa de **texto**. Hoje ela **reusa o texto
+genérico de `degradado`**, que descreve uma condição transitória e é, por
+isso, impreciso para uma condição que **não se resolve sozinha**: a tela não
+volta a ter push sem nova montagem.
+
+Escrever a frase certa é **redigir texto clínico normativo**, explicitamente
+fora da autoridade de qualquer agente (Contrato de Agentes §3). `ADR-0029`
+condição **C2** (vocabulário pt-BR) segue **ABERTA**, e é onde esta pendência
+se resolve.
+
+> *Quem decide:* o processo de `ADR-0029` (C2), com a autoridade clínica que
+> ratifica vocabulário de estado. *Que evidência fecharia:* o texto
+> ratificado para a condição "entrega em tempo quase-real interrompida em
+> definitivo", distinto do texto de degradação transitória, mais teste
+> provando que as duas condições não compartilham a mesma frase. *Efeito
+> bloqueante hoje:* `ADR-0029` C2 não pode ser fechada; a tela declara a
+> degradação (`QAS-0023` na direção certa) com precisão menor que a
+> devida. `owner: UNASSIGNED — VALIDATION REQUIRED`.
+
+### 6.4 Provenance de §5 e §6
+
+| Campo | Valor |
+|---|---|
+| `label` | `OBSERVED` para todo achado de §5 e para a ordem transcrita em §6.1 (leitura direta dos arquivos citados linha a linha por este agente); `INFERENCE` para a leitura de impacto sobre `QAS-0023`/`QAS-0017`; `VALIDATION REQUIRED` para as três pendências de §6 |
+| `source_repo` | `intensicare-V2` |
+| `path_or_url` | `apps/web/src/domain/clinico.ts`; `apps/web/src/eventos/maquina.ts`, `porta.ts`, `useFluxoDeEventos.ts`, `fiacaoNaArvore.test.tsx`, `maquina.test.ts`, `adaptadorNavegador.test.ts`; `apps/web/src/estado/reconciliacaoObservada.ts`, `cadenciaDeRecarga.test.ts`; `apps/web/src/components/AvisosDeEstado.tsx`, `CartaoLeito.tsx`; `apps/web/src/App.tsx` |
+| `commit_sha_or_version` | `700b13e` (base); correções desta sessão lidas no working tree da branch `codex/lacunas-frontend-a11y` |
+| `section_or_lines` | `clinico.ts:143-191`; `maquina.ts:261-304`; `porta.ts:146`; `App.tsx:189-197`; `fiacaoNaArvore.test.tsx:279-313`; `AvisosDeEstado.tsx:86-100`; `CartaoLeito.tsx:22` |
+| `date_collected` | 2026-08-18 |
+| `collector` | agente de consistência documental e rastreabilidade (esta sessão) |
+| `transformation` | achados relatados por três revisores adversariais somente-leitura e **reproduzidos por leitura do código atual** por este agente antes de serem escritos; citações entre aspas são cópia literal do código, do teste ou da cláusula normativa |
+| `confidence` | high para os achados e seus fechos (leitura direta); medium para o alcance clínico de §5.4 (a renderização foi lida, o efeito sobre a decisão à beira do leito **não** foi validado com humano algum) |
+| `owner` | UNASSIGNED — VALIDATION REQUIRED |
+| `validation_status` | VALIDATION REQUIRED |

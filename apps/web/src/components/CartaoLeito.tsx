@@ -17,6 +17,14 @@ const ESTADOS_FAIL_CLOSED = new Set(["nao_avaliada", "invalida"]);
  */
 export function CartaoLeito({ item, aoSelecionar }: CartaoLeitoProps) {
   const { avaliacao } = item;
+  /*
+    `null` = a superfície consultada NÃO publica frescor por insumo, e o cartão
+    não afirma nada sobre ele (ACH-O3-12). É o caso da projeção da grade, que é
+    um resumo: até aqui, cada cartão exibia "✓ Dado atual.", tom positivo,
+    derivado de uma lista VAZIA de contribuições — frescor afirmado a partir de
+    ausência de evidência, o oposto de ADR-0011 P7.
+  */
+  const frescorGeral = avaliacao === null ? null : calcularFrescorGeral(avaliacao.contribuicoes);
 
   return (
     <li>
@@ -42,7 +50,7 @@ export function CartaoLeito({ item, aoSelecionar }: CartaoLeitoProps) {
                 <BadgeTom {...textoBandaRisco(avaliacao.bandaRisco)} />
               </div>
               <div className="cartao-leito__linha">
-                <BadgeTom {...textoFrescor(calcularFrescorGeral(avaliacao.contribuicoes))} />
+                {frescorGeral !== null && <BadgeTom {...textoFrescor(frescorGeral)} />}
                 {avaliacao.estadoAvaliacao === "desatualizada" && (
                   <BadgeTom {...textoAvaliacao("desatualizada")} />
                 )}

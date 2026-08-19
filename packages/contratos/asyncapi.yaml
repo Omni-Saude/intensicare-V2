@@ -83,9 +83,11 @@ x-pendencias:
     `VALIDATION REQUIRED` (ADR-0011 P5 diz isto literalmente; §3 D6/D7 não
     têm alvo). Este contrato fixa a ESTRUTURA (fila limitada, shed por
     desconexão explícita, backoff dirigido pelo servidor) e transporta os
-    números no fio porque quem os escolhe é a configuração do servidor.
-    Nenhum valor aqui é um SLO aprovado; nenhum alvo de latência de entrega
-    é declarado.
+    números no fio porque quem os escolhe é a configuração do servidor:
+    `intervaloPulsacaoMs` em `MensagemEstadoConexao` e `MensagemPulsacao`,
+    `reconexao` em `MensagemEstadoConexao` e
+    `MensagemInstrucaoReconciliacao`. Nenhum valor aqui é um SLO aprovado;
+    nenhum alvo de latência de entrega é declarado.
   - >-
     TRANSPORTE DO HANDSHAKE É PREMISSA REVERSÍVEL. ADR-0011 §5.3 declara
     explicitamente que a decisão "não vincula transporte concreto de push".
@@ -178,7 +180,11 @@ operations:
       verificação (regra §3-6).
 
 
-      2. `estado-conexao: replaying` — o servidor anuncia o catch-up.
+      2. `estado-conexao: replaying` — o servidor anuncia o catch-up e, no
+      MESMO quadro, a cadência de pulsação (`intervaloPulsacaoMs`) e a
+      política de reconexão (`reconexao`). É o primeiro quadro da
+      assinatura: a partir dele o cliente já sabe quando cobrar pulsação e
+      como reconectar, sem precisar de nenhuma constante local.
 
 
       3. Zero ou mais `EventoFluxo` do backlog, em ordem estritamente
@@ -263,7 +269,10 @@ components:
         Prova periódica de que a conexão está viva. A AUSÊNCIA de pulsação
         dentro do intervalo anunciado é o sinal de que a conexão morreu —
         o cliente deve degradar a tela visivelmente, jamais mantê-la com
-        aparência de atual (HAZ-0025; ADR-0011 P6).
+        aparência de atual (HAZ-0025; ADR-0011 P6). O intervalo é anunciado
+        em `intervaloPulsacaoMs`, tanto aqui quanto no `estado-conexao` de
+        ABERTURA — de modo que o cliente tenha a referência antes mesmo da
+        primeira pulsação.
       contentType: application/json
       payload:
         $ref: "#/components/schemas/MensagemPulsacao"
@@ -276,6 +285,7 @@ components:
             estado: online
             cursor: 42
             pendentes: 0
+            intervaloPulsacaoMs: 15000
 
     EstadoConexao:
       name: estadoConexao
@@ -289,12 +299,31 @@ components:
       x-sse:
         campo_event: estado-conexao
       examples:
+        - name: aberturaAnunciandoCadenciaEBackoff
+          summary: >-
+            Primeiro quadro da assinatura. O cliente já sai daqui sabendo
+            quando cobrar pulsação e como reconectar.
+          payload:
+            estado: replaying
+            descricao: Entregando o backlog acumulado desde o cursor informado (catch-up).
+            emitidoEm: "2026-08-16T12:00:00.100Z"
+            cursor: 0
+            intervaloPulsacaoMs: 15000
+            reconexao:
+              esperaMinimaMs: 1000
+              esperaMaximaMs: 30000
+              jitter: 0.2
         - name: catchUpConcluido
           payload:
             estado: online
             descricao: Conexão aberta e em dia com o cursor do servidor.
             emitidoEm: "2026-08-16T12:00:00.500Z"
             cursor: 42
+            intervaloPulsacaoMs: 15000
+            reconexao:
+              esperaMinimaMs: 1000
+              esperaMaximaMs: 30000
+              jitter: 0.2
 
     InstrucaoReconciliacao:
       name: instrucaoReconciliacao
@@ -466,9 +495,25 @@ components:
           description: >-
             Eventos aguardando escrita nesta conexão. Torna o backlog da
             conexão observável em vez de invisível (ADR-0011 P5/P10).
+        intervaloPulsacaoMs:
+          type: integer
+          minimum: 1
+          description: >-
+            Cadência de pulsação ANUNCIADA pelo servidor, em milissegundos.
+            OPCIONAL (evolução compatível): um consumidor que não a receba
+            continua conforme, e continua obrigado a degradar a tela quando a
+            pulsação faltar. O número é configuração do servidor e permanece
+            `VALIDATION REQUIRED` (ADR-0011 §3 D6) — não é SLO, não é alvo de
+            latência de entrega e não é limiar clínico de frescor (VAL-0023).
 
     MensagemEstadoConexao:
       type: object
+      description: >-
+        PRIMEIRO quadro da assinatura (`replaying`, na abertura) e último antes
+        do encerramento (`offline`). É por isso que os dois anúncios do servidor
+        vivem aqui: quando ele chega, o cliente já sabe com que cadência
+        esperar pulsação e com que política reconectar — antes de qualquer
+        pulsação e antes de qualquer instrução de reconciliação.
       additionalProperties: false
       required: [estado, descricao, emitidoEm, cursor]
       properties:
@@ -483,6 +528,18 @@ components:
         cursor:
           type: integer
           minimum: 0
+        intervaloPulsacaoMs:
+          type: integer
+          minimum: 1
+          description: >-
+            Mesma cadência anunciada em `MensagemPulsacao`, entregue já na
+            ABERTURA. Fecha a janela em que o cliente ficava sem referência
+            para armar vigia de silêncio — entre a abertura e a primeira
+            pulsação, uma conexão meio-aberta era indistinguível de uma
+            saudável (HAZ-0025; SAF-0025; ADR-0011 P6). OPCIONAL: evolução
+            compatível.
+        reconexao:
+          $ref: "#/components/schemas/PoliticaReconexao"
 
     PoliticaReconexao:
       type: object

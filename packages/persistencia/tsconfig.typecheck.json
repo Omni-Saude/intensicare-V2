@@ -1,0 +1,19 @@
+{
+  // Configuração SÓ de verificação de tipos (ACH-O3-2 — `tsconfig.json`
+  // exclui `src/**/*.test.ts` E `src/test-support.ts` de propósito, o que
+  // tornava `pnpm typecheck` cego aos testes E ao apoio de teste). Medido
+  // limpo: `tsc -p tsconfig.typecheck.json --noEmit` passa com 0 erros —
+  // ADOTADA em `package.json` (`"typecheck"` aponta para este arquivo).
+  // `include` cobre `src/**/*.ts` inteiro (produção + teste + apoio) de
+  // propósito: excluir `test-support.ts` de novo aqui reintroduziria
+  // exatamente o ponto cego que esta configuração existe para fechar.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "typeRoots": ["../../node_modules/@types"],
+    "allowJs": true,
+    "rootDir": "../.."
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist"]
+}

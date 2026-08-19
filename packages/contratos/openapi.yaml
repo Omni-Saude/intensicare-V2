@@ -368,6 +368,18 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
+        "500":
+          description: >-
+            Existe registro de idempotência para a chave, mas a resposta
+            original armazenada NÃO é republicável; nenhum efeito novo foi
+            executado. Recusa deliberada de `ACH-O3-3`: o corpo persistido
+            não atravessa a fronteira HTTP sem ser reconstruído e submetido
+            à autoridade, e um corpo que não reconstrói é recusado em vez de
+            republicado. O cliente não errou — daí 5xx e não 4xx.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
       security:
         - bearerSyntheticStub: []
 

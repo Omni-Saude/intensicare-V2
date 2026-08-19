@@ -1,0 +1,35 @@
+{
+  // Configuração SÓ de verificação de tipos — existe separada da de build
+  // (mesmo molde de packages/rule-bundle/tsconfig.typecheck.json) porque
+  // `tsconfig.json` exclui `src/**/*.test.ts` de propósito (teste não entra
+  // em `dist/`), e essa exclusão tornava `pnpm typecheck` cego aos testes:
+  // um campo de tipo poderia divergir só no teste e nada acusaria (ACH-O3-2).
+  //
+  // ADOTADA em `package.json` — `"typecheck"` aponta para este arquivo.
+  // `tsc -p tsconfig.typecheck.json --noEmit` passa com 0 erros.
+  //
+  // HISTÓRICO (ACH-O3-2, achado corrigido nesta fronteira ampliada):
+  // reprovava com 1 erro real — src/asyncapi.test.ts(44,8): "./asyncapi.js"
+  // não exportava `EventoFluxo`, porque a interface vive em `./index.ts`,
+  // não em `./asyncapi.ts`. `type EventoFluxo` importava do módulo errado
+  // desde o commit 4de1961 — um especificador que NUNCA resolveu, invisível
+  // ao vitest porque `import type` é apagado na transpilação antes de
+  // qualquer tentativa de resolver o módulo em runtime. CORRIGIDO em
+  // `src/asyncapi.test.ts`: `EventoFluxo` passou a vir de `./index.js`,
+  // separado do import de `./asyncapi.js`. `noEmit`/`types`/`typeRoots`/
+  // `allowJs`/`rootDir` abaixo resolveram os outros 13 erros que apareciam
+  // antes deste (ausência de `@types/node` localmente resolvível — só
+  // existe no `node_modules` da raiz do workspace — e `import` de
+  // `scripts/check_contratos.mjs`, fora de `rootDir`); nenhum deles era
+  // erro de conteúdo de teste.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "typeRoots": ["../../node_modules/@types"],
+    "allowJs": true,
+    "rootDir": "../.."
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist"]
+}

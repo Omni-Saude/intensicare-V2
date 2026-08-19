@@ -17,6 +17,7 @@ import { comporRegistroDeRegras } from "../composicao/regras.js";
 import type { ConfiguracaoRuntime } from "../config/index.js";
 import { BLOQUEIO_ASSINATURA_AUSENTE, type EstadoDeBundle, type PortaDeBundle } from "./bundle.js";
 import {
+  BLOQUEIO_PROVENIENCIA_NAO_ATESTADA,
   CAMPOS_PUBLICADOS_DO_REGISTRO,
   CAMPOS_RETIDOS_DO_REGISTRO,
   comModoDeDespacho,
@@ -24,6 +25,7 @@ import {
   derivarAcionavel,
   lerModoDeDespacho,
   modoDeDespachoDoResultadoPersistido,
+  PROVENIENCIA_NAO_ATESTADA,
   projetarModoDeDespacho,
   resultadoNews2Publicavel,
 } from "./exposicao.js";
@@ -467,7 +469,37 @@ describe("leitura do envelope já persistido", () => {
     expect(relido?.modo).toBe("sombra");
     expect(relido?.acionavel).toBe(false);
     expect(relido?.versaoRegra).toBe("RULE-NEWS2@0.2.0");
-    expect(relido).toEqual(publicavel.despacho);
+    expect(relido?.rotuloPt).toBe(publicavel.despacho.rotuloPt);
+    expect(relido?.desfecho).toBe(publicavel.despacho.desfecho);
+
+    // A asserção anterior era `toEqual(publicavel.despacho)` — igualdade
+    // INTEIRA, inclusive a proveniência. Ela deixou de valer de propósito
+    // (ACHADO 4): esta leitura é SEM autoridade, e sem autoridade não há
+    // proveniência publicável. O envelope continua legível; o que ele NÃO faz
+    // mais é descrever um artefato que este runtime não atestou.
+    expect(relido?.bundle).toEqual(PROVENIENCIA_NAO_ATESTADA);
+    expect(relido?.bundle.behaviorHash).toBeNull();
+    // Não-vacuidade: o registro legítimo TINHA proveniência a vazar.
+    expect(publicavel.despacho.bundle.behaviorHash).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(publicavel.despacho.bundle.assinatura).toBe("assinatura_ausente");
+  });
+
+  it("COM autoridade, a proveniência publicada é a do runtime — a supressão é do ramo sem autoridade", () => {
+    const publicavel = resultadoNews2Publicavel(
+      despacharNews2(registroReal(), INSUMO_NEWS2, CONTEXTO),
+    );
+    const persistido = JSON.parse(JSON.stringify(publicavel)) as Record<string, unknown>;
+
+    const relido = modoDeDespachoDoResultadoPersistido(persistido, {
+      catalogo: registroReal(),
+      instanteIso: AVALIACAO,
+    });
+    expect(relido).not.toBeNull();
+    expect(relido?.bundle.assinatura).toBe("assinatura_ausente");
+    expect(relido?.bundle.behaviorHash).toBe(publicavel.despacho.bundle.behaviorHash);
+    expect(relido?.bundle.bloqueiosDeAtivacao).toContain(BLOQUEIO_ASSINATURA_AUSENTE);
+    // …e não é o marcador de "não atestada".
+    expect(relido?.bundle.bloqueiosDeAtivacao).not.toContain(BLOQUEIO_PROVENIENCIA_NAO_ATESTADA);
   });
 
   it("linha antiga (sem o campo) ou forma inválida ⇒ null, que o contrato define como NÃO acionável", () => {

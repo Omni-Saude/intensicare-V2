@@ -116,11 +116,29 @@ export interface ItemGradeLeito {
 }
 
 /**
- * Ordem de severidade de frescor usada por `calcularFrescorGeral` —
- * quanto maior o índice, pior o frescor. `ausente`/`invalido` não
- * entram aqui porque, nesta fatia, insumo ausente já é representado à
- * parte (`insumosAusentes`), não como "o pior frescor entre os
- * presentes".
+ * Ordem de severidade de frescor usada por `calcularFrescorGeral` — quanto
+ * maior o índice, pior o frescor.
+ *
+ * ESTA LISTA OMITIA `ausente` E `invalido`, E ISSO ERA UM DEFEITO SILENCIOSO
+ * (ACH-O3-12). `indexOf` devolve `-1` para o que não está na lista, e o índice
+ * de partida da busca era `0`: `-1 > 0` é SEMPRE falso, de modo que os dois
+ * piores estados de frescor nunca elevavam a severidade. Um insumo que o
+ * PRODUTOR declarou inválido (`quarantined`/`invalid` em
+ * `../api/clienteHttp.ts`) era simplesmente ignorado, e o cartão do leito
+ * exibia "✓ Dado atual.", tom positivo, sobre ele. ADR-0011 P7 é explícita:
+ * nenhum cliente promove status.
+ *
+ * A DIREÇÃO DA CORREÇÃO É FAIL-CLOSED: os dois entram, e entram no PIOR
+ * extremo. Um insumo inválido ou ausente é o que menos autoriza a tela a dizer
+ * que está em dia.
+ *
+ * VALIDATION REQUIRED (ADR-0029, condição C2 ABERTA). A ORDEM RELATIVA entre
+ * estes nove estados é apresentação clínica, não engenharia: quem decide se
+ * `invalido` é pior que `expirado`, e se `conflitante` precede `envelhecendo`,
+ * é autoridade clínica. O que está aqui é a ordenação provisória herdada, com
+ * os dois estados faltantes acrescentados no extremo fail-closed. Nenhum
+ * vocabulário novo foi criado: os nove identificadores e seus textos já
+ * existiam em `./estados.ts` e `./linguagem.ts`.
  */
 const ORDEM_SEVERIDADE_FRESCOR: EstadoFrescor[] = [
   "atual",
@@ -130,22 +148,42 @@ const ORDEM_SEVERIDADE_FRESCOR: EstadoFrescor[] = [
   "envelhecendo",
   "desatualizado",
   "expirado",
+  "ausente",
+  "invalido",
 ];
 
 /**
- * Frescor geral de uma avaliação = o pior frescor entre as contribuições
- * com valor presente (nunca inventa um frescor melhor que o pior insumo
- * real usado no cálculo). `atual` se não houver nenhuma contribuição com
- * valor observado.
+ * Frescor geral de uma avaliação = o pior frescor entre as contribuições com
+ * valor presente. Nunca inventa um frescor melhor que o pior insumo real usado
+ * no cálculo — e, desde ACH-O3-12, também não inventa um frescor a partir de
+ * NADA.
+ *
+ * `null` = esta avaliação não publica frescor por insumo, e portanto NADA é
+ * afirmado sobre ele. O caso não é hipotético: a projeção da grade é um resumo
+ * e devolve `contribuicoes: []` para TODO leito (`mapearEntradaGrade` em
+ * `../api/clienteHttp.ts`), de modo que a versão anterior — que devolvia
+ * `"atual"` para lista vazia — fazia cada cartão da grade exibir "✓ Dado
+ * atual." a partir de zero evidência. Frescor afirmado por ausência de
+ * evidência é o oposto de fail-closed; a ausência de afirmação é o resultado
+ * correto, e quem consome renderiza nada (`../components/CartaoLeito.tsx`).
+ *
+ * Contribuição sem valor observado continua fora da conta: insumo ausente é
+ * representado à parte (`insumosAusentes`), e o DetalhePaciente o declara
+ * nominalmente. O que mudou é que "todas fora da conta" deixou de virar
+ * "atual".
  */
-export function calcularFrescorGeral(contribuicoes: ContribuicaoParametro[]): EstadoFrescor {
-  let pior: EstadoFrescor = "atual";
-  let indicePior = 0;
+export function calcularFrescorGeral(contribuicoes: ContribuicaoParametro[]): EstadoFrescor | null {
+  let pior: EstadoFrescor | null = null;
+  let indicePior = -1;
   for (const contribuicao of contribuicoes) {
     if (contribuicao.valorObservado === null) continue;
     const indice = ORDEM_SEVERIDADE_FRESCOR.indexOf(contribuicao.frescor);
-    if (indice > indicePior) {
-      indicePior = indice;
+    // Frescor DESCONHECIDO por esta versão da interface (`indexOf` = -1) não
+    // pode ser mais brando que o pior conhecido: fail-closed manda tratá-lo
+    // como o pior possível, nunca descartá-lo em silêncio.
+    const severidade = indice === -1 ? ORDEM_SEVERIDADE_FRESCOR.length : indice;
+    if (severidade > indicePior) {
+      indicePior = severidade;
       pior = contribuicao.frescor;
     }
   }

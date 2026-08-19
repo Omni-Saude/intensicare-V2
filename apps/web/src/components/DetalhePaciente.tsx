@@ -1,16 +1,28 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { LeitorDeProntidao } from "../api/prontidao.js";
 import type { ClienteApiIntensiCare } from "../api/tipos.js";
 import type { Alerta, AvaliacaoPaciente, ItemGradeLeito } from "../domain/clinico.js";
+import type { EstadoConectividade } from "../domain/estados.js";
 import { textoAvaliacao, textoBandaRisco } from "../domain/linguagem.js";
 import { ROTULO_PARAMETRO } from "../domain/news2.js";
-import { combinarConectividade, useConectividadeNavegador } from "../estado/conectividade.js";
+import {
+  combinarConectividade,
+  refinarComEstadoDoPush,
+  useConectividadeNavegador,
+} from "../estado/conectividade.js";
+import type { ResumoIdadeVisao } from "../estado/idadeVisao.js";
 import { useProntidao } from "../estado/prontidao.js";
-import { INTERVALO_RECARGA_PADRAO_MS, useRecursoRemoto } from "../estado/recursoRemoto.js";
+import { type RelatoDeLeitura, useRelatorioDeLeitura } from "../estado/reconciliacaoObservada.js";
+import {
+  ehEstadoDeFalha,
+  INTERVALO_RECARGA_PADRAO_MS,
+  useRecursoRemoto,
+} from "../estado/recursoRemoto.js";
 import type { Relogio } from "../estado/relogio.js";
 import {
   AvisoProntidao,
   IndicadorConectividade,
+  RotuloCadenciaRecarga,
   RotuloFrescorVisao,
   RotuloIdadeVisao,
 } from "./AvisosDeEstado.js";
@@ -27,6 +39,16 @@ interface DetalhePacienteProps {
   leitorProntidao?: LeitorDeProntidao | null;
   intervaloRecargaMs?: number | null;
   relogio?: Relogio;
+  /** Ver a nota equivalente em `GradeLeitos.tsx` (jitter injetável). */
+  sortear?: () => number;
+  /** Ver a nota equivalente em `GradeLeitos.tsx` (sinal de releitura do push). */
+  sinalDeReleitura?: number;
+  /** Ver a nota equivalente em `GradeLeitos.tsx` (fato de leitura, ACH-O3-9). */
+  aoRelatarLeitura?: (relato: RelatoDeLeitura) => void;
+  /** QUARTA origem, aditiva, do booleano de degradação — ver `GradeLeitos.tsx`. */
+  degradadoPeloPush?: boolean;
+  /** Estado originado no fio; só `reproduzindo`/`reconciliado` chegam por aqui. */
+  conectividadeDoPush?: EstadoConectividade | null;
 }
 
 const ESTADOS_FAIL_CLOSED = new Set(["nao_avaliada", "invalida"]);
@@ -50,6 +72,11 @@ export function DetalhePaciente({
   leitorProntidao = null,
   intervaloRecargaMs = INTERVALO_RECARGA_PADRAO_MS,
   relogio,
+  sortear,
+  sinalDeReleitura = 0,
+  aoRelatarLeitura,
+  degradadoPeloPush = false,
+  conectividadeDoPush = null,
 }: DetalhePacienteProps) {
   const buscar = useCallback(
     (sinal: AbortSignal) => cliente.obterAvaliacaoPaciente(leitoId, { sinal }),
@@ -60,24 +87,18 @@ export function DetalhePaciente({
     buscar,
     intervaloRecargaMs,
     ...(relogio !== undefined ? { relogio } : {}),
+    ...(sortear !== undefined ? { sortear } : {}),
   });
 
   const prontidao = useProntidao({
     leitor: leitorProntidao,
     intervaloRecargaMs,
     ...(relogio !== undefined ? { relogio } : {}),
+    ...(sortear !== undefined ? { sortear } : {}),
   });
 
   const conectividadeNavegador = useConectividadeNavegador();
   const marcarLeituraBemSucedida = conectividadeNavegador.marcarLeituraBemSucedida;
-  // Mesma composição de `GradeLeitos`: falha de leitura, ciclo de releitura
-  // perdido e prontidão do serviço, sem que uma esconda a outra.
-  const conectividade = combinarConectividade(
-    conectividadeNavegador.estado,
-    recurso.exibindoDadoDesatualizado ||
-      recurso.idadeVisao?.classe === "ciclo_perdido" ||
-      prontidao.degradada,
-  );
 
   const [item, setItem] = useState<ItemGradeLeito | null>(null);
 
@@ -97,6 +118,43 @@ export function DetalhePaciente({
   const itemDesteLeito = item !== null && item.leitoId === leitoId ? item : null;
 
   /**
+   * A GUARDA VALE PARA OS RÓTULOS, NÃO SÓ PARA O CONTEÚDO (LAC-L4).
+   *
+   * Até a navegação direta entre leitos existir, este caminho era inalcançável
+   * — grade↔detalhe desmontava o componente e zerava o hook. Com URL por leito,
+   * A→B é um `rerender` da MESMA instância: `recurso.dados` continua sendo o
+   * item de A enquanto a leitura de B corre e, se ela falhar, o redutor marca
+   * `desatualizado_apos_falha` sobre o dado de A.
+   *
+   * A guarda de identidade suprimia o CONTEÚDO de A — mas `RotuloFrescorVisao`
+   * seguia anunciando "o que está na tela é anterior a essa falha" (sobre uma
+   * tela onde nada estava) com o TIMESTAMP DE A, e `RotuloIdadeVisao` seguia
+   * dizendo "última leitura bem-sucedida há N s" sob o cabeçalho de B, sobre
+   * uma leitura que nunca ocorreu em B. Rótulo é afirmação: afirmar frescor de
+   * A sob B é a mesma atribuição errada de HAZ-0001/HAZ-0002, só que em prosa.
+   *
+   * Nada aqui apaga estado do hook (que é de `estado/`, e não desta camada): a
+   * tela deixa de EXIBIR como seu o que não é seu. Dentro da mesma identidade
+   * todos os rótulos seguem intactos.
+   */
+  const visaoDeOutroLeito = recurso.dados !== null && itemDesteLeito === null;
+
+  const frescorVisaoExibido = visaoDeOutroLeito ? "atual" : recurso.frescorVisao;
+  const obtidoEmExibido = visaoDeOutroLeito ? null : recurso.obtidoEm;
+  const idadeVisaoExibida: ResumoIdadeVisao | null =
+    !visaoDeOutroLeito || recurso.idadeVisao === null
+      ? recurso.idadeVisao
+      : {
+          // O único fato verdadeiro sobre ESTE leito: ainda não houve leitura
+          // bem-sucedida nesta tela. A cadência de referência é preservada
+          // porque ela é da TELA, não da leitura.
+          classe: "sem_leitura",
+          idadeMs: null,
+          ciclosVencidos: 0,
+          intervaloRecargaMs: recurso.idadeVisao.intervaloRecargaMs,
+        };
+
+  /**
    * Conteúdo anterior a uma falha, marcado como desatualizado — o mesmo
    * tratamento que `GradeLeitos` já dava e que esta tela não tinha. Sem ele,
    * o `RotuloFrescorVisao` acima afirmava exibir "conteúdo anterior a essa
@@ -105,9 +163,51 @@ export function DetalhePaciente({
    */
   const exibindoDesatualizado = recurso.exibindoDadoDesatualizado && itemDesteLeito !== null;
 
+  // Mesma composição de `GradeLeitos`: falha de leitura, ciclo de releitura
+  // perdido e prontidão do serviço, sem que uma esconda a outra. A primeira
+  // origem passa pela guarda de identidade: um dado desatualizado que pertence
+  // a OUTRO leito não é "degradação desta tela" — sem isto, B falhando com
+  // dado de A em memória declarava `degradado`, e B falhando sem dado nenhum
+  // declarava `online`, para a mesma falha.
+  const conectividade = refinarComEstadoDoPush(
+    combinarConectividade(
+      conectividadeNavegador.estado,
+      exibindoDesatualizado ||
+        idadeVisaoExibida?.classe === "ciclo_perdido" ||
+        prontidao.degradada ||
+        // QUARTA origem, acrescentada DEPOIS das três anteriores e sem apagar
+        // nenhuma (ADR-0011 P6/P8).
+        degradadoPeloPush,
+    ),
+    conectividadeDoPush,
+  );
+
+  // Ver a nota equivalente em `GradeLeitos.tsx`: o sinal do push vira UMA
+  // releitura da projeção autoritativa, e montar com o contador adiantado não
+  // dispara requisição extra.
+  // ROTINA, não nova tentativa do usuário: um sinal de push não pode fazer a
+  // grade desmontar e piscar "Tentando novamente…" (invariante I6).
+  const reconciliar = recurso.reconciliar;
+  const sinalVistoRef = useRef(sinalDeReleitura);
+  useEffect(() => {
+    if (sinalDeReleitura === sinalVistoRef.current) return;
+    sinalVistoRef.current = sinalDeReleitura;
+    reconciliar();
+  }, [sinalDeReleitura, reconciliar]);
+
   useEffect(() => {
     if (recurso.obtidoEm !== null) marcarLeituraBemSucedida();
   }, [recurso.obtidoEm, marcarLeituraBemSucedida]);
+
+  // Ver a nota equivalente em `GradeLeitos.tsx`: é o relato de leitura que
+  // autoriza a máquina de push a declarar `reconciliado` (ACH-O3-9).
+  useRelatorioDeLeitura({
+    buscaEmCurso: recurso.buscaEmCurso,
+    obtidoEm: recurso.obtidoEm,
+    falhou: ehEstadoDeFalha(recurso.estadoTela),
+    sinal: sinalDeReleitura,
+    relatar: aoRelatarLeitura,
+  });
 
   function lidarComAlertaAtualizado(alertaAtualizado: Alerta) {
     setItem((atual) => {
@@ -222,12 +322,14 @@ export function DetalhePaciente({
 
       <IndicadorConectividade estado={conectividade} />
       <AvisoProntidao leitura={prontidao.leitura} />
-      <RotuloFrescorVisao frescor={recurso.frescorVisao} obtidoEm={recurso.obtidoEm} />
+      <RotuloFrescorVisao frescor={frescorVisaoExibido} obtidoEm={obtidoEmExibido} />
       <RotuloIdadeVisao
-        idade={recurso.idadeVisao}
-        obtidoEm={recurso.obtidoEm}
+        idade={idadeVisaoExibida}
+        obtidoEm={obtidoEmExibido}
         buscaEmCurso={recurso.buscaEmCurso}
+        cadencia={recurso.cadencia}
       />
+      <RotuloCadenciaRecarga cadencia={recurso.cadencia} visibilidade={recurso.visibilidadeDaAba} />
 
       <EstadoTela
         estado={recurso.estadoTela}

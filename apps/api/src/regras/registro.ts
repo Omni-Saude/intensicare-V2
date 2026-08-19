@@ -30,6 +30,7 @@ import {
   ehAcionavel,
   type IdentidadeRegra,
   MOTIVO_RECUSA_PT,
+  type ModoDespacho,
   type MotivoRecusa,
   type ProvenienciaBundle,
   type RegistroDeAvaliacao,
@@ -89,6 +90,50 @@ export class RegraNaoRegistradaError extends Error {
   }
 }
 
+// ---------------------------------------------------------------------------
+// CATÁLOGO DE AUTORIDADE (ACH-REV8-3)
+// ---------------------------------------------------------------------------
+
+/**
+ * O artefato que ESTE processo carregou e cuja porta o reconhece como
+ * disponível no instante consultado.
+ *
+ * POR QUE ISTO EXISTE. `acionavel` era derivado, na leitura, de
+ * `ehAcionavel` aplicado à proveniência lida do PRÓPRIO registro persistido.
+ * Registro e proveniência vinham do mesmo blob: quem controlasse o blob
+ * controlava os dois lados da comparação, e uma forja internamente coerente
+ * (assinatura verificada + zero bloqueios + modo acionável) publicava
+ * `acionavel: true` sem que autoridade alguma fosse consultada (ACH-REV8-3,
+ * reproduzido contra o servidor real antes desta mudança).
+ *
+ * A autoridade não vem — e não pode vir — de uma assinatura DO REGISTRO: o
+ * registro é dado, não artefato de regra. Ela vem do estado do runtime: qual
+ * bundle a `PortaDeBundle` reconhece como disponível AGORA, com que modo e
+ * que proveniência. O registro persistido passa a ser apenas CHAVE DE JUNÇÃO
+ * (`chaveRegra` + `versaoBundle` + `behaviorHash` + `digestManifesto`).
+ *
+ * Isto NÃO depende de ADR-0007 C5 (custódia de chave), que segue ABERTA:
+ * fechar C5 é o que permitiria `assinatura === "assinatura_verificada"` ser
+ * VERDADE para um artefato real. Aqui só se exige que a alegação venha de
+ * quem tem autoridade para fazê-la — o que é fail-closed na direção segura.
+ */
+export interface AutoridadeDeRegra {
+  readonly chaveRegra: string;
+  readonly modo: ModoDespacho;
+  readonly proveniencia: ProvenienciaBundle;
+}
+
+/**
+ * Fonte de AUTORIDADE para publicação de acionabilidade. Implementado por
+ * `RegistroDeRegras` — é o mesmo objeto que despacha, de propósito: duas
+ * fontes de "qual bundle está ativo" seriam exatamente a deriva que o
+ * `behaviorHash` existe para pegar.
+ */
+export interface CatalogoDeAutoridade {
+  /** `null` ⇒ nenhuma autoridade para esta regra neste instante. */
+  autoridadeDe(chaveRegra: string, instanteIso: string): AutoridadeDeRegra | null;
+}
+
 /** Forma apagada de tipo, para a tabela heterogênea do registro. */
 interface ProvedorOpaco {
   readonly identidade: IdentidadeRegra;
@@ -122,7 +167,7 @@ export interface OpcoesRegistroDeRegras {
   readonly quadroDeChaves?: ClinicalRuleSwitchboard | undefined;
 }
 
-export class RegistroDeRegras {
+export class RegistroDeRegras implements CatalogoDeAutoridade {
   private readonly provedores = new Map<string, ProvedorOpaco>();
   private readonly quadroDeChaves: ClinicalRuleSwitchboard | undefined;
 
@@ -152,6 +197,47 @@ export class RegistroDeRegras {
 
   temRegra(chave: string): boolean {
     return this.provedores.has(chave);
+  }
+
+  /**
+   * AUTORIDADE de uma regra no instante consultado (ACH-REV8-3).
+   *
+   * Reusa EXATAMENTE as portas 2 e 3 de `despachar` — quadro de chaves de
+   * runtime e porta de bundle —, na mesma ordem e com o mesmo veredito. Não
+   * há segunda definição de "esta regra pode governar agora": se o
+   * despachante recusaria, não há autoridade, e um registro daquela regra
+   * não é publicável como acionável.
+   *
+   * `null` cobre, sem distinguir para o chamador (a distinção vive no
+   * registro imutável do despacho, que é a trilha de auditoria):
+   * regra não registrada, regra desligada/desconhecida no quadro de chaves,
+   * e porta de bundle que recusa (artefato ausente, não verificado,
+   * não ativado, indisponível).
+   */
+  autoridadeDe(chave: string, instanteIso: string): AutoridadeDeRegra | null {
+    const provedor = this.provedores.get(chave);
+    if (provedor === undefined) return null;
+
+    const quadro = this.quadroDeChaves;
+    if (quadro !== undefined) {
+      const disponibilidade = quadro.availabilityOf(provedor.identidade.ruleId);
+      if (
+        disponibilidade.kind === "killed" ||
+        disponibilidade.kind === "load_failed" ||
+        disponibilidade.kind === "unknown"
+      ) {
+        return null;
+      }
+    }
+
+    const estado = provedor.porta.estadoEm(instanteIso);
+    if (estado.tipo !== "disponivel") return null;
+
+    return Object.freeze({
+      chaveRegra: chave,
+      modo: estado.modo,
+      proveniencia: estado.proveniencia,
+    });
   }
 
   /**

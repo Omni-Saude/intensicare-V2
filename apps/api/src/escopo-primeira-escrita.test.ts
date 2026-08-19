@@ -65,6 +65,17 @@ import { gerarTokenSintetico } from "./auth.js";
 import { dependenciaDeBancoDiferida } from "./composicao/prontidao.js";
 import { acknowledgeAlert, getPatientEvaluations, projectBedGrid, replayEvents } from "./db.js";
 import { buildServer } from "./index.js";
+// Registro VAZIO (nenhuma regra registrada) — suficiente e correto aqui: os
+// quatro sítios abaixo testam ORDEM DE ESCRITA/ESCOPO de transação
+// (DETECTOR A/B), nunca dispacho de regra ou modo de despacho. `db.ts`
+// tornou `registroDeRegras` OBRIGATÓRIO no tipo de `projectBedGrid`/
+// `getPatientEvaluations` (ACH-REV8-3); um registro vazio ainda satisfaz o
+// tipo e deixa a autoridade de leitura degradar para "sem autoridade" —
+// mesmo ramo fail-closed que a ausência do parâmetro já produzia, sem
+// mudar a contagem de linhas nem a ordem de instruções que estes testes
+// observam. Mesmo padrão já usado em regras/exposicao.test.ts para os
+// casos que não precisam de provedor nenhum registrado.
+import { RegistroDeRegras } from "./regras/registro.js";
 
 /** Trecho que identifica a instalação do escopo, qualquer que seja o chamador. */
 const MARCA_DA_INSTALACAO = "intensicare_escopo.instalar";
@@ -298,7 +309,14 @@ describe("o escopo de tenant é a primeira escrita de toda transação de apps/a
 
   it("composicao/prontidao.ts: dependência de banco da prontidão", async () => {
     const dependencia = dependenciaDeBancoDiferida(() => porta);
-    const { resultado, transacoes } = await transacoesDe(() => dependencia.verificar());
+    // `DependenciaDeclarada.verificar` é tipado `() => Promise<boolean> |
+    // boolean` de propósito (saude/portas.ts) — a porta aceita implementação
+    // síncrona OU assíncrona; a `verificar` desta dependência específica É
+    // `async` (composicao/prontidao.ts) e sempre devolve Promise de verdade.
+    // `transacoesDe` exige `() => Promise<T>`; envolver em `async` normaliza
+    // o tipo sem mudar comportamento (achado ACH-O3-2, sem impacto em
+    // runtime — `await` sobre valor não-Promise já era no-op).
+    const { resultado, transacoes } = await transacoesDe(async () => dependencia.verificar());
     expect(resultado).toBe(true);
     exigirContrato("composicao/prontidao.ts", transacoes);
   });
@@ -326,6 +344,7 @@ describe("o escopo de tenant é a primeira escrita de toda transação de apps/a
         tenantId: TENANT,
         actorId: ATOR,
         correlationId: "SYNTH-CORR-ESCOPO-GRADE",
+        registroDeRegras: new RegistroDeRegras(),
       }),
     );
     expect(resultado.length).toBeGreaterThan(0);
@@ -339,6 +358,7 @@ describe("o escopo de tenant é a primeira escrita de toda transação de apps/a
         actorId: ATOR,
         pacienteRef: P002.subjectRef,
         correlationId: "SYNTH-CORR-ESCOPO-AVAL",
+        registroDeRegras: new RegistroDeRegras(),
       }),
     );
     expect(resultado).not.toBeNull();
@@ -393,6 +413,7 @@ describe("o escopo de tenant é a primeira escrita de toda transação de apps/a
           tenantId: TENANT,
           actorId: ATOR,
           correlationId: "SYNTH-CORR-ESCOPO-MUT-LEITURA",
+          registroDeRegras: new RegistroDeRegras(),
         }),
       );
 
@@ -423,11 +444,25 @@ describe("o escopo de tenant é a primeira escrita de toda transação de apps/a
       injecaoAntesDoEscopo = "select pg_current_xact_id() as forca_atribuicao";
       const inicio = transacoesObservadas.length;
 
+      // NÃO MASCARADO (verificado por leitura de `withTenantTransaction`,
+      // packages/persistencia/src/session.ts:163-171, antes deste conserto):
+      // a instrução injetada roda no nível do `PGlite.transaction(...)`
+      // interceptado por `espiarPGlite`, ANTES do corpo que
+      // `withTenantTransaction` executa — e é ESSE corpo que primeiro chama
+      // `intensicare_escopo.instalar(...)` e só DEPOIS invoca o callback de
+      // `projectBedGrid` (onde `args.registroDeRegras` é lido). Com
+      // `pg_current_xact_id()` já tendo forçado atribuição de xid, a
+      // instalação do escopo reprova ANTES de o callback de `projectBedGrid`
+      // rodar — `registroDeRegras`, presente ou ausente, nunca chega a ser
+      // lido neste caminho. Por isso este teste já provava exatamente o que
+      // o nome promete, mesmo antes do parâmetro abaixo existir; o parâmetro
+      // é exigido pelo TIPO da função, não pelo comportamento observado aqui.
       await expect(
         projectBedGrid(porta, {
           tenantId: TENANT,
           actorId: ATOR,
           correlationId: "SYNTH-CORR-ESCOPO-MUT-ESCRITA",
+          registroDeRegras: new RegistroDeRegras(),
         }),
       ).rejects.toThrowError(/o escopo deve ser a PRIMEIRA escrita da transação/);
 

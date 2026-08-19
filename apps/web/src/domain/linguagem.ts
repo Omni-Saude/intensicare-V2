@@ -311,6 +311,53 @@ export function textoIdadeDecorrida(idadeMs: number): string {
 }
 
 /**
+ * Texto da CADÊNCIA de releitura quando ela sai do regime declarado.
+ *
+ * POR QUE ISTO PRECISA EXISTIR. Espaçamento por falhas repetidas é uma decisão
+ * de engenharia legítima; espaçamento SILENCIOSO não é. Uma tela que passou a
+ * reler a cada 4 minutos e continua com a mesma aparência de uma que relê a
+ * cada 30 segundos é um retrato antigo se apresentando como corrente —
+ * HAZ-0025, e o oposto de SAF-0025 ("the interface MUST never appear
+ * healthy…"). O número exibido é FACTUAL e vem do agendador, não é recalculado
+ * aqui.
+ *
+ * Note o que a frase NÃO diz: nada sobre o dado clínico estar velho, fora de
+ * janela ou insuficiente. Ela fala do CICLO DESTA TELA — a mesma fronteira de
+ * `textoIdadeVisao`.
+ *
+ * VALIDATION REQUIRED (ADR-0029 C2 ABERTA) — redação provisória de engenharia.
+ */
+export function textoCadenciaEspacada(fator: number, esperaMs: number): TextoComTom {
+  return {
+    texto:
+      `Releitura automática ESPAÇADA — ${fator}× o intervalo normal, ` +
+      `agora a cada ${textoIdadeDecorrida(esperaMs)}, após falhas repetidas de leitura. ` +
+      "O conteúdo abaixo pode não refletir o estado atual.",
+    tom: "alerta",
+  };
+}
+
+/**
+ * Texto da ABA OCULTA. O navegador estrangula temporizadores em segundo plano
+ * (e o sistema pode suspender): a releitura espaça sem que o cliente possa
+ * evitar. A tela declara o fato em vez de deixá-lo invisível.
+ *
+ * A frase é deliberadamente sobre o NAVEGADOR, não sobre o paciente nem sobre o
+ * serviço. E não promete: quando a aba volta, uma releitura é disparada de
+ * imediato — o que a frase afirma é o que de fato acontece.
+ *
+ * VALIDATION REQUIRED (ADR-0029 C2 ABERTA) — redação provisória de engenharia.
+ */
+export function textoAbaOculta(): TextoComTom {
+  return {
+    texto:
+      "Aba em segundo plano — o navegador espaça a releitura automática enquanto ela não " +
+      "estiver em primeiro plano. Ao voltar, uma leitura nova é solicitada imediatamente.",
+    tom: "atencao",
+  };
+}
+
+/**
  * Situação de prontidão do serviço (`GET /v1/readyz`). Os identificadores são
  * do BACKEND (`VereditoProntidao` do contrato) — ADR-0021 F1: identificador do
  * backend, texto do frontend. `nao_lida` é o caso em que o frontend não

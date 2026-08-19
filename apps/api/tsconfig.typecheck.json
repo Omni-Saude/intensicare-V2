@@ -1,0 +1,48 @@
+{
+  // Configuração SÓ de verificação de tipos (ACH-O3-2 — `tsconfig.json`
+  // exclui `src/**/*.test.ts` de propósito, o que tornava `pnpm typecheck`
+  // cego aos testes; a consequência já se materializou nesta sessão: tornar
+  // `registroDeRegras` obrigatório quebrou 3 chamadas diretas de teste em
+  // runtime, e `tsc` não acusou nada porque nunca viu o arquivo).
+  //
+  // "DOM" em `lib`: `src/**/*.test.ts` usa `fetch`/`ReadableStream` nativos
+  // do Node (leitura de SSE em teste) — nenhum código de PRODUTO usa DOM
+  // (confirmado por busca; `grep -rn "ReadableStreamReadResult\|fetch("
+  // src/*.ts` exclui `*.test.ts` não acha nada). Resolve 3 dos 9 erros
+  // originais sem tocar nenhum arquivo de teste.
+  //
+  // ADOTADA em `package.json` — `"typecheck"` aponta para este arquivo.
+  // `tsc -p tsconfig.typecheck.json --noEmit` passa com 0 erros.
+  //
+  // HISTÓRICO (ACH-O3-2, 6 achados corrigidos nesta fronteira ampliada):
+  //   src/escopo-primeira-escrita.test.ts(325,337,392,427 — antes do
+  //   conserto): TS2741 "Property 'registroDeRegras' is missing" em quatro
+  //   chamadas diretas a `projectBedGrid`/`getPatientEvaluations`. CORRIGIDO
+  //   passando `registroDeRegras: new RegistroDeRegras()` (registro vazio —
+  //   estes testes verificam ORDEM de escrita/escopo, nunca dispacho de
+  //   regra; mesmo padrão já usado em regras/exposicao.test.ts). Confirmado
+  //   por leitura de `packages/persistencia/src/session.ts` que o 4º sítio
+  //   (dentro de `.rejects.toThrowError(/PRIMEIRA escrita/)`) NÃO estava
+  //   mascarado: a instalação de escopo reprova ANTES do callback que lê
+  //   `registroDeRegras` ser invocado — não há 7º achado aqui. Explica
+  //   também por que só 3 dos 4 sítios quebraram em execução observada
+  //   (este 4º nunca alcançava o código que usaria o parâmetro ausente).
+  //   src/escopo-primeira-escrita.test.ts(301): TS2322 — `dependencia.
+  //   verificar` tipado `Promise<boolean> | boolean` (saude/portas.ts:89,
+  //   DELIBERADO) vs `transacoesDe`'s `() => Promise<T>`. CORRIGIDO
+  //   envolvendo a chamada em `async () => ...`, que normaliza o tipo sem
+  //   mudar comportamento.
+  //   src/seguranca.test.ts(842): TS18048 — `problema.detail.length` sem
+  //   checar `undefined` (`ProblemDetails.detail` é opcional por contrato).
+  //   CORRIGIDO com guarda `if (problema.detail === undefined) throw ...`
+  //   — falha ALTA e NOMEADA se `detail` faltar, nunca `?.` mascarando
+  //   ausência como verde.
+  // "DOM" em `lib` continua necessário (ver abaixo) e não foi alterado.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist"]
+}

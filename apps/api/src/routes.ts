@@ -199,8 +199,34 @@ export function registrarRotasV1(
 
     switch (resultado.kind) {
       case "replayed":
+        // ACH-O3-3: 201 é o código que o `openapi.yaml` declara para o replay
+        // ("`Idempotency-Replayed: false` numa primeira chamada, `true` num
+        // reenvio da mesma chave", sob a resposta "201"). Antes, o código vinha
+        // de `idempotency_records.status_code` — uma coluna em que o papel da
+        // aplicação tem `insert` —, e com ele o atacante escolhia também o
+        // status. O CORPO já vem reconstruído e submetido à autoridade por
+        // `respostaDeReplayPublicavel` (`db.ts`); nada do blob atravessa aqui.
         reply.header(IDEMPOTENCY_REPLAYED_HEADER, "true");
-        return reply.code(resultado.statusCode).send(resultado.body);
+        return reply.code(201).send(resultado.body);
+      case "replay-nao-publicavel":
+        // Há registro durável para esta chave, mas a resposta armazenada não
+        // reconstrói na forma do contrato. O cliente não errou — o servidor é
+        // que não consegue honrar o replay (RFC 9110 §15.6). Fail-closed: não
+        // publicamos o blob, nem uma versão "lavada" dele, nem inventamos uma
+        // avaliação no lugar. Nenhum detalhe interno viaja (SEC-0015).
+        //
+        // `telemetria.ingestRejeitado()` NÃO é emitido de propósito: esse
+        // gravador é perda de INGESTÃO (`recordPipelineLoss` de
+        // `source_to_accepted`), e aqui nada se perdeu — a ingestão original
+        // está gravada. O evento fica na auditoria append-only, que `db.ts`
+        // grava nesta mesma transação com desfecho `recusada`.
+        return enviarProblema(
+          reply,
+          500,
+          "Resposta idempotente não republicável",
+          "Existe um registro para esta Idempotency-Key, mas a resposta original armazenada não passou na verificação exigida para ser republicada, e nenhuma resposta foi entregue em seu lugar. Nenhum efeito novo foi executado nesta requisição; o efeito da ingestão original permanece registrado. Consulte a projeção autoritativa para o estado corrente.",
+          instanciaSegura(request),
+        );
       case "key-conflict":
         telemetria.ingestRejeitado();
         return enviarProblema(
@@ -257,6 +283,7 @@ export function registrarRotasV1(
       tenantId,
       actorId: atorId,
       correlationId: String(request.id),
+      registroDeRegras: opcoes.registroDeRegras,
     });
     // Latência de `generated_to_visible` emitida pelo hook HTTP — ver nota
     // sobre emissão única na rota de ingestão.
@@ -275,6 +302,7 @@ export function registrarRotasV1(
       actorId: atorId,
       pacienteRef,
       correlationId: String(request.id),
+      registroDeRegras: opcoes.registroDeRegras,
     });
     if (avaliacoes === null) {
       return enviarProblema(

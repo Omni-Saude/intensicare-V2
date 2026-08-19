@@ -87,7 +87,21 @@ describe("tipos do contrato SPR-G7-2 (checagem de forma em tempo de compilação
     expect(quarentena.motivo.length).toBeGreaterThan(0);
   });
 
-  it("ResultadoAvaliacao nunca produz escore/banda quando status != 'valido'", () => {
+  /**
+   * O nome anterior ("ResultadoAvaliacao nunca produz escore/banda quando
+   * status != 'valido'") prometia uma garantia de COMPORTAMENTO do motor
+   * clínico. `packages/contratos` não tem nenhuma lógica de regra para
+   * exercitar — o corpo abaixo apenas constrói um literal escolhido pelo
+   * PRÓPRIO teste, com `escore: null, banda: null` explícitos, e confere que
+   * esses dois campos — recém-escritos duas linhas acima — são `null`. Isso
+   * não pode falhar para nenhum valor de `status`, correto ou errado: é
+   * checagem de FORMA (o tipo TS permite `null` aqui; se o campo virasse
+   * obrigatório e não-nulo, este arquivo não compilaria), não de motor. A
+   * garantia real, contra o kernel NEWS2 de verdade, está em
+   * `apps/api/src/avaliacao.test.ts` ("SpO2 ausente → indisponivel com razão
+   * explícita; escore/banda null; JAMAIS parcial").
+   */
+  it("o TIPO ResultadoAvaliacao permite escore/banda nulos quando status != 'valido' (forma — o motor real é avaliacao.test.ts)", () => {
     const avaliacaoIndisponivel: ResultadoAvaliacao = {
       status: "indisponivel",
       parametrosAusentes: ["FC", "PAS", "SpO2"],

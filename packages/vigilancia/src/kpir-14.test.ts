@@ -128,7 +128,23 @@ describe("KPIR-14 — as duas sub-decisões abertas NUNCA são escolhidas em sil
       episodios: coorteSintetica(),
       variantes: VARIANTES_MINIMAS,
     });
-    const [contaComoViva, excluida, categoriaPropria] = [0, 1, 2].map((i) => abrir(resultado, i));
+    const abertos = [0, 1, 2].map((i) => abrir(resultado, i));
+    const contaComoViva = abertos[0];
+    const excluida = abertos[1];
+    const categoriaPropria = abertos[2];
+    // Guarda que FALHA ALTO e NOMEADA (ACH-O3-2) — não `!` nem cast: sob
+    // `noUncheckedIndexedAccess`, o compilador não prova estaticamente que
+    // `.map()` sobre um array de 3 elementos produz exatamente 3 posições ao
+    // desestruturar; esta checagem prova em runtime (e falha com mensagem,
+    // não com `TypeError` de acesso a `undefined`), e o `throw` explícito é
+    // o que permite ao TypeScript estreitar os três para não-`undefined`
+    // depois deste ponto — o mesmo padrão que `abrir()` já usa (linha 82).
+    if (contaComoViva === undefined || excluida === undefined || categoriaPropria === undefined) {
+      throw new Error(
+        "abrir() deveria produzir exatamente 3 variantes (contaComoViva, excluida, categoriaPropria) " +
+          `mas produziu ${String(abertos.length)}`,
+      );
+    }
 
     expect(contaComoViva.altasVivas).toBe(6); // 4 vivos + 2 transferências
     expect(contaComoViva.obitos).toBe(2);

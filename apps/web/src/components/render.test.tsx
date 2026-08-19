@@ -219,6 +219,53 @@ describe("CartaoLeito", () => {
     expect(html).toMatch(/badge-tom--positivo/);
   });
 
+  it("projeção que NÃO publica frescor por insumo não faz o cartão afirmar frescor", () => {
+    /*
+      A projeção da grade é um resumo e devolve `contribuicoes: []` para TODO
+      leito (`mapearEntradaGrade`, `../api/clienteHttp.ts`). Até ACH-O3-12,
+      `calcularFrescorGeral` traduzia essa lista vazia em `"atual"` e o cartão
+      exibia "✓ Dado atual." — tom positivo, glifo de confirmação — sobre zero
+      evidência, em cada leito da UTI, o tempo todo. ADR-0011 P7: o cliente não
+      promove status.
+    */
+    const semContribuicoes: ItemGradeLeito = {
+      ...itemLeitoCompleto,
+      avaliacao: { ...itemLeitoCompleto.avaliacao!, contribuicoes: [] },
+    };
+    const html = renderToStaticMarkup(
+      <CartaoLeito item={semContribuicoes} aoSelecionar={() => {}} />,
+    );
+
+    // Guarda de não-vacuidade: o cartão FOI renderizado com conteúdo clínico.
+    expect(html).toMatch(/NEWS2/);
+    expect(html, "o cartão afirmou frescor a partir de uma lista vazia").not.toMatch(/Dado atual/);
+  });
+
+  it("insumo declarado INVÁLIDO pelo backend nunca vira 'Dado atual' no cartão", () => {
+    const comInvalido: ItemGradeLeito = {
+      ...itemLeitoCompleto,
+      avaliacao: {
+        ...itemLeitoCompleto.avaliacao!,
+        contribuicoes: [
+          {
+            parametro: "temperatura",
+            rotulo: "Temperatura",
+            valorObservado: 37,
+            pontos: 0,
+            frescor: "invalido",
+            horarioFonte: "2026-08-16T12:00:00Z",
+            explicacao: "SYNTH — insumo em quarentena declarada pelo produtor.",
+          },
+        ],
+      },
+    };
+    const html = renderToStaticMarkup(<CartaoLeito item={comInvalido} aoSelecionar={() => {}} />);
+
+    expect(html).toMatch(/NEWS2/);
+    expect(html).not.toMatch(/Dado atual/);
+    expect(html).toMatch(/Dado inválido/);
+  });
+
   it("leito com avaliação não computável (fail-closed) NUNCA mostra número de escore", () => {
     const html = renderToStaticMarkup(
       <CartaoLeito item={itemLeitoNaoAvaliado} aoSelecionar={() => {}} />,

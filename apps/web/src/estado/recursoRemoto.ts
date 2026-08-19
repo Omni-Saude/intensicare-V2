@@ -59,8 +59,10 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { ProblemaLocal, RespostaApi } from "../api/tipos.js";
 import type { EstadoCarregamento } from "../domain/estados.js";
+import { type Cadencia, calcularCadenciaDeRecarga } from "./cadenciaDeRecarga.js";
 import { calcularIdadeVisao, type ResumoIdadeVisao } from "./idadeVisao.js";
 import { RELOGIO_DO_NAVEGADOR, type Relogio } from "./relogio.js";
+import { useVisibilidadeDaAba, type VisibilidadeAba } from "./visibilidade.js";
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -389,11 +391,23 @@ export interface OpcoesRecursoRemoto<T> {
   readonly intervaloRecargaMs?: number | null;
   /** Porta de tempo (`./relogio.ts`) — injetável para teste determinístico. */
   readonly relogio?: Relogio;
+  /**
+   * Fonte de aleatoriedade do JITTER da recarga periódica (`./cadenciaDeRecarga.ts`).
+   * Injetável para que a cadência seja determinística em teste — sem isto, a
+   * espera dependeria de `Math.random` e nenhum teste poderia afirmar o valor
+   * agendado.
+   */
+  readonly sortear?: () => number;
 }
 
 export interface RecursoRemoto<T> extends EstadoRecurso<T> {
   /** Dispara uma nova tentativa explícita (ato do usuário). */
   readonly recarregar: () => void;
+  /**
+   * Releitura de ROTINA (push, retorno da aba). Não altera nada visível ao
+   * iniciar — invariante I6. Ver a nota na implementação.
+   */
+  readonly reconciliar: () => void;
   /** `true` quando há dado em tela que NÃO reflete a última tentativa. */
   readonly exibindoDadoDesatualizado: boolean;
   /**
@@ -404,6 +418,20 @@ export interface RecursoRemoto<T> extends EstadoRecurso<T> {
   readonly idadeVisao: ResumoIdadeVisao | null;
   /** `true` enquanto há uma busca em voo (inclusive a periódica). */
   readonly buscaEmCurso: boolean;
+  /**
+   * Cadência EFETIVAMENTE agendada para a próxima releitura. `null` enquanto
+   * nenhuma foi agendada (ou com a recarga periódica desligada).
+   *
+   * Ela é devolvida à tela porque uma releitura espaçada TEM de aparecer: uma
+   * tela que relê a cada 4 minutos por backoff e não diz isso é um retrato
+   * antigo com aparência de corrente (HAZ-0025/SAF-0025).
+   */
+  readonly cadencia: Cadencia | null;
+  /**
+   * Visibilidade da aba. Oculta, o NAVEGADOR estrangula temporizadores — o
+   * ciclo espaça sozinho e a tela precisa poder dizê-lo (`./visibilidade.ts`).
+   */
+  readonly visibilidadeDaAba: VisibilidadeAba;
 }
 
 /**
@@ -431,6 +459,7 @@ export function useRecursoRemoto<T>(opcoes: OpcoesRecursoRemoto<T>): RecursoRemo
     habilitado = true,
     intervaloRecargaMs = null,
     relogio = RELOGIO_DO_NAVEGADOR,
+    sortear = Math.random,
   } = opcoes;
   const agora = opcoes.agora ?? (() => new Date(relogio.agoraMs()).toISOString());
 
@@ -455,6 +484,21 @@ export function useRecursoRemoto<T>(opcoes: OpcoesRecursoRemoto<T>): RecursoRemo
   agoraRef.current = agora;
   const relogioRef = useRef(relogio);
   relogioRef.current = relogio;
+  const sortearRef = useRef(sortear);
+  sortearRef.current = sortear;
+  /**
+   * Falhas CONSECUTIVAS desde a última leitura bem-sucedida — a entrada do
+   * espaçamento progressivo (`./cadenciaDeRecarga.ts`).
+   *
+   * É um ref, e não estado do redutor, por uma razão de correção: quem agenda o
+   * próximo ciclo é o `finally` DENTRO da execução do efeito, e ali o estado do
+   * `useReducer` ainda é o do render corrente — usá-lo agendaria com a contagem
+   * de um ciclo atrás. O ref é atualizado no mesmo ponto em que o despacho
+   * acontece, então o agendamento enxerga o resultado que acabou de ocorrer.
+   */
+  const falhasConsecutivasRef = useRef(0);
+  const [cadencia, setCadencia] = useState<Cadencia | null>(null);
+  const visibilidade = useVisibilidadeDaAba();
   // `true` quando o ciclo que está para começar foi disparado pelo
   // TEMPORIZADOR, e não por `recarregar`. Precisa ser um ref: quem lê é o
   // efeito, e transformá-lo em estado provocaria um render a mais entre o
@@ -506,10 +550,21 @@ export function useRecursoRemoto<T>(opcoes: OpcoesRecursoRemoto<T>): RecursoRemo
       // único tempo esgotado (LAC-L1 desfeito em silêncio, HAZ-0025). Tempo
       // esgotado é um RESULTADO do ciclo, não o fim do ciclo de vida da tela.
       if (efeitoEncerrado) return;
+      // A espera deixou de ser o intervalo cru. Ela ganha JITTER (para que N
+      // abas do mesmo plantão não batam no servidor no mesmo instante) e
+      // ESPAÇAMENTO progressivo após falhas seguidas. A cadência resultante é
+      // publicada no estado porque a tela é obrigada a declará-la — espaçar em
+      // silêncio é HAZ-0025 por outra porta.
+      const proxima = calcularCadenciaDeRecarga({
+        intervaloBaseMs: intervaloRecargaMs,
+        falhasConsecutivas: falhasConsecutivasRef.current,
+        sorteio: sortearRef.current(),
+      });
+      setCadencia(proxima);
       idRecarga = relogioRef.current.agendar(() => {
         proximaEhRotinaRef.current = true;
         setPedidoDeBusca((anterior) => anterior + 1);
-      }, intervaloRecargaMs);
+      }, proxima.esperaMs);
     }
 
     // O tempo limite passa pela MESMA porta de tempo do agendamento (antes era
@@ -533,17 +588,27 @@ export function useRecursoRemoto<T>(opcoes: OpcoesRecursoRemoto<T>): RecursoRemo
         // Um cliente que engula o aborto e resolva mesmo assim não pode
         // deixar a tela presa — o tempo esgotado vira estado de tela.
         if (abortoPorTempoEsgotado(controlador.signal)) {
+          falhasConsecutivasRef.current += 1;
           despachar({ tipo: "tempoEsgotado", problema: PROBLEMA_TEMPO_ESGOTADO });
           return;
         }
         if (controlador.signal.aborted) return; // I5: cancelamento não transiciona.
+        // Contagem de falhas CONSECUTIVAS: uma resposta mapeada como falha
+        // (`erro`, `indisponivel`, `proibido`, `tempo_esgotado`) conta tanto
+        // quanto uma rejeição — do ponto de vista da pressão sobre o servidor,
+        // as duas são "não obtive dado". Sucesso ZERA, e o regime volta na hora.
+        falhasConsecutivasRef.current = ehEstadoDeFalha(resposta.estadoCarregamento)
+          ? falhasConsecutivasRef.current + 1
+          : 0;
         despachar({ tipo: "resolvido", resposta, agora: agoraRef.current() });
       } catch (erro) {
         if (abortoPorTempoEsgotado(controlador.signal)) {
+          falhasConsecutivasRef.current += 1;
           despachar({ tipo: "tempoEsgotado", problema: PROBLEMA_TEMPO_ESGOTADO });
           return;
         }
         if (controlador.signal.aborted) return; // I5.
+        falhasConsecutivasRef.current += 1;
         despachar({ tipo: "rejeitado", problema: problemaDeRejeicao(erro) });
       } finally {
         relogioRef.current.cancelar(temporizador);
@@ -616,6 +681,55 @@ export function useRecursoRemoto<T>(opcoes: OpcoesRecursoRemoto<T>): RecursoRemo
     setPedidoDeBusca((anterior) => anterior + 1);
   }, []);
 
+  /**
+   * Releitura de ROTINA, disparada por outra coisa que não o usuário — hoje o
+   * sinal do push (`../eventos/`) e o retorno da aba ao primeiro plano.
+   *
+   * POR QUE ELA PRECISA SER DISTINTA DE `recarregar`, e o defeito que a fez
+   * existir. `recarregar` é o botão "Atualizar": ele leva a tela a `retentando`,
+   * e `EstadoTela` deixa de renderizar os filhos nesse estado — a grade some e
+   * dá lugar a "Tentando novamente…". Isso é correto para um ato do usuário, que
+   * acabou de pedir e espera resposta.
+   *
+   * Para um sinal de push é ERRADO, e mediu-se o quanto: com o transporte fiado,
+   * cada evento do servidor fazia a grade inteira desmontar e remontar. Um teste
+   * de navegador chegou a não conseguir clicar em "Tentar novamente" porque o
+   * botão era destacado do DOM entre a tentativa e o clique. Numa tela clínica o
+   * efeito é pior que instabilidade: a grade pisca a cada evento, e o olho
+   * aprende a ignorar exatamente a região onde a mudança real apareceria.
+   *
+   * Marcada como rotina, vale a invariante I6: nada visível muda ao INICIAR;
+   * só o RESULTADO da leitura muda a tela.
+   */
+  const reconciliar = useCallback(() => {
+    proximaEhRotinaRef.current = true;
+    setPedidoDeBusca((anterior) => anterior + 1);
+  }, []);
+
+  /**
+   * RETORNO À ABA ⇒ RELEITURA IMEDIATA.
+   *
+   * Enquanto a aba está oculta o navegador estrangula temporizadores (e o
+   * sistema pode suspender por completo): o ciclo espaça sozinho, sem que nada
+   * na tela mude. Quem volta encontraria um retrato de vários minutos atrás com
+   * aparência de corrente — HAZ-0025 por uma porta que a cadência declarada não
+   * fecha sozinha. Reler no instante do retorno é a recuperação, e vale
+   * igualmente para a volta de suspensão do sistema.
+   *
+   * É marcada como ROTINA de propósito: voltar para a aba não é uma nova
+   * tentativa do usuário, e não pode fazer a grade piscar "Tentando novamente…"
+   * (invariante I6).
+   */
+  const retornosAoVisivel = visibilidade.retornosAoVisivel;
+  const retornosVistosRef = useRef(retornosAoVisivel);
+  useEffect(() => {
+    if (retornosAoVisivel === retornosVistosRef.current) return;
+    retornosVistosRef.current = retornosAoVisivel;
+    if (!habilitado) return;
+    proximaEhRotinaRef.current = true;
+    setPedidoDeBusca((anterior) => anterior + 1);
+  }, [retornosAoVisivel, habilitado]);
+
   // A idade é DERIVADA no render, a partir do relógio injetado — nunca guardada
   // em estado. Guardá-la exigiria mantê-la sincronizada e criaria a
   // possibilidade de um número congelado na tela, que é o defeito em questão.
@@ -628,9 +742,12 @@ export function useRecursoRemoto<T>(opcoes: OpcoesRecursoRemoto<T>): RecursoRemo
   return {
     ...estado,
     recarregar,
+    reconciliar,
     exibindoDadoDesatualizado:
       estado.dados !== null && estado.frescorVisao === "desatualizado_apos_falha",
     idadeVisao,
     buscaEmCurso,
+    cadencia,
+    visibilidadeDaAba: visibilidade.estado,
   };
 }

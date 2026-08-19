@@ -30,6 +30,7 @@ import type { ItemGradeLeito } from "../domain/clinico.js";
 // `?raw` do Vite: lê a folha de estilo como texto sem depender de API do Node
 // (o tsconfig deste app declara apenas `vite/client`, não `node`).
 import cssFonte from "../estilo.css?raw";
+import { criarHistoricoDeTeste } from "../roteamento/historicoDeTeste.js";
 import {
   CRITERIOS_WCAG_22_A_E_AA,
   criteriosAeAANaoEnumerados,
@@ -51,7 +52,19 @@ import {
  * proteger: remover o rótulo (o ato de dispensar) esvaziava a lista e o teste
  * passava sem asserção nenhuma.
  */
-const SC_COM_VALIDACAO_MANUAL_OBRIGATORIA = ["2.1.1", "2.4.3", "2.4.7", "2.4.11", "4.1.3"] as const;
+const SC_COM_VALIDACAO_MANUAL_OBRIGATORIA = [
+  "2.1.1",
+  // 2.4.1 e 2.4.2 entraram em LAC-L4 e entraram JÁ com pendência manual: o
+  // atalho existe e o título muda (automação afirma isso), mas "o bloco pulado
+  // é o que atrapalha" e "o título descreve tópico e propósito" são juízo de
+  // quem usa. Incluir é reconhecer pendência — o que este teste permite.
+  "2.4.1",
+  "2.4.2",
+  "2.4.3",
+  "2.4.7",
+  "2.4.11",
+  "4.1.3",
+] as const;
 
 /**
  * Regras desligadas em jsdom, com a razão. Toda entrada aqui precisa ter
@@ -133,27 +146,51 @@ function clienteQueFalha(): ClienteApiIntensiCare {
 
 const sessaoAtiva = () => criarSessaoControlada("ativa", "Bearer SYNTH-TESTE");
 
+/**
+ * Toda montagem de `App` desta suíte injeta um histórico PRÓPRIO (LAC-L4).
+ *
+ * POR QUE ISSO PASSOU A SER NECESSÁRIO. Com navegação por URL, clicar num
+ * cartão chama `history.pushState` — e o jsdom tem UM único `location` por
+ * arquivo de teste. O primeiro caso que navegasse para o detalhe deixava a URL
+ * global em `/leitos/SYNTH-LEITO-01`, e todos os casos seguintes montavam a
+ * TELA DE DETALHE achando que montavam a grade. OBSERVADO: seis casos desta
+ * suíte passaram a falhar por isso, nenhum deles por defeito de acessibilidade.
+ * Um histórico por montagem devolve o isolamento entre casos; a History API de
+ * verdade é exercitada em `e2e/navegacao.spec.ts`, em navegador real.
+ */
+function montarApp(cliente: ClienteApiIntensiCare, caminho = "/") {
+  return render(
+    <App
+      cliente={cliente}
+      sessao={sessaoAtiva()}
+      historico={criarHistoricoDeTeste(caminho)}
+      leitorProntidao={null}
+      portasDeEventos={null}
+    />,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // axe nas telas principais
 // ---------------------------------------------------------------------------
 
 describe("axe-core — telas principais sem violação", () => {
   it("grade de leitos carregada", async () => {
-    const { container } = render(<App cliente={clienteQueResolve()} sessao={sessaoAtiva()} />);
+    const { container } = montarApp(clienteQueResolve());
     await screen.findAllByText(/SYNTH-LEITO-01/);
     await verificarAxe(container);
   });
 
   it("detalhe do paciente (com avaliação não computável)", async () => {
     const usuario = userEvent.setup();
-    const { container } = render(<App cliente={clienteQueResolve()} sessao={sessaoAtiva()} />);
+    const { container } = montarApp(clienteQueResolve());
     await usuario.click(await screen.findByRole("button", { name: /SYNTH-LEITO-01/ }));
     await screen.findByRole("heading", { name: "SYNTH-LEITO-01" });
     await verificarAxe(container);
   });
 
   it("estado de ERRO da grade (o caminho do ACH-07)", async () => {
-    const { container } = render(<App cliente={clienteQueFalha()} sessao={sessaoAtiva()} />);
+    const { container } = montarApp(clienteQueFalha());
     await waitFor(() => {
       expect(document.querySelector('[data-estado="erro"]')).not.toBeNull();
     });
@@ -162,7 +199,13 @@ describe("axe-core — telas principais sem violação", () => {
 
   it("tela de sessão expirada", async () => {
     const { container } = render(
-      <App cliente={clienteQueResolve()} sessao={criarSessaoControlada("expirada", null)} />,
+      <App
+        cliente={clienteQueResolve()}
+        sessao={criarSessaoControlada("expirada", null)}
+        historico={criarHistoricoDeTeste("/")}
+        leitorProntidao={null}
+        portasDeEventos={null}
+      />,
     );
     await screen.findByText(/Sessão expirada/);
     await verificarAxe(container);
@@ -170,6 +213,12 @@ describe("axe-core — telas principais sem violação", () => {
 
   it("galeria com TODOS os estados obrigatórios do §11", async () => {
     const { container } = render(<GaleriaEstados />);
+    await verificarAxe(container);
+  });
+
+  it("tela de endereço não reconhecido (LAC-L4)", async () => {
+    const { container } = montarApp(clienteQueResolve(), "/nao-existe");
+    await screen.findByTestId("endereco-nao-reconhecido");
     await verificarAxe(container);
   });
 });
@@ -181,7 +230,7 @@ describe("axe-core — telas principais sem violação", () => {
 describe("teclado — todos os controles alcançáveis, sem armadilha de foco", () => {
   it("a tabulação alcança cada controle interativo da grade e volta ao início", async () => {
     const usuario = userEvent.setup();
-    render(<App cliente={clienteQueResolve()} sessao={sessaoAtiva()} />);
+    montarApp(clienteQueResolve());
     await screen.findAllByText(/SYNTH-LEITO-01/);
 
     const interativos = Array.from(
@@ -205,7 +254,7 @@ describe("teclado — todos os controles alcançáveis, sem armadilha de foco", 
 
   it("o cartão de leito é ativável por teclado (Enter) e navega para o detalhe", async () => {
     const usuario = userEvent.setup();
-    render(<App cliente={clienteQueResolve()} sessao={sessaoAtiva()} />);
+    montarApp(clienteQueResolve());
     const cartao = await screen.findByRole("button", { name: /SYNTH-LEITO-01/ });
 
     cartao.focus();
@@ -217,7 +266,7 @@ describe("teclado — todos os controles alcançáveis, sem armadilha de foco", 
 
   it("o botão de recuperação do estado de erro é alcançável por teclado", async () => {
     const usuario = userEvent.setup();
-    render(<App cliente={clienteQueFalha()} sessao={sessaoAtiva()} />);
+    montarApp(clienteQueFalha());
     const botao = await screen.findByRole("button", { name: /Tentar novamente/i });
     botao.focus();
     expect(document.activeElement).toBe(botao);
@@ -233,14 +282,14 @@ describe("teclado — todos os controles alcançáveis, sem armadilha de foco", 
 
 describe("live regions — mudança de alerta é anunciada, e de forma coalescida", () => {
   it("a região de alertas existe ANTES da mensagem (senão o anúncio não dispara)", () => {
-    render(<App cliente={clienteQueResolve()} sessao={sessaoAtiva()} />);
+    montarApp(clienteQueResolve());
     const regiao = document.querySelector('[aria-atomic="true"][aria-live="assertive"]');
     expect(regiao).not.toBeNull();
     expect(regiao?.textContent).toBe("");
   });
 
   it("uma leitura com alertas pendentes produz UMA mensagem com contagem, não uma por alerta", async () => {
-    render(<App cliente={clienteQueResolve()} sessao={sessaoAtiva()} />);
+    montarApp(clienteQueResolve());
     const regiao = document.querySelector('[aria-atomic="true"][aria-live="assertive"]');
     await waitFor(() => {
       expect(regiao?.textContent ?? "").toMatch(/1 alerta pendente na grade de leitos\./);
@@ -248,7 +297,7 @@ describe("live regions — mudança de alerta é anunciada, e de forma coalescid
   });
 
   it("o estado de falha é anunciado assertivamente e o de rotina, educadamente", async () => {
-    render(<App cliente={clienteQueFalha()} sessao={sessaoAtiva()} />);
+    montarApp(clienteQueFalha());
     await waitFor(() => {
       const bloco = document.querySelector('[data-contexto="grade de leitos"]');
       expect(bloco?.getAttribute("aria-live")).toBe("assertive");
@@ -286,6 +335,21 @@ describe("folha de estilo — foco visível e prefers-reduced-motion", () => {
 
   it("respeita prefers-reduced-motion", () => {
     expect(css).toMatch(/@media\s*\(prefers-reduced-motion/);
+  });
+
+  it("o atalho de pular blocos é focável e SAI do esconderijo ao receber foco (2.4.1)", () => {
+    // Um atalho invisível quando focado é armadilha, não atalho. E ele NÃO pode
+    // usar `.sr-only`: aquela técnica mantém a caixa em 1×1 px mesmo com foco.
+    expect(css).toMatch(/\.link-pular\s*\{/);
+    expect(css).toMatch(/\.link-pular:focus\s*\{[^}]*left:\s*0/);
+    // `display:none`/`visibility:hidden` removeriam o elemento da ordem de
+    // tabulação — que é exatamente o que o atalho precisa ter.
+    const blocoAtalho = /\.link-pular\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(blocoAtalho.length).toBeGreaterThan(0);
+    expect(blocoAtalho).not.toMatch(/display:\s*none/);
+    expect(blocoAtalho).not.toMatch(/visibility:\s*hidden/);
+    // Alvo de ao menos 24×24 CSS px (2.5.8) mesmo sendo um link de atalho.
+    expect(blocoAtalho).toMatch(/min-height:\s*44px/);
   });
 
   it("a existência da regra CSS NÃO é declarada como prova de foco perceptível", () => {
@@ -433,7 +497,7 @@ describe("matriz de acessibilidade — honestidade de estado", () => {
   });
 
   /**
-   * O RECORTE precisa aparecer na própria declaração. Uma matriz de 15
+   * O RECORTE precisa aparecer na própria declaração. Uma matriz de 17
    * critérios sob o rótulo "WCAG 2.2 AA" lê como se cobrisse o padrão, que tem
    * 55 no nível A+AA — e um recorte não declarado é a forma silenciosa de
    * alegar conformidade que ninguém verificou (encargo §4.6).
@@ -444,9 +508,11 @@ describe("matriz de acessibilidade — honestidade de estado", () => {
     expect(declaracao).toContain(String(MATRIZ_ACESSIBILIDADE.length));
     expect(declaracao).toContain(String(TOTAL_CRITERIOS_WCAG_22_AA));
     expect(declaracao).toMatch(/recorte declarado/i);
-    // A aritmética do recorte é DERIVADA e verificada aqui: 55 − 14 = 41
-    // (a matriz tem 15 entradas, mas uma delas é AAA — ver o caso seguinte).
-    expect(criteriosAeAANaoEnumerados()).toHaveLength(41);
+    // A aritmética do recorte é DERIVADA e verificada aqui: 55 − 16 = 39
+    // (a matriz tem 17 entradas, mas uma delas é AAA — ver o caso seguinte).
+    // Era 41 antes de LAC-L4 fechar 2.4.1 e 2.4.2; o número muda porque a
+    // COBERTURA mudou, e este teste existe para que ele não mude sozinho.
+    expect(criteriosAeAANaoEnumerados()).toHaveLength(39);
     expect(declaracao).toContain(String(criteriosAeAANaoEnumerados().length));
   });
 
@@ -472,36 +538,61 @@ describe("matriz de acessibilidade — honestidade de estado", () => {
   });
 
   /**
-   * ESTE TESTE PROVA AUSÊNCIA, NÃO EXECUÇÃO — e o nome anterior ("guarda de
-   * não-vacuidade") mentia sobre isso (revisão adversarial do PR #8, P2). Os
-   * três critérios (2.4.1, 2.4.2, 2.2.1) NÃO estão na matriz: `find()` devolve
-   * `undefined` e `undefined?.execucao !== "executado"` é verdadeiro por
-   * vacuidade, independentemente de qualquer coisa. Ele continua valendo como
-   * ESTOPIM DE REGRESSÃO FUTURA (se alguém os acrescentar como "executado" sem
-   * fechar a lacuna de navegação, quebra), mas o estado de hoje passa a ser
-   * afirmado às claras, com `toBeUndefined()` primeiro.
+   * ESTE TESTE PROVA AUSÊNCIA, NÃO EXECUÇÃO. Ele nasceu cobrindo três critérios
+   * (2.4.1, 2.4.2, 2.2.1), todos ausentes da matriz por causa da lacuna de
+   * roteamento — e o comentário anterior advertia que `undefined?.execucao !==
+   * "executado"` é verdadeiro por vacuidade.
+   *
+   * LAC-L4 FECHOU DOIS DELES, e a ordem importa: o comportamento passou a
+   * existir (`components/LinkPular.tsx`, `roteamento/tituloDocumento.ts`) e a
+   * ser exercitado (`roteamento/navegacao.test.tsx`, `e2e/navegacao.spec.ts`)
+   * ANTES de o rótulo mudar. 2.4.1 e 2.4.2 saíram desta lista e entraram na
+   * matriz; o teste que os protege agora é o de coerência com a lista fixa de
+   * validação manual, mais os casos de comportamento.
+   *
+   * 2.2.1 CONTINUA AQUI e continua sozinho. Ele depende de sessão real
+   * (ADR-0015, `not-started`): o provedor de hoje é sintético e não expira por
+   * tempo, então não existe temporização a ajustar. Marcá-lo executado seria
+   * alegar cobertura sobre componente inexistente.
    */
-  it("os critérios de navegação com lacuna conhecida seguem AUSENTES da matriz", () => {
-    for (const sc of ["2.4.1", "2.4.2", "2.2.1"]) {
+  it("2.2.1 (Timing Adjustable) segue AUSENTE da matriz — depende de sessão real", () => {
+    const sc = "2.2.1";
+    const criterio = MATRIZ_ACESSIBILIDADE.find((c) => c.sc === sc);
+
+    expect(
+      criterio,
+      `${sc} entrou na matriz: ele depende de sessão real (ADR-0015, not-started)`,
+    ).toBeUndefined();
+
+    // Pertence ao padrão (logo, a ausência é uma LACUNA, não um número
+    // inventado) e está entre os critérios A+AA fora do recorte.
+    expect(CRITERIOS_WCAG_22_A_E_AA.map((c) => c.sc)).toContain(sc);
+    expect(criteriosAeAANaoEnumerados()).toContain(sc);
+
+    // Estopim de regressão: se entrar, não pode entrar como "executado".
+    expect(
+      criterio?.execucao,
+      `${sc} apareceu na matriz como "executado" sem que exista sessão real para expirar`,
+    ).not.toBe("executado");
+  });
+
+  /**
+   * O CONTRAPESO do caso acima: 2.4.1 e 2.4.2 só podem estar na matriz como
+   * "executado" enquanto o COMPORTAMENTO existir. Este teste amarra o rótulo ao
+   * artefato — se `LinkPular` ou o título dinâmico sumirem, os casos de
+   * comportamento deste arquivo quebram primeiro, e aqui fica registrado por
+   * que a entrada existe.
+   */
+  it("2.4.1 e 2.4.2 entraram na matriz COM pendência manual declarada", () => {
+    for (const sc of ["2.4.1", "2.4.2"]) {
       const criterio = MATRIZ_ACESSIBILIDADE.find((c) => c.sc === sc);
-
-      // O fato de HOJE, dito explicitamente: ausente. Se um dia entrar na
-      // matriz, esta linha falha e a asserção seguinte deixa de ser vácua.
+      expect(criterio, `${sc} ausente da matriz`).toBeDefined();
+      expect(criterio?.execucao).toBe("executado");
       expect(
-        criterio,
-        `${sc} entrou na matriz: reveja este teste — ele foi escrito provando AUSÊNCIA`,
-      ).toBeUndefined();
-
-      // Pertence ao padrão (logo, a ausência é uma LACUNA, não um número
-      // inventado) e está entre os critérios A+AA fora do recorte.
-      expect(CRITERIOS_WCAG_22_A_E_AA.map((c) => c.sc)).toContain(sc);
-      expect(criteriosAeAANaoEnumerados()).toContain(sc);
-
-      // Estopim de regressão: se entrar, não pode entrar como "executado".
-      expect(
-        criterio?.execucao,
-        `${sc} apareceu na matriz como "executado" sem que a lacuna de navegação tenha sido fechada`,
-      ).not.toBe("executado");
+        criterio?.cobertura,
+        `${sc} foi declarado encerrado por automação — automação não encerra usabilidade`,
+      ).toContain("manual_obrigatorio");
+      expect(criterio?.nota).toMatch(/NÃO prova|não prova/);
     }
   });
 });

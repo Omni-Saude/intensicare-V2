@@ -14,7 +14,12 @@
  */
 
 import { setTimeout as dormir } from "node:timers/promises";
-import type { EventoFluxo, ProblemDetails } from "@intensicare/contratos";
+import {
+  CAMINHO_FLUXO_EVENTOS,
+  CAMINHO_TICKET_EVENTOS,
+  type EventoFluxo,
+  type ProblemDetails,
+} from "@intensicare/contratos";
 import Fastify, { type FastifyInstance } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import { criarChaveEscopada, RECURSO_CANAL_EVENTOS } from "./chave-escopada.js";
@@ -1112,4 +1117,93 @@ describe("ticket efêmero e recusa de credencial em URL/log", () => {
     const resposta = await fetch(`${c.base}${CAMINHO_STREAM}`);
     expect(resposta.status).toBe(401);
   }, 30_000);
+});
+
+// ---------------------------------------------------------------------------
+// O que o servidor ANUNCIA no fio
+// ---------------------------------------------------------------------------
+
+describe("intervalo de pulsação e política de reconexão anunciados (ADR-0011 P5/P6)", () => {
+  /**
+   * LACUNA MEDIDA no consumo de push do navegador (LAC-L1, segunda metade):
+   * o `asyncapi.yaml` afirmava "a AUSÊNCIA de pulsação dentro do intervalo
+   * anunciado é o sinal de que a conexão morreu", e NENHUM campo carregava
+   * esse intervalo — ele só existia em `LimitesConexao`, do lado do servidor.
+   * Enquanto foi assim, entre a abertura e a PRIMEIRA pulsação o cliente não
+   * tinha referência para armar vigia algum, e uma conexão meio-aberta nessa
+   * janela ficava indistinguível de uma saudável: HAZ-0025 / SAF-0025.
+   *
+   * Um campo declarado no schema e não POPULADO não fecharia lacuna nenhuma;
+   * por isso estes testes afirmam o VALOR no quadro que o servidor emitiu.
+   */
+  it("o PRIMEIRO quadro do fio já anuncia intervalo e política — antes de qualquer pulsação", async () => {
+    const c = await cenario();
+    const { leitor } = await c.abrir();
+
+    const primeiro = await leitor.esperarQuadro((q) => q.evento === "estado-conexao");
+    const corpo = JSON.parse(primeiro.dados!) as {
+      estado: string;
+      intervaloPulsacaoMs?: number;
+      reconexao?: { esperaMinimaMs: number; esperaMaximaMs: number; jitter: number };
+    };
+
+    expect(corpo.estado).toBe("replaying");
+    expect(corpo.intervaloPulsacaoMs).toBe(LIMITES_DE_TESTE.intervaloPulsacaoMs);
+    expect(corpo.reconexao).toEqual(RECONEXAO);
+
+    // Não-vacuidade: nenhuma pulsação chegou ainda, então o anúncio veio mesmo
+    // do quadro de abertura e não de um heartbeat que já tivesse passado.
+    expect(leitor.quadros.filter((q) => q.evento === "pulsacao")).toHaveLength(0);
+  }, 30_000);
+
+  it("a pulsação também carrega o intervalo, para o cliente reancorar o vigia", async () => {
+    const c = await cenario();
+    const { leitor } = await c.abrir();
+
+    const pulso = await leitor.esperarQuadro((q) => q.evento === "pulsacao");
+    const corpo = JSON.parse(pulso.dados!) as { intervaloPulsacaoMs?: number };
+    expect(corpo.intervaloPulsacaoMs).toBe(LIMITES_DE_TESTE.intervaloPulsacaoMs);
+  }, 30_000);
+
+  it("o valor anunciado é o DO SERVIDOR — muda a configuração, muda o fio", async () => {
+    // A prova de que o número não é constante de contrato nem literal no
+    // produtor: outro servidor, outro anúncio.
+    const outroIntervalo = LIMITES_DE_TESTE.intervaloPulsacaoMs * 3;
+    const c = await cenario({ limites: { intervaloPulsacaoMs: outroIntervalo } });
+    const { leitor } = await c.abrir();
+
+    const primeiro = await leitor.esperarQuadro((q) => q.evento === "estado-conexao");
+    const corpo = JSON.parse(primeiro.dados!) as { intervaloPulsacaoMs?: number };
+    expect(corpo.intervaloPulsacaoMs).toBe(outroIntervalo);
+    expect(corpo.intervaloPulsacaoMs).not.toBe(LIMITES_DE_TESTE.intervaloPulsacaoMs);
+  }, 30_000);
+
+  it("o anúncio acompanha a assinatura até o encerramento instruído", async () => {
+    // O quadro `estado-conexao: offline` que precede o fechamento também
+    // anuncia — um cliente que só viu o fim ainda sabe com que cadência
+    // reconectar e o que esperar da próxima conexão.
+    const c = await cenario();
+    const { leitor } = await c.abrir();
+    await leitor.esperarQuadro((q) => q.evento === "estado-conexao" && q.dados!.includes("online"));
+
+    await c.controleDoGateway.encerrarTodas();
+    await leitor.esperarQuadro((q) => q.evento === "instrucao-reconciliacao");
+
+    const ultimoEstado = leitor.quadros.filter((q) => q.evento === "estado-conexao").at(-1);
+    const corpo = JSON.parse(ultimoEstado!.dados!) as {
+      estado: string;
+      intervaloPulsacaoMs?: number;
+      reconexao?: unknown;
+    };
+    expect(corpo.estado).toBe("offline");
+    expect(corpo.intervaloPulsacaoMs).toBe(LIMITES_DE_TESTE.intervaloPulsacaoMs);
+    expect(corpo.reconexao).toEqual(RECONEXAO);
+  }, 30_000);
+
+  it("as rotas do gateway são as PUBLICADAS pelo contrato, não constantes locais", async () => {
+    // A fronteira de módulo impede `apps/web` de importar deste arquivo; se a
+    // rota for declarada aqui, o navegador é obrigado a redigitá-la.
+    expect(CAMINHO_STREAM).toBe(CAMINHO_FLUXO_EVENTOS);
+    expect(CAMINHO_TICKET).toBe(CAMINHO_TICKET_EVENTOS);
+  });
 });

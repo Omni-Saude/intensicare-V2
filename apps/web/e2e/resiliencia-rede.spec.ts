@@ -86,12 +86,45 @@ test.describe("sessão autenticada", () => {
     //    ser anônima é OBRIGATÓRIO aqui: é justamente quando a sessão falha
     //    que a tela precisa poder declarar a prontidão do serviço (LAC-L2,
     //    SAF-0025). Por isso a asserção abaixo é INVERTIDA para ela.
+    //
+    // TERCEIRA EXCEÇÃO, acrescentada quando o transporte de push foi FIADO na
+    // árvore de UI — e ela foi descoberta por ESTE teste ficar vermelho, não
+    // por alguém lembrar de afrouxá-lo:
+    //
+    //  - `GET /v1/eventos/stream` — aberto por `EventSource`, que NÃO envia
+    //    cabeçalho `Authorization`. É a razão declarada de o gateway aceitar
+    //    ticket efêmero por cookie `HttpOnly` (ADR-0011 §5.3). A alternativa —
+    //    credencial na query string — é o anti-padrão 12 do contrato comum, e o
+    //    gateway a RECUSA com 400. A asserção para ela é INVERTIDA e mais
+    //    forte: não pode haver credencial nem no cabeçalho nem na URL.
+    //
+    // `POST /v1/eventos/ticket` NÃO é exceção: ele é emitido por `fetch` com a
+    // credencial normal e continua sendo cobrado como chamada de dados.
     const ehEmissao = (url: string) => url.includes("/v1/dev/sessao");
     const ehSonda = (url: string) => url.includes("/v1/readyz");
+    const ehFluxoDeEventos = (url: string) => url.includes("/v1/eventos/stream");
 
     const emissoes = requisicoes.filter((r) => ehEmissao(r.url()));
     const sondas = requisicoes.filter((r) => ehSonda(r.url()));
-    const chamadasDeDados = requisicoes.filter((r) => !ehEmissao(r.url()) && !ehSonda(r.url()));
+    const fluxos = requisicoes.filter((r) => ehFluxoDeEventos(r.url()));
+    const chamadasDeDados = requisicoes.filter(
+      (r) => !ehEmissao(r.url()) && !ehSonda(r.url()) && !ehFluxoDeEventos(r.url()),
+    );
+
+    // A abertura do fluxo, quando ocorre, não carrega credencial em lugar
+    // nenhum — nem no cabeçalho (o `EventSource` não o envia) nem na URL.
+    for (const fluxo of fluxos) {
+      const cabecalhos = await fluxo.allHeaders();
+      expect(
+        cabecalhos.authorization,
+        `abertura de fluxo com credencial em cabeçalho: ${fluxo.url()}`,
+      ).toBeUndefined();
+      const parametros = [...new URL(fluxo.url()).searchParams.keys()];
+      expect(
+        parametros.filter((p) => p !== "cursor"),
+        `abertura de fluxo com parâmetro além do cursor: ${fluxo.url()}`,
+      ).toEqual([]);
+    }
 
     expect(emissoes.length).toBeGreaterThan(0);
     for (const emissao of emissoes) {
@@ -190,6 +223,25 @@ test.describe("falha de rede — nunca 'carregando' permanente", () => {
 
   test("recuperação: após corrigir a rede, 'Tentar novamente' traz o dado", async ({ page }) => {
     await pularSeNaoAutenticado(page);
+
+    /*
+      O PUSH É BLOQUEADO NESTE CASO, e a razão é preservar a força da asserção.
+
+      Com o transporte SSE fiado na casca, o servidor sinaliza releitura por
+      conta própria: assim que a rota é consertada, a projeção volta SEM que
+      ninguém clique. O teste então passaria sem nunca exercitar a AÇÃO DE
+      RECUPERAÇÃO do usuário, que é exatamente o que ele existe para provar
+      (modelo de estados §5, `erro`: "ação de recuperação sempre disponível").
+      OBSERVADO: antes deste bloqueio o botão era destacado do DOM entre o
+      `locator` e o clique — o push já havia recuperado a tela.
+
+      Bloquear o handshake faz o push parar de forma explícita
+      (`ticket-recusado`/`sem-politica-de-reconexao`) e deixa o clique como
+      ÚNICO caminho de volta. O comportamento do push tem cobertura própria em
+      `src/eventos/fiacaoNaArvore.test.tsx`.
+    */
+    await page.route("**/v1/eventos/**", (rota) => rota.abort("connectionrefused"));
+
     let deveFalhar = true;
     await page.route(ROTA_GRADE, async (rota) => {
       if (deveFalhar) return rota.abort("connectionrefused");

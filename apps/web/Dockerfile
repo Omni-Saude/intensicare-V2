@@ -137,10 +137,14 @@ USER root
 # solto: mantém o artefato inteiro auditável num único arquivo versionado,
 # sem um `.conf` órfão cuja correspondência com esta imagem ninguém checa.
 #
-# PREMISSA REVERSÍVEL: `try_files ... /index.html` (history fallback de
-# SPA). É o comportamento que uma aplicação React roteada no cliente exige;
-# altera apenas o que hoje seria 404. O dono de `apps/web` confirma ou
-# reverte — ver EM ABERTO no handoff.
+# REQUISITO (LAC-L4), não mais premissa: `try_files ... /index.html`
+# (history fallback de SPA). Era premissa reversível enquanto a navegação
+# era estado de React e nenhuma URL além de `/` existia. Deixou de ser
+# opcional quando a aplicação passou a ter roteamento por URL
+# (`src/roteamento/`): SEM este fallback, todo deep link para
+# `/leitos/<leito>` responde 404 — inclusive o recarregamento de uma tela
+# de detalhe já aberta. Confirmado pelo dono de `apps/web`; a verificação
+# em navegador real está em `e2e/navegacao.spec.ts`.
 RUN set -eux; \
     printf '%s\n' \
       'server {' \

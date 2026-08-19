@@ -35,6 +35,30 @@ export const ASYNCAPI_SPEC_VERSION = "3.0.0" as const;
 export const ASYNCAPI_CONTRACT_VERSION = "0.1.0" as const;
 
 // ---------------------------------------------------------------------------
+// Rotas do canal
+// ---------------------------------------------------------------------------
+
+/**
+ * Rotas do gateway de eventos, PUBLICADAS pelo contrato.
+ *
+ * POR QUE ELAS VIVEM AQUI, e não só em quem as registra. A fronteira de módulo
+ * (`scripts/check_module_boundaries.mjs`, ADR-0002) permite `apps/web ->
+ * SOMENTE contratos`: o frontend não pode importar
+ * `apps/api/src/eventos/stream.ts`, que era onde as rotas estavam declaradas.
+ * Enquanto foi assim, todo consumidor de navegador foi OBRIGADO a redigitar a
+ * rota — e rota redigitada deriva em silêncio, que é a classe de defeito que
+ * este pacote existe para eliminar.
+ *
+ * `packages/contratos/src/asyncapi.test.ts` prova que `CAMINHO_FLUXO_EVENTOS`
+ * é EXATAMENTE o `address` do canal no `asyncapi.yaml` e que os dois caminhos
+ * são rotas declaradas no `openapi.yaml`. Nenhum deles carrega query string:
+ * credencial, tenant e identificador de sujeito não trafegam ali (prompt §10
+ * anti-padrão 12).
+ */
+export const CAMINHO_TICKET_EVENTOS = "/v1/eventos/ticket" as const;
+export const CAMINHO_FLUXO_EVENTOS = "/v1/eventos/stream" as const;
+
+// ---------------------------------------------------------------------------
 // Plano de dados — tipos de evento do fluxo
 // ---------------------------------------------------------------------------
 
@@ -240,6 +264,30 @@ export interface PoliticaReconexao {
   jitter: number;
 }
 
+/**
+ * Intervalo de pulsação anunciado no fio, em milissegundos.
+ *
+ * POR QUE ESTE CAMPO EXISTE (lacuna medida, não melhoria especulativa). Este
+ * contrato afirma que "a AUSÊNCIA de pulsação dentro do intervalo anunciado é
+ * o sinal de que a conexão morreu" — e, até esta versão, NENHUM campo carregava
+ * o intervalo: ele só existia em `LimitesConexao`
+ * (`apps/api/src/eventos/fila.ts`), do lado do servidor. A consequência era de
+ * segurança clínica, não de estética: entre a abertura e a PRIMEIRA pulsação o
+ * cliente não tinha referência alguma para armar vigia, e uma conexão
+ * meio-aberta nessa janela ficava indistinguível de uma saudável (HAZ-0025;
+ * SAF-0025; ADR-0011 P6).
+ *
+ * OPCIONAL de propósito: acrescentar campo opcional é evolução COMPATÍVEL
+ * (`POLITICA_EVOLUCAO_EVENTOS.compativel`); torná-lo obrigatório seria QUEBRA.
+ * Um consumidor que não o receba continua conforme — e continua obrigado a
+ * degradar a tela quando a pulsação faltar, aprendendo a cadência do próprio
+ * fio.
+ *
+ * O NÚMERO NÃO É DECIDIDO POR ESTE CONTRATO. Ele é configuração do servidor e
+ * permanece `VALIDATION REQUIRED` (ADR-0011 §3 D6). Não é SLO, não é alvo de
+ * latência de entrega e não é limiar clínico de frescor (VAL-0023).
+ */
+
 /** Mensagem de pulsação (`event: pulsacao`). Nunca carrega dado clínico. */
 export interface MensagemPulsacao {
   /** Instante do servidor, ISO 8601. */
@@ -250,15 +298,41 @@ export interface MensagemPulsacao {
   cursor: number;
   /** Eventos aguardando escrita nesta conexão (visibilidade de backlog). */
   pendentes: number;
+  /** Cadência de pulsação anunciada pelo servidor — ver nota acima. */
+  intervaloPulsacaoMs?: number;
 }
 
-/** Mensagem de estado de conexão (`event: estado-conexao`). */
+/**
+ * Mensagem de estado de conexão (`event: estado-conexao`).
+ *
+ * É o PRIMEIRO quadro da assinatura (`replaying`, na abertura), e por isso o
+ * lugar certo para os dois anúncios: quando ele chega, o cliente já sabe com
+ * que cadência esperar pulsação e com que política reconectar — antes de
+ * qualquer pulsação e antes de qualquer encerramento.
+ */
 export interface MensagemEstadoConexao {
   estado: EstadoConexao;
   /** Descrição pt-BR do estado — pronta para exibição. */
   descricao: string;
   emitidoEm: string;
   cursor: number;
+  /** Cadência de pulsação anunciada pelo servidor — ver nota acima. */
+  intervaloPulsacaoMs?: number;
+  /**
+   * Política de reconexão DIRIGIDA PELO SERVIDOR (ADR-0011 P5), anunciada já
+   * na abertura.
+   *
+   * POR QUE ELA PRECISOU SUBIR PARA CÁ. Até esta versão a política só viajava
+   * dentro de `MensagemInstrucaoReconciliacao`, isto é, no ENCERRAMENTO. Uma
+   * queda de transporte antes da primeira instrução deixava o cliente sem
+   * política alguma — e um cliente conforme não inventa backoff próprio, então
+   * o push simplesmente parava. Anunciando na abertura, a reconexão passa a ser
+   * possível desde a primeira queda, e continua dirigida pelo servidor.
+   *
+   * É a MESMA estrutura da instrução, de propósito: um segundo tipo paralelo
+   * seria a duplicação que este pacote existe para eliminar.
+   */
+  reconexao?: PoliticaReconexao;
 }
 
 /**
@@ -335,8 +409,10 @@ export interface TicketEventosResposta {
  * como prosa) para que o frontend e os testes citem a mesma sequência.
  */
 export const CONTRATO_CLIENTE_EVENTOS = [
-  "1. POST /v1/eventos/ticket com a credencial normal — recebe o ticket por cookie HttpOnly (nunca no corpo).",
-  "2. Abrir EventSource em /v1/eventos/stream. Nunca pôr credencial, ticket, tenant ou identificador de sujeito na URL.",
+  // Os caminhos vêm das constantes publicadas acima: a rota aparece UMA vez
+  // neste módulo, e o teste que confronta contrato × documento a segue.
+  `1. POST ${CAMINHO_TICKET_EVENTOS} com a credencial normal — recebe o ticket por cookie HttpOnly (nunca no corpo).`,
+  `2. Abrir EventSource em ${CAMINHO_FLUXO_EVENTOS}. Nunca pôr credencial, ticket, tenant ou identificador de sujeito na URL.`,
   "3. Persistir o `id:` de cada evento de dados recebido como cursor durável de retomada.",
   "4. Tratar ausência de `pulsacao` dentro do intervalo anunciado como conexão morta: exibir estado `degraded`/`offline` — jamais manter a tela com aparência de atual.",
   "5. Ao receber `instrucao-reconciliacao`, executar a `acao` indicada ANTES de voltar a confiar na tela; a conexão será encerrada em seguida.",

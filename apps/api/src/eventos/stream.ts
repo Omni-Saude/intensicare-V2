@@ -31,6 +31,8 @@
  */
 
 import {
+  CAMINHO_FLUXO_EVENTOS,
+  CAMINHO_TICKET_EVENTOS,
   DESCRICAO_ESTADO_CONEXAO,
   DESCRICAO_MOTIVO_ENCERRAMENTO,
   type EstadoConexao,
@@ -77,8 +79,15 @@ import {
   montarCookieDeTicket,
 } from "./ticket.js";
 
-export const CAMINHO_STREAM = "/v1/eventos/stream" as const;
-export const CAMINHO_TICKET = "/v1/eventos/ticket" as const;
+/**
+ * Rotas do gateway. O VALOR vem do contrato publicado
+ * (`@intensicare/contratos`), não de um literal daqui: a fronteira de módulo
+ * (ADR-0002) permite `apps/web -> SOMENTE contratos`, então uma rota declarada
+ * neste arquivo obriga todo consumidor de navegador a redigitá-la. Os nomes
+ * curtos permanecem para não quebrar quem já os importa.
+ */
+export const CAMINHO_STREAM = CAMINHO_FLUXO_EVENTOS;
+export const CAMINHO_TICKET = CAMINHO_TICKET_EVENTOS;
 
 /**
  * Nomes de parâmetro de consulta que este gateway RECUSA, com 400, antes
@@ -362,6 +371,26 @@ class ConexaoEventos {
     }
   }
 
+  /**
+   * ANÚNCIO NA ABERTURA (ADR-0011 P5/P6). O primeiro quadro da assinatura é um
+   * `estado-conexao: replaying`, e ele carrega os dois números que o cliente
+   * precisa para NÃO inventar nada: a cadência de pulsação e a política de
+   * reconexão. Ambos vêm da configuração deste servidor.
+   *
+   * As duas lacunas que isto fecha foram medidas no consumo de push do
+   * navegador, não supostas:
+   *   - sem `intervaloPulsacaoMs`, entre a abertura e a primeira pulsação o
+   *     cliente não tinha referência para armar vigia de silêncio, e uma
+   *     conexão meio-aberta nessa janela ficava indistinguível de uma
+   *     saudável (HAZ-0025; SAF-0025);
+   *   - sem `reconexao` aqui, a política só chegava dentro da instrução de
+   *     encerramento; uma queda de transporte ANTES da primeira instrução
+   *     deixava o cliente sem política, e um cliente conforme não inventa
+   *     backoff próprio — o push simplesmente parava.
+   *
+   * Os NÚMEROS continuam não sendo decididos aqui (`VALIDATION REQUIRED`,
+   * ADR-0011 §3 D6): eles são injetados por quem sobe o gateway.
+   */
   #emitirEstado(estado: EstadoEmitidoPeloServidor): void {
     this.#estado = estado;
     const mensagem: MensagemEstadoConexao = {
@@ -369,6 +398,8 @@ class ConexaoEventos {
       descricao: DESCRICAO_ESTADO_CONEXAO[estado],
       emitidoEm: new Date(this.#agora()).toISOString(),
       cursor: this.#cursorEntregue,
+      intervaloPulsacaoMs: this.#opcoes.limites.intervaloPulsacaoMs,
+      reconexao: this.#opcoes.reconexao,
     };
     this.#escritor.escrever(montarQuadro({ evento: EVENTO_SSE_ESTADO_CONEXAO, dados: mensagem }));
   }
@@ -411,6 +442,9 @@ class ConexaoEventos {
       estado,
       cursor: this.#cursorEntregue,
       pendentes: this.#fila.tamanho,
+      // Reancora o vigia do cliente a cada batida: uma reconfiguração de
+      // cadência no servidor não deixa o cliente cobrando o ritmo antigo.
+      intervaloPulsacaoMs: this.#opcoes.limites.intervaloPulsacaoMs,
     };
     this.#escritor.escrever(montarQuadro({ evento: EVENTO_SSE_PULSACAO, dados: pulsacao }));
   }
