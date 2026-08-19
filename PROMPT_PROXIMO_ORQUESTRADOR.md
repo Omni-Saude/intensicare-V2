@@ -14,6 +14,15 @@
 2. `.claude/CONTRATO-DE-AGENTES.md` e `.claude/agents/`.
 3. Os registros de `ACH-O3-1` a `ACH-O3-16` em `docs/**`.
 
+> **Este arquivo é ROLANTE.** Ele carrega sempre o encargo da PRÓXIMA sessão, e
+> é reescrito ao fim de cada uma. O encargo que a sessão anterior executou está
+> arquivado, íntegro e sob nome datado, em
+> **`ENCARGO_ONDAS_3_E_4_2026-08-18.md`** — leia-o se precisar saber o que foi
+> pedido, e não só o que foi entregue. Ao encerrar a sua sessão, **arquive este
+> arquivo do mesmo modo antes de sobrescrevê-lo**: o `git log` guarda a versão
+> antiga, mas quem lê a árvore de trabalho não a vê, e foi assim que a fronteira
+> entre "o que foi pedido" e "o que se pede agora" quase se perdeu.
+
 ## 1. As duas regras que mais economizam tempo aqui
 
 **Nunca rode `pnpm verify` com outro trabalho em curso.** Um sozinho leva esta
