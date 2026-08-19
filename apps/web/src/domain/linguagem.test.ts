@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { loadingStateLabel } from "../index.js";
 import type {
   BandaRisco,
   EstadoAvaliacao,
@@ -145,5 +146,29 @@ describe("módulo de linguagem — cobertura total (ADR-0021 F1/F4)", () => {
 
   it("P7 (ADR-0029): 'parcial' nunca é redigido como 'quase completo'", () => {
     expect(textoCarregamento("parcial").texto.toLowerCase()).not.toMatch(/quase completo/);
+  });
+});
+
+/**
+ * FONTE ÚNICA DO TEXTO VISÍVEL — mesma classe de defeito de LAC-L8, em outro
+ * arquivo. `../index.ts` mantinha as MESMAS quatro frases já redigidas em
+ * `textoCarregamento`, copiadas à mão. Duas cópias do mesmo texto visível
+ * divergem na primeira revisão de redação (ADR-0008 N3), e a revisão pela
+ * autoridade clínica de ADR-0029 (condição C2 ABERTA) passaria por uma delas
+ * sem tocar na outra.
+ *
+ * A asserção é de IGUALDADE ESTRITA — `toMatch` deixaria a segunda cópia
+ * sobreviver enquanto compartilhasse uma palavra.
+ */
+describe("apps/web/src/index.ts não é uma segunda fonte de texto visível", () => {
+  it("cada rótulo ilustrativo É, literalmente, o texto de `textoCarregamento`", () => {
+    expect(loadingStateLabel("loading")).toBe(textoCarregamento("carregando").texto);
+    expect(loadingStateLabel("empty")).toBe(textoCarregamento("vazio").texto);
+    expect(loadingStateLabel("error")).toBe(textoCarregamento("erro").texto);
+    expect(loadingStateLabel("success")).toBe(textoCarregamento("pronto").texto);
+  });
+
+  it("estado fora do union LANÇA — nenhum rótulo silencioso", () => {
+    expect(() => loadingStateLabel("quase" as never)).toThrowError(/loadingStateLabel/);
   });
 });

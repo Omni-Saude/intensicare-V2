@@ -21,6 +21,7 @@
  * (isso pertence ao processo da ADR-0029, condição C2, ainda ABERTA);
  * este é texto provisório de fatia sintética, sujeito a revisão.
  */
+import type { ParametroId, SituacaoDespacho } from "./clinico.js";
 import {
   type BandaRisco,
   casoImpossivel,
@@ -405,6 +406,77 @@ export function textoProntidao(situacao: SituacaoProntidao): TextoComTom {
   }
 }
 
+/**
+ * Texto do MODO DE DESPACHO (LAC-L2) — a representação visível da degradação
+ * que o backend já publicava e que o cliente descartava.
+ *
+ * A REGRA DE AUTORIA, que é o ponto inteiro desta função. O rótulo pt-BR da
+ * saída é do SERVIDOR: `ModoDeDespachoAvaliacao.rotuloPt` é derivado do
+ * desfecho e é constante do serviço (`ROTULO_SOMBRA_PT` /
+ * `ROTULO_NAO_AVALIADO_PT` em `apps/api/src/regras/tipos.ts`). Redigir aqui uma
+ * segunda versão dessa frase produziria duas descrições divergentes do mesmo
+ * fato — exatamente o que ADR-0008 N3 proíbe e o que `AvisoProntidao` já
+ * recusa fazer com as razões de prontidão. Então, quando o servidor declarou
+ * algo, o que esta função escolhe é o TOM; o texto é o dele, verbatim.
+ *
+ * O FRONTEND SÓ REDIGE ONDE O SERVIDOR CALOU. `nao_registrado` e `incoerente`
+ * não têm texto do servidor — no primeiro caso porque não veio envelope, no
+ * segundo porque a alegação que veio não se sustenta e repeti-la seria
+ * emprestar-lhe autoridade. Essas duas frases são do frontend, e são
+ * fail-closed: dizem "NÃO acionável" e nunca sugerem ausência de risco.
+ *
+ * Nenhum tom aqui é `positivo`: nada neste eixo é "está tudo bem".
+ *
+ * VALIDATION REQUIRED (ADR-0029, condição C2 ABERTA) — as duas frases do
+ * frontend são redação PROVISÓRIA de engenharia. Nenhum vocabulário clínico
+ * novo foi cunhado: "modo de despacho", "sombra", "não acionável" e "não
+ * registrado" já existem no contrato e no registro de regras.
+ */
+export function textoModoDespacho(
+  situacao: SituacaoDespacho,
+  rotuloDoServidor: string | null,
+): TextoComTom {
+  switch (situacao) {
+    case "nao_registrado":
+      // A construção "NÃO acionável: nenhuma recomendação, ordem ou conduta
+      // clínica decorre…" é a MESMA de `ROTULO_SOMBRA_PT`, do servidor —
+      // reuso deliberado, para que as duas frases não divirjam em forma.
+      return {
+        texto:
+          "Modo de despacho NÃO registrado — avaliação NÃO acionável: " +
+          "nenhuma recomendação, ordem ou conduta clínica decorre dela.",
+        tom: "inconclusivo",
+      };
+    case "incoerente":
+      return {
+        texto:
+          "Modo de despacho INCOERENTE — a acionabilidade declarada não é sustentada pelos " +
+          "campos que a acompanham. Tratada como NÃO acionável.",
+        tom: "inconclusivo",
+      };
+    case "nao_acionavel":
+      // Texto do servidor, verbatim. O `??` NÃO é um valor plausível
+      // inventado: `situacaoDeDespacho` já classifica como `incoerente` todo
+      // envelope sem rótulo, então este ramo é inalcançável por payload real —
+      // ele existe para que a função continue TOTAL se for chamada direto.
+      return {
+        texto:
+          rotuloDoServidor ??
+          "Modo de despacho declarado NÃO acionável, sem o rótulo pt-BR obrigatório do servidor.",
+        tom: "atencao",
+      };
+    case "acionavel":
+      return {
+        texto:
+          rotuloDoServidor ??
+          "Modo de despacho declarado acionável, sem o rótulo pt-BR obrigatório do servidor.",
+        tom: "informativo",
+      };
+    default:
+      return casoImpossivel(situacao, "textoModoDespacho");
+  }
+}
+
 /** Rótulo textual (nunca só cor) para a banda de risco — nome + tom. */
 export function textoBandaRisco(banda: BandaRisco): TextoComTom {
   switch (banda) {
@@ -445,5 +517,95 @@ export function glifoTom(tom: Tom): string {
       return "?";
     default:
       return casoImpossivel(tom, "glifoTom");
+  }
+}
+
+/**
+ * Rótulos clínicos pt-BR dos sete parâmetros, para EXIBIÇÃO.
+ *
+ * MUDOU DE CASA (LAC-L8), e a mudança é estrutural, não cosmética. Este mapa
+ * morava em `./news2.ts` — módulo rotulado "APENAS PARA FINS ILUSTRATIVOS",
+ * cuja tabela de pontos NÃO é a regra do produto (a regra real é
+ * `RULE-NEWS2 0.2.0` em `@intensicare/kernel-clinico`, calculada pela API).
+ * Como `../api/clienteHttp.ts` e `../components/DetalhePaciente.tsx`
+ * importavam este mapa de lá, o caminho de PRODUÇÃO tinha uma aresta de
+ * importação para o módulo ilustrativo, e só o tree-shaking — uma otimização,
+ * não uma garantia contratual — impedia o resto de acompanhá-lo.
+ *
+ * Aqui é o lugar certo: rótulo de exibição é LINGUAGEM, não semântica clínica.
+ * Nenhum termo foi reescrito na mudança; as sete strings são as mesmas.
+ */
+export const ROTULO_PARAMETRO: Record<ParametroId, string> = {
+  frequencia_respiratoria: "Frequência respiratória",
+  saturacao_oxigenio: "Saturação de oxigênio (SpO₂)",
+  uso_oxigenio_suplementar: "Uso de oxigênio suplementar",
+  temperatura: "Temperatura",
+  pressao_arterial_sistolica: "Pressão arterial sistólica",
+  frequencia_cardiaca: "Frequência cardíaca",
+  nivel_consciencia: "Nível de consciência",
+};
+
+// ---------------------------------------------------------------------------
+// Instante legível (A6.2)
+// ---------------------------------------------------------------------------
+
+/** Idioma clínico desta fatia — pt-BR em todo material produzido. */
+export const IDIOMA_CLINICO = "pt-BR";
+
+/**
+ * Formatadores memoizados, no padrão já usado por
+ * `packages/vigilancia/src/tipos.ts` (`FORMATADORES`/`formatadorDe`).
+ * `Intl.DateTimeFormat` é caro de construir e estas telas o chamam a cada
+ * tique de idade da visão.
+ */
+const FORMATADORES_DE_INSTANTE = new Map<string, Intl.DateTimeFormat>();
+
+function formatadorDeInstante(idioma: string): Intl.DateTimeFormat {
+  const existente = FORMATADORES_DE_INSTANTE.get(idioma);
+  if (existente !== undefined) return existente;
+  const novo = new Intl.DateTimeFormat(idioma, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+    // O NOME DO FUSO É OBRIGATÓRIO AQUI. Sem ele, "17/08/2026 13:45" é ambíguo
+    // entre plantões e entre máquinas — e a ambiguidade recai justamente sobre
+    // o instante que o clínico usa para julgar se o dado ainda serve.
+    timeZoneName: "short",
+  });
+  FORMATADORES_DE_INSTANTE.set(idioma, novo);
+  return novo;
+}
+
+/**
+ * Instante ISO 8601 → texto pt-BR legível à beira do leito.
+ *
+ * O QUE ESTA FUNÇÃO DELIBERADAMENTE NÃO FAZ:
+ *
+ *   - NÃO inventa fuso. Nenhum `timeZone` é fixado; o instante é apresentado
+ *     no fuso do ambiente que roda a tela, e o nome do fuso vai junto para que
+ *     a leitura seja autodescritiva. Fixar "America/Sao_Paulo" no cliente
+ *     seria decidir por uma instituição que ninguém consultou.
+ *   - NÃO vira tempo relativo. "há pouco" é juízo de suficiência que ninguém
+ *     ratificou (VAL-0023), e um relativo calculado no cliente envelhece
+ *     sozinho na tela. A DURAÇÃO decorrida já tem tratamento próprio e correto
+ *     em `textoIdadeDecorrida`, que esta função não toca.
+ *   - NÃO esconde nada. Entrada que não se interpreta como instante volta
+ *     VERBATIM — melhor um ISO cru visível do que um "—" que apaga o fato. E
+ *     quem renderiza mantém o valor de máquina no atributo `dateTime` de um
+ *     elemento `<time>` (ver `../components/AvisosDeEstado.tsx`).
+ */
+export function textoInstante(iso: string, idioma: string = IDIOMA_CLINICO): string {
+  const instante = new Date(iso);
+  if (Number.isNaN(instante.getTime())) return iso;
+  try {
+    return formatadorDeInstante(idioma).format(instante);
+  } catch {
+    // Runtime sem os dados de localidade pedidos: devolve o instante cru em
+    // vez de derrubar a tela clínica inteira por causa de formatação.
+    return iso;
   }
 }

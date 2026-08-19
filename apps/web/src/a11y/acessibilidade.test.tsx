@@ -9,11 +9,14 @@
  * (`color-contrast`, alvo de toque, reflow) são DESLIGADAS aqui — não porque
  * sejam irrelevantes, mas porque um verde delas em jsdom seria falso. Elas
  * são cobertas pela suíte de navegador (`e2e/`, Playwright + @axe-core), que
- * FOI EXECUTADA: 17 testes verdes, 5 marcados BLOQUEADOS por dependência de
- * autenticação do backend. Cada regra desligada aqui tem cobertura declarada
- * na trilha `automatizado_navegador` de `./matrizAcessibilidade.ts` — e um
- * teste no fim deste arquivo verifica essa correspondência. Desligar sem
- * registrar seria o anti-padrão 7 do contrato comum.
+ * FOI EXECUTADA. Este cabeçalho trazia uma contagem literal ("17 testes
+ * verdes") que envelheceu em silêncio assim que a suíte cresceu; o número
+ * corrente sai de `pnpm --filter @intensicare/web exec playwright test
+ * --workers=1`, e não de uma frase que ninguém recalcula. Cada regra desligada
+ * aqui tem cobertura declarada na trilha `automatizado_navegador` de
+ * `./matrizAcessibilidade.ts` — e um teste no fim deste arquivo verifica essa
+ * correspondência, inclusive que o spec citado EXISTE. Desligar sem registrar
+ * seria o anti-padrão 7 do contrato comum.
  *
  * E, acima de tudo: nenhum verde aqui declara acessibilidade validada
  * (ADR-0021 F7).
@@ -31,6 +34,7 @@ import type { ItemGradeLeito } from "../domain/clinico.js";
 // (o tsconfig deste app declara apenas `vite/client`, não `node`).
 import cssFonte from "../estilo.css?raw";
 import { criarHistoricoDeTeste } from "../roteamento/historicoDeTeste.js";
+import { distanciaSrgb, lerCor, luminanciaRelativa, razaoDeContraste } from "./cor.js";
 import {
   CRITERIOS_WCAG_22_A_E_AA,
   criteriosAeAANaoEnumerados,
@@ -365,6 +369,160 @@ describe("folha de estilo — foco visível e prefers-reduced-motion", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Selos de estado sob tema escuro — a verificação RÁPIDA
+// ---------------------------------------------------------------------------
+
+/**
+ * Separa a folha em "o que está dentro de `@media (prefers-color-scheme:
+ * dark)`" e "todo o resto".
+ *
+ * Por contagem de chaves, e não por expressão regular: um `@media` contém
+ * blocos aninhados, e `\{[^}]*\}` pararia na primeira chave de fechamento
+ * interna — leria só a primeira regra e ficaria verde por ler menos. O
+ * `restante` é necessário para comparar as duas paletas: a clara é a que
+ * sobra quando os blocos escuros saem.
+ */
+function separarPorTema(fonteComComentarios: string): { escuro: string[]; restante: string } {
+  // Comentários saem ANTES da separação. Esta folha documenta as próprias
+  // decisões de cor em prosa longa — inclusive citando `prefers-color-scheme:
+  // dark` e valores hex —, e deixar isso na entrada faria as asserções abaixo
+  // medirem o comentário em vez da regra.
+  const fonte = fonteComComentarios.replace(/\/\*[\s\S]*?\*\//g, "");
+  const escuro: string[] = [];
+  const partesForaDoEscuro: string[] = [];
+  const abertura = /@media\s*\(prefers-color-scheme:\s*dark\)\s*\{/g;
+  let cursor = 0;
+  let achado = abertura.exec(fonte);
+  while (achado !== null) {
+    partesForaDoEscuro.push(fonte.slice(cursor, achado.index));
+    let profundidade = 1;
+    let i = achado.index + achado[0].length;
+    const inicio = i;
+    while (i < fonte.length && profundidade > 0) {
+      if (fonte[i] === "{") profundidade += 1;
+      else if (fonte[i] === "}") profundidade -= 1;
+      i += 1;
+    }
+    escuro.push(fonte.slice(inicio, i - 1));
+    cursor = i;
+    abertura.lastIndex = i;
+    achado = abertura.exec(fonte);
+  }
+  partesForaDoEscuro.push(fonte.slice(cursor));
+  return { escuro, restante: partesForaDoEscuro.join("\n") };
+}
+
+/** Os sete tons de `domain/estados.ts` — o union type inteiro. */
+const TONS_SEMANTICOS = [
+  "neutro",
+  "positivo",
+  "informativo",
+  "atencao",
+  "alerta",
+  "critico",
+  "inconclusivo",
+] as const;
+
+/**
+ * Piso da WCAG para o texto do selo. `.badge-tom` é 0.85rem (13,6 px) com peso
+ * 600 — abaixo do limiar de "texto grande" (18,66 px em negrito), portanto o
+ * piso é 4.5:1. Citado da norma, não escolhido aqui.
+ */
+const PISO_TEXTO_NORMAL_AA = 4.5;
+
+describe("folha de estilo — selos de estado sob prefers-color-scheme: dark", () => {
+  const css = cssFonte;
+  const temas = separarPorTema(css);
+  const escuro = temas.escuro.join("\n");
+
+  function parDeclarado(tom: string, fonte: string): { fundo: string; texto: string } | null {
+    const bloco = new RegExp(`\\.badge-tom--${tom}\\s*\\{([^}]*)\\}`).exec(fonte)?.[1];
+    if (bloco === undefined) return null;
+    const fundo = /background:\s*(#[0-9a-f]{6})/i.exec(bloco)?.[1];
+    const texto = /color:\s*(#[0-9a-f]{6})/i.exec(bloco)?.[1];
+    return fundo === undefined || texto === undefined ? null : { fundo, texto };
+  }
+
+  it("a extração de blocos de tema escuro funciona (senão tudo abaixo é falso verde)", () => {
+    // Mesma guarda do bloco anterior: `expect(escuro).toMatch(...)` sobre uma
+    // string vazia falharia, mas `not.toMatch` passaria — e uma extração
+    // quebrada esvaziaria os dois lados sem avisar.
+    expect(temas.escuro.length).toBeGreaterThan(1);
+    expect(escuro.length).toBeGreaterThan(100);
+    // Âncoras conhecidas: o cartão de leito já tinha variante escura antes
+    // desta mudança, e a paleta CLARA dos selos vive fora de qualquer `@media`.
+    // Se qualquer uma sumir da separação, é a separação que está errada.
+    expect(escuro).toMatch(/\.cartao-leito\s*\{/);
+    expect(temas.restante).toMatch(/\.badge-tom--critico\s*\{/);
+    expect(temas.restante).not.toMatch(/prefers-color-scheme:\s*dark/);
+  });
+
+  it("os SETE tons têm variante escura declarada — nenhum fica com a paleta clara", () => {
+    // ESTE É O TESTE QUE FICA VERMELHO SE A VARIANTE FOR REMOVIDA. A suíte de
+    // navegador mede a cor computada e é a prova forte; esta aqui é a prova
+    // BARATA, que roda em toda execução de `vitest` e não depende de o
+    // navegador do Playwright estar instalado.
+    const semVariante = TONS_SEMANTICOS.filter((tom) => parDeclarado(tom, escuro) === null);
+    expect(
+      semVariante,
+      "tom sem par (background + color) em @media (prefers-color-scheme: dark)",
+    ).toEqual([]);
+  });
+
+  it("cada par da variante escura alcança 4.5:1, calculado — não conferido à mão", () => {
+    const medidos = TONS_SEMANTICOS.map((tom) => {
+      const par = parDeclarado(tom, escuro);
+      if (par === null) throw new Error(`tom ${tom} sem variante escura`);
+      return { tom, ...par, razao: razaoDeContraste(lerCor(par.fundo), lerCor(par.texto)) };
+    });
+    expect(medidos.length).toBe(TONS_SEMANTICOS.length);
+
+    const abaixo = medidos
+      .filter((m) => m.razao < PISO_TEXTO_NORMAL_AA)
+      .map((m) => `${m.tom}: ${m.texto} sobre ${m.fundo} = ${m.razao.toFixed(2)}:1`);
+    expect(abaixo, "par abaixo do piso AA de texto normal (WCAG 1.4.3)").toEqual([]);
+  });
+
+  it("no tema escuro o fundo do selo é escuro — a inversão de saliência não volta", () => {
+    // O defeito não era o par texto/fundo (que nunca quebrou, porque cada
+    // `.badge-tom--*` declara os dois): era o selo continuar com fundo CLARO
+    // dentro de uma página escura, o que fazia `--critico` virar o elemento
+    // menos destacado da tela. Ver `e2e/contraste-tema-escuro.spec.ts`.
+    const invertidos = TONS_SEMANTICOS.filter((tom) => {
+      const par = parDeclarado(tom, escuro);
+      if (par === null) return true;
+      return luminanciaRelativa(lerCor(par.fundo)) >= luminanciaRelativa(lerCor(par.texto));
+    });
+    expect(invertidos, "selo com fundo mais claro que o texto no tema escuro").toEqual([]);
+  });
+
+  it("a variante escura não colapsa os tons num cinza só", () => {
+    // A distinção entre tons é requisito (`domain/estados.ts`: `inconclusivo`
+    // é deliberadamente distinto de `neutro`). O piso não é escolhido a dedo:
+    // é o pior par que a paleta CLARA já pratica.
+    function menorDistancia(fonte: string): number {
+      const fundos = TONS_SEMANTICOS.map((tom) => parDeclarado(tom, fonte)?.fundo).filter(
+        (f): f is string => f !== undefined,
+      );
+      expect(fundos.length).toBe(TONS_SEMANTICOS.length);
+      let menor = Number.POSITIVE_INFINITY;
+      for (let i = 0; i < fundos.length; i += 1) {
+        for (let j = i + 1; j < fundos.length; j += 1) {
+          menor = Math.min(
+            menor,
+            distanciaSrgb(lerCor(fundos[i] as string), lerCor(fundos[j] as string)),
+          );
+        }
+      }
+      return menor;
+    }
+
+    // A paleta clara é o que sobra quando os blocos de tema escuro saem.
+    expect(menorDistancia(escuro)).toBeGreaterThanOrEqual(menorDistancia(temas.restante));
+  });
+});
+
+// ---------------------------------------------------------------------------
 // A matriz é honesta sobre si mesma
 // ---------------------------------------------------------------------------
 
@@ -383,19 +541,89 @@ describe("matriz de acessibilidade — honestidade de estado", () => {
     expect(manuais.map((c) => c.sc)).toContain("2.1.1");
   });
 
-  it("o que NÃO foi verificado continua marcado como não executado, não silenciado", () => {
-    // 2.4.11 (foco não obscurecido) segue sem teste dedicado. Este assert
-    // existe para que a lista de pendências não encolha por esquecimento: se
-    // alguém marcar o critério como executado sem escrever o teste, aqui
-    // quebra.
-    const naoExecutados = criteriosNaoExecutados().map((c) => c.sc);
-    expect(naoExecutados).toContain("2.4.11");
-    expect(naoExecutados.length).toBeGreaterThan(0);
+  it("2.4.11 saiu de 'não executado' com teste, não com caneta", () => {
+    // ESTE TESTE ERA O ESTOPIM. Ele afirmava `naoExecutados` conter "2.4.11",
+    // para que ninguém marcasse o critério como executado sem escrever o
+    // teste. O critério fechou — e o estopim mudou de alvo em vez de sumir:
+    // agora exige as MARCAS de que fechou pelo caminho certo.
+    //
+    // Por que fechou: a nota antiga descrevia um risco que o CSS não realiza
+    // (banner permanente obscurecendo o foco). `.banner-contexto` é
+    // `position: static`, não há `fixed`/`sticky` na folha e o único
+    // `z-index` é o do próprio atalho de pular blocos. A refutação foi por
+    // medição em navegador (`e2e/foco-nao-obscurecido.spec.ts`), não por
+    // releitura da nota.
+    const criterio = MATRIZ_ACESSIBILIDADE.find((c) => c.sc === "2.4.11");
+    expect(criterio, "2.4.11 desapareceu da matriz").toBeDefined();
+    expect(criterio?.execucao).toBe("executado");
+    expect(criterio?.cobertura).toContain("automatizado_navegador");
+    // Fechar em automação NÃO dispensa a pendência humana: se a parte visível
+    // do elemento focado basta para alguém localizá-lo é juízo de quem usa.
+    expect(criterio?.cobertura).toContain("manual_obrigatorio");
+    expect(criterio?.nota).toMatch(/NÃO prova/);
+    expect(criterio?.nota).toMatch(/foco-nao-obscurecido\.spec\.ts/);
+  });
+
+  it("todo spec citado por uma nota da matriz EXISTE de fato", () => {
+    // Sem esta guarda, "EXECUTADO em `e2e/algum.spec.ts`" seria uma alegação
+    // que ninguém verifica — e citar um arquivo inexistente é a forma mais
+    // barata de fingir cobertura. `import.meta.glob` lista o diretório em
+    // tempo de build; nada é importado, só os caminhos são lidos.
+    const specsExistentes = new Set(
+      Object.keys(import.meta.glob("../../e2e/**/*.spec.ts")).map(
+        (caminho) => caminho.split("/e2e/")[1] ?? caminho,
+      ),
+    );
+    expect(specsExistentes.size, "nenhum spec e2e encontrado — o glob quebrou").toBeGreaterThan(0);
+
+    const citados = MATRIZ_ACESSIBILIDADE.flatMap(
+      (c) => c.nota.match(/e2e\/[\w./-]+\.spec\.ts/g)?.map((m) => m.replace("e2e/", "")) ?? [],
+    );
+    expect(citados.length, "nenhuma nota cita spec — a guarda ficaria vazia").toBeGreaterThan(0);
+    expect(
+      citados.filter((s) => !specsExistentes.has(s)),
+      "a matriz cita spec de navegador que não existe no repositório",
+    ).toEqual([]);
+  });
+
+  it("a lacuna que continua aberta segue nomeada, e FORA da matriz", () => {
+    // Com 2.4.11 fechado, `criteriosNaoExecutados()` fica vazio DENTRO do
+    // recorte — e um recorte vazio de pendências leria como cobertura
+    // completa. O que impede essa leitura é o que segue fora: 2.2.1 (Timing
+    // Adjustable) depende de sessão real (ADR-0015, `not-started`) e não pode
+    // ser encerrado por esta fatia. Incluí-lo na matriz como "executado" seria
+    // alegar cobertura sobre componente inexistente.
+    expect(criteriosAeAANaoEnumerados()).toContain("2.2.1");
+    expect(MATRIZ_ACESSIBILIDADE.map((c) => c.sc)).not.toContain("2.2.1");
+    // O recorte continua sendo minoria do padrão — o número é derivado.
+    expect(criteriosAeAANaoEnumerados().length).toBeGreaterThan(MATRIZ_ACESSIBILIDADE.length);
+  });
+
+  it("nenhum critério é declarado executado sem trilha de verificação", () => {
+    // `criteriosNaoExecutados()` continua existindo e continua sendo a fonte
+    // da declaração; o que este teste impede é o atalho de marcar
+    // `executado` sem dizer POR ONDE.
+    const semTrilha = MATRIZ_ACESSIBILIDADE.filter(
+      (c) => c.execucao === "executado" && !c.cobertura.some((t) => t.startsWith("automatizado_")),
+    ).map((c) => c.sc);
+    expect(semTrilha, "critério executado só por cobertura manual — automação não o fecha").toEqual(
+      [],
+    );
+
+    // `criteriosNaoExecutados()` está VAZIA hoje, e um `every` sobre lista
+    // vazia é verdadeiro por vacuidade — seria um assert que não afirma nada.
+    // O que se verifica é a PARTIÇÃO: executados e não-executados somam a
+    // matriz inteira, o que continua tendo conteúdo quando a lista voltar a
+    // ter itens.
+    const executados = MATRIZ_ACESSIBILIDADE.filter((c) => c.execucao === "executado");
+    expect(executados.length + criteriosNaoExecutados().length).toBe(MATRIZ_ACESSIBILIDADE.length);
+    expect(criteriosNaoExecutados().filter((c) => c.execucao === "executado")).toEqual([]);
   });
 
   it("critérios só verificáveis em navegador declaram essa trilha de cobertura", () => {
-    // Foram EXECUTADOS pela suíte Playwright (17 testes verdes), não por
-    // jsdom — e a matriz precisa dizer por onde, não apenas que sim.
+    // Foram EXECUTADOS pela suíte Playwright, não por jsdom — e a matriz
+    // precisa dizer por onde, não apenas que sim. 2.4.11 entrou nesta lista ao
+    // ganhar `e2e/foco-nao-obscurecido.spec.ts`.
     for (const sc of ["1.4.3", "1.4.10", "1.4.11", "2.4.7", "2.5.8"]) {
       const criterio = MATRIZ_ACESSIBILIDADE.find((c) => c.sc === sc);
       expect(criterio, `critério ${sc} ausente da matriz`).toBeDefined();

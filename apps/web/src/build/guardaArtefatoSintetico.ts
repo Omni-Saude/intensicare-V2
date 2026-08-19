@@ -86,6 +86,22 @@ export const MARCADORES_PROIBIDOS: readonly MarcadorProibido[] = [
       "Catálogo de apresentação para revisão. Não é tela clínica e não deve ser " +
       "alcançável em produção.",
   },
+  {
+    nome: "versão da regra NEWS2 ILUSTRATIVA",
+    // Igual, literalmente, a `VERSAO_REGRA_NEWS2_ILUSTRATIVA` de
+    // `../domain/news2.ts`. Duplicado como literal de propósito: importar o
+    // módulo ilustrativo AQUI criaria a mesma aresta de produção que esta
+    // entrada existe para proibir. `domain/fronteiraDoModuloIlustrativo.test.ts`
+    // confronta as duas constantes e reprova se elas divergirem.
+    literal: "news2-ilustrativo-0.0.1-synth",
+    razao:
+      "Marcador de proveniência da tabela NEWS2 ILUSTRATIVA (`domain/news2.ts`), que " +
+      "não é a regra do produto — a regra real é RULE-NEWS2 0.2.0, calculada pela API " +
+      "com `@intensicare/kernel-clinico`. Se esta string chegou ao pacote, o módulo " +
+      "ilustrativo vazou para o caminho de produção e a tela pode exibir " +
+      "rastreabilidade FALSA: `AvaliacaoPaciente.versaoRegra` é renderizada como " +
+      "'(regra X)' no detalhe do paciente (LAC-L8; ADR-0021 F8).",
+  },
 ];
 
 export interface ViolacaoBundle {

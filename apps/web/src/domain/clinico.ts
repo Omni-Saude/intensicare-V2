@@ -14,6 +14,7 @@
  * Nenhuma alegação de efetividade clínica, conformidade regulatória ou
  * segurança comprovada é feita por este arquivo ou pelos que o consomem.
  */
+import type { ModoDeDespachoAvaliacao } from "@intensicare/contratos";
 import type { BandaRisco, EstadoAvaliacao, EstadoFrescor, EstadoItemTrabalho } from "./estados.js";
 
 /**
@@ -89,6 +90,23 @@ export interface AvaliacaoPaciente {
    * rastreabilidade.
    */
   versaoRegra: string | null;
+  /**
+   * MODO DE DESPACHO que governou esta avaliação (LAC-L2), transportado do
+   * contrato SEM tradução: é o envelope publicado em
+   * `ResultadoAvaliacao.despacho` e em `EntradaGradeLeitos.modoAvaliacao`.
+   *
+   * Reusa o TIPO DO CONTRATO de propósito. Redeclará-lo aqui criaria duas
+   * definições estruturalmente idênticas e nenhum gate entre elas — a mesma
+   * deriva que o bloco de despacho de `@intensicare/contratos` foi criado
+   * para eliminar.
+   *
+   * OPCIONAL no formato, FECHADO na semântica: ausente ou `null` significa
+   * "modo NÃO registrado" e o consumidor DEVE tratar a avaliação como NÃO
+   * acionável (`situacaoDeDespacho` abaixo). É opcional pelo mesmo motivo do
+   * contrato — respostas gravadas antes desta versão não o carregam —, jamais
+   * porque a ausência seja benigna.
+   */
+  despacho?: ModoDeDespachoAvaliacao | null;
 }
 
 /**
@@ -113,6 +131,97 @@ export interface ItemGradeLeito {
   avaliacao: AvaliacaoPaciente | null;
   /** Alertas (ativos ou históricos recentes) associados a este leito. */
   alertas: Alerta[];
+  /**
+   * FRESCOR DA LINHA, tal como o produtor o computou
+   * (`EntradaGradeLeitos.frescor`, campo OBRIGATÓRIO do contrato).
+   *
+   * ELE EXISTE AQUI PORQUE O CLIENTE ESTAVA DERIVANDO O QUE JÁ VINHA PRONTO
+   * (ADR-0011 P7). `mapearEntradaGrade` põe `contribuicoes: []` — a projeção
+   * da grade é um resumo e não publica insumo por parâmetro — e `CartaoLeito`
+   * chamava `calcularFrescorGeral` sobre essa lista vazia. Era a mesma família
+   * de LAC-D3 (severidade fabricada), num campo que o servidor entrega pronto.
+   *
+   * Opcional para que um item MONTADO À MÃO (teste, dublê) não afirme frescor
+   * nenhum. O mapeador do cliente sempre o preenche, e preenche fail-closed:
+   * valor ausente ou fora do vocabulário vira `ausente`, nunca `atual`.
+   */
+  frescor?: EstadoFrescor;
+  /**
+   * MODO DE DESPACHO da avaliação que produziu o escore/banda desta linha
+   * (`EntradaGradeLeitos.modoAvaliacao`). Mesma semântica fechada de
+   * `AvaliacaoPaciente.despacho`: ausente ou `null` ⇒ NÃO acionável.
+   */
+  modoAvaliacao?: ModoDeDespachoAvaliacao | null;
+}
+
+// ---------------------------------------------------------------------------
+// Modo de despacho: leitura fail-closed do envelope (LAC-L2)
+// ---------------------------------------------------------------------------
+
+/**
+ * Situação do modo de despacho, DERIVADA do envelope do contrato.
+ *
+ * A FRONTEIRA CLÍNICA, dita às claras. Esta classificação **só sabe
+ * rebaixar**. Ela não computa acionabilidade — quem a computa é a projeção do
+ * backend, cumulativamente (assinatura verificada + modo acionável + zero
+ * bloqueios), e o frontend não tem como verificar assinatura de bundle. O que
+ * ela faz é recusar-se a TRATAR COMO ACIONÁVEL aquilo que o servidor não
+ * declarou de forma sustentada pelos próprios campos que o acompanham. Nenhum
+ * caminho aqui promove nada (ADR-0011 P7; ADR-0021 F3).
+ *
+ *   - `nao_registrado` — envelope ausente ou `null`. O contrato é literal:
+ *     "ausente ou `null` significa modo de despacho NÃO registrado, e o
+ *     consumidor DEVE tratar a avaliação como NÃO acionável".
+ *   - `incoerente`     — o envelope existe, mas a acionabilidade que ele
+ *     declara não é sustentada pelos campos que a acompanham (é a forma exata
+ *     do registro fabricado que `DespachoIncoerenteError` rejeita no backend),
+ *     ou o envelope não traz o rótulo pt-BR obrigatório. Tratado como NÃO
+ *     acionável, e NUNCA "corrigido" para um valor plausível.
+ *   - `nao_acionavel`  — o servidor declarou, coerentemente, que a avaliação
+ *     NÃO é acionável (sombra rotulada ou recusa). O texto visível deste caso
+ *     é o do servidor (`rotuloPt`/`mensagemRecusaPt`), não um redigido aqui.
+ *   - `acionavel`      — o servidor declarou acionável e os campos sustentam a
+ *     declaração. Estado factual do produto: 0 vias clínicas acionáveis; este
+ *     valor existe para que a função seja TOTAL e para que o teste possa
+ *     provar que ela não é constante.
+ */
+export type SituacaoDespacho = "nao_registrado" | "incoerente" | "nao_acionavel" | "acionavel";
+
+export function situacaoDeDespacho(
+  envelope: ModoDeDespachoAvaliacao | null | undefined,
+): SituacaoDespacho {
+  if (envelope === null || envelope === undefined) return "nao_registrado";
+  if (typeof envelope !== "object") return "incoerente";
+
+  const { desfecho, modo, acionavel, rotuloPt } = envelope;
+
+  // O contrato obriga o rótulo pt-BR da saída. Sem ele não há o que exibir, e
+  // exibir silêncio no lugar de uma degradação é o que QAS-0023 conta como
+  // violação.
+  if (typeof rotuloPt !== "string" || rotuloPt.trim() === "") return "incoerente";
+  if (typeof acionavel !== "boolean") return "incoerente";
+
+  // Recusa: nenhuma avaliação foi produzida. Acionabilidade jamais acompanha
+  // uma recusa — se acompanhar, o envelope é fabricado.
+  if (desfecho === "nao_avaliada") return acionavel ? "incoerente" : "nao_acionavel";
+  if (desfecho !== "avaliada") return "incoerente";
+
+  // Avaliada: o contrato liga `modo: null` à recusa ("null quando o despacho
+  // foi recusado antes de haver modo de ativação"), logo uma avaliação sem
+  // modo de ativação contradiz o próprio envelope.
+  if (modo !== "sombra" && modo !== "acionavel") return "incoerente";
+  if (acionavel) return modo === "acionavel" ? "acionavel" : "incoerente";
+  return "nao_acionavel";
+}
+
+/**
+ * Único predicado que a UI consulta para saber se pode tratar a avaliação como
+ * acionável. Deliberadamente NÃO é `envelope.acionavel`: ler o booleano cru
+ * faria um payload forjado (ou uma linha gravada de forma incoerente) autorizar
+ * conduta clínica a partir de uma alegação que nada sustenta.
+ */
+export function ehDespachoAcionavel(envelope: ModoDeDespachoAvaliacao | null | undefined): boolean {
+  return situacaoDeDespacho(envelope) === "acionavel";
 }
 
 /**

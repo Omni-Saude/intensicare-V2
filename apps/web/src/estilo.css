@@ -2,18 +2,26 @@
  * apps/web/src/estilo.css
  *
  * Estilo mínimo desta fatia (SPR-G7-2, revisto em ACH-07). Cores dos tons
- * semânticos (`.badge-tom--*`) foram escolhidas e conferidas manualmente para
- * contraste WCAG 2.2 AA (texto normal ≥ 4.5:1) contra o próprio fundo do
- * selo. Nenhum estado depende só de cor: todo selo carrega também texto e um
- * glifo (`../domain/linguagem.ts` `glifoTom`).
+ * semânticos (`.badge-tom--*`) alcançam o contraste WCAG 2.2 AA (texto normal
+ * ≥ 4.5:1) contra o próprio fundo do selo, NOS DOIS esquemas de cor — o claro
+ * e o escuro, este último acrescentado adiante neste arquivo com os valores
+ * medidos. Nenhum estado depende só de cor: todo selo carrega também texto e
+ * um glifo (`../domain/linguagem.ts` `glifoTom`).
  *
- * ESTADO DA VERIFICAÇÃO DE CONTRASTE (ACH-07). axe-core passou a existir na
- * suíte, mas a regra `color-contrast` é DESLIGADA em jsdom — jsdom não
- * computa estilo cascateado, e um verde ali seria falso. A verificação real
- * de 1.4.3/1.4.11 corre na suíte de navegador (`e2e/`) e está registrada como
- * `nao_executado` em `src/a11y/matrizAcessibilidade.ts` enquanto o navegador
- * do Playwright não estiver instalado. Os valores abaixo permanecem
- * CONFERIDOS À MÃO, não verificados por ferramenta.
+ * ESTADO DA VERIFICAÇÃO DE CONTRASTE. axe-core existe na suíte, mas a regra
+ * `color-contrast` é DESLIGADA em jsdom — jsdom não computa estilo cascateado,
+ * e um verde ali seria falso. A verificação real de 1.4.3/1.4.11 corre na
+ * suíte de navegador (`e2e/acessibilidade.spec.ts` e
+ * `e2e/contraste-tema-escuro.spec.ts`) e 1.4.3 está registrado como
+ * `executado` em `src/a11y/matrizAcessibilidade.ts`.
+ *
+ * "CONFERIDO À MÃO" DEIXOU DE SER A ÚNICA GARANTIA. Esta nota dizia que os
+ * valores eram conferidos à mão e "não verificados por ferramenta" — o que
+ * significava que trocar um hex não recalculava nada e o comentário seguia
+ * afirmando o número antigo. Os pares dos selos passaram a ser MEDIDOS a
+ * partir da cor que o navegador realmente computa, pela aritmética normativa
+ * da WCAG em `src/a11y/cor.ts`. Os números registrados nos comentários abaixo
+ * são o resultado dessa medição, não estimativa.
  */
 
 :root {
@@ -184,6 +192,112 @@ button {
 .badge-tom--inconclusivo {
   background: #efe9fb;
   color: #3a2a66;
+}
+
+/* Selo de MODO DE DESPACHO (LAC-L2). Contêiner do `BadgeTom` que declara se a
+   avaliação é acionável — e, quando o servidor recusou o despacho, a razão que
+   ele mesmo redigiu. Só layout: cor, tom e glifo vêm do `BadgeTom`, que já tem
+   variante escura logo abaixo. Sem regra própria de cor, este bloco não pode
+   inverter a saliência que o bloco seguinte existe para preservar. */
+.selo-modo-despacho {
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.selo-modo-despacho__recusa {
+  margin: 0.25rem 0 0;
+  font-size: 0.9em;
+}
+
+/* ---------------------------------------------------------------------------
+   SELOS SOB TEMA ESCURO — a lacuna que faltava, e o que ela era de fato.
+
+   O DEFEITO. Esta folha tinha sete blocos `@media (prefers-color-scheme:
+   dark)` e nenhum cobria `.badge-tom--*`. Sob tema escuro os sete selos
+   continuavam pintados com as cores do tema claro.
+
+   O QUE NÃO ERA. Não era violação de 1.4.3: cada `.badge-tom--*` declara
+   `background` E `color`, então o par texto/fundo é o MESMO nos dois esquemas
+   e nenhum deles caía abaixo de 4.5:1 — o axe passava, e passava com razão. A
+   suíte `e2e/contraste-tema-escuro.spec.ts` registra essa medição em vez de
+   repetir a suspeita.
+
+   O QUE ERA. A SALIÊNCIA relativa invertia, e ela é o que hierarquiza estado
+   de segurança clínica na tela. Medido em navegador real, contra a superfície
+   onde o selo pousa:
+
+     tema claro  → `--critico` destacava 11,00:1 do cartão branco e os seis
+                   tons claros ficavam em 1,09–1,19:1 (o mais grave, o mais
+                   visível);
+     tema escuro → `--critico` (#7a1010) caía a 1,47:1 contra o cartão
+                   (#1a212b) e os seis tons benignos subiam a 13,66–14,86:1
+                   (o mais grave virava o menos visível, e "positivo" virava
+                   uma placa clara).
+
+   Nada disso comprometia o requisito não-só-cor — texto e glifo continuavam
+   presentes (`../domain/linguagem.ts`) —, mas a hierarquia visual dizia o
+   contrário do estado, no elemento que carrega o estado.
+
+   PARES MEDIDOS DESTA VARIANTE (razão WCAG 2.2, calculada da cor computada
+   pelo navegador; piso aplicável 4.5:1, porque `.badge-tom` é 13,6 px e não
+   se qualifica como texto grande):
+
+     tom            texto/fundo   fundo vs body(#10141a)  fundo vs cartão(#1a212b)
+     neutro           10,45:1            1,45:1                  1,27:1
+     positivo          9,22:1            1,47:1                  1,29:1
+     informativo       8,20:1            1,44:1                  1,26:1
+     atencao           8,90:1            1,46:1                  1,28:1
+     alerta            7,81:1            1,37:1                  1,20:1
+     critico           8,66:1            2,13:1                  1,87:1
+     inconclusivo      7,87:1            1,42:1                  1,25:1
+
+   Nenhum par fica abaixo do piso AA; o menor é 7,81:1 (alerta). O `--critico`
+   volta a ser o mais destacado da superfície, como já é no tema claro.
+
+   LIMITE QUE NÃO SE MAQUIA. A CAIXA do selo contra a superfície fica entre
+   1,20:1 e 1,87:1 no tema escuro — abaixo dos 3:1 que a WCAG pede para
+   componentes de interface e objetos gráficos necessários (SC 1.4.11). Isso
+   NÃO é violação aqui porque o selo não é controle nem objeto gráfico: a
+   informação está no texto e no glifo, e o texto está muito acima do piso. É
+   também o regime que o tema CLARO já pratica (1,03–1,19:1 para os seis tons
+   benignos contra o body), de modo que a variante escura não piora nada — mas
+   fica registrado, porque "não é violação" não é o mesmo que "é confortável",
+   e conforto sob baixa visão é validação humana ainda NÃO EXECUTADA.
+
+   A distinção entre tons é preservada de propósito (não há colapso num cinza
+   só): a menor distância sRGB entre dois fundos aqui é 27,7 (neutro ×
+   informativo), contra 9,9 do pior par do tema claro. Verificado por teste.
+   --------------------------------------------------------------------------- */
+
+@media (prefers-color-scheme: dark) {
+  .badge-tom--neutro {
+    background: #2b333d;
+    color: #e3e9f0;
+  }
+  .badge-tom--positivo {
+    background: #123b23;
+    color: #a9ecc1;
+  }
+  .badge-tom--informativo {
+    background: #16344f;
+    color: #aed3f5;
+  }
+  .badge-tom--atencao {
+    background: #42300a;
+    color: #f6d494;
+  }
+  .badge-tom--alerta {
+    background: #541c1c;
+    color: #f8b4b4;
+  }
+  .badge-tom--critico {
+    background: #96170f;
+    color: #ffffff;
+  }
+  .badge-tom--inconclusivo {
+    background: #352a57;
+    color: #cfc3f3;
+  }
 }
 
 main {
