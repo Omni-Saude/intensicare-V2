@@ -256,6 +256,7 @@ describe("ACEITE L1-1 — a projeção é relida sem interação do usuário", (
         cliente={duble.cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO}
       />,
     );
@@ -312,6 +313,7 @@ describe("ACEITE L1-1 — a projeção é relida sem interação do usuário", (
         cliente={cliente}
         aoVoltar={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO}
       />,
     );
@@ -335,6 +337,7 @@ describe("ACEITE L1-1 — a projeção é relida sem interação do usuário", (
         cliente={duble.cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO}
       />,
     );
@@ -365,6 +368,7 @@ describe("ACEITE L1-1 — a projeção é relida sem interação do usuário", (
         cliente={duble.cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={null}
       />,
     );
@@ -395,6 +399,7 @@ describe("ACEITE L1-2 — a idade da visão está na tela e envelhece com o rel�
         cliente={duble.cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO}
       />,
     );
@@ -424,6 +429,7 @@ describe("ACEITE L1-2 — a idade da visão está na tela e envelhece com o rel�
         cliente={duble.cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO}
       />,
     );
@@ -458,6 +464,7 @@ describe("ACEITE L1-2 — a idade da visão está na tela e envelhece com o rel�
         cliente={duble.cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO}
       />,
     );
@@ -484,6 +491,7 @@ describe("ACEITE L1-2 — a idade da visão está na tela e envelhece com o rel�
         cliente={duble.cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO}
       />,
     );
@@ -511,6 +519,7 @@ describe("ACEITE L1-3 — falha de recarga AUTOMÁTICA preserva e rotula o conte
         cliente={duble.cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO}
       />,
     );
@@ -541,6 +550,7 @@ describe("ACEITE L1-3 — falha de recarga AUTOMÁTICA preserva e rotula o conte
         cliente={duble.cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO}
       />,
     );
@@ -571,6 +581,7 @@ describe("ACEITE L1-3 — falha de recarga AUTOMÁTICA preserva e rotula o conte
         cliente={duble.cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO}
       />,
     );
@@ -633,6 +644,7 @@ describe("ACEITE L1-4 — um tempo esgotado NÃO mata a releitura periódica", (
         cliente={duble.cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO}
       />,
     );
@@ -692,6 +704,7 @@ describe("ACEITE L1-4 — um tempo esgotado NÃO mata a releitura periódica", (
         cliente={duble.cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO}
       />,
     );
@@ -699,11 +712,24 @@ describe("ACEITE L1-4 — um tempo esgotado NÃO mata a releitura periódica", (
       expect(duble.chamadas()).toBe(1);
     });
 
-    // Três ciclos completos (intervalo + tempo limite), um de cada vez: o
-    // relógio precisa deixar as microtarefas correrem entre eles, porque o
-    // reagendamento acontece no `finally`, depois da rejeição.
+    /*
+      Três ciclos completos (espera + tempo limite), um de cada vez: o relógio
+      precisa deixar as microtarefas correrem entre eles, porque o
+      reagendamento acontece no `finally`, depois da rejeição.
+
+      A ESPERA DE CADA CICLO MUDOU, e o teste mudou junto — de propósito. Desde
+      que o ESPAÇAMENTO POR FALHAS REPETIDAS existe (`./cadenciaDeRecarga.ts`),
+      a partir da segunda falha seguida a espera é multiplicada pelo fator, e
+      avançar sempre `INTERVALO` deixaria o terceiro ciclo sem vencer. Avançar
+      pelo fator vigente é o que mantém o teste medindo o que ele diz medir: que
+      o ciclo CONTINUA existindo depois de tempo esgotado repetido.
+
+      O que este teste NÃO passa a tolerar: espaçamento silencioso. A asserção
+      final exige que a tela o declare.
+    */
+    let fatorVigente = 1;
     for (const esperado of [2, 3, 4]) {
-      await avancar(relogio, INTERVALO);
+      await avancar(relogio, INTERVALO * fatorVigente);
       await waitFor(() => {
         expect(duble.chamadas()).toBe(esperado);
       });
@@ -711,10 +737,21 @@ describe("ACEITE L1-4 — um tempo esgotado NÃO mata a releitura periódica", (
       await waitFor(() => {
         expect(screen.getByTestId("rotulo-frescor-visao")).toBeTruthy();
       });
+      fatorVigente = Number(
+        screen.queryByTestId("rotulo-cadencia-recarga")?.getAttribute("data-fator-espacamento") ??
+          "1",
+      );
     }
 
     // Sem sobreposição: cada ciclo produziu UMA chamada, nunca uma rajada.
     expect(duble.chamadas()).toBe(4);
+
+    // O espaçamento que tornou este teste diferente está DECLARADO na tela —
+    // uma releitura mais lenta que ninguém anuncia é HAZ-0025 (SAF-0025: a
+    // interface nunca pode parecer saudável quando não está).
+    const cadencia = screen.getByTestId("rotulo-cadencia-recarga");
+    expect(cadencia.getAttribute("data-cadencia")).toBe("espacada_por_falha");
+    expect(Number(cadencia.getAttribute("data-fator-espacamento"))).toBeGreaterThan(1);
     // E a tela declara a perda de ciclos em vez de fingir atividade.
     expect(screen.getByTestId("rotulo-idade-visao").getAttribute("data-idade-visao")).toBe(
       "ciclo_perdido",
@@ -733,6 +770,7 @@ describe("ACEITE L1-4 — um tempo esgotado NÃO mata a releitura periódica", (
         cliente={duble.cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO}
       />,
     );
@@ -773,6 +811,7 @@ describe("ACEITE L1-5 — desmontagem durante recarga automática aborta no SINA
         cliente={duble.cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO}
       />,
     );
@@ -806,6 +845,7 @@ describe("ACEITE L1-5 — desmontagem durante recarga automática aborta no SINA
         cliente={duble.cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO}
       />,
     );
@@ -840,6 +880,7 @@ describe("a recarga periódica não reanuncia alertas antigos como novos", () =>
         cliente={duble.cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO}
       />,
     );

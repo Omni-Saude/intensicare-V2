@@ -839,6 +839,16 @@ describe("H. superfícies de erro não vazam detalhe interno nem valor clínico"
         corpoNaoVazaDetalheInterno(r.body, rotulo);
         const problema = r.json() as ProblemDetails;
         expect(problema.title.length).toBeGreaterThan(0);
+        // `ProblemDetails.detail` é OPCIONAL por contrato
+        // (packages/contratos/src/index.ts) — `problema.detail.length` direto
+        // reprovava o typecheck (ACH-O3-2) e, pior, se o produto um dia
+        // omitisse `detail` numa resposta de erro, este teste lançaria
+        // `TypeError` em vez de REPROVAR a asserção. A guarda abaixo falha
+        // ALTO e nomeado quando `detail` falta — nunca `?.`, que
+        // transformaria ausência em verde silencioso.
+        if (problema.detail === undefined) {
+          throw new Error(`${rotulo}: 'detail' ausente no problem+json de erro`);
+        }
         expect(problema.detail.length).toBeGreaterThan(0);
       }
     },

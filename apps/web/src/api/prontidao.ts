@@ -31,13 +31,22 @@
  *
  * Rastreio: ADR-0011 P6, ADR-0020 O4, SAF-0025, QAS-0023, HAZ-0025, LAC-L2.
  */
+import {
+  CODIGOS_RAZAO_PRONTIDAO,
+  type CodigoRazaoProntidao,
+  type VereditoProntidao,
+} from "@intensicare/contratos";
 import type { RespostaApi } from "./tipos.js";
 
 /** Caminho da superfície de prontidão (`openapi.yaml`, `obterProntidao`). */
 export const CAMINHO_PRONTIDAO = "/v1/readyz";
 
-/** `VereditoProntidao` do contrato. Ordem de severidade: not_ready > degraded > ready. */
-export type VereditoProntidao = "ready" | "degraded" | "not_ready";
+/**
+ * `VereditoProntidao` — REEXPORTADO do contrato. Era declarado localmente como
+ * um union literal; a duplicação foi fechada pelo mesmo motivo dos códigos de
+ * razão logo abaixo.
+ */
+export type { VereditoProntidao };
 
 const VEREDITOS: ReadonlySet<string> = new Set<VereditoProntidao>([
   "ready",
@@ -46,28 +55,30 @@ const VEREDITOS: ReadonlySet<string> = new Set<VereditoProntidao>([
 ]);
 
 /**
- * `CodigoRazaoProntidao` do contrato — vocabulário FECHADO
- * (`READINESS_REASON_CODES`). Espelhado aqui porque `@intensicare/contratos`
- * ainda NÃO exporta os tipos de saúde (verificado: `packages/contratos/src/index.ts`
- * exporta `HealthzResposta` e nada de prontidão). Espelho manual é a lacuna
- * LAC-L3; enquanto ela existir, esta lista tem um teste que a confronta com o
- * `openapi.yaml` NÃO É POSSÍVEL a partir de `apps/web` (o YAML está fora da
- * fronteira de leitura de build), então o handoff registra o pedido de export.
+ * Vocabulário FECHADO de razões de prontidão — IMPORTADO do contrato, não mais
+ * espelhado.
  *
- * O espelho NÃO é usado para RECUSAR códigos desconhecidos: ver
- * `interpretarProntidao`.
+ * O ESPELHO MANUAL FOI APAGADO. Ele existia porque `@intensicare/contratos` não
+ * exportava os tipos de saúde, e a nota antiga aqui registrava a própria
+ * fraqueza: a lista era uma segunda fonte, e o teste que a confrontaria com o
+ * `openapi.yaml` não era escrevível a partir de `apps/web` (o YAML está fora da
+ * fronteira de leitura de build). Duas listas sem confronto possível é a forma
+ * mais silenciosa de deriva que existe — um código acrescentado ao contrato
+ * simplesmente passaria a chegar como "não reconhecido por esta versão da
+ * interface", sem que nada ficasse vermelho.
+ *
+ * O contrato passou a exportar `CODIGOS_RAZAO_PRONTIDAO`, confrontado com o
+ * `openapi.yaml` pela Seção F de `scripts/check_contratos.mjs` (divergência
+ * FALHA o gate). Importando, o frontend herda esse confronto de graça e a
+ * segunda fonte deixa de existir.
+ *
+ * A lista NÃO é usada para RECUSAR códigos desconhecidos: ver
+ * `interpretarProntidao`. Degradação descartada por desconhecimento é
+ * degradação silenciosa, e QAS-0023 exige contagem ZERO disso.
  */
-export const CODIGOS_RAZAO_CONHECIDOS = [
-  "rule_bundle_unavailable",
-  "required_dependency_unavailable",
-  "identity_not_configured",
-  "projection_stale",
-  "projection_freshness_threshold_unvalidated",
-  "degradation_active",
-  "degradation_unsurfaced",
-] as const;
+export const CODIGOS_RAZAO_CONHECIDOS = CODIGOS_RAZAO_PRONTIDAO;
 
-export type CodigoRazaoProntidao = (typeof CODIGOS_RAZAO_CONHECIDOS)[number];
+export type { CodigoRazaoProntidao };
 
 export interface RazaoDeProntidaoVisao {
   /**

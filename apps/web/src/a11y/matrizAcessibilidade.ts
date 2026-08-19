@@ -147,30 +147,38 @@ export const TOTAL_CRITERIOS_WCAG_22_AA = CRITERIOS_WCAG_22_A_E_AA.length;
  * contraste (1.4.3/1.4.11) — que estavam ausentes da matriz daquele
  * documento, uma lacuna que esta fatia registra em vez de herdar em silêncio.
  *
- * RECORTE, DITO ÀS CLARAS. Esta lista enumera 15 critérios; a WCAG 2.2 nível
+ * RECORTE, DITO ÀS CLARAS. Esta lista enumera 17 critérios; a WCAG 2.2 nível
  * A+AA tem 55 (`CRITERIOS_WCAG_22_A_E_AA`, enumerados um a um). "WCAG 2.2 AA"
  * aqui é, portanto, um SUBCONJUNTO deliberado — os critérios com obrigação já
  * escrita nos artefatos do §11 — e não uma varredura do padrão inteiro.
  *
- * E O RECORTE NÃO É NEM MESMO UM SUBCONJUNTO PRÓPRIO DE A+AA. Um dos 15
+ * E O RECORTE NÃO É NEM MESMO UM SUBCONJUNTO PRÓPRIO DE A+AA. Um dos 17
  * (2.3.3 Animation from Interactions) é de nível AAA, adotado aqui como ALVO
  * por decisão já escrita em `arquitetura-de-informacao.md` §2.2 — de modo que
- * a matriz cobre 14 dos 55 critérios A+AA, mais 1 AAA. A conta "15 de 55"
+ * a matriz cobre 16 dos 55 critérios A+AA, mais 1 AAA. A conta "17 de 55"
  * seria mais bonita e menos verdadeira; `criteriosForaDoNivelAeAA()` e
  * `criteriosAeAANaoEnumerados()` derivam ambos os números do código, para que
  * nenhum deles precise ser mantido à mão nesta prosa.
  *
- * Ao menos três dos 41 critérios A+AA não enumerados têm lacuna conhecida
- * hoje, todas consequência da ausência de roteamento por URL:
+ * O QUE MUDOU EM LAC-L4, E POR QUE O RÓTULO SÓ MUDOU DEPOIS DO COMPORTAMENTO.
+ * Três critérios estavam registrados aqui como lacuna conhecida, todos
+ * consequência da ausência de roteamento por URL. Dois deixaram de ser lacuna
+ * porque o comportamento passou a existir e a ser exercitado por teste — não
+ * porque alguém decidiu que estavam cobertos:
  *
- *   - 2.4.1 (Bypass Blocks): não há link de pular para o conteúdo;
- *   - 2.4.2 (Page Titled): o `<title>` é estático em todas as telas;
- *   - 2.2.1 (Timing Adjustable): pertinente quando a sessão real chegar
- *     (ADR-0015), porque expiração sem ajuste é barreira de acessibilidade.
+ *   - 2.4.1 (Bypass Blocks): existe atalho para o conteúdo principal
+ *     (`components/LinkPular.tsx`), primeiro ponto de tabulação do documento,
+ *     visível ao receber foco;
+ *   - 2.4.2 (Page Titled): o `<title>` passou a ser derivado da tela
+ *     (`roteamento/tituloDocumento.ts`), distinto em cada uma.
  *
- * Elas ficam registradas aqui, e não corrigidas, porque a correção pertence a
- * um pacote de navegação que esta fatia não tem — e porque um recorte não
- * declarado leria como conformidade que ninguém verificou.
+ * O terceiro CONTINUA ABERTO e continua fora desta matriz:
+ *
+ *   - 2.2.1 (Timing Adjustable): depende de sessão real (ADR-0015,
+ *     `not-started`). Expiração sem ajuste é barreira de acessibilidade, e
+ *     nenhum comportamento desta fatia pode encerrá-lo — o provedor de sessão
+ *     de hoje é sintético e não expira por tempo. Marcá-lo como executado seria
+ *     alegar cobertura sobre um componente que não existe.
  */
 export const MATRIZ_ACESSIBILIDADE: readonly CriterioAcessibilidade[] = [
   {
@@ -238,6 +246,31 @@ export const MATRIZ_ACESSIBILIDADE: readonly CriterioAcessibilidade[] = [
     cobertura: ["automatizado_comportamento"],
     execucao: "executado",
     nota: "Verificado percorrendo a ordem de tabulação em ciclo fechado.",
+  },
+  {
+    sc: "2.4.1",
+    nome: "Pular blocos (atalho para o conteúdo principal)",
+    cobertura: ["automatizado_comportamento", "automatizado_navegador", "manual_obrigatorio"],
+    execucao: "executado",
+    nota:
+      "EXECUTADO. Automação afirma: o atalho é o PRIMEIRO ponto de tabulação, ativa por " +
+      "Enter, move o foco para o `<main>` e — em navegador real — passa de fora da área " +
+      "visível para visível ao receber foco. NÃO prova que o bloco pulado é o bloco que " +
+      "atrapalha, nem que alguém usando leitor de tela encontra o atalho na prática; isso " +
+      "é juízo de quem usa. Verificado em `roteamento/navegacao.test.tsx` e " +
+      "`e2e/navegacao.spec.ts`.",
+  },
+  {
+    sc: "2.4.2",
+    nome: "Título de página (distinto e significativo por tela)",
+    cobertura: ["automatizado_comportamento", "automatizado_navegador", "manual_obrigatorio"],
+    execucao: "executado",
+    nota:
+      "EXECUTADO. Automação afirma que `document.title` muda por tela, é não vazio, " +
+      "distinto entre grade/detalhe/endereço não reconhecido/sessão expirada, e carrega a " +
+      "divulgação de contexto. NÃO prova que o título DESCREVE tópico e propósito de forma " +
+      "útil — a redação é provisória e permanece `VALIDATION REQUIRED` (ADR-0029 C2 " +
+      "ABERTA), o que é decisão humana, não de automação.",
   },
   {
     sc: "2.4.3",

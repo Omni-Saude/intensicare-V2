@@ -57,11 +57,28 @@ e LAC-L2 a galeria ganhou duas famílias de TRANSPORTE (não do §11): **idade d
 visão** (`sem_leitura`/`no_ciclo`/`ciclo_perdido`) e **prontidão do serviço**
 (`ready`/`degraded`/`not_ready`/`nao_lida`).
 
-Honestidade de capacidade: `reproduzindo` e `reconciliado` são
-renderizáveis mas **não são produzidos por transporte real** — esta fatia
-não tem SSE, WebSocket nem cursor de replay (ADR-0011 P4 pendente). O hook
-de conectividade nunca os emite; eles existem no catálogo, não como
-capacidade.
+Honestidade de capacidade — **este parágrafo dizia o contrário e ficou
+obsoleto**. Ele afirmava que `reproduzindo` e `reconciliado` "não são
+produzidos por transporte real" e que "esta fatia não tem SSE, WebSocket nem
+cursor de replay". Deixou de ser verdade quando `App.tsx` passou a montar
+`useFluxoDeEventos` (`src/eventos/`): há canal de push SSE com ticket efêmero,
+cursor de retomada e replay finito, e os dois estados têm origem real pela
+ponte `CONECTIVIDADE_POR_ESTADO_CONEXAO`. Um texto de honestidade que
+sobrevive à mudança que o desmente é pior que nenhum — a mesma correção já
+registrada no cabeçalho de `src/estado/conectividade.ts`.
+
+O que é verdade agora, e o que continua NÃO sendo:
+
+- o push **nunca** traz dado clínico: ele diz QUE releia, e quem lê é a
+  projeção autoritativa (ADR-0011 P7/P8). Ele não é chamado de "tempo real"
+  em lugar nenhum (replay finito não é tempo real);
+- `reconciliado` só é afirmado a partir de um **fato de leitura** — uma
+  leitura bem-sucedida da projeção, iniciada depois do pedido
+  (`src/estado/reconciliacaoObservada.ts`). Sem esse fato a lacuna continua
+  aberta e a tela segue declarando degradação;
+- `reproduzindo`/`reconciliado` só chegam à tela depois de o push **se provar
+  vivo** (fluxo aberto). Antes disso, nada do fio é promovido — caso
+  contrário a tela falaria do fio apenas quando o que há a dizer é brando.
 
 ### Módulo de linguagem (ADR-0021)
 
@@ -215,20 +232,31 @@ log.
 
 ## Outras pendências registradas
 
-- Sem biblioteca de rotas (nenhuma navegação por URL) — a troca entre
-  grade e detalhe é só estado de React (`App.tsx`). Suficiente para as
-  duas telas desta fatia; uma URL por leito (deep link) fica para depois.
-- Sem SSE/push (ADR-0011 P4 pendente). O que EXISTE desde o fechamento de
-  LAC-L1 é o **caminho de verdade** que ADR-0011 P8 exige: recarga
-  autoritativa periódica da projeção (`INTERVALO_RECARGA_PADRAO_MS = 30_000`,
-  premissa reversível de engenharia — não é SLO nem limiar clínico), sem
-  sobreposição, cancelável, com idade da visão exibida de forma factual. O
-  push, quando vier, é otimização SOBRE esse caminho — nunca o contrário.
+- Sem biblioteca de rotas **por decisão**, e não por lacuna. A navegação usa a
+  History API nativa (`src/roteamento/`): existe URL por leito
+  (`/leitos/:leitoId`), deep link, recarregamento que preserva contexto e
+  histórico do navegador de verdade — o "voltar" volta para a grade em vez de
+  sair da aplicação. Endereço desconhecido é estado explícito na tela, nunca
+  redirecionamento silencioso. Acrescentar dependência de runtime de roteamento
+  a uma superfície clínica é decisão de cadeia de suprimentos (ADR-0022,
+  THR-0053/THR-0054), não de quem escreve a tela.
+- O **caminho de verdade** que ADR-0011 P8 exige é a recarga autoritativa
+  periódica da projeção (`INTERVALO_RECARGA_PADRAO_MS = 30_000`, premissa
+  reversível de engenharia — não é SLO nem limiar clínico), sem sobreposição,
+  cancelável, com idade da visão exibida de forma factual. Desde a fiação do
+  SSE (`src/eventos/`), o push EXISTE e é **otimização SOBRE esse caminho —
+  nunca o contrário**: um evento sinaliza *que releia*, jamais *o que é
+  verdade*, e toda dúvida se resolve por polling da projeção autoritativa.
+  Esta linha afirmava "Sem SSE/push" e ficou obsoleta com a fiação; a
+  correção é de 2026-08-18. Um push que morre de vez **degrada a tela
+  visivelmente** (ACH-O3-10) — jamais a deixa com aparência de atual.
   A "Região ao vivo" de alertas continua reagindo a mudanças de estado local
   e é coalescida por `obtidoEm`: uma releitura periódica com a mesma contagem
   de alertas NÃO reanuncia nada.
-- `reproduzindo`/`reconciliado` continuam sem transporte que os origine e
-  seguem apenas no catálogo — nada nesta fatia os emite.
+- `reproduzindo`/`reconciliado` **passaram a ter transporte que os origine**
+  (SSE, `src/eventos/`); esta linha dizia o oposto e estava obsoleta. O que
+  segue pendente é a validação clínica do TEXTO desses estados (ADR-0029
+  condição C2, abaixo), não a existência do transporte.
 - Mutação (Stryker) não configurada — mesma pendência já registrada para
   o restante do monorepo.
 - Vocabulário pt-BR desta fatia é provisório (ADR-0029 condição C2 segue

@@ -669,6 +669,33 @@ asserções derivadas do próprio dado; F4 o contrato "escopo é a primeira
 escrita", ainda **não verificado**; F5 independência de relógio fora de
 `apps/web`, **não medida**.
 
+> **Atualização de 2026-08-18 (não reescreve o parágrafo acima, que era exato
+> quando escrito).** O parágrafo permanece como registro do que se sabia em
+> 2026-08-17. Desde então: **F1**, **F2** e **F4** foram fechados na branch
+> `codex/lacunas-frontend-a11y` (F1 e F2 eram **exploráveis de verdade**,
+> medidos contra PostgreSQL 16.14 com o ataque funcionando antes do fecho);
+> **F3** teve três casos fechados por varredura amostral e **segue aberto** para
+> o que a amostra não cobriu.
+>
+> **F5 estava dito de duas formas contraditórias no MESMO commit `7eef8c01`** —
+> aqui "não medida", e em `HANDOFF.yaml` "MEDIDA e LIMPA". `git blame` mostra
+> mesmo autor, mesmo minuto. Não era documento desatualizado: eram duas
+> sub-alegações diferentes sem que nenhuma das duas dissesse qual. O veredito
+> reconciliado, por medição independente, é **PARCIAL**:
+>
+> - **DATA** (calendário/ano) fora de `apps/web` — **medida e limpa** (1.289
+>   testes verdes sob 2027-03-05 e 2019-11-02).
+> - **TEMPORIZAÇÃO** real (`setTimeout`/`performance.now`) fora de `apps/web` —
+>   **segue não medida**, com dependência real confirmada: `await dormir(1_100)`
+>   em `apps/api/src/eventos/stream.test.ts:1061` e tetos de parede de 5.000 ms
+>   em `seguranca.test.ts`, `e2e.fatia.test.ts` e `routes.test.ts`. O
+>   instrumento que mediu a DATA deslocava **apenas** `Date`, deixando
+>   `setTimeout` intacto — era estruturalmente incapaz de ver a temporização.
+>
+> Isso tem consequência direta para a armadilha descrita logo abaixo: parte dos
+> vermelhos por *timeout* desta bancada pode vir **destes tetos de parede sob
+> contenção**, e não do código sob teste.
+
 **Armadilha de medição desta bancada:** um `pnpm verify` sozinho leva o load a
 ~28. Qualquer coisa em paralelo produz falhas por timeout que parecem defeitos e
 não são — o executor caiu nisso três vezes. Uma coisa pesada por vez; confira

@@ -18,6 +18,8 @@ import { chavearRazoes, prontidaoObrigaDegradacao } from "../api/prontidao.js";
 import type { EstadoConectividade, EstadoSessao, FrescorVisao } from "../domain/estados.js";
 import {
   type SituacaoProntidao,
+  textoAbaOculta,
+  textoCadenciaEspacada,
   textoConectividade,
   textoFrescorVisao,
   textoIdadeDecorrida,
@@ -25,7 +27,9 @@ import {
   textoProntidao,
   textoSessao,
 } from "../domain/linguagem.js";
+import type { Cadencia } from "../estado/cadenciaDeRecarga.js";
 import type { ResumoIdadeVisao } from "../estado/idadeVisao.js";
+import type { VisibilidadeAba } from "../estado/visibilidade.js";
 import { BadgeTom } from "./BadgeTom.js";
 
 // ---------------------------------------------------------------------------
@@ -79,6 +83,21 @@ interface RotuloIdadeVisaoProps {
   obtidoEm: string | null;
   /** `true` enquanto uma leitura está em voo (inclusive a periódica). */
   buscaEmCurso?: boolean;
+  /**
+   * Cadência EFETIVAMENTE agendada, quando conhecida.
+   *
+   * ELA EXISTE AQUI PARA QUE ESTE RÓTULO SAIBA CALAR-SE (ACH-O3-13). A frase
+   * "Releitura automática a cada X" era impressa sempre com o intervalo BASE.
+   * Com o backoff no teto, a tela dizia "a cada 30 s" e, três linhas abaixo,
+   * `RotuloCadenciaRecarga` dizia "ESPAÇADA — 8× o intervalo normal, agora a
+   * cada 4 min": duas descrições divergentes do mesmo fato, exatamente o padrão
+   * que ADR-0008 N3 proíbe e que este código cita ao proibi-lo em outro lugar.
+   *
+   * A correção não é repetir o número aqui (seriam duas fontes a manter em
+   * acordo), e sim ter UMA frase por fato: quando a cadência sai do regime,
+   * quem a declara é `RotuloCadenciaRecarga`, com o fator e a razão.
+   */
+  cadencia?: Cadencia | null;
 }
 
 /**
@@ -101,11 +120,20 @@ interface RotuloIdadeVisaoProps {
  * `no_ciclo` não produz selo permanente, pela mesma economia de sinal aplicada
  * a `online` em `IndicadorConectividade`; a idade em texto continua visível.
  */
-export function RotuloIdadeVisao({ idade, obtidoEm, buscaEmCurso = false }: RotuloIdadeVisaoProps) {
+export function RotuloIdadeVisao({
+  idade,
+  obtidoEm,
+  buscaEmCurso = false,
+  cadencia = null,
+}: RotuloIdadeVisaoProps) {
   if (idade === null) return null;
 
   const { texto, tom } = textoIdadeVisao(idade.classe);
   const declara = idade.classe !== "no_ciclo";
+  // Fora do regime, a cadência é declarada por `RotuloCadenciaRecarga` — com o
+  // fator e a razão. Repeti-la aqui com o intervalo BASE produziria duas
+  // descrições divergentes do mesmo fato (ADR-0008 N3).
+  const declaraCadencia = cadencia === null || cadencia.classe === "regime";
 
   return (
     <div
@@ -125,8 +153,10 @@ export function RotuloIdadeVisao({ idade, obtidoEm, buscaEmCurso = false }: Rotu
       ) : (
         <p data-testid="idade-visao-texto">
           Última leitura bem-sucedida há {textoIdadeDecorrida(idade.idadeMs)}
-          {obtidoEm === null ? "" : ` (${obtidoEm})`}. Releitura automática a cada{" "}
-          {textoIdadeDecorrida(idade.intervaloRecargaMs)}.
+          {obtidoEm === null ? "" : ` (${obtidoEm})`}.
+          {declaraCadencia
+            ? ` Releitura automática a cada ${textoIdadeDecorrida(idade.intervaloRecargaMs)}.`
+            : ""}
         </p>
       )}
 
@@ -142,6 +172,60 @@ export function RotuloIdadeVisao({ idade, obtidoEm, buscaEmCurso = false }: Rotu
         e continua rotulado como tal.
       */}
       {buscaEmCurso && <p data-testid="idade-visao-em-curso">Atualizando…</p>}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Cadência de releitura (jitter, espaçamento por falha, aba oculta)
+// ---------------------------------------------------------------------------
+
+interface RotuloCadenciaRecargaProps {
+  /** Cadência EFETIVAMENTE agendada; `null` = nenhuma (recarga desligada). */
+  cadencia: Cadencia | null;
+  /** Visibilidade da aba — o navegador estrangula temporizadores em segundo plano. */
+  visibilidade: VisibilidadeAba;
+}
+
+/**
+ * Declara, no ponto de uso clínico, TODA razão pela qual a releitura automática
+ * não está no regime declarado.
+ *
+ * ESTE COMPONENTE É O QUE TORNA O BACKOFF ACEITÁVEL. Espaçar a releitura após
+ * falhas repetidas alivia um servidor em dificuldade — e, sem declarar, produz
+ * exatamente o dano que LAC-L1 fechou: uma tela que se atualiza de 4 em 4
+ * minutos com a mesma aparência de uma que se atualiza de 30 em 30 segundos
+ * (HAZ-0025; SAF-0025 exige que a interface NUNCA pareça saudável quando não
+ * está). O mesmo vale para a aba em segundo plano, onde quem espaça é o
+ * navegador e o cliente não tem como impedir.
+ *
+ * `regime` com a aba visível NÃO produz selo: a mesma economia de sinal já
+ * aplicada a `online` e a `no_ciclo`. Um aviso permanente de "está tudo normal"
+ * treina o olho a ignorar a região onde o aviso real apareceria.
+ *
+ * Anúncio POLIDO (`role="status"`): é informação persistente sobre o ciclo da
+ * tela, e o canal assertivo fica reservado ao clinicamente urgente
+ * (IA-P2/HAZ-0037).
+ */
+export function RotuloCadenciaRecarga({ cadencia, visibilidade }: RotuloCadenciaRecargaProps) {
+  const espacadaPorFalha = cadencia !== null && cadencia.classe === "espacada_por_falha";
+  const abaOculta = visibilidade === "oculta";
+  if (!espacadaPorFalha && !abaOculta) return null;
+
+  return (
+    <div
+      className="rotulo-cadencia-recarga"
+      data-testid="rotulo-cadencia-recarga"
+      data-cadencia={espacadaPorFalha ? "espacada_por_falha" : "regime"}
+      data-visibilidade={visibilidade}
+      data-fator-espacamento={cadencia?.fator ?? ""}
+      role="status"
+      aria-live="polite"
+    >
+      {espacadaPorFalha && cadencia !== null && (
+        <BadgeTom {...textoCadenciaEspacada(cadencia.fator, cadencia.esperaMs)} />
+      )}
+      {abaOculta && <BadgeTom {...textoAbaOculta()} />}
     </div>
   );
 }

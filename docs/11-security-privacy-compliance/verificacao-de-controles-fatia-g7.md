@@ -33,13 +33,26 @@ links:
   requirements: [SAF-0001, SAF-0002, SAF-0006, SAF-0007, SAF-0008, SAF-0010, SAF-0013, SAF-0017, SAF-0023, SAF-0026, SAF-0028, SEC-0001, SEC-0003, SEC-0009, SEC-0010, SEC-0015, SEC-0021, SEC-0023, SEC-0026, SEC-0027, SEC-0032]
   hazards: [HAZ-0005, HAZ-0013, HAZ-0023, HAZ-0028, HAZ-0035]
   adrs: [ADR-0003, ADR-0005, ADR-0009, ADR-0010, ADR-0011, ADR-0015, ADR-0016]
-  tests: [apps/api/src/seguranca.test.ts, packages/persistencia/src/seguranca.test.ts]
+  tests: [apps/api/src/seguranca.test.ts, packages/persistencia/src/seguranca.test.ts, apps/api/src/regras/autoridade.test.ts, apps/api/src/db.test.ts]
   pr: null
 supersedes: null
 superseded_by: null
+last_updated: 2026-08-18
+addenda:
+  - "§8 (2026-08-18): janela de DDL das migrações 0005/0006"
+  - "§9 (2026-08-18): ACH-O3-1, ABERTO"
+  - "§9.1 (2026-08-18): emenda datada — alcance de ACH-O3-1 estava subdimensionado; continua ABERTO"
+  - "§10 (2026-08-18): quarta onda adversarial — ACH-O3-3/4/5/7 FECHADOS, ACH-O3-8/15 ABERTOS"
 ---
 
 # Verificação de controles na fatia sintética G7
+
+> **Nota de manutenção (2026-08-18, adendo — não altera as seções 1–7).** Este documento
+> descreve o commit `87798af`, anterior às migrações `0004_escopo_selado.sql`,
+> `0005_fecho_de_privilegio.sql` e `0006_ancora_isolada.sql`. Uma afirmação da `0005`, no
+> código, sobre a "janela de DDL" ficar "fechada até o próximo deploy" mudou parcialmente com
+> a `0006` (2026-08-18). A reconciliação está na **seção 8**, ao final, como adendo datado e
+> autocontido — as seções 1–7 permanecem exatamente como escritas, achado por achado.
 
 ## 1. O que este documento é — e, sobretudo, o que ele NÃO é
 
@@ -207,3 +220,574 @@ O único efeito legítimo deste documento é **reduzir incerteza**: passa a exis
 executável de que certos comportamentos afirmados pela fatia resistem a tentativa ativa de
 contorno, e passa a existir registro explícito — com motivo — de tudo o que a fatia **não**
 consegue demonstrar.
+
+## 8. Adendo (2026-08-18) — a janela de DDL da migração `0005`, e o que mudou com a `0006`
+
+**Por que este adendo existe.** As seções 1–7 acima descrevem, sem alteração, a campanha de
+40 testes adversariais executada contra o commit **87798af** (SPR-G6-2, "Ciclos 5 e 6") — antes
+de existirem as migrações `0003_fronteira_papeis.sql`, `0004_escopo_selado.sql`,
+`0005_fecho_de_privilegio.sql` e `0006_ancora_isolada.sql`. Nenhuma linha das seções 1–7 foi
+reescrita: o ACHADO-01 registrado ali (rebaixamento de papel reversível por `SET SESSION
+AUTHORIZATION`) é um achado **diferente e anterior** aos achados ACHADO-17/ACHADO-18/F1/F2
+descritos abaixo, permanece válido tal como escrito, e continua sendo tratado como **limite
+estrutural do simulador PGlite e requisito vinculante de produção** — ver `ADR-0016` §4.1 e
+`packages/persistencia/README.md`, seção "Dois adaptadores, uma porta". Este adendo não fecha,
+não revisa e não contradiz o ACHADO-01, o ACHADO-02 ou o ACHADO-03.
+
+Este adendo trata de uma afirmação diferente, sobre a migração `0005`: que a "janela de DDL"
+ficaria "fechada até o próximo deploy". Registro de precisão sobre o próprio despacho que pediu
+este adendo: essa frase **não está, e nunca esteve, escrita neste documento** — verificado por
+leitura integral das seções 1–7 e por `git log --follow` sobre este arquivo, que mostra um único
+commit em todo o seu histórico (`ecd32d5`), anterior a todas as migrações `0004`–`0006`. A frase
+existe **no código-fonte**, textualmente, em dois lugares —
+`packages/persistencia/src/migrations/0005_fecho_de_privilegio.sql:73` ("Isso é 'fechado até o
+próximo deploy', não 'fechado'") e `packages/persistencia/src/postgres/pool.ts:32-33` (a mesma
+frase) — e já foi
+propagada e atualizada em `packages/persistencia/README.md` (seção "Fecho de privilégio: função
+de terceiro e herança") pelo especialista que fechou F1/F2, em commit posterior. Esse pacote de
+código está **fora da fronteira de escrita deste agente** (`packages/persistencia/**` é área de
+outro agente nesta rodada). Este adendo é, portanto, a **primeira vez que esta informação entra
+em `docs/**`**, não a correção de um erro anterior deste arquivo. A discrepância entre a premissa
+do despacho recebido ("este documento declara X") e o estado observado ("X está no código e em
+`packages/persistencia/README.md`, não aqui") está registrada com todas as letras para que não
+seja lida como uma correção silenciosa.
+
+### 8.1 A evolução, em ordem, com data e evidência (`OBSERVED`)
+
+| Migração | Data / commit | O que fechou | O que declarou aberto, textualmente |
+|---|---|---|---|
+| `0004_escopo_selado.sql` | anterior a `7eef8c0` | Escopo de tenant deixa de viver em parâmetro de sessão regravável pela aplicação; passa a viver em tabela `intensicare_escopo.selo`, alcançável só por duas funções `SECURITY DEFINER` do papel migrador. Fecho transitivo por `pg_rewrite` sobre quem alcança o selo. | `pg_rewrite` cobre VIEW e MATVIEW — **não alcança função**. Declarado no próprio handoff daquela rodada, e é exatamente o que a `0005` mediu como explorável |
+| `0005_fecho_de_privilegio.sql` | `7eef8c0`, 2026-08-17 ("Sexta revisão adversarial: fecho de privilégio (P1)…") | ACHADO-17 (função `SECURITY DEFINER` de terceiro executável pela aplicação — o PostgreSQL concede `EXECUTE` a `PUBLIC` por padrão em toda função nova, inclusive por gatilho, cuja execução não passa por checagem de `EXECUTE`) e ACHADO-18 (ancestral de herança/partição alcançável sem RLS+FORCE+política ancorada) — os dois **medidos como exploráveis** contra PostgreSQL 16.14 antes do fecho | Textual, no próprio cabeçalho (`0005_fecho_de_privilegio.sql:66-78`): a auditoria roda quando a MIGRAÇÃO roda, e a guarda de identidade roda quando o processo ABRE o pool; um `ALTER TABLE ... INHERIT` executado por superusuário (ou pelo migrador) **no meio da vida de um processo já aberto** não é detectado por nenhuma das duas até o próximo boot ou a próxima migração — "isso é 'fechado até o próximo deploy', não 'fechado'". A `0005` recusou deliberadamente resolver isso com `EVENT TRIGGER` porque só superusuário pode criá-lo no PostgreSQL 16, e "um controle presente em alguns ambientes e ausente noutros é pior que um limite declarado" |
+| `0006_ancora_isolada.sql` | `ec97f61`, 2026-08-18 ("Fecha ACH-REV8-4 e dois exploits reais de isolamento de tenant (F1, F2)") | **F1** (função `SECURITY DEFINER` de terceiro lendo a tabela de selo inteira — `pid` + `tenant_id` de todos os backends vivos) fechado **por estrutura**: a âncora sai da propriedade do dono do esquema (`intensicare_migrador`) para um papel dedicado `intensicare_selo` — `NOLOGIN`, sem nenhum atributo, do qual **ninguém é membro**. **F2** (`ALTER TABLE ... INHERIT` pós-boot) fechado por um **event trigger** em `ddl_command_end` que reexecuta os invariantes da `0005` ao fim de cada comando de DDL e **aborta** o que os violar | O event trigger só pode ser criado por **superusuário** (regra do PostgreSQL 16); o papel de migração não tem esse atributo, por desenho da `0003`. Por isso a instalação é um **segundo passe explícito** do provisionamento, não algo automático em todo ambiente — ver 8.2 |
+
+F1 e F2 foram **atacados de verdade contra PostgreSQL 16.14 real antes do fecho, e os dois
+ataques tiveram êxito** — não são hipóteses de inspeção (`packages/persistencia/README.md`,
+seção "Âncora isolada e guarda de DDL"; `0006_ancora_isolada.sql:14-38`). As recusas medidas
+depois do fecho são **`42501`, erro do banco (PostgreSQL), não da aplicação**: a garantia não
+depende de nenhuma linha de `apps/api` decidindo recusar — é o próprio motor que recusa o
+comando de DDL.
+
+### 8.2 Estado atual, com todas as letras: o que fecha por padrão e o que não fecha
+
+Duas opções distintas, de nomes parecidos e efeito diferente — confundi-las seria o próprio erro
+que este adendo existe para prevenir:
+
+| Opção | Onde (`OBSERVED`) | Efeito | Padrão | O que controla |
+|---|---|---|---|---|
+| `OpcoesProvisionamento.fechoDeRuntime` | `packages/persistencia/src/postgres/provisionamento.ts:70-83,245-250` | Se `true` **e** a `0006` estiver na cadeia de migrações aplicada, o provisionamento roda um **segundo passe** com credencial de superusuário (`instalarFechoDeRuntime`, idempotente — linhas 262-293) que isola a âncora no papel guardião e instala o event trigger | `true` (só produz efeito quando quem chama o provisionamento **possui** uma credencial de superusuário; sem ela o segundo passe apenas registra `notice` e não falha) | Se o fecho é **instalado no banco** no momento do provisionamento |
+| `ConfiguracaoPostgres.exigirFechoDeRuntime` | `packages/persistencia/src/postgres/pool.ts:59-82,432-440` | Se `true`, `AdaptadorPostgres.abrir()` **recusa a partida** contra um banco onde a âncora não está isolada ou o event trigger está ausente/desabilitado, nomeando F1 e F2 nos motivos de recusa (`ErroIdentidadeInsegura`) | **`false`** | Se a **ausência** do fecho é detectada e barrada **em tempo de execução, pela aplicação** |
+
+**Isto é o ponto central deste adendo, dito sem eufemismo — rótulo `VALIDATION REQUIRED`:** com
+`exigirFechoDeRuntime` no padrão (`false`), um `AdaptadorPostgres` abre normalmente contra um
+banco onde o fecho de runtime **não foi instalado** — por exemplo, um ambiente gerenciado que
+não concede `CREATE ROLE`/`CREATE EVENT TRIGGER` a ninguém além do próprio provedor. Nesse caso,
+a ausência do fecho **não gera nenhum erro, nenhum aviso em tempo de execução, nenhuma linha de
+log** por parte deste pacote — ela fica exatamente onde a `0005` já a deixava: **um limite
+declarado em comentário de código e em `README.md`, não uma recusa observável em runtime**. A
+frase "fechado até o próximo deploy" deixou de ser universalmente verdadeira (passou a depender
+de topologia), mas "sempre fechado" **também não é verdadeira hoje** — e não há, atualmente,
+nenhum sinal em runtime que diferencie as duas situações para quem opera o sistema, a menos que
+`exigirFechoDeRuntime` seja ligado explicitamente.
+
+Isso não é uma lacuna de código para um agente corrigir: ligar `exigirFechoDeRuntime` por padrão
+exigiria exigir superusuário no provisionamento de **todo** ambiente-alvo, o que é decisão de
+**topologia de infraestrutura/provedor** — fora da autoridade de qualquer agente. Fica registrado
+como pendência, no mesmo formato que este documento já usa para pendências (§3, coluna
+"Evidência residual necessária para G6"; §4, coluna "O que produziria a evidência"):
+
+> **Pendência de decisão — topologia do fecho de runtime.** Decisão necessária: se todo ambiente
+> que hospeda `AdaptadorPostgres` deve exigir credencial de superusuário no provisionamento (o
+> que habilita `exigirFechoDeRuntime: true` como padrão) ou se algum ambiente-alvo não concede
+> esse privilégio (o que exigiria aceitar o limite declarado como risco residual, formalmente,
+> por quem tem autoridade para aceitar risco — não por nenhum agente). Nenhuma das duas opções
+> foi escolhida até o momento deste adendo. `owner: UNASSIGNED — VALIDATION REQUIRED`
+> (`evidence-notation.md` §2 regra 7) — este documento não nomeia, e não pode nomear, quem
+> decide. Evidência que fecharia a pendência: uma ADR ou decisão registrada em
+> `docs/00-governance/registers/decision-register.md` fixando a topologia de provisionamento
+> para todo ambiente de destino.
+
+### 8.3 O que este adendo NÃO faz
+
+Idêntico, em força, ao que a §1 já declara sobre o documento inteiro — reafirmado porque este
+adendo introduz material novo:
+
+1. **Não fecha `THR-0050`**, nem nenhum outro `THR-*`, `SAF-*`, `SEC-*` ou `HAZ-*`. F1 e F2 foram
+   fechados **no código e na configuração de privilégio do banco**, medidos contra PostgreSQL
+   real — isso é diferente de qualquer um desses IDs de rastreio ser fechado, aceito ou
+   verificado por terceiro independente (`DEC-G0-02`, `MG-G6`).
+2. **Não fecha nem aproxima o Gate G6.** A §7 acima ("Situação frente ao Gate G6 (inalterada)")
+   permanece integralmente válida; nada neste adendo muda qualquer uma das quatro condições ali
+   descritas.
+3. **Não marca nenhuma ADR como `implemented` nem `verified`.** `ADR-0016` continua como está;
+   este adendo cita, não decide.
+4. **Não aceita risco residual, não nomeia owner, não usa o rótulo `DECIDED`.** A pendência de
+   8.2 é registrada, não resolvida.
+5. **Estado factual duro, inalterado:** 0 vias clínicas acionáveis; matriz de vias 47/47
+   inelegíveis; `Observation` da AMH não consumível; safety case **M0**; nenhum dado real
+   acessado (100% sintético, prefixo `SYNTH-`). Nenhum gate aprovado, nenhum `MG-*` satisfeito.
+
+### 8.4 Provenance deste adendo
+
+| Campo | Valor |
+|---|---|
+| `label` | Misto por subseção — 8.1 e a tabela de 8.2: `OBSERVED` (leitura direta de código-fonte e de `git log`); o bloco de pendência em 8.2: `VALIDATION REQUIRED`; 8.3: declarativo (escopo negativo) |
+| `source_repo` | `intensicare-V2` |
+| `path_or_url` | `packages/persistencia/src/migrations/0004_escopo_selado.sql`, `0005_fecho_de_privilegio.sql`, `0006_ancora_isolada.sql`; `packages/persistencia/src/postgres/pool.ts`; `packages/persistencia/src/postgres/provisionamento.ts`; `packages/persistencia/README.md` (citado como fonte já reconciliada; não editado por este agente — fora de `docs/**`) |
+| `commit_sha_or_version` | `7eef8c0` (introduz `0005`); `ec97f61` (introduz `0006` e atualiza `packages/persistencia/README.md`) |
+| `section_or_lines` | `0005_fecho_de_privilegio.sql:66-78`; `0006_ancora_isolada.sql:1-105`; `pool.ts:25-46,59-82,432-440`; `provisionamento.ts:70-83,245-293` |
+| `date_collected` | 2026-08-18 |
+| `collector` | agente reconciliador documental (esta sessão, branch `codex/lacunas-frontend-a11y`) |
+| `transformation` | resumido e organizado em tabela a partir de comentário de código; citações entre aspas são cópia literal, sem tradução de sentido técnico |
+| `confidence` | high (leitura direta do código-fonte citado linha a linha; nenhum teste foi executado por este agente — ver rubricas TESTADO/NÃO TESTADO do handoff desta sessão) |
+| `owner` | UNASSIGNED — VALIDATION REQUIRED |
+| `validation_status` | VALIDATION REQUIRED |
+
+## 9. Adendo (2026-08-18) — `ACH-O3-1` (ABERTO): o veredito clínico persistido continua sem integridade própria
+
+**Por que este achado mora aqui.** Esta é a continuação natural da lacuna já
+registrada em §4.2 deste documento sobre `SAF-0019`: *"o controle exige
+identidade e hash do bundle no registro — que não existem (SEC-0028). O
+registro é imutável, mas incompleto frente a SAF-0019."* `ACH-O3-1` é a
+mesma lacuna, medida de novo e de forma mais específica, depois de uma rodada
+de revisão adversarial (`ACH-REV8-3`) ter fechado uma fatia ADJACENTE — a
+acionabilidade — sem fechar esta. Não é um achado novo em espécie; é a prova,
+por teste, de que o gap já registrado continua aberto mesmo depois de
+`ACH-REV8-3` fechar.
+
+**Identificador.** `ACH-O3-1` é documento-local, atribuído pelo orquestrador
+desta sessão, no mesmo regime autodeclarado de `LAC-*`/`RLI-*`/`IA-*`/`EV-N`
+usados alhures neste repositório — pendente de ratificação em
+`docs/00-governance/traceability-policy.md` §1.1 caso venha a precisar de
+alcance global. A família `ACH-*` já está em uso neste repositório (por
+exemplo `ACH-REV8-3`, `ACH-01`/`ACH-05`/`ACH-07`/`ACH-09` em
+`packages/persistencia/README.md` e `ACHADO-17`/`ACHADO-18` nas migrações
+citadas em §8) — nenhum prefixo global novo é cunhado aqui.
+
+**O que `ACH-REV8-3` fechou, e o que ele deliberadamente não fechou
+(`OBSERVED`, `apps/api/src/regras/exposicao.ts:468-497`,
+`apps/api/src/regras/autoridade.test.ts` inteiro).** `lerModoDeDespacho`
+derivava `acionavel` da proveniência **lida do próprio registro persistido**
+— registro e proveniência vêm do mesmo blob, então um atacante com escrita em
+`evaluation_records` no escopo do tenant podia forjar coerência interna
+(assinatura "verificada", zero bloqueios, `modo: "acionavel"`,
+`acionavel: true`) e publicá-la como se fosse autorizada. A correção
+(`resultadoPersistidoPublicavel`, `exposicao.ts:488-497`) passou a derivar
+`acionavel` do **catálogo de autoridade do runtime** — o conjunto de
+artefatos que o próprio processo carregou — em vez da alegação do blob; o
+registro persistido serve apenas de chave de junção
+(`versaoRegra`+`versaoBundle`+`behaviorHash`+`digestManifesto`), nunca de
+fonte de verdade. Isto é `ACH-REV8-3`, e está **fechado**: medido em
+`autoridade.test.ts`, uma forja competente (internamente coerente, não
+apenas incompetente como os cinco vetores anteriores) é recusada com e sem
+autoridade em mãos, com chave de junção copiada do runtime, contra regra
+desconhecida, e mesmo tentando só a "aparência" de cadeia verificada sem
+`acionavel: true` (lavagem de autoridade).
+
+**O que continua aberto — `ACH-O3-1`.** O fecho cobre **acionabilidade e
+alegação de autoridade**, não o **veredito clínico em si**. `escore`,
+`banda`, `status`, `explicacao` e `anotacoes` continuam sendo republicados
+**VERBATIM** do `result` persistido (`resultadoPersistidoPublicavel`, mesma
+função, mesmas linhas: só o campo `despacho` é submetido à autoridade). Um
+atacante com escrita em `evaluation_records` no escopo do tenant **fabrica
+um escore e uma banda de risco** — só não fabrica uma recomendação acionável
+para agir sobre eles. Medido ponta a ponta contra servidor real
+(`autoridade.test.ts`, último `describe`, caso *"o fecho é PARCIAL: neutraliza
+o despacho forjado e NÃO o veredito forjado"*): uma linha inserida com
+`escore: 0`, `banda: "normal"` e explicação sintética fabricada — na direção
+clinicamente mais perigosa, esconder deterioração — atravessa
+`GET /v1/pacientes/{ref}/avaliacoes` com `despacho: null` (corretamente
+neutralizado) **e** o escore/banda/explicação fabricados intactos. Para a
+mesma série de insumos, o kernel real produz `11`/`crítico`; o veredito
+publicado nesse cenário de ataque é `0`/`normal`. As asserções que provam
+isto existem **para tornar o limite visível**, não para aprová-lo — o próprio
+teste as chama de "dupla guarda de não-vacuidade", exatamente para que este
+fato não passe despercebido quando alguém mudar o comportamento sem
+atualizar o achado.
+
+**O que fechá-lo exigiria — não é chamada deste documento.** Integridade do
+**registro persistido** em si: assinatura de linha, HMAC ou coluna de digest
+sobre o `result` gravado em `evaluation_records`. Isto é desenho novo, toca
+`packages/persistencia` (fora da fronteira de escrita deste agente nesta
+rodada), e provavelmente depende da MESMA custódia de chave que `ADR-0007`
+C5 mantém **ABERTA** — não há, hoje, onde guardar a chave de assinatura de
+forma que o mesmo atacante com escrita no banco não a alcance também.
+
+> **Pendência de decisão — quem fecha `ACH-O3-1`.** *Quem decide:* o dono da
+> `ADR-0007` (formato/assinatura de bundle de regra, cuja condição C5 sobre
+> custódia de chave está na mesma família de problema) em conjunto com a
+> autoridade de dados/segurança que aceitaria ou recusaria o desenho de
+> integridade de registro. Nenhum nome é atribuído por este documento — a
+> decisão de topologia de custódia de chave e o desenho de integridade de
+> registro estão fora da autoridade de qualquer agente (Contrato de Agentes
+> §3). `owner: UNASSIGNED — VALIDATION REQUIRED`
+> (`evidence-notation.md` §2 regra 7).
+
+**O que este adendo NÃO faz.** Não fecha `ACH-O3-1`, `ACH-REV8-3` (que já
+estava fechado antes deste adendo, por outro agente) nem `SAF-0019`/`SEC-0028`.
+Não fecha nem aproxima o Gate G6 — a §7 permanece integralmente válida. Não
+marca nenhuma ADR como `implemented`/`verified`; `ADR-0007` C5 continua
+`ABERTA`. Não aceita risco residual, não nomeia owner, não usa `DECIDED`.
+**Estado factual duro, inalterado:** 0 vias clínicas acionáveis; 47/47
+inelegíveis; `Observation` da AMH não consumível; safety case **M0**; nenhum
+dado real acessado (100% sintético, prefixo `SYNTH-`). Nenhum gate aprovado,
+nenhum `MG-*` satisfeito.
+
+**Provenance:** `OBSERVED`, `apps/api/src/regras/exposicao.ts:468-497`,
+`apps/api/src/regras/autoridade.test.ts` (arquivo inteiro, novo nesta
+sessão) — lido diretamente por este agente. `date_collected`: 2026-08-18.
+`collector`: agente reconciliador documental (esta sessão). `confidence`:
+high (leitura direta de código e de teste que exercita o achado contra
+servidor real e PGlite real — nenhum teste foi executado por este agente,
+apenas lido). `owner`: UNASSIGNED — VALIDATION REQUIRED. `validation_status`:
+VALIDATION REQUIRED.
+
+### 9.1 Emenda datada (2026-08-18, fim da sessão) — o alcance de `ACH-O3-1` estava SUBDIMENSIONADO
+
+O texto de §9 acima **fica intacto e continua sendo o registro do que se
+sabia quando ele foi escrito**. Esta subseção corrige uma coisa só: a frase
+*"fabrica um escore e uma banda de risco — só não fabrica uma recomendação
+acionável"*, que descreve o achado como menor do que ele é. `ACH-O3-1`
+**continua ABERTO**; a emenda amplia o alcance medido, não o fecha.
+
+**Medido depois de §9 ter sido escrita** (`OBSERVED`, leitura de
+`apps/api/src/regras/exposicao.ts:55-92` e do bloco *secção 5* de
+`apps/api/src/regras/autoridade.test.ts`, por este agente, 2026-08-18):
+
+1. **Não é "um escore a mais" — é o escore CERTO substituído pelo ERRADO na
+   direção clinicamente perigosa.** Para a mesma série semeada, o kernel real
+   produz `11`/`critico`; a linha forjada publica `0`/`normal` **mantendo
+   `statusAvaliacao: "valido"` e `frescor: "atual"`**. Não há nenhuma
+   degradação de status que sinalize o problema: o veredito falso se
+   apresenta como um veredito bom.
+2. **O atacante escreve prosa em português na tela do intensivista.**
+   `explicacao`, `anotacoes` e `motivos` **são renderizados**
+   (`apps/web/src/components/DetalhePaciente.tsx`, `ExplicacaoDoBackend`:
+   `<p>{avaliacao.explicacao}</p>`, a lista de `anotacoes`, os `motivos` em
+   `<code>`). Isso é texto normativo de terceiro em superfície clínica
+   (`HAZ-0005`), não um número fora de faixa.
+3. **A allow-list que fechou `ACH-O3-5` (§10.2) não alcança isto**, e é
+   importante que a distinção fique escrita: ela filtra por **CHAVE**
+   (que campos existem, e com que forma estrutural), nunca por **VALOR**. O
+   veredito forjado tem exatamente as chaves certas com exatamente as formas
+   certas — atravessa por construção.
+
+**Limite do que foi medido — o que este documento NÃO afirma.** A grade de
+leitos toma `escore`, `banda` e `statusAvaliacao` das **colunas** de
+`evaluation_records`, não do blob `result`: forjar só o blob **não move a
+grade** (asserido em `autoridade.test.ts`). A substituição do **item de
+trabalho** (alerta da grade e `POST /v1/alertas/{id}/reconhecer`) foi
+relatada por revisão adversarial, é de outra tabela (`work_items`) e **não
+foi reproduzida** — fica registrada como alegação de revisor, não como fato
+observado por este documento.
+
+**O que fechá-lo exige continua o mesmo** (§9, último parágrafo): integridade
+do registro persistido — assinatura de linha, HMAC ou coluna de digest sobre
+o `result` gravado — e, provavelmente, a mesma custódia de chave que
+`ADR-0007` C5 mantém **ABERTA**. A pendência de decisão nomeada em §9
+permanece válida sem alteração. `owner: UNASSIGNED — VALIDATION REQUIRED`.
+
+## 10. Adendo (2026-08-18, quarta onda de revisão adversarial) — seis achados de autoridade de leitura e de isolamento
+
+**O que produziu este adendo.** Três revisores adversariais somente-leitura,
+com lentes distintas, foram despachados contra árvore congelada nesta sessão;
+os três **refutaram** a tese que lhes foi apresentada, e juntos produziram 25
+achados. Os seis abaixo são os que caem no escopo deste documento (autoridade
+de leitura, isolamento de tenant, controle publicado). Os demais estão em
+`docs/10-ux-and-accessibility/analise-de-lacunas-frontend.md` §5
+(apresentação/tela), `docs/09-api-events-and-mcp/catalogo-de-eventos.md` §5.5
+e §5.6 (contrato de eventos) e `docs/14-devsecops-and-delivery/ci-policy.md`
+§1.2/§5 (gate e método).
+
+**Consequência de método, registrada aqui porque é o sexto ciclo seguido em
+que ocorre:** esta refutação tripla veio sobre uma branch com `pnpm verify`
+**exit 0** e **1.883 testes** (medição do orquestrador desta sessão — ver §10.7).
+A taxa de achado deste repositório **não convergiu**. Nada neste adendo pode
+ser lido como "a superfície de leitura está agora correta"; ele descreve o que
+foi medido, fechado e deixado aberto numa rodada.
+
+**Identificadores.** `ACH-O3-3`, `ACH-O3-4`, `ACH-O3-5`, `ACH-O3-7`,
+`ACH-O3-8` e `ACH-O3-15` são **documento-locais, pendentes de ratificação em
+`docs/00-governance/traceability-policy.md` §1.1** — exatamente o mesmo
+regime já declarado para `ACH-O3-1` em §9 e para `LAC-*` no documento de
+lacunas de frontend. **Nenhum prefixo global novo é cunhado**: a família
+`ACH-*` já está em uso neste repositório (`ACH-REV8-3`,
+`ACH-01`/`ACH-05`/`ACH-07`/`ACH-09` em `packages/persistencia/README.md`,
+`ACHADO-17`/`ACHADO-18` nas migrações citadas em §8). Enquanto §1.1 não for
+ratificado por autoridade humana nomeada, cada um destes IDs carrega o peso
+probatório de um `PROPOSAL` (`evidence-notation.md` §2).
+
+### 10.1 `ACH-O3-3` — FECHADO (era P0): a terceira superfície de leitura republicava corpo E status do banco
+
+`ACH-REV8-3` foi fechado em **duas** superfícies de leitura
+(`getPatientEvaluations`, `projectBedGrid`). Havia uma **terceira, que nunca
+esteve naquele escopo**: o ramo de replay de idempotência de
+`ingestObservations`, que devolvia `statusCode: existing.statusCode` e
+`body: existing.responseBody` — os dois lidos de `idempotency_records`, sem
+`lerModoDeDespacho`, sem `resultadoPersistidoPublicavel`, **sem autoridade**.
+A migração `packages/persistencia/src/migrations/0002_g7_integration.sql:72`
+concede `insert` nessa tabela ao papel da **aplicação**, e a guarda
+`existing.requestHash !== args.requestHash` não protege nada: quem insere a
+linha escolhe também o `request_hash`.
+
+**Reprodução `OBSERVED`** (registrada em
+`apps/api/src/db.test.ts:255-311`, contra `HEAD` `700b13e`, com PGlite real e
+`buildServer` real — lida por este agente, não executada por ele):
+
+| | status HTTP | `despacho.acionavel` | `rotuloPt` publicado |
+|---|---|---|---|
+| caminho legítimo, mesmo processo | `201` | `false` | constante `ROTULO_SOMBRA_PT` |
+| replay sobre linha forjada | **`200`** | **`true`** | **texto escrito pelo atacante** |
+
+O `rotuloPt` da forja é significativo por si: `"ACIONÁVEL — conduta clínica
+autorizada."` **não existe como constante deste serviço** — não há
+`ROTULO_ACIONAVEL_PT` em `apps/api/src/regras/tipos.ts`. A frase foi
+integralmente redigida por quem escreveu a linha no banco e publicada
+verbatim.
+
+**Como foi fechado** — três exigências, todas verificáveis no código:
+
+1. o corpo do replay é **reconstruído** por este processo, e a parte que
+   alega autoridade (`avaliacao.despacho`) passa pela mesma submissão ao
+   catálogo do runtime que as outras duas leituras já sofriam
+   (`respostaDeReplayPublicavel`, `apps/api/src/db.ts:420`);
+2. o `status_code` da linha **não decide** o código HTTP. O 201 é
+   **transcrito do `packages/contratos/openapi.yaml`**, que já declarava esse
+   código para o replay (`apps/api/src/routes.ts:200-210`) — não é um número
+   decidido por nenhum agente;
+3. corpo armazenado que **não reconstrói** é recusado com **500**
+   (`replay-nao-publicavel`, `routes.ts:211-229`), nunca republicado nem
+   "lavado". Fail-closed: o cliente não errou, o servidor é que não consegue
+   honrar o replay.
+
+**O que este fecho NÃO cobre:** exatamente o limite de `ACH-O3-1` (§9 e
+§9.1). Escore, banda, status, motivos, anotações e explicação continuam
+republicados verbatim. Quem escreve no banco ainda fabrica um veredito — só
+não fabrica mais uma recomendação acionável nem um código HTTP.
+
+### 10.2 `ACH-O3-5` — FECHADO: o `spread` do blob e a tripwire que passava por acidente
+
+`resultadoPersistidoPublicavel` fazia **spread** do blob persistido e
+substituía apenas o campo `despacho`. Consequência medida: um
+`acionavel: true` colocado no **topo** do objeto — fora do envelope de
+despacho — atravessava intacto para a resposta.
+
+O que torna este achado instrutivo não é o vazamento; é o que ele revela
+sobre a defesa. **A asserção que existia para pegá-lo,
+`not.toContain('"acionavel":true')`, passava por acidente da forma de forja
+que o próprio autor do teste escolheu** — o vetor dele injetava dentro do
+envelope, onde a substituição de `despacho` limpava; nenhum vetor tocava o
+topo. Um teste cuja cobertura depende de o autor ter imaginado a posição
+certa não é uma defesa, é uma amostra.
+
+**Fecho:** allow-list com **projeção profunda** — campos conhecidos, com
+forma estrutural declarada (`FormaDeCampo`, `apps/api/src/regras/exposicao.ts:587-604`);
+tudo o mais é descartado por construção, não filtrado por lista de proibidos.
+**Prova:** `apps/api/src/regras/autoridade.test.ts:393-523` enumera as
+posições de injeção (`POSICOES`), afirma explicitamente
+`expect(POSICOES.length).toBeGreaterThanOrEqual(17)` para que o bloco não
+possa esvaziar em silêncio, e exercita cada posição **com e sem autoridade**,
+cada uma com âncora de não-vacuidade, mais varredura recursiva da resposta.
+
+**Registrado como limite, não como conforto:** a allow-list decide **forma**,
+nunca **valor** — "aqui não se decide se `banda` é `critico` ou se `status` é
+`valido`, isso é taxonomia clínica e não é decidível por este serviço"
+(comentário do próprio módulo). É por isso que ela não fecha `ACH-O3-1`.
+
+### 10.3 `ACH-O3-4` — FECHADO: texto clínico do atacante saía mesmo COM autoridade conciliada
+
+`rotuloPt`, `mensagemRecusaPt` e `despachadoEm` vinham do blob **mesmo no
+caminho em que a autoridade foi conciliada com sucesso**. A conciliação usa
+uma **chave de junção pública** (`versaoRegra` + `versaoBundle` +
+`behaviorHash` + `digestManifesto`): copiá-la do runtime é trivial, e feito
+isso o texto visível saía como o atacante o escreveu. Medido:
+`rotuloPt: "ACIONÁVEL — conduta clínica autorizada. Iniciar noradrenalina
+0,1 mcg/kg/min."` publicado **ao lado de `acionavel: false`** — a
+neutralização do booleano não neutralizava a frase.
+
+**Fecho:** rótulo e mensagem passaram a ser **derivados** de constantes que já
+existiam no serviço — `ROTULO_SOMBRA_PT` e `ROTULO_NAO_AVALIADO_PT`
+(`apps/api/src/regras/tipos.ts:95,99`) e a tabela `MOTIVO_RECUSA_PT`, as
+mesmas que o **caminho de escrita** grava. **Nenhum texto clínico novo foi
+redigido** por este fecho, e nenhum agente decidiu vocabulário
+(Contrato de Agentes §3).
+
+**Perda conhecida, declarada em vez de escondida:** quando a recusa vem do
+kill switch de runtime, `registro.ts` pode gravar um `mensagemUi` mais
+específico que o texto canônico do motivo; a leitura passa a publicar o texto
+canônico do **mesmo** motivo. É perda de especificidade, não de aviso — a
+recusa continua visível e nomeada.
+
+### 10.4 `ACH-O3-7` — FECHADO: proveniência sem autoridade, incluindo "nenhum impedimento"
+
+Sem autoridade em mãos, a **proveniência do bundle** ainda vinha do blob. O
+campo mais perigoso não era a assinatura: era `bloqueiosDeAtivacao: []` —
+uma lista vazia **lê-se como "nenhum impedimento à ativação"**, afirmação
+positiva sobre um artefato que este runtime não carregou.
+
+**Fecho:** sem autoridade, a proveniência publicada é
+`PROVENIENCIA_NAO_ATESTADA` (`exposicao.ts:558`) — não se descreve um
+artefato que não se conhece. Três guardas independentes precedem isso
+(`d.acionavel`, `modo === "acionavel"`, `assinatura === "assinatura_verificada"`),
+e o próprio módulo registra por que são três: medido por mutação, remover
+duas delas **deixava 387 testes verdes**, porque todo vetor existente
+carregava `assinatura_verificada` e só a terceira decidia. Cada uma tem hoje
+um vetor que a mata sozinha.
+
+`versaoRegra` permanece — é **chave de junção**, não proveniência, e a mesma
+string já é republicada verbatim em `ResultadoAvaliacao.versaoRegra`, que
+segue sob `ACH-O3-1`. Suprimi-la só ali seria teatro, e o código diz isso com
+essas palavras.
+
+### 10.5 `ACH-O3-15` — ABERTO (novo, pré-existente): a recusa LEGÍTIMA nunca concilia, e perde a razão nomeada
+
+**Fonte A — o código de conciliação** (`OBSERVED`,
+`apps/api/src/regras/exposicao.ts:445-462`): `conciliarComAutoridade` exige
+`modoAlegado === entrada.modo`.
+**Fonte B — a forma do envelope de recusa** (`OBSERVED`, mesmo arquivo,
+linhas 501-529): um despacho recusado tem `desfecho: "nao_avaliada"` e
+**`modo: null`**, por invariante estrutural que o próprio módulo impõe.
+**Impacto:** `entrada.modo` do catálogo é sempre `"sombra"` ou
+`"acionavel"` — nunca `null`. Logo a comparação **nunca** é verdadeira para
+uma recusa, `conciliarComAutoridade` devolve `null`, e o despacho publicado é
+`null` **em vez do envelope com `motivoRecusa` e `mensagemRecusaPt`
+visíveis**.
+
+**Interpretação adotada** (precedência: estado executável observado > mapa):
+a direção é **fail-closed** — nada indevido é publicado, e `null` é definido
+pelo contrato como "trate como não acionável". O problema não é exposição; é
+que **a razão nomeada da recusa desaparece da resposta**. Isso toca
+`QAS-0023` (*"count of degradations with no user-visible representation
+(must be zero)"*): uma recusa que vira `null` silencioso é uma degradação sem
+representação — a mesma classe de `LAC-L2`, e a soma das duas mantém a
+contagem acima de zero.
+
+**Por que não foi fechado nesta rodada.** Fechá-lo exige **desenho**, não
+ajuste: seria preciso decidir como uma recusa concilia com autoridade quando,
+por construção, ela não tem modo de ativação a conciliar — por exemplo, um
+predicado de conciliação distinto para `nao_avaliada`, ou um envelope de
+recusa que carregue a identidade do artefato de outra forma. Qualquer uma das
+duas muda o que o serviço afirma sobre uma recusa, e isso é matéria de
+`ADR-0008` §8.3 ("recusa nunca é no-fire silencioso") + `ADR-0007`, não de um
+agente.
+
+> **Pendência de decisão — quem fecha `ACH-O3-15`.** *Quem decide:* o dono de
+> `ADR-0008` (semântica de recusa e sua visibilidade) com o dono de
+> `ADR-0007` (o que identifica o artefato de regra numa recusa). *Que
+> evidência fecharia:* um desenho aceito de conciliação para
+> `desfecho: "nao_avaliada"`, mais teste ponta a ponta provando que a recusa
+> chega à resposta **com o motivo nomeado** e sem abrir caminho para o
+> envelope forjado que `ACH-O3-3`/`ACH-O3-5` fecharam. *Efeito bloqueante
+> hoje:* `QAS-0023` não pode ser declarado satisfeito.
+> `owner: UNASSIGNED — VALIDATION REQUIRED`.
+
+### 10.6 `ACH-O3-8` — ABERTO (novo): o cursor de outbox mede o volume de escrita de todos os tenants
+
+`OBSERVED` (`packages/persistencia/src/migrations/0001_init.sql:266-290`,
+lido por este agente): `outbox_events.id` é **`bigserial` primary key** —
+uma sequência **global**, compartilhada por todos os tenants; o comentário
+imediatamente acima da tabela explica que é justamente a monotonicidade
+global que faz a ordenação por `ordering_scope` funcionar sem sequência por
+escopo. A RLS está ligada e forçada
+(`outbox_events_tenant_isolation`), e `grant usage, select on all sequences`
+é concedido ao papel de aplicação.
+
+**Nenhuma linha vaza.** O achado é de **canal lateral**, e é exatamente o que
+§6 item 5 deste documento já declarava não cobrir ("Sem canal lateral"): o
+cursor entregue a um tenant em `GET /v1/eventos/stream` é um número da
+sequência global, então a **diferença entre dois cursores consecutivos**
+mede o volume de escrita de **todos os outros tenants** no intervalo. Para
+uma plataforma multi-instituição, isso é informação comercial e
+epidemiológica sobre terceiros derivada de um identificador legítimo.
+
+**Por que não foi fechado nesta rodada.** Fechá-lo é **topologia**: ou um
+cursor escopado por tenant (sequência por tenant, ou coluna de posição
+derivada dentro do escopo), ou um cursor **opaco** (token cifrado/HMAC que
+não revele a posição global). A primeira opção muda o esquema de persistência
+e a garantia de ordenação declarada em `ADR-0010` B3; a segunda reintroduz a
+custódia de chave de `ADR-0007` C5, **ABERTA**. As duas mudam o contrato de
+`x-pendencias` do `asyncapi.yaml`.
+
+> **Pendência de decisão — quem fecha `ACH-O3-8`.** *Quem decide:* o dono de
+> `ADR-0010` (backbone de outbox e garantias de ordenação/entrega) com o dono
+> de `ADR-0016` (isolamento por tenant), e — se a saída escolhida for cursor
+> opaco — a mesma autoridade de custódia de chave que `ADR-0007` C5 aguarda.
+> *Que evidência fecharia:* um desenho aceito de cursor, mais teste
+> adversarial de dois tenants provando que o cursor de um **não varia** com a
+> escrita do outro. *Efeito bloqueante hoje:* `SEC-0009` (isolamento
+> cross-tenant incluindo canais laterais) não pode ser declarado satisfeito —
+> o que já era verdade por `ACHADO-01`, e agora por uma segunda via
+> independente. `owner: UNASSIGNED — VALIDATION REQUIRED`.
+
+### 10.7 O que este adendo NÃO faz, e sob que números ele foi escrito
+
+**Não fecha nada além do que nomeia.** Não fecha `ACH-O3-1` (§9, §9.1),
+`ACH-O3-8`, `ACH-O3-15`, `ACHADO-01`, `ACHADO-02`, `ACHADO-03`, nem
+`SAF-0019`/`SEC-0028`. Não fecha nem aproxima o **Gate G6** — §7 permanece
+integralmente válida. Não marca nenhuma ADR como `implemented`/`verified`;
+`ADR-0007` C5 continua **ABERTA**. Não aceita risco residual, não nomeia
+owner, não usa `DECIDED`, e não resolve nenhuma das duas pendências de
+decisão acima.
+
+**Os fechos reduzem exposição medida — e é só isso que este documento pode
+escrever.** `ACH-O3-3`, `ACH-O3-4`, `ACH-O3-5` e `ACH-O3-7` **não** fecham
+`HAZ-0005`, `HAZ-0001`, `HAZ-0002` nem `QAS-0023`. Uma mitigação só conta
+quando implementada, testada **e validada com humanos** (`ADR-0004` V10).
+
+**Estado factual duro, inalterado:** 0 vias clínicas acionáveis; 47/47
+inelegíveis; `Observation` da AMH não consumível; relação com a AMH =
+candidato a integração; safety case **M0**; nenhum dado real acessado (100%
+sintético, prefixo `SYNTH-`). Nenhum gate aprovado, nenhum `MG-*` satisfeito.
+
+**Números sob os quais este adendo foi escrito — cada um com o comando que o
+produz** (medição do **orquestrador** desta sessão, com a máquina ociosa;
+**este agente não executou nenhum deles**, e a distinção importa porque um
+revisor mostrou que dois números vinham sendo confundidos):
+
+| Comando | Resultado relatado |
+|---|---|
+| `pnpm verify` | exit **0** — **1.883 passed \| 1 skipped** |
+| `pnpm --filter @intensicare/persistencia test` (pacote inteiro, contra PostgreSQL 16.14 real) | **99/99** |
+| `pnpm test:fronteira` (**um arquivo**, não o pacote) | **63/63** |
+| `pnpm --filter @intensicare/web test:e2e -- --workers=1` | **38/38** |
+| `node scripts/check_contratos.mjs` | **208 verificações** relatadas pelo orquestrador — ver a divergência abaixo |
+| `node scripts/check_contratos.mjs autoteste` | **35 casos** |
+
+**`99/99` e `63/63` são escopos diferentes e não devem ser somados nem
+trocados** — o primeiro é o pacote `persistencia` inteiro, o segundo é o
+arquivo de fronteira. Onde este documento escrever um número, ele nomeia o
+comando que o produz.
+
+**Divergência registrada, não resolvida em silêncio — 208 × 209.** *Fonte A:*
+o orquestrador desta sessão relatou **208 verificações** para
+`pnpm check:contratos`. *Fonte B:* este agente executou
+`node scripts/check_contratos.mjs` sobre o working tree ao final da sessão e
+obteve **209 verificações** (`0 pendência(s) declarada(s)`, exit 0). *Impacto:*
+nenhum — o gate passa nos dois casos, e nenhuma alegação deste documento
+depende do número exato. *Interpretação adotada* (precedência: estado
+executável observado > relatório de evidência): o número corrente é **209**;
+a diferença é compatível com uma verificação acrescentada por outro agente
+entre a medição do orquestrador e o fim da sessão, mas **isso é hipótese, não
+medida** — nenhuma execução intermediária foi preservada para confirmá-la.
+*Verificação auxiliar feita por este agente:* rodando o mesmo gate com
+`--raiz` apontando para uma cópia em que **apenas** o catálogo de eventos é a
+versão de `HEAD` (isto é, sem as edições documentais desta rodada), o
+resultado também é **209** — logo a divergência **não** foi introduzida pelas
+edições de `docs/**` desta rodada. Nenhuma autoridade é necessária para
+dispor deste item; ele fica registrado para que o próximo leitor não trate
+"208" como o número corrente.
+
+### 10.8 Provenance deste adendo
+
+| Campo | Valor |
+|---|---|
+| `label` | Misto por subseção — 10.1 a 10.4 e 10.6: `OBSERVED` (leitura direta do código-fonte e dos testes citados linha a linha); 10.5: `OBSERVED` quanto às duas fontes citadas, `INFERENCE` quanto ao impacto sobre `QAS-0023`; os blocos de pendência em 10.5/10.6: `VALIDATION REQUIRED`; 10.7: declarativo (escopo negativo) + números relatados pelo orquestrador, não medidos por este agente |
+| `source_repo` | `intensicare-V2` |
+| `path_or_url` | `apps/api/src/regras/exposicao.ts`; `apps/api/src/regras/tipos.ts`; `apps/api/src/regras/autoridade.test.ts`; `apps/api/src/routes.ts`; `apps/api/src/db.ts`; `apps/api/src/db.test.ts`; `packages/persistencia/src/migrations/0001_init.sql`, `0002_g7_integration.sql`; `packages/contratos/openapi.yaml` |
+| `commit_sha_or_version` | `700b13e` (base de leitura); correções desta sessão lidas no working tree da branch `codex/lacunas-frontend-a11y` |
+| `section_or_lines` | `exposicao.ts:55-92,368-400,445-462,493-584,587-604`; `tipos.ts:95,99`; `autoridade.test.ts:393-523`; `routes.ts:200-229`; `db.ts:420,481-484`; `db.test.ts:255-311,415-668`; `0001_init.sql:266-290`; `0002_g7_integration.sql:72` |
+| `date_collected` | 2026-08-18 |
+| `collector` | agente de consistência documental e rastreabilidade (esta sessão, branch `codex/lacunas-frontend-a11y`) |
+| `transformation` | achados relatados por três revisores adversariais somente-leitura, cada um **reproduzido por leitura do código atual** por este agente antes de ser escrito aqui; citações entre aspas são cópia literal do código ou do teste, sem tradução de sentido técnico; nenhum teste foi executado por este agente |
+| `confidence` | high para 10.1-10.4 e 10.6 (leitura direta); medium para o alcance de `HAZ-0005` em §9.1 item 2 (a renderização foi lida em `DetalhePaciente.tsx`, o efeito clínico não foi validado com humano algum) |
+| `owner` | UNASSIGNED — VALIDATION REQUIRED |
+| `validation_status` | VALIDATION REQUIRED |

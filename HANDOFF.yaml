@@ -690,19 +690,39 @@ consolidacao_final_2026_08_17:
     medicao isolada. REGRA: uma coisa pesada por vez; se houver vermelho,
     conferir `uptime` ANTES de concluir qualquer coisa; e o CI do PR #5 (runner
     limpo) e' evidencia mais confiavel que esta bancada.
-  F5_MEDIDO_E_LIMPO: >-
-    Independencia de DATA fora de apps/web: MEDIDA e LIMPA. 1.289 testes verdes
-    em 2027-03-05 e em 2019-11-02, um pacote por vez, load 2,7-8,0. Zero falhas.
-    Instrumento: shim que desloca APENAS Date (setTimeout/performance.now
-    intactos), validado nos dois sentidos antes do uso. RISCO RESIDUAL, nao
-    fechado: sao pontos de fuga de relogio em CODIGO DE PRODUTO, com default de
-    parede, que um teste futuro pode esquecer de injetar —
-    apps/api/src/eventos/ticket.ts:88,104,113 (expiracao de ticket),
-    auth/verificador.ts:118, composicao/regras.ts:185,
-    packages/conformidade/src/runner.ts:65, apps/api/src/db.ts:179,327,557,827.
-    Hoje nenhum produz teste dependente de data (medido). O tratamento
-    estrutural (caminho unico que nao aceita o parametro) e' mudanca de PRODUTO
-    e precisa de dono.
+  F5_DATA_MEDIDA_TEMPORIZACAO_NAO_MEDIDA: >-
+    RECONCILIADO em 2026-08-18 por medicao independente. A contradicao NAO era
+    entre documentos de epocas diferentes: `git blame` mostra que esta chave e a
+    frase oposta do PROMPT_IMPLEMENTACAO_FINAL §16 ("nao medida") foram escritas
+    no MESMO commit 7eef8c01, mesmo autor, mesmo minuto. Nenhuma das duas estava
+    "desatualizada" — elas falavam de sub-alegacoes DIFERENTES sem dizer qual.
+    O veredito correto e' PARCIAL, e se separa em duas.
+    (1) DATA (calendario/ano) fora de apps/web: MEDIDA e LIMPA. 1.289 testes
+    verdes em 2027-03-05 e em 2019-11-02, um pacote por vez, load 2,7-8,0, zero
+    falhas. Instrumento: shim que desloca APENAS Date (setTimeout e
+    performance.now intactos), validado nos dois sentidos antes do uso.
+    (2) TEMPORIZACAO real (setTimeout/performance.now) fora de apps/web: NAO
+    MEDIDA, e com dependencia REAL confirmada — o proprio instrumento da (1)
+    deixava setTimeout intacto, entao ele era estruturalmente incapaz de ver
+    isto. Confirmados: `await dormir(1_100)` em
+    apps/api/src/eventos/stream.test.ts:1061 (1,1 s de espera de parede real),
+    mais oito esperas de 10-150 ms no mesmo arquivo, e lacos com teto de parede
+    de 5.000 ms em seguranca.test.ts, e2e.fatia.test.ts e routes.test.ts — os
+    tres ja documentados no proprio codigo-fonte como tendo produzido
+    falso-negativo sob carga antes de corrigidos. CONSEQUENCIA OPERACIONAL: e'
+    provavel que parte dos "Hook timed out" que esta bancada vem lendo como
+    defeito venha DESTES tetos de parede sob contencao, e nao do codigo sob
+    teste. Isso reforca a regra de uma coisa pesada por vez em vez de enfraquecer.
+    RISCO RESIDUAL, nao fechado: pontos de fuga de relogio em CODIGO DE PRODUTO,
+    com default de parede, que um teste futuro pode esquecer de injetar —
+    expiracao de ticket em apps/api/src/eventos/ticket.ts, auth/verificador.ts,
+    composicao/regras.ts, packages/conformidade/src/runner.ts e varios pontos de
+    apps/api/src/db.ts. DELIBERADAMENTE SEM NUMERO DE LINHA: a versao anterior
+    desta chave citava db.ts:179,327,557,827 e as linhas ja haviam derivado para
+    197,345,582,869 quando foram reconferidas; citar linha aqui envelhece mais
+    rapido do que o fato. Hoje nenhum desses pontos produz teste dependente de
+    data (medido). O tratamento estrutural (caminho unico que nao aceita o
+    parametro) e' mudanca de PRODUTO e precisa de dono.
   SEXTA_REVISAO_NAO_CONCLUIDA: >-
     A 6a rodada adversarial foi despachada e NAO concluiu (morreu por contencao
     causada pelo proprio orquestrador, que rodava suites em paralelo). Alvos
@@ -861,6 +881,166 @@ ondas_1_e_2_2026_08_18:
     anteriores; a quinta reabriu classe que a quarta declarava fechada; e a
     revisão do PR #8 achou 4 P1 numa branch com CI VERDE. Duas ondas de
     correção não mudam isso.
+
+ondas_3_e_4_2026_08_18:
+  aviso: >-
+    ESTADO VIVO E MAIS RECENTE. SUPERSEDE, no que toca ao codigo, TODAS as
+    secoes anteriores, inclusive ondas_1_e_2_2026_08_18. O estado factual duro
+    segue INALTERADO. Numeros de ondas_1_e_2 NAO foram reescritos: eram corretos
+    quando escritos, e reescreve-los seria a edicao retroativa que o proprio
+    contrato proibe.
+  branch: codex/lacunas-frontend-a11y
+  main: 7eef8c0 — NAO alterada; merge do PR #8 e' ato do titular (GDEC-0014)
+
+  metodo: >-
+    Especialistas estreitos com fronteira de escrita DISJUNTA, em ondas, com
+    roteamento de modelo por dificuldade (Opus para julgamento sutil, Sonnet
+    para engenharia bem especificada). Nenhum agente generico. Verificacao
+    serial SO com a maquina ociosa. A arvore foi CONGELADA durante a onda 4 e
+    os tres revisores confirmaram, por hash de `git status` e `git diff` no
+    inicio e no fim, que ela nao derivou — o erro registrado do executor
+    anterior era justamente revisar arvore em movimento.
+
+  entregue_do_encargo:
+    onda_3_1_sse: >-
+      Transporte SSE construido em apps/web/src/eventos/** e FIADO na arvore.
+      Antes da fiacao ele tinha 80 testes verdes e ZERO consumidores — codigo
+      morto verde. Foi a fiacao, nao mais teste do modulo isolado, que revelou
+      tres defeitos reais; o pior: `EventSource` ausente derrubava a aplicacao
+      inteira e levava junto o POLLING, que e' o caminho de verdade de
+      ADR-0011 P8 e nao depende de push.
+    onda_3_2_navegacao: >-
+      URL por leito, deep link, historico (o "voltar" deixou de sair da
+      aplicacao), titulo dinamico, foco na transicao, skip-link, rota
+      desconhecida explicita. History API nativa, ZERO dependencia nova.
+      WCAG 2.4.1 e 2.4.2 entraram na matriz COM pendencia de validacao manual;
+      2.2.1 permanece FORA (depende de ADR-0015, not-started).
+      A navegacao direta entre leitos TERIA introduzido atribuicao errada de
+      paciente (HAZ-0001/0002) se nao corrigida junto: a guarda de identidade
+      suprimia o CONTEUDO do leito anterior mas os ROTULOS (frescor, idade,
+      conectividade) seguiam sob o cabecalho do leito novo, afirmando recencia
+      com o carimbo de tempo do outro paciente. Reproduzido em vermelho antes.
+    onda_3_3_cadencia: >-
+      Jitter, backoff apos falhas consecutivas, Page Visibility e releitura
+      imediata no retorno da aba. O backoff APARECE na tela — espacar a
+      releitura em silencio seria a mesma classe de HAZ-0025.
+    itens_do_paragrafo_4: >-
+      ACH-REV8-3 diagnosticado e fechado; F3 (3 casos); F5 reconciliado como
+      PARCIAL; gate que emudecia 16 verificacoes; fiacao de exigirFechoDeRuntime;
+      duplicacoes estruturais fechadas por import; docs da janela de DDL.
+
+  onda_4_tres_lentes_tres_refutacoes: >-
+    Tres revisores adversariais SOMENTE LEITURA, com lentes distintas
+    (correcao clinica; fail-closed/autoridade; reprodutibilidade da
+    evidencia), contra arvore congelada. OS TRES REFUTARAM. 25 achados sobre
+    uma branch com `pnpm verify` exit 0. A taxa de achado NAO convergiu — e'
+    a sexta rodada consecutiva em que CI verde e revisao adversarial
+    discordam. Sequencia historica: 8, 6, 9, 12, 12, e agora 25.
+
+  o_que_a_onda_4_ensinou_sobre_METODO:
+    mutacao_nao_prova_aceitacao: >-
+      MUTACAO PROVA QUE UM GATE REPROVA O ERRADO. NUNCA PROVA QUE ELE ACEITA O
+      CERTO. O extrator da Parte G era cego a `readonly` (milhares de
+      ocorrencias no repositorio; ZERO no unico arquivo contra o qual foi
+      testado). A direcao pior nao seria pega por bateria de mutacao alguma:
+      anotar `readonly` numa propriedade JA CONFORME fazia o gate REPROVAR
+      documento correto, e o conserto natural de quem lesse a falha era apagar
+      a propriedade do YAML — o gate ENSINAVA a criar a divergencia que existe
+      para impedir. Todo gate precisa de bloco de CONFORMIDADE, nao so de
+      mutacao.
+    tripwire_pode_testar_a_imaginacao_do_autor: >-
+      `expect(JSON.stringify(saneado)).not.toContain('"acionavel":true')`
+      parecia guarda forte. Passava porque a forja do autor punha o campo
+      DENTRO de `despacho`. No topo, atravessava. A correcao certa foi
+      enumerar 17 POSICOES de injecao, cada uma com ancora propria, com e sem
+      autoridade, mais varredura recursiva.
+    guarda_pode_ser_invisivel_a_suite_inteira: >-
+      Duas das tres guardas fail-closed de `lerModoDeDespacho` podiam ser
+      REMOVIDAS com os 387 testes de apps/api VERDES, porque todo vetor
+      carregava `assinatura_verificada` e so a terceira guarda decidia.
+    exit_code_atraves_de_pipe: >-
+      ERRO MEU: li "exit 0" de um `pnpm verify | tail` e quase reportei verde
+      uma verify que REPROVOU. O exit era do `tail`. Nunca medir exit atraves
+      de pipe.
+    lint_da_raiz_ve_o_que_o_lint_de_caminho_nao_ve: >-
+      `pnpm lint` e' `biome ci --error-on-warnings .` e cobre FORMATACAO.
+      Agente que roda `biome check <caminhos>` nao ve. Uma divergencia de
+      formatacao reprovou a primeira verify desta sessao.
+
+  erros_do_orquestrador_registrados:
+    - >-
+      Li o aviso da onda C de que `reconciliar` devolvia `void` e classifiquei
+      como custo de requisicao. Era VERACIDADE: a tela afirmava "Sincronizado"
+      com a releitura em voo (ACH-O3-9, nucleo de HAZ-0025). O agente me
+      avisou; a classificacao errada foi minha.
+    - >-
+      Verifiquei que o gate contava 204 e que suas 3 mutacoes ficavam
+      vermelhas. NAO verifiquei se o extrator cobria o estilo dominante do
+      repositorio. As tres mutacoes tinham sido escritas no unico estilo que
+      ele enxergava.
+    - >-
+      Repassei a um agente a redacao de um revisor sobre ACH-O3-6 ("quebra a
+      alegacao de conformidade com o catalogo") sem conferir. Nao havia tal
+      alegacao: `asyncapi.yaml` declara a limitacao. O agente conferiu e me
+      corrigiu.
+    - >-
+      Errei a aritmetica de um alvo de teste no despacho (pedi 388 passed + 1
+      skipped, que somaria 389). O agente corrigiu.
+
+  verificacao_maquina_ociosa:
+    pnpm_verify: "exit 0 — 1.883 passed | 1 skipped (era 1.604)"
+    e2e_navegador: "38/38 — `cd apps/web && pnpm exec playwright test --workers=1`"
+    fronteira_pacote: "99/99 — `cd packages/persistencia && IC_FRONTEIRA_PG=obrigatoria pnpm exec vitest run`"
+    fronteira_arquivo: "63/63 — `pnpm test:fronteira` (UM arquivo; escopo DIFERENTE do 99/99 acima)"
+    check_contratos: "209 verificacoes + autoteste 35 casos"
+    nota_de_rotulo: >-
+      Um revisor mostrou que o HANDFOFF anterior confundia esses dois escopos
+      de fronteira. TODO numero daqui em diante nomeia o comando que o produz.
+    unico_pulado: >-
+      apps/api/src/db.test.ts, condicionado a PG_TEST_URL. NAO e' skip
+      permanente: rodei com PostgreSQL real e da' 3/3. Falha alto em CI e sob
+      IC_FRONTEIRA_PG=obrigatoria.
+
+  ABERTO_leia_antes_de_alegar_fecho:
+    ACH_O3_1: >-
+      Integridade do registro persistido. ALCANCE CORRIGIDO: nao e' "so um
+      escore". Oculta deterioracao (11/critico -> 0/normal mantendo status
+      valido e frescor atual), substitui o item de trabalho, e
+      explicacao/anotacoes/motivos SAO RENDERIZADOS — o atacante escreve prosa
+      em portugues na tela do intensivista. A allow-list do ACH-O3-5 filtra por
+      CHAVE, nao por VALOR. Fechar exige assinatura/HMAC/digest de linha e
+      provavelmente a mesma custodia de chave de ADR-0007 C5.
+    ACH_O3_6: "PARCIAL. `sequencia` negativa fechada; tipar `dados` por variante exige decisao de contrato."
+    ACH_O3_8: "Cursor derivado de `bigserial` GLOBAL: mede volume de escrita dos outros tenants. Nenhuma linha vaza. Exige cursor escopado ou opaco — topologia."
+    ACH_O3_15: >-
+      Recusa LEGITIMA (`desfecho: nao_avaliada`, `modo: null`) nunca concilia
+      com autoridade, porque a conciliacao exige `modoAlegado === entrada.modo`
+      e esse e' sempre sombra/acionavel. Publica `null` em vez do envelope com
+      `motivoRecusa` visivel. Fail-closed, mas perde a razao nomeada (QAS-0023).
+      Exige DESENHO, nao ajuste.
+    ACH_O3_16: >-
+      catalogo-de-eventos.md §5.2 JA diverge do codigo (4 tipos listados vs 5
+      no enum; duas formas de payload erradas). QUEM FOR TIPAR `dados` NAO PODE
+      COPIAR DO §5.2 — precisa redigir contra o codigo e ratificar.
+    verificacao_criptografica_nunca_roda: >-
+      `portaDeBundleDoLivroRazao` e `registrarBundleAprovado` nao tem chamador
+      fora de teste. `verifyBundle` — a unica verificacao criptografica do
+      repositorio — NUNCA roda em runtime. A "autoridade" contra a qual tudo e'
+      conciliado e' "este processo carregou este artefato do disco". E' real
+      contra o modelo de ameaca vigente (escrita no banco) e NULA contra
+      atacante com escrita no sistema de arquivos ou no artefato de build.
+
+  atos_humanos_novos_criados_por_este_trabalho:
+    - "Ordem de severidade de frescor EXIBIDA. So a direcao fail-closed foi engenharia; a ordem relativa nao."
+    - "Ausencia de selo de frescor em TODO cartao da grade (a projecao nao publica contribuicoes). Nao afirmar e' correto; se a ausencia e' aceitavel na tela clinica, ou se a projecao deve publicar frescor, e' decisao de contrato."
+    - "Texto para 'entrega em tempo quase-real interrompida em definitivo' — hoje reusa o generico de `degradado`. ADR-0029 C2 ABERTA."
+
+  nada_foi_declarado: >-
+    Nenhum gate aprovado, nenhum MG-* satisfeito, nenhum hazard fechado,
+    nenhuma alegacao de acessibilidade validada. Os achados fechados NAO fecham
+    HAZ-0025, SAF-0025, QAS-0023 nem HAZ-0001/0002 — reduzem exposicao medida.
+    Estado factual duro INALTERADO: 0 vias acionaveis, 47/47 inelegiveis,
+    Observation nao consumivel, safety case M0, nenhum dado real acessado.
 
 rules_for_any_resuming_agent:
   - Read docs/00-governance/evidence-notation.md before writing anything; front-matter is CI-enforced

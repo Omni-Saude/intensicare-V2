@@ -39,6 +39,7 @@ import {
   isLegalWorkItemTransition,
   presentInstant,
   type TemporalValue,
+  WORK_ITEM_STATES,
   type WorkItemState,
 } from "@intensicare/dominio";
 import { loadIntoDatabase } from "@intensicare/fixtures-sinteticas";
@@ -75,11 +76,13 @@ import {
 import { canonicalUnitFor, PARAM_TO_CONCEPT, PARAM_TO_KERNEL, requerAlerta } from "./avaliacao.js";
 import type { ConfiguracaoRuntime } from "./config/index.js";
 import {
+  type AutoridadeDeLeitura,
   type ComModoDeDespacho,
   despacharNews2,
   modoDeDespachoDoResultadoPersistido,
   type RegistroDeRegras,
   resultadoNews2Publicavel,
+  resultadoPersistidoPublicavel,
 } from "./regras/index.js";
 
 // Limiares de frescor ilustrativos — VALIDATION REQUIRED no ADR-0011 §3
@@ -87,6 +90,29 @@ import {
 // para tornar `Frescor` observável e testável nesta fatia.
 const FRESCOR_ATUAL_MS = 5 * 60 * 1000;
 const FRESCOR_ENVELHECENDO_MS = 30 * 60 * 1000;
+
+/**
+ * Autoridade de leitura para o catálogo de regras — construída
+ * DEFENSIVAMENTE (ACH-REV8-3). `registroDeRegras` é OBRIGATÓRIO no tipo de
+ * `projectBedGrid`/`getPatientEvaluations`, mas um caminho de chamada direto
+ * a estas funções — fora de `routes.ts`, portanto fora da fronteira de
+ * escrita desta correção — pode não ter migrado ainda e entregar
+ * `undefined` em tempo de execução (TypeScript apaga tipos; um chamador não
+ * checado por `tsc` não é impedido de omitir o campo). Preferimos DEGRADAR
+ * para "nenhuma autoridade em mãos" — o MESMO ramo fail-closed que
+ * `lerModoDeDespacho`/`modoDeDespachoDoResultadoPersistido` já aplicam
+ * quando o parâmetro `autoridade` está ausente (ver `regras/exposicao.ts`) —
+ * a um erro 500 opaco por acessar propriedade de `undefined`. Isto não
+ * afrouxa nada: o resultado é o mesmo "sem autoridade ⇒ nada acionável" que
+ * o caminho normal já produz sem `registroDeRegras` nenhum.
+ */
+function autoridadeDeLeituraOuIndisponivel(
+  registroDeRegras: RegistroDeRegras,
+  instanteIso: string,
+): AutoridadeDeLeitura | undefined {
+  const catalogo: RegistroDeRegras | undefined = registroDeRegras;
+  return catalogo === undefined ? undefined : { catalogo, instanteIso };
+}
 
 /**
  * Abre o banco do processo e devolve a PORTA (`PortaBancoDeDados`) — nunca um
@@ -100,7 +126,13 @@ const FRESCOR_ENVELHECENDO_MS = 30 * 60 * 1000;
  *     `IC_BANCO_SENHA` (a URL de configuração não carrega credencial — ver
  *     `config/carregar.ts`). O adaptador RECUSA identidade superusuário,
  *     `BYPASSRLS` ou dona de tabela: URL errada ⇒ a API não sobe. É intencional
- *     (ADR-0016 §4.1; anti-padrão 5 do contrato de agentes);
+ *     (ADR-0016 §4.1; anti-padrão 5 do contrato de agentes). Fora de perfil
+ *     sintético, o adaptador também EXIGE o FECHO DE RUNTIME da migração
+ *     `0006_ancora_isolada.sql` (`exigirFechoDeRuntime`): sem ele, a recusa de
+ *     identidade de `abrir()` é só um retrato do instante do boot, e um
+ *     `GRANT`/`ALTER TABLE ... INHERIT`/`CREATE FUNCTION ... SECURITY DEFINER`
+ *     aplicado por superusuário DEPOIS não é reavaliado até o próximo deploy
+ *     (F1/F2 — cabeçalho de `@intensicare/persistencia/postgres/pool.ts`);
  *   - caso contrário ⇒ PGlite em memória, migrado, e semeado com as fixtures
  *     sintéticas SOMENTE quando `banco.semearFixturesSinteticas` (GDEC-0014;
  *     anti-padrão 9 — fixtures nunca em perfil não-dev).
@@ -142,6 +174,16 @@ export async function prepareDatabase(
     const porta = await AdaptadorPostgres.abrir({
       url: urlCom(url, { usuario, senha: senha.revelar() }),
       tamanhoMaximo: 8,
+      // `!sintetico` é a MESMA distinção typada que `exigirFronteiraVerificavel`
+      // (abaixo) já usa para exigir fronteira de isolamento verificável — não é
+      // uma decisão nova de topologia, é o mesmo limite reaplicado ao fecho de
+      // runtime. Em perfil sintético apontado para PostgreSQL (uso local/CI,
+      // sem alegação de fronteira verificável: `exigirFronteiraVerificavel`
+      // retorna cedo para essa classe) não exigimos — instalar o fecho requer
+      // superusuário no PROVISIONAMENTO, e qual ambiente concede isso é
+      // decisão de TOPOLOGIA, fora do escopo deste arquivo (contrato de
+      // agentes §3).
+      exigirFechoDeRuntime: !sintetico,
     });
     exigirFronteiraVerificavel(config, porta);
     return porta;
@@ -238,7 +280,20 @@ async function auditAction(
 
 export type IngestOutcome =
   | { readonly kind: "created"; readonly body: IngestaoObservacoesResposta }
-  | { readonly kind: "replayed"; readonly statusCode: number; readonly body: unknown }
+  /**
+   * Replay idempotente. O corpo é RECONSTRUÍDO por este processo
+   * (`respostaDeReplayPublicavel`) — nunca o blob de `idempotency_records`
+   * verbatim — e NÃO carrega `statusCode`: quem decide o código HTTP é o
+   * contrato (201), não uma coluna que quem insere a linha escolhe
+   * (ACH-O3-3).
+   */
+  | { readonly kind: "replayed"; readonly body: IngestaoObservacoesResposta }
+  /**
+   * Existe registro de idempotência para a chave, mas a resposta armazenada
+   * NÃO reconstrói na forma do contrato. Fail-closed: nada é publicado, nem
+   * uma versão "lavada" da linha. Ver `respostaDeReplayPublicavel`.
+   */
+  | { readonly kind: "replay-nao-publicavel" }
   | { readonly kind: "key-conflict" }
   | { readonly kind: "encounter-not-found" }
   | { readonly kind: "mismatch"; readonly detail: string };
@@ -263,6 +318,134 @@ export interface IngestArgs {
   readonly aceitas: readonly ObservacaoEntrada[];
   readonly quarentena: readonly ObservacaoEmQuarentena[];
   readonly rawBody: unknown;
+}
+
+// --- replay idempotente: o corpo persistido NÃO atravessa verbatim ----------
+//
+// ACH-O3-3 (P0). O ramo de replay devolvia `existing.responseBody` e
+// `existing.statusCode` lidos de `idempotency_records`, e `routes.ts` fazia
+// `reply.code(resultado.statusCode).send(resultado.body)`. A migração
+// `0002_g7_integration.sql:72` concede `insert` nessa tabela ao papel da
+// APLICAÇÃO, e a guarda `existing.requestHash !== args.requestHash` não
+// protege nada — quem insere a linha escolhe o `request_hash`. Reproduzido:
+// uma linha plantada publicava `despacho.acionavel: true` com rótulo escolhido
+// pelo atacante, sob um código HTTP também escolhido por ele.
+//
+// Esta era a TERCEIRA superfície de leitura do mesmo blob; as outras duas
+// (`getPatientEvaluations`, `projectBedGrid`) já submetem o envelope de
+// despacho ao catálogo de autoridade do runtime desde o fecho do ACH-REV8-3.
+// Aqui a defesa é a MESMA função (`resultadoPersistidoPublicavel`) mais uma
+// reconstrução: os campos que o PEDIDO desta requisição já determina não são
+// lidos do armazenamento.
+
+/**
+ * Estados publicáveis de `ResumoItemTrabalho`, derivados da fonte ÚNICA
+ * (`WORK_ITEM_STATES` de `@intensicare/dominio`) pela MESMA tradução que a
+ * projeção de leitura usa (`hyphenState`). Reescrever os oito valores à mão
+ * criaria uma segunda lista para divergir da primeira.
+ */
+const ESTADOS_ITEM_TRABALHO_PUBLICAVEIS: ReadonlySet<string> = new Set(
+  WORK_ITEM_STATES.map(hyphenState),
+);
+
+function ehObjetoSimples(valor: unknown): valor is Record<string, unknown> {
+  return typeof valor === "object" && valor !== null && !Array.isArray(valor);
+}
+
+/** Instante ISO 8601 normalizado, ou `null` quando o valor não é instante nenhum. */
+function instanteIsoOuNulo(valor: unknown): string | null {
+  if (typeof valor !== "string") return null;
+  const ms = Date.parse(valor);
+  return Number.isNaN(ms) ? null : new Date(ms).toISOString();
+}
+
+/**
+ * Resumo de alerta lido do corpo armazenado, fail-closed por FORMA.
+ *
+ * Três resultados distintos, de propósito: `null` (o campo estava
+ * explicitamente `null` — não houve alerta nesta ingestão), o resumo válido,
+ * e `undefined` (forma inválida OU campo ausente ⇒ a resposta inteira não é
+ * republicável). Campo ausente NÃO é tratado como "não houve alerta": o
+ * caminho legítimo sempre grava a chave, com valor ou com `null`, e inferir
+ * ausência de alerta a partir de ausência de campo esconderia um alerta.
+ */
+function resumoDeAlertaArmazenado(valor: unknown): ResumoItemTrabalho | null | undefined {
+  if (valor === null) return null;
+  if (!ehObjetoSimples(valor)) return undefined;
+  if (typeof valor.id !== "string" || valor.id.length === 0) return undefined;
+  if (typeof valor.estado !== "string" || !ESTADOS_ITEM_TRABALHO_PUBLICAVEIS.has(valor.estado)) {
+    return undefined;
+  }
+  if (typeof valor.versao !== "number" || !Number.isInteger(valor.versao) || valor.versao < 0) {
+    return undefined;
+  }
+  return { id: valor.id, estado: valor.estado as EstadoItemTrabalho, versao: valor.versao };
+}
+
+/**
+ * Reconstrói a resposta de um replay idempotente. `null` ⇒ o corpo armazenado
+ * não reconstrói e NADA é publicado (nem uma versão "lavada" dele).
+ *
+ * De onde vem cada campo, e por quê:
+ *
+ * - `encontroId`, `aceitas`, `quarentena` — do PEDIDO desta requisição, não do
+ *   armazenamento. O `requestHash` já provou que o corpo recebido agora é o
+ *   mesmo que produziu a resposta original, e a derivação de `aceitas`/
+ *   `quarentena` (zod, em `routes.ts`) é pura: os valores são idênticos aos
+ *   originais e vêm de uma fonte que o chamador autenticado controla para si
+ *   mesmo, e não de uma linha que um terceiro pode ter plantado;
+ * - `avaliacao` — MESMA submissão à autoridade que `getPatientEvaluations`
+ *   faz: `resultadoPersistidoPublicavel` concilia `despacho` com o catálogo do
+ *   runtime e devolve `null` quando nenhuma autoridade sustenta a alegação
+ *   (`regras/exposicao.ts`). O ESCOPO deste fecho é ACIONABILIDADE: escore,
+ *   banda, status, motivos e explicação continuam republicados verbatim —
+ *   `ACH-O3-1`, ABERTO, exatamente como na rota de avaliações;
+ * - `recebidoEm` — só existe no armazenamento (é o instante do processamento
+ *   ORIGINAL; recalculá-lo agora seria mentir sobre quando o envelope foi
+ *   processado). Validado como instante e normalizado. Residual declarado: um
+ *   adversário com escrita no banco escolhe um instante válido — mesma classe
+ *   do `ACH-O3-1`;
+ * - `alerta` — validado por forma, pelo vocabulário FECHADO de estados do
+ *   contrato E pela EXISTÊNCIA do item de trabalho neste tenant (`getWorkItem`,
+ *   dentro desta mesma transação escopada). Um identificador de alerta que não
+ *   corresponde a item nenhum é fabricação de estado de fluxo de trabalho, e
+ *   não atravessa. `estado` e `versao` continuam vindo do corpo armazenado, e
+ *   não da linha atual: replay idempotente devolve a resposta ORIGINAL, e
+ *   trocá-los pelo estado corrente seria mudar essa semântica — decisão que
+ *   este arquivo não toma (draft IETF idempotency-key-header). Residual
+ *   declarado: dentro do tenant, um adversário com escrita no banco pode
+ *   apontar para um item real com estado/versão de sua escolha — mesma classe
+ *   do `ACH-O3-1`.
+ */
+async function respostaDeReplayPublicavel(
+  tx: Parameters<typeof getWorkItem>[0],
+  armazenado: Record<string, unknown>,
+  args: IngestArgs,
+  autoridade: AutoridadeDeLeitura | undefined,
+): Promise<IngestaoObservacoesResposta | null> {
+  // O tipo diz `Record<string, unknown>`, mas o valor vem de uma coluna
+  // `jsonb` gravável: em runtime pode ser texto, número, arranjo ou `null`.
+  // Guarda explícita — acessar propriedade de `null` viraria 500 opaco.
+  if (!ehObjetoSimples(armazenado)) return null;
+
+  const recebidoEm = instanteIsoOuNulo(armazenado.recebidoEm);
+  if (recebidoEm === null) return null;
+
+  const alerta = resumoDeAlertaArmazenado(armazenado.alerta);
+  if (alerta === undefined) return null;
+  if (alerta !== null && (await getWorkItem(tx, alerta.id)) === undefined) return null;
+
+  const avaliacaoArmazenada = armazenado.avaliacao;
+  if (!ehObjetoSimples(avaliacaoArmazenada)) return null;
+
+  return {
+    encontroId: args.encontroId,
+    recebidoEm,
+    aceitas: [...args.aceitas],
+    quarentena: [...args.quarentena],
+    avaliacao: resultadoPersistidoPublicavel(avaliacaoArmazenada, autoridade),
+    alerta,
+  };
 }
 
 /**
@@ -294,11 +477,29 @@ export async function ingestObservations(
         });
         return { kind: "key-conflict" } as const;
       }
-      return {
-        kind: "replayed",
-        statusCode: existing.statusCode,
-        body: existing.responseBody,
-      } as const;
+      // ACH-O3-3: reconstrói e submete à autoridade — ver
+      // `respostaDeReplayPublicavel`. `existing.statusCode` é deliberadamente
+      // IGNORADO: o `openapi.yaml` declara 201 para o replay, e ler o código
+      // de uma coluna gravável deixava o atacante escolher também o status.
+      const corpoDeReplay = await respostaDeReplayPublicavel(
+        tx,
+        existing.responseBody,
+        args,
+        autoridadeDeLeituraOuIndisponivel(args.registroDeRegras, new Date().toISOString()),
+      );
+      if (corpoDeReplay === null) {
+        await auditAction(tx, {
+          tenantId: args.tenantId,
+          actorId: args.actorId,
+          command: "ingestao-observacoes",
+          aggregateType: "encounter",
+          aggregateId: args.encontroId,
+          outcome: "recusada",
+          idempotencyKey: args.idempotencyKey,
+        });
+        return { kind: "replay-nao-publicavel" } as const;
+      }
+      return { kind: "replayed", body: corpoDeReplay } as const;
     }
 
     // Encontro provisionado? (404 indistinguível entre inexistente e cross-tenant.)
@@ -550,10 +751,19 @@ function calcularFrescor(evaluatedAtIso: string | null, agora: Date): Frescor {
  * `reassessNews2AtReadTime`): um `valido` envelhecido degrada para
  * `desatualizado`/`indisponivel` — escore some junto (nunca um número
  * velho parecendo fresco; HAZ-0005).
+ *
+ * ACH-REV8-3: `modoAvaliacao` é submetido ao `CatalogoDeAutoridade` do
+ * runtime (`args.registroDeRegras`), não apenas lido/checado por coerência
+ * interna do `result` persistido — ver `regras/exposicao.ts`.
  */
 export async function projectBedGrid(
   db: PortaBancoDeDados,
-  args: { tenantId: string; actorId: string; correlationId: string },
+  args: {
+    tenantId: string;
+    actorId: string;
+    correlationId: string;
+    registroDeRegras: RegistroDeRegras;
+  },
 ): Promise<EntradaGradeLeitos[]> {
   return withTenantTransaction(db, args.tenantId, async (tx) => {
     const [beds, encounters, evaluations, workItems] = [
@@ -611,13 +821,19 @@ export async function projectBedGrid(
 
       const evaluatedAtIso = toIsoOrNull(evaluation.evaluatedAt);
       // Lido do `result` PERSISTIDO, fail-closed: forma inválida, campo
-      // ausente (linha gravada antes desta versão do contrato) ou `acionavel`
-      // divergente da derivação devolvem `null`, e nunca um valor
-      // "corrigido". Deliberadamente calculado ANTES da reavaliação em tempo
-      // de leitura e NÃO tocado por ela: a reavaliação descreve FRESCOR do
-      // dado, não o MODO DE ATIVAÇÃO do artefato que governou o despacho —
-      // um escore que envelheceu continua tendo sido despachado em sombra.
-      const modoAvaliacao = modoDeDespachoDoResultadoPersistido(evaluation.result);
+      // ausente (linha gravada antes desta versão do contrato), alegação sem
+      // autoridade que a sustente, ou `acionavel` divergente do que a
+      // AUTORIDADE deriva devolvem `null`, e nunca um valor "corrigido"
+      // (ACH-REV8-3 — a checagem é de AUTORIDADE contra
+      // `args.registroDeRegras`, não de coerência interna do blob).
+      // Deliberadamente calculado ANTES da reavaliação em tempo de leitura e
+      // NÃO tocado por ela: a reavaliação descreve FRESCOR do dado, não o
+      // MODO DE ATIVAÇÃO do artefato que governou o despacho — um escore que
+      // envelheceu continua tendo sido despachado em sombra.
+      const modoAvaliacao = modoDeDespachoDoResultadoPersistido(
+        evaluation.result,
+        autoridadeDeLeituraOuIndisponivel(args.registroDeRegras, agora.toISOString()),
+      );
       let statusAvaliacao = evaluation.status as StatusAvaliacao;
       let escore = evaluation.totalScore;
       let banda = evaluation.riskTier as BandaRisco | null;
@@ -673,10 +889,28 @@ export async function projectBedGrid(
 
 // --- leitura: avaliações por paciente ---------------------------------------
 
-/** `null` se o paciente é desconhecido OU pertence a outro tenant — indistinguíveis por desenho. */
+/**
+ * `null` se o paciente é desconhecido OU pertence a outro tenant —
+ * indistinguíveis por desenho.
+ *
+ * ACH-REV8-3 (vetor A): `row.result` vem do armazenamento e não prova nada
+ * sobre si — `resultadoPersistidoPublicavel` submete o `despacho` de CADA
+ * linha ao `CatalogoDeAutoridade` do runtime (`args.registroDeRegras`) antes
+ * de publicar; sem autoridade que sustente a alegação, `despacho` sai `null`
+ * (fail-closed por AUSÊNCIA DE AUTORIDADE, nunca por incoerência interna do
+ * blob — ver `regras/exposicao.ts`). O resto do `result` (escore, banda,
+ * status, motivos) continua sendo republicado como persistido; o escopo
+ * deste fecho é ACIONABILIDADE.
+ */
 export async function getPatientEvaluations(
   db: PortaBancoDeDados,
-  args: { tenantId: string; actorId: string; pacienteRef: string; correlationId: string },
+  args: {
+    tenantId: string;
+    actorId: string;
+    pacienteRef: string;
+    correlationId: string;
+    registroDeRegras: RegistroDeRegras;
+  },
 ): Promise<ResultadoAvaliacao[] | null> {
   return withTenantTransaction(db, args.tenantId, async (tx) => {
     const rows = await listEvaluationRecordsBySubject(tx, args.pacienteRef);
@@ -690,7 +924,13 @@ export async function getPatientEvaluations(
       idempotencyKey: args.correlationId,
     });
     if (rows.length === 0) return null;
-    return rows.map((row) => row.result as unknown as ResultadoAvaliacao);
+    const instanteIso = new Date().toISOString();
+    return rows.map((row) =>
+      resultadoPersistidoPublicavel(
+        row.result,
+        autoridadeDeLeituraOuIndisponivel(args.registroDeRegras, instanteIso),
+      ),
+    );
   });
 }
 
@@ -904,6 +1144,20 @@ export async function replayEvents(
     for (const row of rows) {
       const tipo = OUTBOX_TO_CONTRACT_EVENT[row.eventType];
       if (tipo === undefined) continue;
+      // ACH-O3-6 (fecho PARCIAL). `EventoFluxo.sequencia` é declarado
+      // `type: integer, minimum: 0` no `asyncapi.yaml` e é o CURSOR DURÁVEL de
+      // retomada (ADR-0011 P4), que sai também no `id:` do quadro SSE.
+      // `outbox_events.id` é `bigserial` e começa em 1 — nenhum caminho
+      // legítimo produz `sequencia <= 0`; uma linha PLANTADA produz (a
+      // aplicação tem `insert` nessa tabela, `0001_init.sql:288`), e o quadro
+      // resultante viraria cursor de retomada fabricado no cliente. Mesma
+      // disciplina do `tipo` desconhecido logo acima: o que não é publicável
+      // não é publicado — omitir é honesto, emitir seria falsificar o cursor.
+      //
+      // Isto NÃO valida `dados`: o contrato declara aquele campo NÃO tipado
+      // por variante (`asyncapi.yaml`, schema `EventoFluxo`; catálogo §5.3), e
+      // tipá-lo é decisão de CONTRATO — ver `db.test.ts` e o handoff.
+      if (!Number.isInteger(row.id) || row.id <= 0) continue;
       eventos.push({
         sequencia: row.id,
         tipo,

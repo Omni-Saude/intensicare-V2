@@ -73,6 +73,53 @@
  *    própria; e no instante em que o YAML passar a publicar o schema, o
  *    confronto 1×3 entra em vigor sozinho, sem editar este arquivo — se
  *    divergir, FALHA (há caso de autoteste provando exatamente isso).
+ * G. FORMA das interfaces de mensagem e caminho do canal — porte de
+ *    `packages/contratos/src/asyncapi.test.ts` para o gate (mesma técnica de
+ *    extração por regex das partes C/D/F, não `tsc`, porque
+ *    `packages/contratos/tsconfig.json` exclui `src/**\/*.test.ts` do
+ *    typecheck). Diferente da Parte D (que compara ENUMS de plano de
+ *    controle), a Parte G1 compara a FORMA das interfaces
+ *    `MensagemPulsacao`, `MensagemEstadoConexao`,
+ *    `MensagemInstrucaoReconciliacao` e `PoliticaReconexao` contra
+ *    `components.schemas.<nome>` do `asyncapi.yaml`, em DUAS dimensões:
+ *      G1a. o CONJUNTO de propriedades (`properties`) — um campo
+ *           acrescentado, removido ou renomeado só de um lado FALHA;
+ *      G1b. a OBRIGATORIEDADE de cada propriedade — `campo?:` no TS ⇔ campo
+ *           FORA de `required` no YAML. Existe porque
+ *           `POLITICA_EVOLUCAO_EVENTOS.quebra` (`src/asyncapi.ts`) declara
+ *           "estreitar tipo ou tornar campo obrigatório" como evolução
+ *           INCOMPATÍVEL: um gate cego a isso não impõe a política que o
+ *           próprio contrato publica. O invariante foi MEDIDO antes de virar
+ *           checagem — 22 propriedades nas quatro interfaces, 0 desvios.
+ *    Até esta parte, o gate cobria os enums e não a forma das interfaces.
+ *
+ *    O QUE A PARTE G NÃO COMPARA — limite DECLARADO, não omissão. Cada item
+ *    abaixo foi medido com o gate real sobre cópia mutada do repositório e
+ *    sai exit 0 hoje; quem lê o veredito "OK" precisa saber disso.
+ *    (a) TIPO da propriedade: `jitter: number` no TS contra `type: string`
+ *        no YAML PASSA aqui. Comparar tipos exige uma TABELA de mapeamento
+ *        TS→JSON Schema (`number`↔`number|integer`,
+ *        `Record<string, unknown>`↔`object`, interface↔`$ref`, união de
+ *        literais↔`enum`, `string`↔`format: date-time`) — decisão de
+ *        semântica de contrato, que este porte não toma sozinho. Fica como
+ *        pendência nomeada no handoff, não como capacidade insinuada.
+ *    (b) Propriedade declarada em MEIO DE LINHA (`a: number; b: string;` na
+ *        mesma linha): o extrator ancora em início de linha e vê só a
+ *        primeira. MEDIDO que outro gate bloqueante impede a forma de
+ *        entrar: `biome format` quebra essa linha em duas, e `pnpm lint` é
+ *        `biome ci --error-on-warnings .` com `packages/contratos/src`
+ *        dentro de `files.includes`. O limite existe; ele não fica sozinho.
+ *    (c) Propriedades ANINHADAS (indentação de 4+ espaços): só o nível de
+ *        TOPO da interface é comparado, deliberadamente — o schema YAML
+ *        correspondente aninha em `properties.<campo>.properties`, que este
+ *        porte não percorre.
+ *    O extrator ACEITA `readonly` e nome de propriedade CITADO
+ *    (`"campo-x": T`) — ver a docstring de `propriedadesComObrigatoriedadeTs`
+ *    para a medição que motivou cada um.
+ *
+ *    A Parte G2 confronta `CAMINHO_FLUXO_EVENTOS` (a rota que `apps/web`
+ *    consome sem poder importar `apps/api/src/eventos/stream.ts`, por
+ *    fronteira de módulo — ADR-0002) com `channels.fluxoDeEventos.address`.
  *
  * Por que PyYAML via `python3`, e não uma biblioteca JS
  * ----------------------------------------------------
@@ -99,10 +146,17 @@
  * `autoteste`: prova, a partir do repositório, que o gate REPROVA o que deve
  * reprovar — não só "aceita o conforme" (o problema conhecido: eficácia
  * relatada pelo autor, não reproduzível). Copia o subconjunto de arquivos
- * que a parte F lê para um diretório temporário, aplica UMA mutação por vez
+ * que o gate lê para um diretório temporário, aplica UMA mutação por vez
  * (valor a mais no YAML; valor a mais no TS; valor renomeado; enum inteiro
- * removido) e afirma que `verificarContratos` reprova cada cópia mutada —
- * no espírito de `scripts/verificar-artefato.mjs autoteste`.
+ * removido; propriedade a mais só de um lado, escrita também com `readonly`
+ * e com nome citado; obrigatoriedade invertida) e afirma que
+ * `verificarContratos` reprova cada cópia mutada — no espírito de
+ * `scripts/verificar-artefato.mjs autoteste`.
+ *
+ * Um caso vai na direção OPOSTA e é tão necessário quanto: uma cópia CONFORME
+ * anotada com `readonly` precisa continuar ACEITA, com o MESMO número de
+ * verificações da cópia intocada. Bateria só de mutações não enxerga gate que
+ * reprova o correto — e foi essa a segunda metade do defeito medido em HOLE-1.
  */
 
 import { spawnSync } from "node:child_process";
@@ -217,6 +271,60 @@ function extrairUniaoTipoTs(fonte, nome) {
   const encontrado = padrao.exec(fonte);
   if (!encontrado) return undefined;
   return [...encontrado[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+}
+
+/**
+ * Corpo textual de uma `export interface NOME { ... }` de um fonte
+ * TypeScript. Porte DIRETO de `packages/contratos/src/asyncapi.test.ts`
+ * (mesma técnica, mesmo nome de função) — única diferença de estilo: a
+ * versão de teste lança quando a interface não existe; esta devolve
+ * `undefined` e deixa o chamador reportar com `verificar(...)`, porque um
+ * gate precisa listar TODAS as falhas numa execução, não abortar na
+ * primeira (ver docstring do topo deste arquivo).
+ */
+function corpoDaInterfaceTs(fonte, nome) {
+  const padrao = new RegExp(`export interface ${nome}\\s*\\{([\\s\\S]*?)\\n\\}`, "m");
+  const encontrado = padrao.exec(fonte);
+  return encontrado ? encontrado[1] : undefined;
+}
+
+/**
+ * Propriedades de TOPO declaradas numa `export interface`, na ordem do
+ * fonte, cada uma com a sua OBRIGATORIEDADE (`campo?:` é opcional). Porte
+ * DIRETO de `packages/contratos/src/asyncapi.test.ts` — mesmo nome de
+ * função, mesmo regex, uma cópia de cada lado.
+ *
+ * POR QUE O REGEX TEM A FORMA QUE TEM (revisão adversarial da Parte G).
+ * A primeira versão era `/^\s{2}(\w+)\??:/gm` e NÃO enxergava
+ * `readonly campo: X` — depois dos dois espaços vem `readonly`, e o `:`
+ * esperado não está ali. `readonly` é o estilo DOMINANTE deste repositório
+ * (medido: 4.775 ocorrências em `apps/` + `packages/`, 15 delas no
+ * arquivo-irmão `packages/contratos/src/index.ts`); `asyncapi.ts` usa zero
+ * hoje, e era SÓ por isso que a cegueira não aparecia. A consequência tinha
+ * as duas direções, ambas medidas antes desta correção e ambas com caso de
+ * autoteste:
+ *   - FALSO-NEGATIVO: `readonly campoNovo: string;` acrescentado só no TS
+ *     ficava invisível, os conjuntos "coincidiam" e o gate aprovava por
+ *     omissão — exatamente o que a Parte G existe para impedir;
+ *   - FALSO-POSITIVO: anotar `readonly` uma propriedade JÁ conforme fazia o
+ *     conjunto do TS perder o campo e o gate REPROVAVA documento correto,
+ *     empurrando quem corrige a apagar a propriedade do YAML — isto é, a
+ *     criar a divergência real que o gate deveria evitar.
+ *
+ * O regex também aceita nome de propriedade CITADO (`"campo-x": T`), que o
+ * formatador NÃO desfaz (medido com `biome format --stdin-file-path`), e
+ * continua ancorado em `^\s{2}` de propósito: só o nível de TOPO da
+ * interface é comparado (ver limite (c) na docstring da Parte G).
+ *
+ * @returns {{nome: string, opcional: boolean}[] | undefined}
+ */
+function propriedadesComObrigatoriedadeTs(fonte, nome) {
+  const corpo = corpoDaInterfaceTs(fonte, nome);
+  if (corpo === undefined) return undefined;
+  return [...corpo.matchAll(/^\s{2}(?:readonly\s+)?(?:(\w+)|"([^"]+)")(\??):/gm)].map((m) => ({
+    nome: m[1] ?? m[2] ?? "",
+    opcional: m[3] === "?",
+  }));
 }
 
 /** Resolve um `$ref` de JSON Pointer local (`#/a/b/c`). */
@@ -531,7 +639,48 @@ export function verificarContratos(raiz) {
     );
   }
 
-  if (tiposTs && existsSync(caminhoCatalogo) && existsSync(caminhoDb)) {
+  // Ausência de QUALQUER um destes dois arquivos desligava a subseção INTEIRA
+  // em silêncio — o `if` abaixo não tinha `else`. Medido diretamente (P2 da
+  // revisão do PR #8; HANDOFF.yaml `P2_gate_emudece`): com os dois presentes,
+  // 187 verificações; com qualquer um ausente, 171 — 16 verificações somem e
+  // o script ainda sai 0. PROMPT_IMPLEMENTACAO_FINAL_INTENSICARE_V2.md §10
+  // nomeia isto: anti-padrão 16, "tornar gate consultivo, engolir falha".
+  //
+  // Nenhum caminho de uso legítimo desta função roda sem os dois arquivos: a
+  // execução direta sobre o repositório os tem sempre, e todo raiz temporária
+  // de teste (autoteste abaixo; `packages/contratos/src/asyncapi.test.ts`)
+  // copia `ARQUIVOS_LIDOS_PELO_GATE`, que inclui os dois. Por isso a ausência
+  // é FALHA NOMEADA — o mesmo regime já usado na Seção F2 para
+  // `apps/api/src/regras/tipos.ts` — e não uma pendência descontada em
+  // silêncio: esta subseção não tem uma "dívida declarada" legítima da forma
+  // que `SCHEMAS_DESPACHO_PENDENTES_NO_OPENAPI` declara para F2, porque não
+  // há hoje nenhum cenário em que rodar sem catálogo ou sem `db.ts` seja
+  // intencional.
+  const catalogoExiste = existsSync(caminhoCatalogo);
+  const dbExiste = existsSync(caminhoDb);
+  // Piso COMPUTADO, não digitado: as duas checagens estruturais (união do
+  // catálogo; bloco OUTBOX_TO_CONTRACT_EVENT) mais uma checagem de "evento
+  // inventado" por tipo já declarado em TIPOS_EVENTO_FLUXO — contagem que não
+  // depende do conteúdo dos arquivos ausentes, então pode ser afirmada mesmo
+  // sem lê-los. As comparações por tipo do PRÓPRIO catálogo e do PRÓPRIO mapa
+  // de outbox somam mais que isso, mas a contagem exata delas depende do
+  // conteúdo dos arquivos ausentes — por isso o texto abaixo diz "pelo menos".
+  const pisoVerificacoesSecaoC = 2 + (tiposTs?.length ?? 0);
+  verificar(
+    catalogoExiste && dbExiste,
+    "Parte C (coerência do enum de eventos entre TIPOS_EVENTO_FLUXO, o catálogo " +
+      "§5.1 e o mapa de outbox) não pôde rodar: " +
+      `${catalogoExiste ? "" : `catálogo ausente em '${caminhoCatalogo}'; `}` +
+      `${dbExiste ? "" : `apps/api/src/db.ts ausente em '${caminhoDb}'; `}` +
+      `pelo menos ${String(pisoVerificacoesSecaoC)} verificação(ões) desta subseção ` +
+      "não rodaram nesta execução (as duas checagens estruturais mais uma checagem de " +
+      `'evento inventado' por tipo em TIPOS_EVENTO_FLUXO, hoje ${String(tiposTs?.length ?? 0)}), ` +
+      "além das comparações por tipo do próprio catálogo e do próprio mapa de outbox, cuja " +
+      "contagem depende do conteúdo dos arquivos ausentes e por isso não pode ser antecipada " +
+      "aqui. Entrada obrigatória ausente é falha nomeada, não silêncio.",
+  );
+
+  if (tiposTs && catalogoExiste && dbExiste) {
     const catalogo = readFileSync(caminhoCatalogo, "utf8");
     const uniao = /tipo:\s*((?:"[a-z0-9-]+"\s*\|?\s*)+);/.exec(catalogo);
     verificar(
@@ -614,6 +763,104 @@ export function verificarContratos(raiz) {
   verificar(
     cookieTs === cookieYaml,
     `Nome do cookie de ticket divergente: TS='${String(cookieTs)}', AsyncAPI='${String(cookieYaml)}'.`,
+  );
+
+  // --- G1. FORMA das mensagens de controle (propriedades TS × YAML) ------
+  //
+  // Porte para o gate de uma checagem que só existia em
+  // `packages/contratos/src/asyncapi.test.ts` ("as propriedades das
+  // mensagens de controle são as MESMAS no TS e no YAML"), escrita pelo
+  // especialista de eventos para provar duas lacunas fechadas (LAC-L1:
+  // `intervaloPulsacaoMs` e `reconexao` anunciados no fio desde a abertura).
+  // A Parte D acima já compara os ENUMS do plano de controle; esta parte
+  // compara a FORMA das interfaces — exatamente a lacuna que o encargo desta
+  // sessão nomeia: "o gate cobre os ENUMS, não a FORMA das interfaces — um
+  // campo acrescentado só de um lado passa". Mesma técnica de extração das
+  // demais partes (regex sobre o fonte), não `tsc`: o `tsconfig.json` do
+  // pacote exclui `src/**/*.test.ts` do typecheck, então uma checagem
+  // puramente de tipo nunca seria compilada por gate nenhum — ler o fonte e
+  // comparar com o YAML é a única técnica com dentes aqui, e é a mesma que
+  // já prova as demais partes deste script.
+  const paresDeInterfaceDeMensagem = [
+    ["MensagemPulsacao", "MensagemPulsacao"],
+    ["MensagemEstadoConexao", "MensagemEstadoConexao"],
+    ["MensagemInstrucaoReconciliacao", "MensagemInstrucaoReconciliacao"],
+    ["PoliticaReconexao", "PoliticaReconexao"],
+  ];
+  verificar(
+    paresDeInterfaceDeMensagem.length > 0,
+    "check_contratos: a lista de pares de interface de mensagem está vazia — o laço abaixo não verificaria nada (guarda de não-vacuidade).",
+  );
+  for (const [nomeTs, nomeSchema] of paresDeInterfaceDeMensagem) {
+    const detalhadoTs = propriedadesComObrigatoriedadeTs(fonteTs, nomeTs);
+    const doTs = detalhadoTs?.map((p) => p.nome);
+    verificar(
+      doTs !== undefined && doTs.length > 0,
+      `asyncapi.ts: interface '${nomeTs}' não encontrada (ou sem propriedades extraídas).`,
+    );
+
+    const propriedadesYaml = asyncapi.components?.schemas?.[nomeSchema]?.properties;
+    const doYaml =
+      typeof propriedadesYaml === "object" && propriedadesYaml !== null
+        ? Object.keys(propriedadesYaml)
+        : undefined;
+    verificar(
+      doYaml !== undefined && doYaml.length > 0,
+      `asyncapi.yaml: schema '${nomeSchema}' sem 'properties' (ou vazio).`,
+    );
+
+    if (
+      detalhadoTs !== undefined &&
+      doTs !== undefined &&
+      doTs.length > 0 &&
+      doYaml !== undefined &&
+      doYaml.length > 0
+    ) {
+      const tsOrdenado = [...doTs].sort();
+      const yamlOrdenado = [...doYaml].sort();
+      verificar(
+        mesmaLista(tsOrdenado, yamlOrdenado),
+        `Propriedades divergentes entre a interface '${nomeTs}' (TS) e o schema '${nomeSchema}' (YAML) — um campo acrescentado, removido ou renomeado só de um lado.\n      TS   : ${JSON.stringify(tsOrdenado)}\n      YAML : ${JSON.stringify(yamlOrdenado)}`,
+      );
+
+      // G1b. OBRIGATORIEDADE. `campo?:` no TS ⇔ campo FORA de `required` no
+      // YAML. Não é preciosismo de schema: `POLITICA_EVOLUCAO_EVENTOS.quebra`
+      // (`packages/contratos/src/asyncapi.ts`) declara "estreitar tipo ou
+      // tornar campo obrigatório" como evolução INCOMPATÍVEL. Enquanto o gate
+      // comparava só o CONJUNTO de nomes, tornar um campo obrigatório de um
+      // lado só — a quebra que o próprio contrato nomeia — passava (medido:
+      // inverter `required` no YAML saía exit 0). O invariante vale HOJE em
+      // todas as quatro interfaces, medido antes de escrever esta checagem:
+      // 22 propriedades, 0 desvios.
+      const obrigatoriosNoTs = detalhadoTs
+        .filter((p) => !p.opcional)
+        .map((p) => p.nome)
+        .sort();
+      const requeridoYaml = asyncapi.components?.schemas?.[nomeSchema]?.required;
+      const requeridosNoYaml = Array.isArray(requeridoYaml) ? [...requeridoYaml].sort() : [];
+      verificar(
+        mesmaLista(obrigatoriosNoTs, requeridosNoYaml),
+        `Obrigatoriedade divergente entre a interface '${nomeTs}' (TS) e o schema '${nomeSchema}' (YAML) — tornar campo obrigatório de um lado só é evolução INCOMPATÍVEL (POLITICA_EVOLUCAO_EVENTOS.quebra).\n      TS obrigatórios   : ${JSON.stringify(obrigatoriosNoTs)}\n      YAML required     : ${JSON.stringify(requeridosNoYaml)}`,
+      );
+    }
+  }
+
+  // --- G2. Caminho do canal de eventos publicado (TS × YAML) -------------
+  //
+  // Porte de "o caminho do fluxo é EXATAMENTE o endereço do canal no
+  // AsyncAPI" (mesma suíte). `CAMINHO_FLUXO_EVENTOS` é a rota que
+  // `apps/web` consome sem poder importar `apps/api/src/eventos/stream.ts`
+  // (fronteira de módulo, ADR-0002) — uma rota redigitada em vez de
+  // importada derivaria em silêncio.
+  const caminhoFluxoTs = extrairConstanteTs(fonteTs, "CAMINHO_FLUXO_EVENTOS");
+  const caminhoFluxoYaml = asyncapi.channels?.fluxoDeEventos?.address;
+  verificar(
+    caminhoFluxoTs !== undefined,
+    "asyncapi.ts: constante CAMINHO_FLUXO_EVENTOS não encontrada.",
+  );
+  verificar(
+    caminhoFluxoTs === caminhoFluxoYaml,
+    `Caminho do canal de eventos divergente: CAMINHO_FLUXO_EVENTOS='${String(caminhoFluxoTs)}' no TS, mas o canal 'fluxoDeEventos' declara address='${String(caminhoFluxoYaml)}'.`,
   );
 
   // --- F1. Coerência dos enums REST publicados (openapi.yaml × index.ts) --
@@ -936,7 +1183,141 @@ function autoteste() {
     },
   ];
 
-  for (const mutacao of [...mutacoesRest, ...mutacoesProntidaoEDespacho]) {
+  /**
+   * Mutações da Parte G — FORMA das interfaces de mensagem e caminho do
+   * canal. Porte de checagem já provada por mutação em
+   * `packages/contratos/src/asyncapi.test.ts`; estas três casos replicam a
+   * prova no gate, com o MESMO cuidado documentado acima para a Parte F2: a
+   * chave-duplicada já produziu, uma vez, um caso `ok` pelo motivo ERRADO
+   * (injeção de bloco novo que reprovava o parsing antes da comparação
+   * rodar). Por isso as três MUTAM IN LOCO — trocam um valor onde ele já
+   * está — em vez de injetar texto novo:
+   *   - a primeira renomeia `intervaloPulsacaoMs` SÓ no schema
+   *     `MensagemPulsacao` do YAML (âncora inclui a descrição de
+   *     `pendentes`, que só existe ali, para não tocar a cópia homônima de
+   *     `MensagemEstadoConexao` mais abaixo no mesmo arquivo);
+   *   - a segunda acrescenta uma propriedade SÓ na interface
+   *     `PoliticaReconexao` do TS;
+   *   - a terceira renomeia o `address` do canal `fluxoDeEventos` SÓ no
+   *     YAML, sem tocar `CAMINHO_FLUXO_EVENTOS` no TS.
+   * Nas três, o documento continua sintaticamente válido e nenhuma outra
+   * parte do gate (A–F) tem motivo para reprovar — a única rota até a falha
+   * é a comparação nova da Parte G.
+   *
+   * AS TRÊS PRIMEIRAS NÃO BASTAVAM, E A REVISÃO ADVERSARIAL PROVOU ISSO.
+   * Elas ficavam vermelhas, sim — e mesmo assim o extrator era cego a
+   * `readonly`, porque as três foram escritas no ÚNICO estilo que o extrator
+   * enxergava (`campo: T`, sem `readonly`, sem aspas). Mutação que confirma o
+   * caminho já testado não mede cobertura; mede repetição. As mutações
+   * acrescentadas abaixo são as VIZINHAS ÓBVIAS da primeira leva — o mesmo
+   * campo no OUTRO estilo (`readonly`, `readonly ?`, nome citado), na OUTRA
+   * dimensão (obrigatoriedade) e no OUTRO lado (YAML). Cada uma foi medida
+   * FALHANDO em reprovar antes da correção do extrator; ver a docstring de
+   * `propriedadesComObrigatoriedadeTs`.
+   */
+  const mutacoesFormaDeInterface = [
+    {
+      nome: "propriedade de MensagemPulsacao renomeada SÓ no YAML (Parte G1)",
+      arquivo: "packages/contratos/asyncapi.yaml",
+      de: "conexão observável em vez de invisível (ADR-0011 P5/P10).\n        intervaloPulsacaoMs:",
+      para: "conexão observável em vez de invisível (ADR-0011 P5/P10).\n        intervaloPulsacaoMsRenomeado:",
+    },
+    {
+      nome: "propriedade acrescentada SÓ na interface PoliticaReconexao do TS (Parte G1)",
+      arquivo: "packages/contratos/src/asyncapi.ts",
+      de: "  jitter: number;\n}",
+      para: "  jitter: number;\n  campoFantasma: string;\n}",
+    },
+    {
+      nome: "address do canal fluxoDeEventos renomeado SÓ no YAML (Parte G2)",
+      arquivo: "packages/contratos/asyncapi.yaml",
+      de: "address: /v1/eventos/stream",
+      para: "address: /v1/eventos/stream-renomeado",
+    },
+    {
+      /**
+       * O BURACO QUE A REVISÃO ADVERSARIAL MEDIU (HOLE-1), no estilo que o
+       * repositório de fato escreve. Antes da correção do extrator este caso
+       * saía exit 0: o gate APROVAVA uma propriedade que só existe no TS,
+       * porque `readonly` empurra o `:` para depois do ponto onde o regex o
+       * procurava. A mutação irmã logo acima ("propriedade acrescentada SÓ na
+       * interface PoliticaReconexao do TS") já reprovava — e reprovava por
+       * estar escrita no único estilo visível. Este par é a prova de que
+       * "mutação vermelha" e "cobertura" não são a mesma coisa.
+       */
+      nome: "propriedade READONLY acrescentada SÓ na interface PoliticaReconexao do TS (Parte G1a — HOLE-1)",
+      arquivo: "packages/contratos/src/asyncapi.ts",
+      de: "  jitter: number;\n}",
+      para: "  jitter: number;\n  readonly campoFantasmaReadonly: string;\n}",
+    },
+    {
+      /**
+       * `readonly` + `?` na mesma declaração — a combinação exata que o
+       * arquivo-irmão `packages/contratos/src/index.ts` usa. Vizinha da
+       * anterior: mesmo campo, mesma posição, uma marca a mais.
+       */
+      nome: "propriedade READONLY OPCIONAL acrescentada SÓ na interface PoliticaReconexao do TS (Parte G1a)",
+      arquivo: "packages/contratos/src/asyncapi.ts",
+      de: "  jitter: number;\n}",
+      para: "  jitter: number;\n  readonly campoFantasmaOpcional?: string;\n}",
+    },
+    {
+      /**
+       * Nome de propriedade CITADO (HOLE-3). Diferente de HOLE-2 (declaração
+       * em meio de linha), esta forma NÃO é desfeita pelo formatador — medido
+       * com `biome format --stdin-file-path`, que preserva `"campo-x": T`.
+       * Por isso ela é fechada no extrator, e não declarada como limite.
+       */
+      nome: "propriedade de nome CITADO acrescentada SÓ na interface PoliticaReconexao do TS (Parte G1a — HOLE-3)",
+      arquivo: "packages/contratos/src/asyncapi.ts",
+      de: "  jitter: number;\n}",
+      para: '  jitter: number;\n  "campo-fantasma-citado": string;\n}',
+    },
+    {
+      /**
+       * O OUTRO LADO: propriedade que passa a existir só no YAML. Renomear em
+       * loco (em vez de injetar um bloco novo) mantém o documento válido e
+       * preserva a lição registrada na Parte F2 — injeção já produziu caso
+       * `ok` pelo motivo errado, ao criar chave duplicada que reprovava antes
+       * de a comparação rodar.
+       */
+      nome: "propriedade renomeada SÓ no schema PoliticaReconexao do YAML (Parte G1a — lado espelho)",
+      arquivo: "packages/contratos/asyncapi.yaml",
+      de: "        jitter:\n          type: number",
+      para: "        jitterRenomeado:\n          type: number",
+    },
+    {
+      /**
+       * G1b, na direção que `POLITICA_EVOLUCAO_EVENTOS.quebra` nomeia como
+       * INCOMPATÍVEL: campo OPCIONAL no TS declarado obrigatório no YAML.
+       * O conjunto de nomes continua idêntico dos dois lados — G1a passa, e
+       * era exatamente por isso que este defeito atravessava o gate (medido:
+       * exit 0 antes de G1b existir).
+       */
+      nome: "campo OPCIONAL no TS declarado obrigatório no YAML (Parte G1b — evolução QUEBRA)",
+      arquivo: "packages/contratos/asyncapi.yaml",
+      de: "      required: [emitidoEm, estado, cursor, pendentes]",
+      para: "      required: [emitidoEm, estado, cursor, pendentes, intervaloPulsacaoMs]",
+    },
+    {
+      /**
+       * G1b na direção inversa — vizinha da anterior: campo OBRIGATÓRIO no TS
+       * some de `required` no YAML. O documento passa a prometer menos do que
+       * o tipo promete, e um consumidor que confie no YAML aceita mensagem
+       * sem `jitter` que o TS declara sempre presente.
+       */
+      nome: "campo OBRIGATÓRIO no TS removido de 'required' no YAML (Parte G1b — direção inversa)",
+      arquivo: "packages/contratos/asyncapi.yaml",
+      de: "      required: [esperaMinimaMs, esperaMaximaMs, jitter]",
+      para: "      required: [esperaMinimaMs, esperaMaximaMs]",
+    },
+  ];
+
+  for (const mutacao of [
+    ...mutacoesRest,
+    ...mutacoesProntidaoEDespacho,
+    ...mutacoesFormaDeInterface,
+  ]) {
     let raizTemp;
     try {
       raizTemp = criarCopiaMutada(RAIZ_PADRAO, [mutacao]);
@@ -946,6 +1327,119 @@ function autoteste() {
         true,
         resultado.falhas.length > 0,
         `${String(resultado.falhas.length)} falha(s)`,
+      );
+    } finally {
+      if (raizTemp) rmSync(raizTemp, { recursive: true, force: true });
+    }
+  }
+
+  /**
+   * A OUTRA DIREÇÃO DE HOLE-1 — e a única que uma bateria só de mutações
+   * jamais pegaria.
+   *
+   * Toda mutação acima afirma "o gate REPROVA X". Nenhuma delas pode detectar
+   * o defeito simétrico: o gate reprovando algo CORRETO. E era o que
+   * acontecia — anotar `readonly` numa propriedade JÁ conforme fazia o
+   * conjunto do TS perder o campo, e o gate acusava divergência contra um
+   * documento intacto. Da posição de quem lê a falha, a propriedade "só
+   * existe no YAML"; o conserto natural é apagá-la do YAML, criando a
+   * divergência REAL que o gate deveria ter evitado. Um gate que ensina a
+   * quebrar o contrato é pior que gate ausente.
+   *
+   * MUTAÇÃO IN LOCO: acrescenta a palavra `readonly` a uma linha existente,
+   * sem inventar campo nem tocar o YAML. O documento continua conforme, logo
+   * o gate PRECISA aceitar. Medido: antes da correção do extrator este bloco
+   * saía com 1 falha ("Propriedades divergentes ... TS sem 'jitter'").
+   *
+   * A segunda asserção existe porque "0 falhas" é fraco sozinho — é
+   * exatamente a forma de verde que passa quando uma checagem foi PULADA. A
+   * contagem de verificações da cópia anotada tem de ser IGUAL à da cópia
+   * intocada: nenhuma comparação da Parte G deixou de rodar. É uma
+   * comparação entre duas execuções, não um número mágico transcrito.
+   */
+  {
+    let raizAnotada;
+    let raizIntocada;
+    try {
+      raizAnotada = criarCopiaMutada(RAIZ_PADRAO, [
+        {
+          nome: "propriedade conforme ANOTADA readonly no TS (nada muda no YAML)",
+          arquivo: "packages/contratos/src/asyncapi.ts",
+          de: "  jitter: number;\n}",
+          para: "  readonly jitter: number;\n}",
+        },
+      ]);
+      raizIntocada = criarCopiaMutada(RAIZ_PADRAO, []);
+      const anotada = verificarContratos(raizAnotada);
+      const intocada = verificarContratos(raizIntocada);
+      registrar(
+        "propriedade conforme anotada 'readonly' no TS continua ACEITA (HOLE-1, direção falso-positivo)",
+        0,
+        anotada.falhas.length,
+        anotada.falhas.join(" | "),
+      );
+      registrar(
+        "a cópia anotada roda o MESMO número de verificações que a intocada (nenhuma checagem pulada)",
+        intocada.verificacoes,
+        anotada.verificacoes,
+        `intocada=${String(intocada.verificacoes)} anotada=${String(anotada.verificacoes)}`,
+      );
+    } finally {
+      if (raizAnotada) rmSync(raizAnotada, { recursive: true, force: true });
+      if (raizIntocada) rmSync(raizIntocada, { recursive: true, force: true });
+    }
+  }
+
+  /**
+   * P2 DA REVISÃO DO PR #8 (HANDOFF.yaml `achados_p2_p3_nao_corrigidos` /
+   * `P2_gate_emudece`; PROMPT_IMPLEMENTACAO_FINAL_INTENSICARE_V2.md §10,
+   * anti-padrão 16 — "tornar gate consultivo, engolir falha").
+   *
+   * A Parte C só entrava em `if (tiposTs && existsSync(caminhoCatalogo) &&
+   * existsSync(caminhoDb))`, SEM `else`. Medido diretamente (renomear os dois
+   * arquivos e rodar o gate): com os dois presentes, 187 verificações; com
+   * QUALQUER um ausente, 171 — 16 verificações somem, e as duas execuções
+   * saem 0. Um gate que se cala por ausência de entrada aprova por omissão.
+   *
+   * Estes dois casos MUTAM POR REMOÇÃO DE ARQUIVO, não por conteúdo — mutação
+   * de conteúdo não pode testar ausência. Cada um copia o repositório intocado
+   * (`criarCopiaMutada` com lista de mutações vazia) e remove um dos dois
+   * arquivos opcionais, isolado do outro, para que cada caso prove exatamente
+   * um motivo. Nenhum outro caminho do gate intercepta essa remoção antes da
+   * Parte C: nem `catalogo-de-eventos.md` nem `db.ts` pertencem a
+   * `ARQUIVOS_DE_CONTRATO_OBRIGATORIOS` (o early-return de "arquivo de
+   * contrato ausente"), e nenhum dos dois participa do parsing YAML nem das
+   * partes A/B/D/E/F1/F2 — a única rota até a falha é a checagem nova da
+   * Parte C.
+   */
+  {
+    let raizTemp;
+    try {
+      raizTemp = criarCopiaMutada(RAIZ_PADRAO, []);
+      rmSync(join(raizTemp, "docs/09-api-events-and-mcp/catalogo-de-eventos.md"));
+      const resultado = verificarContratos(raizTemp);
+      registrar(
+        "catálogo de eventos ausente REPROVA e NOMEIA o arquivo (P2: não silencia a Parte C)",
+        true,
+        resultado.falhas.length > 0 &&
+          resultado.falhas.some((f) => f.includes("catalogo-de-eventos.md")),
+        resultado.falhas.join(" | "),
+      );
+    } finally {
+      if (raizTemp) rmSync(raizTemp, { recursive: true, force: true });
+    }
+  }
+  {
+    let raizTemp;
+    try {
+      raizTemp = criarCopiaMutada(RAIZ_PADRAO, []);
+      rmSync(join(raizTemp, "apps/api/src/db.ts"));
+      const resultado = verificarContratos(raizTemp);
+      registrar(
+        "apps/api/src/db.ts ausente REPROVA e NOMEIA o arquivo (P2: não silencia a Parte C)",
+        true,
+        resultado.falhas.length > 0 && resultado.falhas.some((f) => f.includes("db.ts")),
+        resultado.falhas.join(" | "),
       );
     } finally {
       if (raizTemp) rmSync(raizTemp, { recursive: true, force: true });
@@ -1034,6 +1528,17 @@ function autoteste() {
     true,
     mutacoesProntidaoEDespacho.length > 0,
   );
+  registrar(
+    "há mutações de forma de interface (Parte G) declaradas",
+    true,
+    mutacoesFormaDeInterface.length > 0,
+  );
+  // A não-vacuidade de `paresDeInterfaceDeMensagem` (Parte G1) NÃO é checada
+  // aqui — a variável é local a `verificarContratos` e não está em escopo
+  // nesta função. A guarda equivalente já roda DENTRO de `verificarContratos`
+  // (`verificar(paresDeInterfaceDeMensagem.length > 0, ...)`), incluída em
+  // toda execução — inclusive a do caso-base acima ("repositório real (sem
+  // mutação) é ACEITO"), que já prova que ela não é vazia hoje.
   registrar("ENUMS_DE_DESPACHO não está vazia", true, ENUMS_DE_DESPACHO.length > 0);
   registrar(
     "toda pendência declarada nomeia um enum de despacho real",
@@ -1062,7 +1567,10 @@ function autoteste() {
   }
   console.log(
     `\nautoteste: OK — ${String(casos.length)} casos; o gate aceita o conforme e reprova ` +
-      "cada mutação de enum REST, de prontidão e de despacho testada.",
+      "cada mutação testada de enum REST, de prontidão, de despacho e de FORMA de interface " +
+      "(Parte G: conjunto de propriedades — inclusive escritas com `readonly` ou nome citado — " +
+      "e obrigatoriedade). NÃO cobre o TIPO da propriedade nem declaração em meio de linha: " +
+      "limites declarados na docstring da Parte G, no topo deste arquivo.",
   );
   return 0;
 }

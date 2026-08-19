@@ -11,7 +11,11 @@
 import { describe, expect, it } from "vitest";
 import { evaluateNews2, type News2ParameterId } from "../src/index.js";
 import { buildVectorInput, type VectorFile } from "./suporte.js";
-import vetoresJson from "./vetores-news2.json";
+// `with { type: "json" }` é SINTAXE de módulo ES exigida por `module:
+// "NodeNext"` (ACH-O3-2) — o vitest tolerava a ausência (resolução própria,
+// não passa por `tsc`); o Node ESM estrito e o `tsc` exigem o atributo.
+// NENHUM valor do vetor é tocado por esta linha — só a forma do import.
+import vetoresJson from "./vetores-news2.json" with { type: "json" };
 
 const vetores = vetoresJson as unknown as VectorFile;
 

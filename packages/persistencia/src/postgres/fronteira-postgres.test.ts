@@ -3499,6 +3499,103 @@ function registrarSuite(urlSuperusuario: string): void {
       );
 
       it(
+        "instalarFechoDeRuntime instala o fecho num banco PRÉ-EXISTENTE sem ele, e é idempotente contra o MESMO banco",
+        async () => {
+          // TAREFA 2 do despacho de composição: o caminho operacional para
+          // instalar o fecho numa base que já existe SEM ele — não apenas
+          // reaplicar sobre uma base que o `beforeAll` já endureceu (o teste
+          // seguinte prova reaplicação idempotente numa base que NASCEU
+          // fechada). Aqui a base nasce deliberadamente sem o fecho
+          // (`fechoDeRuntime: false`, o mesmo estado de um banco provisionado
+          // ANTES de esta migração existir) e recebe o passe DEPOIS, fora do
+          // fluxo de `provisionarBanco` — exatamente o que um operador faria
+          // contra um banco de produção pré-existente.
+          const preExistente = await provisionarBaseDeAtaque({
+            urlSuperusuario,
+            banco: nomeDeBancoDeVerificacao("intensicare_pre_existente"),
+            recriarBanco: true,
+          });
+          expect(preExistente.fechoDeRuntimeInstalado).toBe(false);
+
+          // ANTES: recusado quando exigido — o estado real de um banco que
+          // nunca viu o passe de superusuário.
+          const antes = await capturarRejeicao(
+            AdaptadorPostgres.abrir({
+              url: preExistente.urlAplicacao,
+              exigirFechoDeRuntime: true,
+            }),
+            "o banco pré-existente abriu com exigirFechoDeRuntime mesmo sem o fecho instalado",
+          );
+          expect(antes).toBeInstanceOf(ErroIdentidadeInsegura);
+
+          // Instala UMA vez, contra o banco pré-existente — o ponto de
+          // entrada operacional que TAREFA 2 pede.
+          await instalarFechoDeRuntime(preExistente.urlSuperusuarioNoBanco);
+
+          // DEPOIS: abre normalmente com a mesma exigência.
+          const portaDepois = await AdaptadorPostgres.abrir({
+            url: preExistente.urlAplicacao,
+            exigirFechoDeRuntime: true,
+          });
+          await portaDepois.encerrar();
+
+          // IDEMPOTÊNCIA, medida no cenário que importa: reaplicar sobre o
+          // MESMO banco pré-existente uma SEGUNDA e TERCEIRA vez não quebra
+          // nada — diferente do teste seguinte, que só reaplica sobre uma
+          // base que já nasceu fechada.
+          await instalarFechoDeRuntime(preExistente.urlSuperusuarioNoBanco);
+          await instalarFechoDeRuntime(preExistente.urlSuperusuarioNoBanco);
+
+          const portaTerceiraVez = await AdaptadorPostgres.abrir({
+            url: preExistente.urlAplicacao,
+            exigirFechoDeRuntime: true,
+          });
+          try {
+            const escopo = await portaTerceiraVez.comTenant(TENANT_A, (tx) =>
+              tx.query<{ t: string }>("select intensicare_escopo.tenant_atual() as t"),
+            );
+            expect(escopo.rows[0]?.t).toBe(TENANT_A);
+          } finally {
+            await portaTerceiraVez.encerrar();
+          }
+
+          // E o estado final é o mesmo que o teste seguinte mede na base do
+          // `beforeAll`: selo do guardião, um único gatilho ativo, ninguém
+          // membro do guardião.
+          const administrativa = await ConexaoPostgres.conectar(
+            opcoesDaUrl(preExistente.urlSuperusuarioNoBanco, "verificacao"),
+          );
+          try {
+            const estado = await administrativa.consultar<{
+              dono_do_selo: string;
+              gatilhos: number;
+              membros_do_guardiao: number;
+            }>(
+              `select
+                 (select pg_get_userbyid(c.relowner)
+                    from pg_class c join pg_namespace n on n.oid = c.relnamespace
+                   where n.nspname = 'intensicare_escopo' and c.relname = 'selo') as dono_do_selo,
+                 (select count(*)::int from pg_event_trigger
+                   where evtname = 'intensicare_guarda_ddl' and evtenabled <> 'D') as gatilhos,
+                 (select count(*)::int from pg_roles a
+                   where not a.rolsuper and a.rolname <> $1
+                     and pg_has_role(a.oid, $1, 'MEMBER')) as membros_do_guardiao`,
+              [PAPEL_GUARDIAO_DO_SELO],
+            );
+            expect(estado.rows[0]?.dono_do_selo).toBe(PAPEL_GUARDIAO_DO_SELO);
+            expect(estado.rows[0]?.gatilhos).toBe(1);
+            expect(
+              estado.rows[0]?.membros_do_guardiao,
+              "algum papel não-superusuário é MEMBRO do guardião — pode SET ROLE e reassumir a âncora",
+            ).toBe(0);
+          } finally {
+            await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
         "o passe de superusuário da 0006 é idempotente e a base principal desta suíte está endurecida",
         async () => {
           // A base do `beforeAll` é provisionada COM o fecho: as ~40 asserções
@@ -3544,6 +3641,84 @@ function registrarSuite(urlSuperusuario: string): void {
             ).toBe(0);
           } finally {
             await administrativa.fechar();
+          }
+        },
+        TEMPO_LIMITE_GANCHO_MS,
+      );
+
+      it(
+        'a guarda de DDL impõe a ordem NOVA "cria, protege, concede": GRANT antes de RLS+FORCE+política é abortado; a ordem correta passa',
+        async () => {
+          // TAREFA 3 do despacho de composição — 0006, item 4 do cabeçalho:
+          // com a guarda armada, um GRANT para a aplicação sobre uma relação
+          // com `tenant_id` só passa DEPOIS de ela ter ROW LEVEL SECURITY +
+          // FORCE + política ancorada em `intensicare_escopo.tenant_atual()`.
+          // A ordem antiga "cria, concede, protege" — válida em toda migração
+          // anterior a esta suíte (`0001_init.sql` em diante) — deixa de ser
+          // aceita a partir daqui. Reusa a base já endurecida do `beforeAll`
+          // (mesma economia do teste anterior): provisionar uma base nova só
+          // para isto multiplicaria o custo desta suíte sem testar nada a
+          // mais, já que o único pré-requisito é a guarda estar armada — e
+          // `banco.fechoDeRuntimeInstalado` já confirma isso acima.
+          const migradoraOrdem = await ConexaoPostgres.conectar(
+            opcoesDaUrl(banco.urlMigrador, "verificacao"),
+          );
+          try {
+            // ORDEM ERRADA — "cria, concede, protege": o GRANT chega com a
+            // tabela ainda sem RLS/FORCE/política, e é ELE que a guarda
+            // aborta (não o CREATE TABLE, que não torna nada alcançável).
+            await migradoraOrdem.executar(
+              "create table public.synth_ordem_errada (id text primary key, tenant_id text not null)",
+            );
+            const erroDoGrant = await capturarRejeicao(
+              migradoraOrdem.executar(
+                `grant select on public.synth_ordem_errada to ${PAPEL_APLICACAO}`,
+              ),
+              "a guarda de DDL aceitou GRANT antes de RLS+FORCE+política sobre uma relação com tenant_id",
+            );
+            expect(erroDoGrant).toBeInstanceOf(ErroPostgres);
+            expect((erroDoGrant as ErroPostgres).codigo).toBe(SQLSTATE_PRIVILEGIO_INSUFICIENTE);
+            expect((erroDoGrant as ErroPostgres).message).toMatch(/GUARDA-DDL/);
+
+            // O GRANT foi ABORTADO pelo banco, não silenciosamente ignorado
+            // pela aplicação: a tabela existe, mas o privilégio não colou.
+            const semPrivilegio = await migradoraOrdem.consultar<{ tem: boolean }>(
+              "select has_table_privilege($1, 'public.synth_ordem_errada', 'SELECT') as tem",
+              [PAPEL_APLICACAO],
+            );
+            expect(semPrivilegio.rows[0]?.tem).toBe(false);
+            await migradoraOrdem.executar("drop table public.synth_ordem_errada");
+
+            // ORDEM CERTA — "cria, protege, concede": o MESMO GRANT passa
+            // quando RLS+FORCE+política já ancoram a relação primeiro.
+            await migradoraOrdem.executar(
+              "create table public.synth_ordem_certa (id text primary key, tenant_id text not null)",
+            );
+            await migradoraOrdem.executar(
+              "alter table public.synth_ordem_certa enable row level security",
+            );
+            await migradoraOrdem.executar(
+              "alter table public.synth_ordem_certa force row level security",
+            );
+            await migradoraOrdem.executar(
+              `create policy synth_ordem_certa_isolamento on public.synth_ordem_certa
+                 using (tenant_id = intensicare_escopo.tenant_atual())
+                 with check (tenant_id = intensicare_escopo.tenant_atual())`,
+            );
+            await migradoraOrdem.executar(
+              `grant select on public.synth_ordem_certa to ${PAPEL_APLICACAO}`,
+            );
+            const comPrivilegio = await migradoraOrdem.consultar<{ tem: boolean }>(
+              "select has_table_privilege($1, 'public.synth_ordem_certa', 'SELECT') as tem",
+              [PAPEL_APLICACAO],
+            );
+            expect(
+              comPrivilegio.rows[0]?.tem,
+              "a ordem correta ('cria, protege, concede') deveria ter sido aceita pela guarda",
+            ).toBe(true);
+            await migradoraOrdem.executar("drop table public.synth_ordem_certa");
+          } finally {
+            await migradoraOrdem.fechar();
           }
         },
         TEMPO_LIMITE_GANCHO_MS,

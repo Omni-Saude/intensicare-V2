@@ -14,10 +14,18 @@ source: >
   packages/contratos/src/index.ts (tipo EventoFluxo); docs/06-architecture/
   adrs/ADR-0010-backbone-transacao-outbox-eventos-garantias-de-entrega.md
   (accepted, GDEC-0008, B1-B10); ADR-0009 (W1, estados de WorkItem, accepted
-  GDEC-0008)
+  GDEC-0008); packages/contratos/asyncapi.yaml e packages/contratos/src/
+  asyncapi.ts (autoridade para as mensagens de plano de controle — §5.4,
+  acrescentado 2026-08-18, OBSERVADO); apps/api/src/eventos/fila.ts
+  (LIMITES_ILUSTRATIVOS) e apps/api/src/index.ts (RECONEXAO_ILUSTRATIVA),
+  OBSERVADO
 date_collected: 2026-08-16
 collector: especialista de publicação de contratos como documentação (SPR-G4-4, ciclo 6)
-last_updated: 2026-08-16
+last_updated: 2026-08-18
+addenda:
+  - "§5.4 (2026-08-18): três campos novos no plano de controle"
+  - "§5.5 (2026-08-18): ACH-O3-16, ABERTO — o §5.2 diverge do código em três pontos; a divergência é REGISTRADA, o §5.2 fica intacto"
+  - "§5.6 (2026-08-18): ACH-O3-6, fecho PARCIAL — sequencia negativa fechada; tipar `dados` por variante segue aberto"
 ---
 
 # Catálogo de eventos — outbox da fatia SPR-G7-2 (semente de AsyncAPI)
@@ -181,6 +189,177 @@ depende de o catálogo §2.3 sair de `PROPOSAL`; não há dedup por
 `idempotency_key` no envelope; e o **relay/publicador externo** (`ADR-0010`
 B9/B10) segue não implementado. Ambas as mudanças pendentes exigem alteração de
 esquema de persistência que não foi feita.
+
+### 5.4 Três campos novos no plano de controle (correção de estado, 2026-08-18)
+
+`packages/contratos/asyncapi.yaml` e `packages/contratos/src/asyncapi.ts` — a
+autoridade deste catálogo para as mensagens de plano de controle — ganharam
+três campos novos desde a última leitura deste documento (§ front matter,
+`date_collected`). Todos são opcionais e de evolução COMPATÍVEL
+(`POLITICA_EVOLUCAO_EVENTOS.compativel`: "acrescentar campo opcional a uma
+mensagem"), e todos **populados de verdade pelo produtor**
+(`apps/api/src/eventos/stream.ts`, OBSERVADO), não apenas declarados no
+schema e deixados vazios:
+
+| Campo | Mensagem(ns) | Tipo |
+|---|---|---|
+| `intervaloPulsacaoMs` | `MensagemPulsacao` **e** `MensagemEstadoConexao` | `number?` |
+| `reconexao` (`PoliticaReconexao`) | `MensagemEstadoConexao` | objeto opcional |
+
+**Por que importam — não é cosmético.** O contrato já afirmava que "a AUSÊNCIA
+de pulsação dentro do intervalo anunciado é o sinal de que a conexão morreu" —
+mas, até esta versão, nenhum campo carregava esse intervalo; ele só existia do
+lado do servidor (`LimitesConexao.intervaloPulsacaoMs`,
+`apps/api/src/eventos/fila.ts`). A consequência medida era uma **janela cega
+entre a abertura da conexão e a primeira pulsação**: uma conexão meio-aberta
+nessa janela só seria detectada pelo `error` do transporte, e a tela podia
+parecer atual sem estar (`HAZ-0025`; `SAF-0025`; `ADR-0011` P6). Anunciando o
+intervalo e a política de reconexão já no primeiro quadro
+(`estado-conexao: replaying`), o cliente sabe, antes de qualquer pulsação,
+quando cobrar silêncio e como reconectar.
+
+**O gate não vê esta omissão — por isso o catálogo podia ficar um passo atrás
+em silêncio.** `scripts/check_contratos.mjs` confronta `asyncapi.yaml`,
+`asyncapi.ts` e este catálogo **apenas quanto ao enum de `TipoEventoFluxo`**
+(§5.1, plano de DADOS) — nada nele compara os campos das mensagens de plano de
+CONTROLE entre os três lados. Este §5.4 é a correção desse atraso, não a
+descrição de um comportamento novo do produto.
+
+**Pendência sem dono, sem `DECIDED` (`VALIDATION REQUIRED`).** Os números
+anunciados no fio vêm de `RECONEXAO_ILUSTRATIVA` (`apps/api/src/index.ts`) e
+de `LIMITES_ILUSTRATIVOS` (`apps/api/src/eventos/fila.ts`) — ambos rotulados
+`VALIDATION REQUIRED` no próprio código (`ADR-0011` §3 D6/D7 não têm alvo
+decidido; ver também `x-pendencias` do `asyncapi.yaml`). Antes desta mudança,
+esses números só existiam do lado do servidor, sem efeito fora dele. Agora
+trafegam no fio, e o próprio contrato de cliente **obriga** quem o segue a
+"tratar ausência de `pulsacao` dentro do intervalo anunciado como conexão
+morta" e a "reconectar respeitando a `PoliticaReconexao` recebida"
+(`CONTRATO_CLIENTE_EVENTOS`, itens 4 e 6, `asyncapi.ts`) — e há indício (fora
+da autoridade lida para esta tarefa, portanto não verificado com o mesmo rigor
+do resto desta seção) de que um consumidor SSE do navegador, em construção em
+paralelo, já lê exatamente estes dois campos do quadro recebido
+(`apps/web/src/eventos/maquina.ts`). Decidir a cadência de pulsação e a
+política de backoff deixou de ser um parâmetro interno sem efeito observável
+fora do servidor e passou a ser uma decisão com **efeito clínico observável na
+tela** (quanto tempo até ela se declarar `degraded`/`offline`; quanto tempo
+até reconectar). Isto é matéria de `ADR-0011` §3 D6, `VALIDATION REQUIRED` —
+não é decisão de nenhum agente, e este catálogo não a toma.
+
+### 5.5 `ACH-O3-16` (ABERTO) — o §5.2 acima JÁ DIVERGE do código, em três pontos
+
+**Aviso de leitura, e é o ponto desta subseção:** quem for tipar `dados` por
+variante (§5.6, §7 item 1) **não pode copiar a tabela do §5.2** — ela está
+errada em três lugares. A forma correta precisa ser redigida **contra o
+código** e depois **ratificada**; ela não existe ainda, e este catálogo
+**não a inventa aqui**.
+
+**Por que esta subseção registra a divergência em vez de "consertar" a
+tabela.** O §5.2 é o registro do que foi observado quando foi escrito. Editar
+a tabela no lugar apagaria a evidência de que o catálogo derivou do código, e
+substituiria uma observação datada por uma redação nova sem autoridade — que
+é exatamente a armadilha que se quer evitar (o próximo leitor copiaria a
+redação nova achando que ela foi verificada). O §5.2 fica **intacto**; esta
+subseção diz, ponto a ponto, onde ele deixou de bater.
+
+`OBSERVED` (leitura direta por este agente, 2026-08-18):
+
+| # | O que o §5.2 diz | O que o código faz | Fonte lida |
+|---|---|---|---|
+| 1 | **quatro** `tipo` (e o mesmo vale para a união do §5.1) | o enum tem **cinco**: falta `observacao-clinica-registrada` | `packages/contratos/asyncapi.yaml:386-391` (enum FECHADO) e `apps/api/src/db.ts:1120-1126` (`OUTBOX_TO_CONTRACT_EVENT`, que mapeia `clinical_observation_recorded` → `observacao-clinica-registrada`) |
+| 2 | `observacoes-ingeridas` carrega `{ encontroId, leitoId, pacienteRef }` | carrega **também** `aceitas` e `quarentena` (duas contagens) | `apps/api/src/db.ts:588-601` |
+| 3 | `avaliacao-computada` carrega `{ encontroId, leitoId, pacienteRef, avaliacao }`, "inclui `ResultadoAvaliacao` completo" | carrega `{ encontroId, status, escore, banda }` — **sem** `leitoId`, **sem** `pacienteRef`, e **sem** `ResultadoAvaliacao` | `apps/api/src/db.ts:647-659` |
+
+**O item 3 é o mais consequente, e na direção segura.** O payload NÃO carrega
+o `ResultadoAvaliacao` completo — logo não carrega `explicacao`, `anotacoes`,
+`motivos` nem o envelope de despacho. Um documento que afirmasse o contrário
+levaria quem tipar `dados` a **declarar no contrato um payload clínico que o
+produtor não emite**, e — pior — a construir consumidor que espera veredito
+onde só há um resumo. Registrar isso agora é mais barato que descobrir depois
+da tipagem.
+
+**Por que o gate fica VERDE sobre as três divergências — verificado, não
+suposto.** `scripts/check_contratos.mjs` (Parte C, linhas 683-720) lê deste
+arquivo **um único padrão**: a união `tipo: "…" | "…";` do §5.1. Sobre ela faz
+duas perguntas, e nenhuma das duas alcança o item 1:
+
+- *"todo tipo documentado no catálogo existe no contrato?"* — os quatro do
+  §5.1 existem; **verde**. A pergunta inversa (todo tipo do contrato está
+  documentado no catálogo?) **não é feita nesses termos**;
+- *"todo tipo do contrato aparece no catálogo §5.1 **ou** na imagem de
+  `OUTBOX_TO_CONTRACT_EVENT`?"* — `observacao-clinica-registrada` está na
+  imagem do mapa, logo é **permitido** mesmo ausente do catálogo; **verde**.
+  Essa checagem existe para impedir evento **inventado** no contrato, não para
+  impedir evento **omitido** no catálogo. Ela faz o que promete; o que não se
+  pode é ler o verde dela como acordo entre catálogo e enum.
+
+Os itens 2 e 3 (forma de `dados`) não são alcançados por checagem alguma:
+enquanto `dados` for `unknown` no contrato, **não há o que um gate compare** —
+a divergência é entre **prosa** e **código**, e nenhum verificador deste
+repositório lê as duas. É a mesma limitação já registrada em §5.4 para o
+plano de controle.
+
+Vale ler isto junto com o achado de método registrado em
+`docs/14-devsecops-and-delivery/ci-policy.md` §5: um gate verde sobre o enum
+não diz nada sobre o payload, e a ausência de vermelho aqui nunca foi
+evidência de acordo.
+
+> **Pendência de decisão — o que fecharia `ACH-O3-16`.** *Quem decide:* o
+> dono de `ADR-0010` (envelope e catálogo de eventos) — a redação da forma de
+> `dados` por variante é conteúdo de contrato, não de agente. *Que evidência
+> fecharia:* uma tabela de payload redigida **contra o código** (não contra
+> este §5.2), ratificada, e um gate que a confronte com o produtor, de modo
+> que a próxima divergência apareça em vermelho e não em prosa. *Efeito
+> bloqueante hoje:* §7 item 1 e §5.6 não podem avançar a partir desta
+> tabela. `owner: UNASSIGNED — VALIDAÇÃO NECESSÁRIA`.
+
+### 5.6 `ACH-O3-6` (fecho PARCIAL) — `sequencia` negativa fechada; tipar `dados` por variante segue aberto
+
+**Enquadramento corrigido, e a correção importa.** A revisão adversarial
+apresentou este achado como "quebra a alegação de conformidade" do contrato.
+Isso **não se sustenta**: não havia alegação a quebrar — o
+`packages/contratos/asyncapi.yaml` declara explicitamente que `dados` **não é
+tipado por variante nesta fatia**, e §5.1/§5.3 acima dizem o mesmo. Um
+documento que declara a própria lacuna não a está violando. Registrar a
+refutação do enquadramento é parte de registrar o achado: adotar a redação do
+revisor teria criado, no catálogo, uma não-conformidade inexistente.
+
+**A violação REAL, não declarada em lugar nenhum, e essa foi fechada.**
+`asyncapi.yaml` declara `minimum: 0` para `sequencia` (`asyncapi.yaml:450`), e
+uma linha de outbox plantada podia produzir um quadro com `sequencia`
+**negativa** — valor que o próprio contrato proíbe, publicado sem que nada o
+barrasse. Fecho: um quadro cuja `sequencia` não é publicável **não é
+emitido**. Rastreio no código: `apps/api/src/db.ts:1147` e
+`apps/api/src/db.test.ts:670-740` (*"quadro de fluxo com sequencia não
+publicável não é emitido"*).
+
+**O que continua ABERTO.** Tipar `dados` por variante de `tipo`. Isto exige
+**decisão de contrato** — e, desde `ACH-O3-16` (§5.5), exige também que a
+redação seja feita contra o código, não contra o §5.2. É a mesma pendência já
+listada em §5.3 ("`dados` ainda não é tipado por variante") e em §7 item 1;
+`ACH-O3-6` apenas a nomeia e a liga à evidência.
+
+> **Pendência de decisão — o que fecharia a parte aberta de `ACH-O3-6`.**
+> *Quem decide:* o dono de `ADR-0010` (fechar o enum de `event_type` de
+> `WorkItem`, §2.3, é pré-requisito declarado) e quem ratificar a forma de
+> `dados` por variante. *Que evidência fecharia:* schema por variante em
+> `asyncapi.yaml`, tipo discriminado correspondente em `asyncapi.ts`, e gate
+> que confronte os dois com o produtor. *Efeito bloqueante hoje:* §7 item 1.
+> `owner: UNASSIGNED — VALIDAÇÃO NECESSÁRIA`.
+
+### 5.7 Identificadores usados em §5.5/§5.6, e o que estas subseções NÃO fazem
+
+`ACH-O3-6` e `ACH-O3-16` são **documento-locais, pendentes de ratificação em
+`docs/00-governance/traceability-policy.md` §1.1** — mesmo regime já
+declarado neste catálogo para os rótulos `EV-N`, e o mesmo usado para
+`ACH-O3-1`/`ACH-O3-2` alhures. **Nenhum prefixo global novo é cunhado**: a
+família `ACH-*` já está em uso neste repositório.
+
+Estas subseções **não** tipam `dados`, **não** redigem a tabela de payload
+correta, **não** promovem `ADR-0010` a `implemented`/`verified`, **não**
+fecham `SR-*`/`MG-*` algum e **não** aceitam risco residual. Nenhum dado real
+foi acessado; todo exemplo segue sob o marcador `SYNTH-` (GDEC-0014). Estado
+factual duro inalterado: 0 vias clínicas acionáveis, 47/47 inelegíveis,
+`Observation` da AMH não consumível, safety case **M0**.
 
 ## 6. Envelope-alvo (ADR-0010 B8) vs. o que existe — gaps declarados
 

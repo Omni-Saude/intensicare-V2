@@ -2,10 +2,13 @@
 doc_id: DEVSECOPS-CI-POLICY
 status: PROPOSAL
 owner: UNASSIGNED — VALIDAÇÃO NECESSÁRIA
-source: INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §15.1 (Repository foundation), §15.2 (Environments and delivery), §3 regras 12-14; .github/workflows/docs-gates.yml, ci-plataforma.yml, metadados-gates.yml (este repositório); docs/06-architecture/adrs/ADR-0022-build-dependencias-supply-chain.md; docs/06-architecture/premissas-de-construcao.md
+source: INTENSICARE_V2_ORCHESTRATOR_PROMPT.md §15.1 (Repository foundation), §15.2 (Environments and delivery), §3 regras 12-14; .github/workflows/docs-gates.yml, ci-plataforma.yml, metadados-gates.yml (este repositório); docs/06-architecture/adrs/ADR-0022-build-dependencias-supply-chain.md; docs/06-architecture/premissas-de-construcao.md; scripts/check_contratos.mjs e package.json da raiz (§5, acrescentado 2026-08-18, OBSERVADO)
 date_collected: 2026-08-14
 collector: especialista de fundação de repositório (ciclo 6, construção)
-last_updated: 2026-08-16
+last_updated: 2026-08-18
+addenda:
+  - "§1.2 emenda (2026-08-18): ACH-O3-2 passa a FECHADO; o texto original é preservado como estado medido à época"
+  - "§5 (2026-08-18): achado de método — mutação prova reprovação, não aceitação; e pnpm lint da raiz cobre formatação"
 ---
 
 # Política de CI — estado atual e estágios futuros
@@ -25,6 +28,25 @@ por sua vez ganhou passos de typecheck/lint/fronteira de módulo nesta
 fatia (§15.1 itens A/B/D). §1 abaixo foi reescrito para descrever os TRÊS
 workflows reais. §2 foi ajustado onde a fatia SPR-G7-1 já cobre parte do
 que antes era "não existe ainda".
+
+**Adendo 2026-08-18 — `ACH-O3-2` (ABERTO), registrado em §1.2 abaixo:** o
+passo 2 (Typecheck) da tabela de `ci-plataforma.yml` não cobre arquivo de
+teste em 7 dos 11 `tsconfig.json` do monorepo. Não reescreve a tabela nem o
+texto acima — só qualifica, com uma nota datada logo após a tabela, o que
+"compila sem erro em todo pacote/app" realmente cobre hoje.
+
+**Emenda datada 2026-08-18 (fim da sessão) — `ACH-O3-2` passa a FECHADO.** O
+parágrafo acima **fica intacto**: ele descrevia o estado **medido no instante
+em que foi escrito**, não o estado final da sessão, e essa distinção é o
+próprio ponto. Os **11** pacotes do monorepo passaram a typecheckar seus
+testes. Ver §1.2, nota `ACH-O3-2`, subseção "Emenda" — inclusive o defeito
+real que o fecho desmascarou, e que era invisível ao vitest por construção.
+
+**Adendo 2026-08-18 — §5 (novo): um achado de MÉTODO sobre como este
+repositório prova um gate.** Registrado com destaque porque muda o que se
+exige de qualquer gate daqui em diante, e não é específico de nenhum dos
+três workflows do §1: *mutação prova que um gate REPROVA o errado; nunca
+prova que ele ACEITA o certo.*
 
 ## 0. Escopo deste documento
 
@@ -87,6 +109,48 @@ raiz do repositório:
 | 5 | Build | `pnpm -r build` | Todo pacote/app compila (`tsc`) e, onde aplicável, empacota (`vite build` em `apps/web`). | ADR-0022 S3 (artefato final mínimo — a compilação é o primeiro passo dessa cadeia). |
 | 6 | Testes | `pnpm -r test -- --run` | Toda suíte Vitest do workspace, incluindo `packages/persistencia` (RLS por tenant, outbox transacional, e o teste de clean-install da migração SQL — ver nota abaixo) e `packages/kernel-clinico` (kernel clínico determinístico). | PRE-08 (Vitest + fast-check); ADR-0022 S4 (gate bloqueante desde o primeiro commit). |
 
+**Nota — `ACH-O3-2` (ABERTO), o passo 2 (Typecheck) não cobre teste em toda a
+árvore (correção de estado, 2026-08-18).** A linha do passo 2 acima —
+"compila sem erro em todo pacote/app" — precisa ser lida como *todo `src/`
+de produção*, não *todo arquivo TypeScript do workspace*. **OBSERVADO**
+(leitura direta de cada `tsconfig.json` do monorepo por este agente,
+2026-08-18): **7 dos 11** excluem `src/**/*.test.ts` do typecheck —
+`apps/api`, `packages/contratos`, `packages/dominio`,
+`packages/fixtures-sinteticas`, `packages/kernel-clinico`,
+`packages/persistencia` e `packages/vigilancia`. Só `packages/conformidade`,
+`packages/observabilidade`, `packages/rule-bundle` e `apps/web` cobrem os
+testes no typecheck (os três primeiros por não terem `exclude` de teste
+algum; `apps/web` não declara `exclude`). Consequência **relatada por quem
+mediu o achado** (não reproduzida por este agente): mudar uma assinatura
+exportada quebrou 3 casos de teste sem que `tsc` acusasse nada. O caso mais
+preocupante é `packages/kernel-clinico` — os testes da regra clínica ficam
+fora do typecheck, então uma mudança de tipo num export do kernel ou numa
+fixture de **vetor de referência** só quebraria em execução, não em
+compilação. **Não afirmamos aqui volume de erro latente algum** — isso é
+medida do especialista que está corrigindo este achado, não deste documento,
+e mudaria a cada correção aplicada.
+
+Existe **precedente de correção já no repositório**: `packages/rule-bundle`
+tem um `tsconfig.typecheck.json` separado (`extends` de `tsconfig.json`,
+`include: ["src/**/*.ts", "test/**/*.ts"]`, `noEmit: true`, `exclude:
+["dist"]`) e um script `"typecheck": "tsc -p tsconfig.typecheck.json
+--noEmit"` próprio no `package.json` do pacote — a build (`tsconfig.json`,
+que não pode emitir teste no artefato final) e o typecheck (que precisa
+verificar tudo, incluindo `@ts-expect-error` que provam barreira de tipo,
+ADR-0007 A7-1) ficam configurações distintas. **Este achado está sendo
+medido e corrigido por outro agente no momento em que esta nota foi
+escrita** (`tsconfig*.json`/`package.json` estão fora da fronteira de
+escrita deste documento) — por exemplo,
+`packages/contratos/tsconfig.typecheck.json` já existe no working tree nesta sessão, mas o
+`package.json` daquele pacote ainda apontava seu script `typecheck` só para
+`tsconfig.json` no instante desta observação. Este documento registra o
+achado como **ABERTO**, não um estado de conclusão. `ACH-O3-2` é
+documento-local (mesmo regime de `THR`/`QAS`/`CRV` da tabela §1.1 do
+`traceability-policy.md`; a família `ACH-*` já está em uso alhures neste
+repositório) — pendente de ratificação naquele §1.1, nenhum prefixo global
+novo é cunhado aqui. **Ver a emenda datada ao final desta §1.2: o achado
+passou a FECHADO até o fim da sessão de 2026-08-18.**
+
 **Nota — teste de clean-install da migração SQL:** `packages/persistencia`
 não tem um passo de CI dedicado para isso porque **já roda dentro do
 passo 6 acima, em toda execução**. `packages/persistencia/src/test-support.ts`
@@ -115,6 +179,45 @@ desde o primeiro commit, com **SBOM, atestado de proveniência e
 assinatura de artefato explicitamente diferidos para o Gate G8** (ADR-0022
 §5.2 S8) — nada neste workflow gera ou verifica SBOM/assinatura, e nenhuma
 alegação nesse sentido é feita aqui.
+
+#### Emenda datada (2026-08-18, fim da sessão) — `ACH-O3-2` passa a FECHADO
+
+A nota de `ACH-O3-2` acima **fica intacta**. Ela descrevia o estado **medido
+no instante em que foi escrita** — "7 dos 11", "este achado está sendo medido
+e corrigido por outro agente no momento em que esta nota foi escrita" —, e não
+o estado final da sessão. Reescrevê-la apagaria a única prova de que o achado
+existiu.
+
+**Estado final relatado pelo orquestrador desta sessão** (`OBSERVED` por ele,
+não por quem escreve esta emenda): os **11** pacotes/apps do monorepo passaram
+a typecheckar seus arquivos de teste. O precedente citado naquela nota
+(`packages/rule-bundle` com `tsconfig.typecheck.json` separado) foi a forma
+adotada onde a build não pode emitir teste no artefato final.
+
+**O que o fecho desmascarou — e é o motivo pelo qual esta emenda existe.** Ao
+ligar o typecheck sobre os testes, apareceu um `import type` de `EventoFluxo`
+apontando para um módulo onde **o símbolo não existe**. Ele era **invisível ao
+vitest por construção**, não por descuido: `import type` é **apagado** antes de
+qualquer resolução de módulo em runtime, então a suíte rodava verde sobre uma
+importação que não resolvia. É a mesma classe de verde vácuo que o §3 deste
+documento persegue, com um agravante — nenhuma quantidade de teste adicional a
+teria encontrado, porque o defeito vivia justamente no que o runtime nunca vê.
+Só o typecheck o alcança.
+
+**Consequência prática, para não se perder:** um pacote cuja suíte está verde
+**não** prova que os arquivos de teste desse pacote compilam. São duas
+verificações distintas, e o passo 2 da tabela desta §1.2 só passou a cobrir as
+duas depois deste fecho. Onde o `exclude` de teste voltar a um
+`tsconfig.json`, a cobertura volta a valer só para `src/` de produção — e a
+linha "compila sem erro em todo pacote/app" volta a precisar da qualificação
+daquela nota.
+
+**O que esta emenda NÃO faz.** Não aprova gate algum, não altera nenhum
+`MG-*`, não afirma que o typecheck sobre testes elimina verde vácuo (o §5
+abaixo mostra por que essa conclusão não se sustenta) e não nomeia owner.
+`ACH-O3-2` continua sendo um ID **documento-local pendente de ratificação** em
+`traceability-policy.md` §1.1; "FECHADO" aqui descreve o achado, não ratifica
+o identificador.
 
 ### 1.3 `metadados-gates.yml` — metadados de mudança / rastreabilidade
 
@@ -208,3 +311,131 @@ indústria a planejar contra, não um risco inventado.
   premissas de construção citadas em §0/§1.2 (`docs/06-architecture/premissas-de-construcao.md`)
   já foram registradas alhures, por outro agente, sob o regime de MODO
   CONSTRUÇÃO; este documento apenas descreve a materialização delas em CI.
+- **A partir de 2026-08-18, tampouco afirma que um gate verde deste
+  repositório aceita o documento correto.** Ver §5.
+
+## 5. Achado de MÉTODO (2026-08-18) — mutação prova que um gate REPROVA o errado; nunca prova que ele ACEITA o certo
+
+Esta seção não descreve um workflow. Ela registra uma **propriedade da forma
+como este repositório vinha provando seus gates**, descoberta na quarta onda
+de revisão adversarial desta sessão. Ela vale para todo gate presente e
+futuro do §1 e do §2, e por isso está numa seção própria em vez de numa nota
+de rodapé.
+
+> **Mutação prova que um gate REPROVA o errado. Nunca prova que ele ACEITA o
+> certo.**
+
+### 5.1 A medida que produziu a frase
+
+`scripts/check_contratos.mjs` — o gate de contrato rodado por
+`pnpm check:contratos`, dentro de `pnpm verify` — tem uma **Parte G** que
+compara o conjunto de propriedades de uma interface TypeScript com o schema
+correspondente. O extrator dessa parte era **cego a `readonly`**: a expressão
+que colhe os nomes de propriedade esperava dois espaços seguidos de
+`nome:` e, com `readonly` entre eles, o `:` não estava onde ela o procurava.
+
+`OBSERVED`, medido nesta sessão e verificado por este agente:
+
+| Medida | Comando / método | Valor |
+|---|---|---|
+| Ocorrências de `readonly` em `apps/` + `packages/` (`.ts`/`.tsx`) | `grep -rn "readonly" --include="*.ts" --include="*.tsx" apps packages \| wc -l` | **4.824** |
+| Ocorrências no único arquivo contra o qual a Parte G era testada | idem, restrito àquele arquivo | **zero** |
+
+A faixa relatada pelo orquestrador (**4.775–5.329**) varia com o recorte
+contado (com/sem `scripts/`, com/sem `dist/`); qualquer recorte razoável
+mantém a mesma conclusão. `readonly` é o **estilo dominante** deste
+repositório, e o extrator não o enxergava — porque o único arquivo contra o
+qual ele fora exercitado era o único que não o usava.
+
+### 5.2 As DUAS direções, e por que só uma delas era alcançável por mutação
+
+**Direção 1 — falso-negativo (conhecida, e a que mutação pega).** Uma
+propriedade acrescentada **só de um lado** e escrita com `readonly` passava:
+o gate não a via, logo não a comparava. Uma bateria de mutação encontra isto,
+porque mutação existe exatamente para perguntar *"se eu estragar isto, o gate
+fica vermelho?"*.
+
+**Direção 2 — falso-positivo (a pior, e a que NENHUMA bateria de mutação
+pegaria).** Anotar `readonly` numa propriedade **já conforme** — sem mudar
+mais nada, sem mudar o YAML, sem introduzir divergência alguma — fazia o gate
+**reprovar um documento correto**. E aqui está o dano real: da posição de
+quem lê a falha, o conserto natural é **apagar a propriedade do YAML**, que é
+onde a mensagem aponta.
+
+> **O gate ensinava o leitor a criar exatamente a divergência que ele existe
+> para impedir.**
+
+Mutação nunca chegaria a isto por construção: mutação **estraga** a entrada e
+verifica se o gate reprova. A direção 2 exige a pergunta simétrica —
+**preservar** a entrada correta (num estilo diferente) e verificar se o gate
+**continua aceitando**. São perguntas distintas, e este repositório só vinha
+fazendo a primeira.
+
+### 5.3 O que mudou no autoteste, e o que continua exigido daqui em diante
+
+O buraco foi fechado, e o autoteste de `check_contratos.mjs` ganhou um bloco
+de **conformidade** ao lado do bloco de **mutação**. A asserção nova não é
+"a cópia anotada passa" — isso seria satisfeito por um gate que não verifica
+nada. É:
+
+> *"a cópia anotada roda o MESMO número de verificações que a intocada
+> (nenhuma checagem pulada)"* — `scripts/check_contratos.mjs`, bloco
+> `HOLE-1`, direção falso-positivo.
+
+Comparar **contagem de verificações**, e não apenas o veredito, é o que
+distingue "aceitou porque está conforme" de "aceitou porque não olhou". Um
+gate que pula silenciosamente a checagem também passa — e passaria verde.
+
+**Exigência que este documento passa a registrar para qualquer gate futuro
+do §2** (`PROPOSAL`, não ratificada — ver §0): todo gate deste repositório
+precisa de **duas** provas, não uma.
+
+| Prova | Pergunta | Falha que ela pega |
+|---|---|---|
+| Mutação | estragando a entrada, o gate fica **vermelho**? | gate que não verifica nada (falso-negativo) |
+| Conformidade | reescrevendo a entrada correta num **estilo equivalente**, o gate continua **verde**, com o **mesmo número de verificações**? | gate que reprova o certo, e ensina o conserto errado (falso-positivo); gate que pula checagem em silêncio |
+
+Isto é uma exigência de **método de prova**, não uma decisão de stack, de SLO
+ou de limiar. Ela não ratifica nada e não altera nenhum `MG-*`.
+
+### 5.4 Corolário operacional — `pnpm lint` da raiz cobre FORMATAÇÃO, e `biome check <caminhos>` não
+
+`OBSERVED` (`package.json` da raiz, lido por este agente, 2026-08-18):
+
+```json
+"lint": "biome ci --error-on-warnings ."
+```
+
+Três diferenças que custaram uma reprovação de `pnpm verify` nesta sessão:
+
+1. **`biome ci` verifica formatação**; `biome check` no modo usado por
+   agentes normalmente não reporta a mesma coisa como falha bloqueante;
+2. **o alvo é `.`** — o repositório inteiro. Um agente que roda
+   `biome check <caminhos que eu toquei>` não vê arquivo algum fora do seu
+   recorte, e é fora do recorte que a formatação diverge com mais
+   frequência (arquivo tocado por outro agente na mesma onda);
+3. **`--error-on-warnings`** torna bloqueante o diagnóstico nível `warn`,
+   que os dois modos acima reportariam como aviso benigno.
+
+**Medido nesta sessão:** uma divergência de **formatação** — não de lógica,
+não de tipo — reprovou o `pnpm verify` da sessão, depois de agentes terem
+verificado seus próprios recortes com `biome check`. A regra operacional que
+sai daqui: **o único comando que responde "o lint passa?" é o `pnpm lint` da
+raiz**; qualquer outro responde uma pergunta menor e não deve ser relatado
+como se respondesse aquela.
+
+### 5.5 Provenance desta seção
+
+| Campo | Valor |
+|---|---|
+| `label` | `OBSERVED` para §5.1 (contagem verificada por este agente), §5.3 (asserção lida no arquivo) e §5.4 (script lido no `package.json`); `INFERENCE` para a generalização de §5.2 a gates futuros; `PROPOSAL` para a exigência de duas provas em §5.3 — não ratificada |
+| `source_repo` | `intensicare-V2` |
+| `path_or_url` | `scripts/check_contratos.mjs`; `package.json` (raiz) |
+| `commit_sha_or_version` | working tree da branch `codex/lacunas-frontend-a11y` sobre `700b13e` |
+| `section_or_lines` | `check_contratos.mjs:116,151-157,299-324,1209-1262,1342-1385,1571`; `package.json` (bloco `scripts`) |
+| `date_collected` | 2026-08-18 |
+| `collector` | agente de consistência documental e rastreabilidade (esta sessão) |
+| `transformation` | achado relatado pelo orquestrador e **reproduzido por leitura do script atual** por este agente antes de ser escrito; a contagem de `readonly` foi executada por este agente (`grep`+`wc`); nenhum teste, build ou gate foi executado por ele além de `pnpm check:docs` e `pnpm check:forbidden` |
+| `confidence` | high para as medidas; medium para a generalização a gates ainda não construídos (§2) |
+| `owner` | UNASSIGNED — VALIDAÇÃO NECESSÁRIA |
+| `validation_status` | VALIDAÇÃO NECESSÁRIA |

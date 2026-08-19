@@ -1,0 +1,35 @@
+{
+  // Configuração SÓ de verificação de tipos — mesmo molde de
+  // packages/rule-bundle/tsconfig.typecheck.json (precedente já existente
+  // no repositório). `tsconfig.json` exclui `src/**/*.test.ts` de propósito
+  // (teste não entra em `dist/`), o que tornava `pnpm typecheck` cego aos
+  // testes e às fixtures de VETOR DE REFERÊNCIA em `test/vetores-*.json`
+  // (ACH-O3-2) — precisamente o ponto cego que a regra "nunca altere vetor
+  // de referência para obter verde" não pode ter.
+  //
+  // ADOTADA em `package.json` — `"typecheck"` aponta para este arquivo.
+  // `tsc -p tsconfig.typecheck.json --noEmit` passa com 0 erros.
+  //
+  // HISTÓRICO (ACH-O3-2, achado corrigido nesta fronteira ampliada):
+  // reprovava com 2 erros reais, os dois exatamente nos arquivos de VETOR
+  // DE REFERÊNCIA CLÍNICA:
+  //   test/vetores-gcs.test.ts(16) e test/vetores-news2.test.ts(14):
+  //   "Importing a JSON file into an ECMAScript module requires a
+  //   'type: \"json\"' import attribute when 'module' is set to 'NodeNext'"
+  //   — os dois arquivos faziam `import vetoresJson from "./vetores-*.json"`
+  //   sem o atributo `with { type: "json" }` que o Node ESM estrito exige.
+  //   O vitest tolerava (resolução própria, não passa por `tsc`).
+  // CORRIGIDO acrescentando `with { type: "json" }` ao especificador de
+  // import nos dois arquivos — SINTAXE de módulo, não conteúdo: nenhum
+  // valor, campo ou vetor foi tocado, e o typecheck depois da correção NÃO
+  // acusou nenhum erro de VALOR ou FORMA dos vetores (se tivesse acusado, a
+  // instrução era parar e relatar — não ajustar o vetor; não foi
+  // necessário).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "exclude": ["dist"]
+}

@@ -34,6 +34,8 @@ export interface OpcoesProntidao {
   readonly leitor: LeitorDeProntidao | null;
   readonly intervaloRecargaMs?: number | null;
   readonly relogio?: Relogio;
+  /** Jitter da recarga periódica — injetável para teste determinístico. */
+  readonly sortear?: () => number;
 }
 
 export interface ProntidaoObservada {
@@ -44,7 +46,7 @@ export interface ProntidaoObservada {
 }
 
 export function useProntidao(opcoes: OpcoesProntidao): ProntidaoObservada {
-  const { leitor, intervaloRecargaMs = null, relogio } = opcoes;
+  const { leitor, intervaloRecargaMs = null, relogio, sortear } = opcoes;
 
   const buscar = useCallback(
     async (sinal: AbortSignal): Promise<RespostaApi<LeituraDeProntidao>> => {
@@ -63,6 +65,7 @@ export function useProntidao(opcoes: OpcoesProntidao): ProntidaoObservada {
     habilitado: leitor !== null,
     intervaloRecargaMs,
     ...(relogio !== undefined ? { relogio } : {}),
+    ...(sortear !== undefined ? { sortear } : {}),
   });
 
   // FAIL-CLOSED, E ANTES DO DADO ANTERIOR — a ordem é o defeito P1 corrigido

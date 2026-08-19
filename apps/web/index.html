@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>IntensiCare V2</title>
+    <!--
+      Título de PARTIDA, antes de a aplicação montar. A partir daí o título é
+      dinâmico por tela (WCAG 2.2 SC 2.4.2, LAC-L4) e vem de
+      `src/roteamento/tituloDocumento.ts` — o sufixo abaixo é o mesmo
+      (`SUFIXO_TITULO`), para que a aba não mude de identidade ao hidratar.
+    -->
+    <title>IntensiCare V2 (consultivo, dados sintéticos)</title>
   </head>
   <body>
     <div id="root"></div>

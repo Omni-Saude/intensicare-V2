@@ -190,7 +190,7 @@ export function GaleriaEstados() {
       <Familia
         titulo="5. Conectividade"
         idSecao="galeria-conectividade"
-        nota="ATENÇÃO: `reproduzindo` e `reconciliado` são renderizáveis, mas NÃO são produzidos por transporte real nesta fatia — não há SSE, WebSocket nem cursor de replay (ADR-0011 P4 pendente). Estão aqui como catálogo de apresentação, não como capacidade."
+        nota="`reproduzindo` e `reconciliado` passaram a ter ORIGEM REAL: o canal SSE (ADR-0011 P4) está fiado na casca e os estados do fio chegam à tela pela ponte `CONECTIVIDADE_POR_ESTADO_CONEXAO`. Deixaram de ser catálogo de apresentação. O que continua valendo: o push nunca traz dado clínico — ele diz QUE releia, e quem lê é a projeção autoritativa (P7/P8); e replay finito não é chamado de tempo real."
         valores={CONECTIVIDADE}
         traduzir={textoConectividade}
       />

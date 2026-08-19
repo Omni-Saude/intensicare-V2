@@ -1,0 +1,33 @@
+{
+  // Configuração SÓ de verificação de tipos (ACH-O3-2 — `tsconfig.json`
+  // exclui `src/**/*.test.ts` de propósito, o que tornava `pnpm typecheck`
+  // cego aos testes).
+  //
+  // ADOTADA em `package.json` — `"typecheck"` aponta para este arquivo.
+  // `tsc -p tsconfig.typecheck.json --noEmit` passa com 0 erros.
+  //
+  // HISTÓRICO (ACH-O3-2, achado corrigido nesta fronteira ampliada):
+  // reprovava com 10 erros, todos em UM teste — src/kpir-14.test.ts
+  // (133-144): TS18048 "'X' is possibly 'undefined'" em `contaComoViva`,
+  // `excluida`, `categoriaPropria`, desestruturados de
+  // `[0, 1, 2].map((i) => abrir(resultado, i))`: sob `noUncheckedIndexedAccess`
+  // (tsconfig.base.json do workspace), TS não prova estaticamente que um
+  // `.map()` sobre um array de 3 produz exatamente 3 elementos ao
+  // desestruturar — limite de inferência do compilador, não indício de
+  // lógica de teste errada. CORRIGIDO com guarda explícita de comprimento
+  // (`if (a === undefined || b === undefined || c === undefined) throw new
+  // Error(...)`, com mensagem nomeada) em vez de `!`/cast — o `throw`
+  // explícito é o que permite ao TypeScript estreitar os três valores para
+  // não-`undefined`, e falha a asserção (não `TypeError`) se a premissa um
+  // dia deixar de valer.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "typeRoots": ["../../node_modules/@types"],
+    "allowJs": true,
+    "rootDir": "../.."
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "exclude": ["dist"]
+}

@@ -359,6 +359,7 @@ describe("ACEITE L2-5 — prontidão lida com sucesso e depois morta não conta 
         aoSelecionarLeito={() => {}}
         leitorProntidao={leitor}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO_RECARGA_PADRAO_MS}
       />,
     );
@@ -405,6 +406,7 @@ describe("ACEITE L2-5 — prontidão lida com sucesso e depois morta não conta 
         aoSelecionarLeito={() => {}}
         leitorProntidao={leitor}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO_RECARGA_PADRAO_MS}
       />,
     );
@@ -439,6 +441,7 @@ describe("ACEITE L2-5 — prontidão lida com sucesso e depois morta não conta 
         aoSelecionarLeito={() => {}}
         leitorProntidao={leitor}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={INTERVALO_RECARGA_PADRAO_MS}
       />,
     );
@@ -529,6 +532,7 @@ describe("axe-core — as superfícies novas (idade da visão e prontidão)", ()
         cliente={cliente}
         aoSelecionarLeito={() => {}}
         relogio={relogio}
+        sortear={() => 0.5}
         intervaloRecargaMs={30_000}
       />,
     );
