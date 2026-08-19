@@ -3,8 +3,7 @@ import type { LeitorDeProntidao } from "../api/prontidao.js";
 import type { ClienteApiIntensiCare } from "../api/tipos.js";
 import type { Alerta, AvaliacaoPaciente, ItemGradeLeito } from "../domain/clinico.js";
 import type { EstadoConectividade } from "../domain/estados.js";
-import { textoAvaliacao, textoBandaRisco } from "../domain/linguagem.js";
-import { ROTULO_PARAMETRO } from "../domain/news2.js";
+import { ROTULO_PARAMETRO, textoAvaliacao, textoBandaRisco } from "../domain/linguagem.js";
 import {
   combinarConectividade,
   refinarComEstadoDoPush,
@@ -30,6 +29,7 @@ import { BadgeTom } from "./BadgeTom.js";
 import { ContribuicaoParametroLinha } from "./ContribuicaoParametroLinha.js";
 import { EstadoTela } from "./EstadoTela.js";
 import { PainelAlertas } from "./PainelAlertas.js";
+import { SeloModoDespacho } from "./SeloModoDespacho.js";
 
 interface DetalhePacienteProps {
   leitoId: string;
@@ -246,6 +246,16 @@ export function DetalhePaciente({
               <BadgeTom texto="Parâmetro isolado no extremo." tom="alerta" />
             )}
           </div>
+
+          {/*
+            MODO DE DESPACHO (LAC-L2), no ponto exato de decisão e ANTES do
+            escore. A ordem é deliberada: quem lê a tela precisa saber que
+            nenhuma conduta decorre deste número antes de ler o número. O
+            texto é do servidor (`rotuloPt`/`mensagemRecusaPt`); o que esta
+            tela decide é onde ele aparece (ADR-0021 F8: a apresentação decide
+            COMO, nunca SE).
+          */}
+          <SeloModoDespacho envelope={itemDesteLeito.avaliacao.despacho} detalhado />
 
           {ESTADOS_FAIL_CLOSED.has(itemDesteLeito.avaliacao.estadoAvaliacao) ? (
             <div role="alert">

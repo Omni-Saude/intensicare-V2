@@ -33,6 +33,7 @@ import type {
   ContribuicaoParametro as ContribuicaoContrato,
   EntradaGradeLeitos,
   EstadoItemTrabalho as EstadoItemContrato,
+  Frescor as FrescorContrato,
   GradeLeitosResposta,
   ItemTrabalho,
   ParametroClinico,
@@ -57,7 +58,7 @@ import type {
   EstadoFrescor,
   EstadoItemTrabalho,
 } from "../domain/estados.js";
-import { ROTULO_PARAMETRO } from "../domain/news2.js";
+import { ROTULO_PARAMETRO } from "../domain/linguagem.js";
 import { exigirPerfilDesenvolvimento } from "../perfil.js";
 import type { ProvedorSessao } from "./sessao.js";
 import type {
@@ -143,6 +144,30 @@ export function mapearFrescorParametro(statusParametro: string | undefined): Est
   }
 }
 
+/**
+ * `Frescor` da LINHA DA GRADE (3 valores no contrato) → `EstadoFrescor` da UI
+ * (9 valores). Total e fail-closed, no mesmo padrão de
+ * `mapearFrescorParametro`: valor ausente ou fora do vocabulário vira
+ * `ausente`, jamais `atual`.
+ *
+ * O TIPO NÃO É AMPLIADO EM NENHUMA DIREÇÃO. O produtor computa três estados
+ * (`packages/contratos/src/index.ts:414`) e a UI sabe representar nove; o
+ * mapeamento é uma injeção dos três nos nove. Inventar um quarto valor aqui
+ * seria o cliente originando frescor — ADR-0011 P7.
+ */
+export function mapearFrescorGrade(frescor: FrescorContrato | undefined): EstadoFrescor {
+  switch (frescor) {
+    case "atual":
+      return "atual";
+    case "envelhecendo":
+      return "envelhecendo";
+    case "desatualizado":
+      return "desatualizado";
+    default:
+      return "ausente";
+  }
+}
+
 export function mapearContribuicao(c: ContribuicaoContrato): ContribuicaoParametro {
   const parametro = mapearParametro(c.parametro);
   return {
@@ -167,9 +192,19 @@ export function mapearContribuicao(c: ContribuicaoContrato): ContribuicaoParamet
  * INV-B ficava invisível justamente quando o total não é computável. ADR-0021
  * F8 é explícita: a camada de apresentação decide COMO apresentar o racional,
  * nunca SE ele aparece.
+ *
+ * `despacho` entrou pelo mesmo motivo, um ciclo depois (LAC-L2): o envelope de
+ * MODO DE DESPACHO é a representação visível da degradação exigida por
+ * QAS-0023, o backend o publica desde `apps/api/src/db.ts`, e este mapeador
+ * copiava onze campos sem ele. Sem o envelope, a única marca "CONSULTIVO" na
+ * tela era um literal fixo do banner — verdadeiro por coincidência, e mudo se
+ * a regra saísse de sombra. `?? null` normaliza o campo ausente das respostas
+ * gravadas antes desta versão do contrato para o `null` que o domínio já lê
+ * como "modo NÃO registrado ⇒ não acionável".
  */
 export function mapearAvaliacao(resultado: ResultadoAvaliacao): AvaliacaoPaciente {
   return {
+    despacho: resultado.despacho ?? null,
     estadoAvaliacao: mapearStatusAvaliacao(resultado.status),
     news2Total: resultado.escore,
     bandaRisco: mapearBanda(resultado.banda),
@@ -268,6 +303,10 @@ export function mapearEntradaGrade(entrada: EntradaGradeLeitos): ItemGradeLeito 
           parametroVermelho: false,
           calculadoEm: entrada.atualizadoEm,
           versaoRegra: null,
+          // MESMO fato do `modoAvaliacao` da linha, e lido do MESMO campo: o
+          // cartão e a tela de detalhe nunca podem ler versões diferentes do
+          // modo de despacho da mesma linha.
+          despacho: entrada.modoAvaliacao ?? null,
         };
 
   return {
@@ -276,6 +315,16 @@ export function mapearEntradaGrade(entrada: EntradaGradeLeitos): ItemGradeLeito 
     pacienteApelido: entrada.pacienteRef === null ? null : apelidoDePaciente(entrada.pacienteRef),
     avaliacao,
     alertas,
+    // O PRODUTOR ENTREGA O FRESCOR PRONTO (ADR-0011 P7). Até aqui este campo
+    // obrigatório do contrato era simplesmente ignorado e o cartão do leito
+    // derivava frescor de `contribuicoes`, que este mesmo mapeador deixa vazia
+    // por construção — a projeção da grade é um resumo e não publica insumo
+    // por parâmetro.
+    frescor: mapearFrescorGrade(entrada.frescor),
+    // LAC-L2: a linha atravessava a fronteira sem nenhum vestígio de que a
+    // regra rodou em SOMBRA. `?? null` é normalização de campo ausente, não
+    // valor inventado — `null` já significa "modo NÃO registrado".
+    modoAvaliacao: entrada.modoAvaliacao ?? null,
   };
 }
 

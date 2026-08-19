@@ -26,6 +26,7 @@ import type {
   ItemGradeLeito,
   ParametroId,
 } from "../domain/clinico.js";
+import { ROTULO_PARAMETRO } from "../domain/linguagem.js";
 import {
   calcularBandaRisco,
   pontuarFrequenciaCardiaca,
@@ -35,7 +36,6 @@ import {
   pontuarSaturacaoOxigenio,
   pontuarTemperatura,
   pontuarUsoOxigenioSuplementar,
-  ROTULO_PARAMETRO,
   somarPontos,
   VERSAO_REGRA_NEWS2_ILUSTRATIVA,
 } from "../domain/news2.js";

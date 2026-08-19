@@ -18,6 +18,9 @@
  * capacidade inacabada é apresentada como operacional.
  */
 
+import { casoImpossivel } from "./domain/estados.js";
+import { textoCarregamento } from "./domain/linguagem.js";
+
 export const packageVersion = "0.0.0" as const;
 
 /** Subconjunto ilustrativo do eixo de carregamento do modelo de estado do §11. */
@@ -26,16 +29,27 @@ export type LoadingState = "loading" | "empty" | "error" | "success";
 /**
  * Rótulo textual em pt-BR clínico para cada estado — nunca depende só de
  * cor como sinal (§11 "non-color-only cues").
+ *
+ * DELEGA, NÃO REPETE. As quatro frases estavam escritas de novo aqui, idênticas
+ * às de `textoCarregamento` (`./domain/linguagem.ts`) — duas fontes do MESMO
+ * texto visível, que é a mesma classe de defeito de LAC-L8 e o que ADR-0008 N3
+ * proíbe. Duas cópias divergem na primeira revisão de redação, e a revisão pela
+ * autoridade clínica (ADR-0029, condição C2 ABERTA) alteraria uma sem tocar na
+ * outra. O que sobrevive aqui é só a TRADUÇÃO de identificador: este módulo é o
+ * esqueleto de fundação (SPR-G7-1) e usa o vocabulário em inglês do §11, ao
+ * passo que as telas usam os identificadores pt-BR de `./domain/estados.ts`.
  */
 export function loadingStateLabel(state: LoadingState): string {
   switch (state) {
     case "loading":
-      return "Carregando…";
+      return textoCarregamento("carregando").texto;
     case "empty":
-      return "Nenhum item encontrado.";
+      return textoCarregamento("vazio").texto;
     case "error":
-      return "Não foi possível carregar. Tente novamente.";
+      return textoCarregamento("erro").texto;
     case "success":
-      return "Carregado.";
+      return textoCarregamento("pronto").texto;
+    default:
+      return casoImpossivel(state, "loadingStateLabel");
   }
 }

@@ -13,16 +13,27 @@
  * Integração SPR-G7-2: a implementação REAL do escore existe em
  * `@intensicare/kernel-clinico` (RULE-NEWS2 0.2.0) e é o que a API
  * calcula; a tabela abaixo alimenta APENAS o cliente mock
- * (`../api/fixtures.ts`) e o `ROTULO_PARAMETRO` de exibição — jamais deve
- * ser tratada como fonte de verdade do escore.
+ * (`../api/fixtures.ts`) — jamais deve ser tratada como fonte de verdade do
+ * escore.
+ *
+ * FRONTEIRA EXECUTÁVEL (LAC-L8). Nenhum módulo do caminho de produção pode
+ * importar este arquivo: `./fronteiraDoModuloIlustrativo.test.ts` varre o grafo
+ * de importações de `src/**` e reprova se alguém além de `../api/fixtures.ts`
+ * o alcançar, e `../build/guardaArtefatoSintetico.ts` faz o build de produção
+ * FALHAR se `VERSAO_REGRA_NEWS2_ILUSTRATIVA` aparecer no pacote emitido.
+ * Tree-shaking removia a tabela hoje, mas é otimização, não garantia
+ * contratual — a aresta de importação existia e nada a impedia de crescer.
  *
  * Faixas de banda de risco (baixo/médio/alto/crítico) são um recorte
  * ILUSTRATIVO em quatro níveis (inspirado na "clear four-tier
  * prioritization" citada no prompt §11), não um limiar clinicamente
  * validado.
  */
-import type { ParametroId } from "./clinico.js";
-
+/**
+ * Marcador de proveniência da tabela ILUSTRATIVA. `../build/guardaArtefatoSintetico.ts`
+ * proíbe este literal no pacote de produção — se ele chegar lá, a tela pode
+ * exibir rastreabilidade de regra FALSA (LAC-L8; ADR-0021 F8).
+ */
 export const VERSAO_REGRA_NEWS2_ILUSTRATIVA = "news2-ilustrativo-0.0.1-synth" as const;
 
 /** Pontua a frequência respiratória (irpm). */
@@ -102,13 +113,12 @@ export function calcularBandaRisco(
   return "baixo";
 }
 
-/** Mapa de rótulos clínicos pt-BR por parâmetro (para exibição). */
-export const ROTULO_PARAMETRO: Record<ParametroId, string> = {
-  frequencia_respiratoria: "Frequência respiratória",
-  saturacao_oxigenio: "Saturação de oxigênio (SpO₂)",
-  uso_oxigenio_suplementar: "Uso de oxigênio suplementar",
-  temperatura: "Temperatura",
-  pressao_arterial_sistolica: "Pressão arterial sistólica",
-  frequencia_cardiaca: "Frequência cardíaca",
-  nivel_consciencia: "Nível de consciência",
-};
+/*
+ * `ROTULO_PARAMETRO` SAIU DAQUI (LAC-L8) — foi para `./linguagem.ts`.
+ *
+ * Ele era a única razão pela qual `../api/clienteHttp.ts` e
+ * `../components/DetalhePaciente.tsx` — caminho de PRODUÇÃO — importavam este
+ * módulo ILUSTRATIVO. Rótulo de exibição é linguagem, não semântica clínica, e
+ * não pertencia a um arquivo cuja tabela de pontos não é a regra do produto.
+ * `./fronteiraDoModuloIlustrativo.test.ts` reprova se a aresta voltar.
+ */

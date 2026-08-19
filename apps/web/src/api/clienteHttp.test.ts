@@ -216,4 +216,156 @@ describe("mapeamento de entrada da grade", () => {
     };
     expect(mapearEntradaGrade(emAlerta).avaliacao?.versaoRegra).toBeNull();
   });
+
+  /**
+   * ADR-0011 P7, mesma família de LAC-D3 (severidade fabricada), agora no
+   * FRESCOR. `EntradaGradeLeitos.frescor` é campo OBRIGATÓRIO do contrato
+   * (`packages/contratos/src/index.ts:424`) e o cliente não o lia: o mapeador
+   * punha `contribuicoes: []` e `CartaoLeito` chamava `calcularFrescorGeral`
+   * sobre essa lista vazia — frescor DERIVADO de nada, num campo que o
+   * produtor já entregou pronto.
+   */
+  it("frescor da grade vem do SERVIDOR — os três valores de `Frescor`, sem derivação", () => {
+    const base: EntradaGradeLeitos = {
+      leitoId: "SYNTH-LEITO-06",
+      encontroId: "SYNTH-ENC-P006",
+      pacienteRef: "amh:psr:v1:SYNTH-P006",
+      escore: 3,
+      banda: "atencao",
+      statusAvaliacao: "valido",
+      frescor: "atual",
+      atualizadoEm: "2026-08-16T12:00:00.000Z",
+      alerta: null,
+    };
+    expect(mapearEntradaGrade({ ...base, frescor: "atual" }).frescor).toBe("atual");
+    expect(mapearEntradaGrade({ ...base, frescor: "envelhecendo" }).frescor).toBe("envelhecendo");
+    expect(mapearEntradaGrade({ ...base, frescor: "desatualizado" }).frescor).toBe("desatualizado");
+  });
+
+  it("frescor ausente ou fora do vocabulário ⇒ 'ausente' (fail-closed), nunca 'atual'", () => {
+    const semFrescor = {
+      leitoId: "SYNTH-LEITO-07",
+      encontroId: "SYNTH-ENC-P007",
+      pacienteRef: "amh:psr:v1:SYNTH-P007",
+      escore: 3,
+      banda: "atencao",
+      statusAvaliacao: "valido",
+      atualizadoEm: "2026-08-16T12:00:00.000Z",
+      alerta: null,
+    } as unknown as EntradaGradeLeitos;
+    expect(mapearEntradaGrade(semFrescor).frescor).toBe("ausente");
+
+    const desconhecido = { ...semFrescor, frescor: "fresquinho" } as unknown as EntradaGradeLeitos;
+    expect(mapearEntradaGrade(desconhecido).frescor).toBe("ausente");
+  });
+
+  /**
+   * LAC-L2. `EntradaGradeLeitos.modoAvaliacao` era simplesmente omitido pelo
+   * mapeador: a linha atravessava a fronteira sem nenhum vestígio de que a
+   * regra rodou em SOMBRA. QAS-0023 exige contagem ZERO de degradação sem
+   * representação visível.
+   */
+  it("modo de despacho da grade atravessa o mapeador intacto", () => {
+    const comModo: EntradaGradeLeitos = {
+      leitoId: "SYNTH-LEITO-08",
+      encontroId: "SYNTH-ENC-P008",
+      pacienteRef: "amh:psr:v1:SYNTH-P008",
+      escore: 3,
+      banda: "atencao",
+      statusAvaliacao: "valido",
+      frescor: "atual",
+      atualizadoEm: "2026-08-16T12:00:00.000Z",
+      alerta: null,
+      modoAvaliacao: {
+        desfecho: "avaliada",
+        modo: "sombra",
+        acionavel: false,
+        rotuloPt: "SOMBRA — rótulo pt-BR emitido pelo servidor.",
+        motivoRecusa: null,
+        mensagemRecusaPt: null,
+        versaoRegra: "RULE-NEWS2@0.2.0",
+        despachadoEm: "2026-08-16T12:00:00.000Z",
+        bundle: {
+          versaoBundle: "SYNTH-BUNDLE-0.0.1",
+          digestManifesto: null,
+          behaviorHash: null,
+          assinatura: "assinatura_verificada",
+          bloqueiosDeAtivacao: [],
+          ativoDesde: null,
+        },
+      },
+    };
+    const item = mapearEntradaGrade(comModo);
+    expect(item.modoAvaliacao?.modo).toBe("sombra");
+    expect(item.modoAvaliacao?.acionavel).toBe(false);
+    expect(item.modoAvaliacao?.rotuloPt).toBe("SOMBRA — rótulo pt-BR emitido pelo servidor.");
+    // O mesmo fato também acompanha a avaliação da linha, para que a tela de
+    // detalhe e o cartão nunca leiam versões diferentes do mesmo campo.
+    expect(item.avaliacao?.despacho?.modo).toBe("sombra");
+  });
+
+  it("linha SEM modo de despacho chega ao domínio como `null` — nunca como campo inexistente", () => {
+    const semModo: EntradaGradeLeitos = {
+      leitoId: "SYNTH-LEITO-09",
+      encontroId: "SYNTH-ENC-P009",
+      pacienteRef: "amh:psr:v1:SYNTH-P009",
+      escore: 3,
+      banda: "atencao",
+      statusAvaliacao: "valido",
+      frescor: "atual",
+      atualizadoEm: "2026-08-16T12:00:00.000Z",
+      alerta: null,
+    };
+    const item = mapearEntradaGrade(semModo);
+    expect(item.modoAvaliacao).toBeNull();
+    expect(item.avaliacao?.despacho).toBeNull();
+  });
+});
+
+describe("modo de despacho na avaliação por paciente (LAC-L2)", () => {
+  const base: ResultadoAvaliacao = {
+    status: "valido",
+    parametrosAusentes: [],
+    parametros: [],
+    escore: 3,
+    banda: "atencao",
+    avaliadoEm: "2026-08-16T12:00:00.000Z",
+    motivos: [],
+    anotacoes: [],
+    explicacao: "SYNTH — explicação agregada do backend.",
+    parametroVermelho: false,
+    versaoRegra: "RULE-NEWS2@0.2.0",
+  };
+
+  it("`ResultadoAvaliacao.despacho` sobrevive ao mapeamento (11 campos → 12)", () => {
+    const comDespacho: ResultadoAvaliacao = {
+      ...base,
+      despacho: {
+        desfecho: "avaliada",
+        modo: "sombra",
+        acionavel: false,
+        rotuloPt: "SOMBRA — rótulo pt-BR emitido pelo servidor.",
+        motivoRecusa: null,
+        mensagemRecusaPt: null,
+        versaoRegra: "RULE-NEWS2@0.2.0",
+        despachadoEm: "2026-08-16T12:00:00.000Z",
+        bundle: {
+          versaoBundle: "SYNTH-BUNDLE-0.0.1",
+          digestManifesto: null,
+          behaviorHash: null,
+          assinatura: "assinatura_verificada",
+          bloqueiosDeAtivacao: [],
+          ativoDesde: null,
+        },
+      },
+    };
+    const avaliacao = mapearAvaliacao(comDespacho);
+    expect(avaliacao.despacho?.modo).toBe("sombra");
+    expect(avaliacao.despacho?.acionavel).toBe(false);
+    expect(avaliacao.despacho?.rotuloPt).toBe("SOMBRA — rótulo pt-BR emitido pelo servidor.");
+  });
+
+  it("resposta gravada ANTES desta versão do contrato chega como `null`, não como `undefined`", () => {
+    expect(mapearAvaliacao(base).despacho).toBeNull();
+  });
 });

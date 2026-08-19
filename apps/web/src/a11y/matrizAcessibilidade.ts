@@ -208,7 +208,14 @@ export const MATRIZ_ACESSIBILIDADE: readonly CriterioAcessibilidade[] = [
       "jsdom não computa estilo cascateado, então `color-contrast` é DESLIGADA na suíte " +
       "de componentes. EXECUTADO em navegador real (`e2e/acessibilidade.spec.ts`), " +
       "incluindo a galeria do §11 — a página onde todos os tons semânticos aparecem " +
-      "lado a lado, que é a varredura de contraste mais densa da fatia.",
+      "lado a lado, que é a varredura de contraste mais densa da fatia. E EXECUTADO " +
+      "TAMBÉM SOB TEMA ESCURO (`e2e/contraste-tema-escuro.spec.ts`), com a emulação de " +
+      "`prefers-color-scheme` verificada por meta-teste. O que essa suíte ACHOU não foi " +
+      "violação de 1.4.3: cada `.badge-tom--*` declara fundo e texto, então o par nunca " +
+      "caiu abaixo de 4.5:1 e o axe passava com razão. O defeito era de SALIÊNCIA — sem " +
+      "variante escura, o selo `--critico` caía a 1,47:1 contra o cartão enquanto os tons " +
+      "benignos subiam acima de 13:1, invertendo a hierarquia de estado. Registro do " +
+      "limite: axe NÃO decide se um contraste suficiente é confortável sob baixa visão.",
   },
   {
     sc: "1.4.10",
@@ -297,11 +304,20 @@ export const MATRIZ_ACESSIBILIDADE: readonly CriterioAcessibilidade[] = [
     sc: "2.4.11",
     nome: "Foco não obscurecido (mínimo)",
     cobertura: ["automatizado_navegador", "manual_obrigatorio"],
-    execucao: "nao_executado",
+    execucao: "executado",
     nota:
-      "NÃO EXECUTADO. O banner de contexto é permanente por obrigação de segurança " +
-      "clínica (HAZ-0046); se ele chega a obscurecer o elemento focado sob rolagem não " +
-      "foi verificado. Exige teste dedicado de rolagem com foco, ainda não escrito.",
+      "EXECUTADO em `e2e/foco-nao-obscurecido.spec.ts`. A nota anterior registrava como " +
+      "risco não verificado que o banner permanente (HAZ-0046) pudesse obscurecer o foco " +
+      "sob rolagem; a MEDIÇÃO refutou a hipótese, e o critério fecha por isso, não por " +
+      "decisão: `.banner-contexto` é `position: static` e sem `z-index`, a folha não tem " +
+      "NENHUM `fixed`/`sticky`, e o único `z-index` é o do próprio atalho de pular blocos " +
+      "— permanente no documento não é fixo na viewport. Automação afirma, por " +
+      "hit-testing (`elementFromPoint`) em navegador real e em cinco posições de rolagem, " +
+      "que nenhum elemento focado fica INTEIRAMENTE oculto, e dois meta-testes provam que " +
+      "o detector acusa uma barra fixa fabricada e não acusa obscurecimento parcial (que " +
+      "o nível AA permite). NÃO prova que a parte visível baste para alguém LOCALIZAR o " +
+      "foco, sobretudo sob ampliação — isso é juízo de quem usa e segue exigindo " +
+      "validação humana.",
   },
   {
     sc: "2.3.3",
@@ -391,7 +407,11 @@ export function declaracaoDeAcessibilidade(): string {
     "NÃO VALIDADA. Automação WCAG 2.2 AA executada parcialmente; validação com " +
     "usuários de tecnologia assistiva é dependência humana e permanece NÃO EXECUTADA " +
     `(${criteriosQueExigemValidacaoManual().length} critérios exigem validação manual; ` +
-    `${criteriosNaoExecutados().length} ainda não executados). ` +
+    // "0 ainda não executados" lido isoladamente soa como cobertura completa.
+    // O zero vale para os critérios ENUMERADOS, não para o padrão — e a frase
+    // seguinte diz quantos ficam fora. Nomear o escopo aqui impede a leitura
+    // otimista sem inventar número novo.
+    `${criteriosNaoExecutados().length} dos enumerados ainda não executados). ` +
     // Sem esta frase, a declaração leria como se a matriz cobrisse o padrão.
     // Os três números são DERIVADOS — nenhum é digitado aqui (revisão
     // adversarial do PR #8: o total literal `56` estava errado e nenhum teste

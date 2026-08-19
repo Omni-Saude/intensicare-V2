@@ -1,6 +1,7 @@
-import { calcularFrescorGeral, type ItemGradeLeito } from "../domain/clinico.js";
+import type { ItemGradeLeito } from "../domain/clinico.js";
 import { textoAvaliacao, textoBandaRisco, textoFrescor } from "../domain/linguagem.js";
 import { BadgeTom } from "./BadgeTom.js";
+import { SeloModoDespacho } from "./SeloModoDespacho.js";
 
 interface CartaoLeitoProps {
   item: ItemGradeLeito;
@@ -11,20 +12,26 @@ const ESTADOS_FAIL_CLOSED = new Set(["nao_avaliada", "invalida"]);
 
 /**
  * Cartão de um leito na grade — escore NEWS2, banda de risco (cor
- * acessível + rótulo textual) e frescor do dado, conforme a tarefa.
+ * acessível + rótulo textual), frescor do dado e modo de despacho da regra.
  * `<button>` nativo (não `<div onClick>`): foco de teclado e ativação
  * por Enter/Espaço vêm de graça, sem `tabIndex`/`onKeyDown` manuais.
  */
 export function CartaoLeito({ item, aoSelecionar }: CartaoLeitoProps) {
   const { avaliacao } = item;
   /*
-    `null` = a superfície consultada NÃO publica frescor por insumo, e o cartão
-    não afirma nada sobre ele (ACH-O3-12). É o caso da projeção da grade, que é
-    um resumo: até aqui, cada cartão exibia "✓ Dado atual.", tom positivo,
-    derivado de uma lista VAZIA de contribuições — frescor afirmado a partir de
-    ausência de evidência, o oposto de ADR-0011 P7.
+    FRESCOR VEM DO SERVIDOR (ADR-0011 P7: "a projeção entrega o status pronto;
+    o cliente não o deriva"). Até aqui, esta linha era
+    `calcularFrescorGeral(avaliacao.contribuicoes)` — e `mapearEntradaGrade`
+    devolve `contribuicoes: []` para TODO leito, porque a projeção da grade é
+    um resumo. A grade estava derivando frescor de uma lista vazia por
+    construção, enquanto `EntradaGradeLeitos.frescor` — campo OBRIGATÓRIO do
+    contrato — era descartado no mapeamento. Mesma família de LAC-D3.
+
+    `undefined` (item montado à mão, sem passar pelo mapeador) continua sendo
+    "nada é afirmado", e o cartão não exibe selo de frescor nenhum —
+    exatamente o resultado que ACH-O3-12 fixou para ausência de evidência.
   */
-  const frescorGeral = avaliacao === null ? null : calcularFrescorGeral(avaliacao.contribuicoes);
+  const frescorDaLinha = item.frescor;
 
   return (
     <li>
@@ -50,7 +57,7 @@ export function CartaoLeito({ item, aoSelecionar }: CartaoLeitoProps) {
                 <BadgeTom {...textoBandaRisco(avaliacao.bandaRisco)} />
               </div>
               <div className="cartao-leito__linha">
-                {frescorGeral !== null && <BadgeTom {...textoFrescor(frescorGeral)} />}
+                {frescorDaLinha !== undefined && <BadgeTom {...textoFrescor(frescorDaLinha)} />}
                 {avaliacao.estadoAvaliacao === "desatualizada" && (
                   <BadgeTom {...textoAvaliacao("desatualizada")} />
                 )}
@@ -60,6 +67,16 @@ export function CartaoLeito({ item, aoSelecionar }: CartaoLeitoProps) {
               </div>
             </>
           )}
+
+        {/*
+          MODO DE DESPACHO (LAC-L2), em TODA linha que faz alguma afirmação
+          clínica — inclusive as fail-closed, onde a pergunta "isto autoriza
+          conduta?" é ainda mais aguda. Um leito VAGO não o declara: não há
+          avaliação a rotular, e um selo permanente sobre nada é o ruído que
+          treina o olho a ignorar a região (a mesma economia de sinal aplicada
+          a `online` e a `no_ciclo`).
+        */}
+        {avaliacao && <SeloModoDespacho envelope={item.modoAvaliacao} />}
       </button>
     </li>
   );

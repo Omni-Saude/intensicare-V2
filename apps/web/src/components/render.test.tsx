@@ -219,51 +219,53 @@ describe("CartaoLeito", () => {
     expect(html).toMatch(/badge-tom--positivo/);
   });
 
-  it("projeção que NÃO publica frescor por insumo não faz o cartão afirmar frescor", () => {
+  it("item que NÃO traz o frescor do servidor não faz o cartão afirmar frescor", () => {
     /*
-      A projeção da grade é um resumo e devolve `contribuicoes: []` para TODO
-      leito (`mapearEntradaGrade`, `../api/clienteHttp.ts`). Até ACH-O3-12,
-      `calcularFrescorGeral` traduzia essa lista vazia em `"atual"` e o cartão
-      exibia "✓ Dado atual." — tom positivo, glifo de confirmação — sobre zero
-      evidência, em cada leito da UTI, o tempo todo. ADR-0011 P7: o cliente não
-      promove status.
+      HISTÓRICO DESTE TESTE, em duas etapas, porque a segunda mudou a PREMISSA
+      da primeira e o teste teria virado uma tautologia se ficasse como estava.
+
+      1) ACH-O3-12: o cartão derivava frescor de `avaliacao.contribuicoes`, e
+         `mapearEntradaGrade` devolve `contribuicoes: []` para TODO leito (a
+         projeção da grade é um resumo). `calcularFrescorGeral` traduzia a
+         lista vazia em `"atual"` e cada cartão da UTI exibia "✓ Dado atual.",
+         tom positivo, sobre zero evidência. A correção fez a lista vazia
+         devolver `null` e o cartão calar-se.
+
+      2) ADR-0011 P7 (agora): o cartão parou de DERIVAR. `EntradaGradeLeitos`
+         publica `frescor` como campo OBRIGATÓRIO e é ele que o cartão exibe.
+         Um item sem esse campo — construído à mão, nunca vindo do mapeador —
+         continua não autorizando afirmação nenhuma sobre frescor.
+
+      O que este teste guarda hoje é a etapa 2: AUSÊNCIA DE EVIDÊNCIA continua
+      produzindo silêncio, e não um tom positivo.
     */
-    const semContribuicoes: ItemGradeLeito = {
-      ...itemLeitoCompleto,
-      avaliacao: { ...itemLeitoCompleto.avaliacao!, contribuicoes: [] },
-    };
+    const semFrescorDoServidor: ItemGradeLeito = { ...itemLeitoCompleto };
+    delete (semFrescorDoServidor as { frescor?: unknown }).frescor;
+
     const html = renderToStaticMarkup(
-      <CartaoLeito item={semContribuicoes} aoSelecionar={() => {}} />,
+      <CartaoLeito item={semFrescorDoServidor} aoSelecionar={() => {}} />,
     );
 
     // Guarda de não-vacuidade: o cartão FOI renderizado com conteúdo clínico.
     expect(html).toMatch(/NEWS2/);
-    expect(html, "o cartão afirmou frescor a partir de uma lista vazia").not.toMatch(/Dado atual/);
+    expect(html, "o cartão afirmou frescor sem o campo do servidor").not.toMatch(/Dado atual/);
   });
 
-  it("insumo declarado INVÁLIDO pelo backend nunca vira 'Dado atual' no cartão", () => {
-    const comInvalido: ItemGradeLeito = {
-      ...itemLeitoCompleto,
-      avaliacao: {
-        ...itemLeitoCompleto.avaliacao!,
-        contribuicoes: [
-          {
-            parametro: "temperatura",
-            rotulo: "Temperatura",
-            valorObservado: 37,
-            pontos: 0,
-            frescor: "invalido",
-            horarioFonte: "2026-08-16T12:00:00Z",
-            explicacao: "SYNTH — insumo em quarentena declarada pelo produtor.",
-          },
-        ],
-      },
-    };
-    const html = renderToStaticMarkup(<CartaoLeito item={comInvalido} aoSelecionar={() => {}} />);
+  it("frescor DECLARADO pelo servidor é o que aparece — o cartão não o deriva", () => {
+    /*
+      Sucessor direto do teste "insumo declarado INVÁLIDO nunca vira 'Dado
+      atual'", que exercitava o caminho de DERIVAÇÃO removido por ADR-0011 P7.
+      A invariante preservada é a mesma — o cartão nunca inventa um frescor
+      melhor do que o declarado —, agora ancorada na fonte certa. A prova de
+      que mexer nas contribuições não altera nada está em
+      `./despachoNoPontoDeUso.test.tsx`.
+    */
+    const desatualizado: ItemGradeLeito = { ...itemLeitoCompleto, frescor: "desatualizado" };
+    const html = renderToStaticMarkup(<CartaoLeito item={desatualizado} aoSelecionar={() => {}} />);
 
     expect(html).toMatch(/NEWS2/);
     expect(html).not.toMatch(/Dado atual/);
-    expect(html).toMatch(/Dado inválido/);
+    expect(html).toMatch(/Dado desatualizado/);
   });
 
   it("leito com avaliação não computável (fail-closed) NUNCA mostra número de escore", () => {

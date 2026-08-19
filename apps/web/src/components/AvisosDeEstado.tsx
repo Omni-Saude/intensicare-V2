@@ -24,6 +24,7 @@ import {
   textoFrescorVisao,
   textoIdadeDecorrida,
   textoIdadeVisao,
+  textoInstante,
   textoProntidao,
   textoSessao,
 } from "../domain/linguagem.js";
@@ -31,6 +32,38 @@ import type { Cadencia } from "../estado/cadenciaDeRecarga.js";
 import type { ResumoIdadeVisao } from "../estado/idadeVisao.js";
 import type { VisibilidadeAba } from "../estado/visibilidade.js";
 import { BadgeTom } from "./BadgeTom.js";
+
+// ---------------------------------------------------------------------------
+// Instante legível (A6.2)
+// ---------------------------------------------------------------------------
+
+interface InstanteProps {
+  /** Instante ISO 8601 vindo do transporte. */
+  iso: string;
+  testId: string;
+}
+
+/**
+ * Instante formatado para leitura de relance, com o valor de MÁQUINA
+ * preservado no atributo `dateTime`.
+ *
+ * ANTES, os dois pontos de uso imprimiam a string ISO crua
+ * ("2026-08-17T13:45:07.000Z") no meio de uma frase pt-BR. Numa interface de
+ * beira-leito isso é ilegível — e o instante da última leitura é justamente o
+ * que o clínico usa para julgar se o que está na tela ainda serve. Medido:
+ * ZERO uso de `Intl.` em `apps/web/src`.
+ *
+ * O `<time>` não é enfeite semântico: ele mantém o instante exato disponível
+ * para teste, telemetria e auditoria, de modo que a formatação NÃO substitui o
+ * fato — ela só o torna legível.
+ */
+function Instante({ iso, testId }: InstanteProps) {
+  return (
+    <time dateTime={iso} data-testid={testId}>
+      {textoInstante(iso)}
+    </time>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Frescor da visão
@@ -50,9 +83,11 @@ interface RotuloFrescorVisaoProps {
  * `indisponivel` "nunca mantenha dado velho sem marcação no lugar do erro"
  * (WF-05).
  *
- * O horário da última leitura é mostrado cru (ISO), sem "há 3 minutos":
+ * O horário da última leitura é ABSOLUTO, nunca relativo ("há 3 minutos"):
  * tempo relativo calculado no cliente envelhece sozinho na tela e passaria a
- * mentir se a aba ficasse aberta.
+ * mentir se a aba ficasse aberta. O que mudou (A6.2) é que o absoluto deixou
+ * de ser a string ISO do transporte e passou por `textoInstante`; o valor
+ * exato continua no `dateTime` do `<time>`.
  */
 export function RotuloFrescorVisao({ frescor, obtidoEm }: RotuloFrescorVisaoProps) {
   if (frescor === "atual") return null;
@@ -67,7 +102,11 @@ export function RotuloFrescorVisao({ frescor, obtidoEm }: RotuloFrescorVisaoProp
       aria-live="polite"
     >
       <BadgeTom texto={texto} tom={tom} />
-      {obtidoEm !== null && <p>Última leitura bem-sucedida: {obtidoEm}.</p>}
+      {obtidoEm !== null && (
+        <p>
+          Última leitura bem-sucedida: <Instante iso={obtidoEm} testId="instante-ultima-leitura" />.
+        </p>
+      )}
     </div>
   );
 }
@@ -153,7 +192,14 @@ export function RotuloIdadeVisao({
       ) : (
         <p data-testid="idade-visao-texto">
           Última leitura bem-sucedida há {textoIdadeDecorrida(idade.idadeMs)}
-          {obtidoEm === null ? "" : ` (${obtidoEm})`}.
+          {obtidoEm === null ? null : (
+            <>
+              {" ("}
+              <Instante iso={obtidoEm} testId="instante-idade-visao" />
+              {")"}
+            </>
+          )}
+          .
           {declaraCadencia
             ? ` Releitura automática a cada ${textoIdadeDecorrida(idade.intervaloRecargaMs)}.`
             : ""}
