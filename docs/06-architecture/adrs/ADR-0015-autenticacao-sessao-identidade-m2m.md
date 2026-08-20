@@ -85,6 +85,20 @@ provenance:
 > `not-started`. A atualização do índice está **fora do escopo de escrita** desta tarefa
 > e fica registrada como pendência (ver §9).
 
+> **Correção (2026-08-19, especialista de consistência documental e
+> rastreabilidade — reconciliação ADR-0015).** A frase acima estava correta em
+> 2026-08-16, quando esta minuta foi redigida, e deixou de estar: `adr-index.md`
+> já foi atualizado (tabela `§1`/`§3`, linhas 106 e 240; grafo `§4.2`) pela
+> "Correção de sincronização (ACH-09, 2026-08-17)" registrada no próprio
+> índice. O índice hoje registra `ADR-0015` como `accepted (direção GDEC-0016;
+> minuta redigida 2026-08-16, ciclo 6)` — **não** `not-started`. Isto não
+> promove `ADR-0015` além de "direção aceita, minuta materializada": a §9
+> abaixo continua correta quanto a G5/G6, que permanecem sem fechar (uma ADR
+> `accepted` não é evidência `implemented`/`verified` — `adr-index.md` §5,
+> "Lembrete"). Esta é uma correção de citação cruzada desatualizada, não uma
+> nova decisão sobre o mérito do ADR; nenhuma autoridade além da já registrada
+> em `GDEC-0015`/`GDEC-0016` é invocada aqui.
+
 ## 1. Contexto e problema
 
 A V2 precisa de um contexto de identidade confiável antes de qualquer leitura clínica,
@@ -268,5 +282,14 @@ substitui.
 - **Pendência:** `adr-index.md` continua marcando `ADR-0015` como `not-started` e a §5 do
   índice ainda o lista como bloqueador de G5/G6; atualizar o índice está fora do escopo de
   escrita desta tarefa.
+
+  > **Correção (2026-08-19, especialista de consistência documental e
+  > rastreabilidade).** A primeira metade desta pendência está desatualizada —
+  > ver a correção de topo deste arquivo: `adr-index.md` não marca mais
+  > `ADR-0015` como `not-started`. A segunda metade permanece verdadeira e não
+  > é afetada por esta correção: `adr-index.md` §5 continua listando
+  > `ADR-0015` entre as ADRs que G5 e G6 aguardam, porque aceitação de direção
+  > não equivale a evidência `implemented`/`verified` — G5 e G6 permanecem, de
+  > fato, sem fechar.
 - **Pendência:** `AUTH-SECURITY` para as cláusulas de operação (break-glass, revisão de
   acesso) permanece `UNASSIGNED` (`BLK-0003`).

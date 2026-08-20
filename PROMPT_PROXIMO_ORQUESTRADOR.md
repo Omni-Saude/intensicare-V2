@@ -143,7 +143,7 @@ letras antes de alegar qualquer coisa sobre assinatura.
 | **Ausência de selo de frescor em TODO cartão** — a projeção não publica contribuições; não afirmar é correto, mas a aceitabilidade clínica (ou publicar frescor na projeção) é decisão de contrato | `AUTH-CLINSAFETY` + titular |
 | **Texto de "entrega em tempo quase-real interrompida em definitivo"** — hoje reusa o genérico de `degradado` | `ADR-0029` C2 |
 | `ADR-0007` C5 — custódia de chave (bloqueia `ACH-O3-1`) | titular |
-| `ADR-0015` — IdP real; `not-started` (bloqueia WCAG 2.2.1) | titular |
+| `ADR-0015` — IdP real; direção aceita (`GDEC-0016`), IdP ainda não contratado (bloqueia WCAG 2.2.1) | titular |
 | `MG-G4`, `MG-G6`, `MG-G7`, `MG-G8` | titular / autoridades nomeadas |
 | `VAL-0023` (cadência de releitura), `VAL-0027/0029/0031/0033` (piso de 3 usuários **reais** de TA) | pesquisa de campo |
 | Topologia: `ACH-O3-8` (cursor escopado) e ambiente que permita `CREATE EVENT TRIGGER` | titular |
@@ -164,11 +164,11 @@ git checkout codex/lacunas-frontend-a11y
 uptime                                     # média de 5 min < 4 antes de medir
 pnpm --filter @intensicare/contratos build # SEMPRE antes de execução alvo
 
-pnpm verify                                # exit 0 — 1.883 passed | 1 skipped
-cd apps/web && pnpm exec playwright test --workers=1          # 38/38
+pnpm verify                                # exit 0 — 1.973 passed | 1 skipped
+cd apps/web && pnpm exec playwright test --workers=1          # 57/57
 cd packages/persistencia && IC_FRONTEIRA_PG=obrigatoria pnpm exec vitest run  # 99/99
 pnpm test:fronteira                        # 63/63 — UM arquivo, escopo DIFERENTE
-pnpm check:contratos                       # 209 verificações + autoteste 35 casos
+pnpm check:contratos                       # 258 verificações + autoteste 99 casos
 ```
 
 O **único** teste pulado é `apps/api/src/db.test.ts`, condicionado a

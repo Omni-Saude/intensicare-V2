@@ -1,3 +1,7 @@
+// @vitest-environment node
+// Este arquivo não toca DOM em NENHUM módulo do seu grafo (verificado). Em
+// jsdom ele custava a construção de um ambiente inteiro sem usá-lo — ver a
+// nota "CUSTO DE AMBIENTE" em `apps/web/vitest.config.ts`.
 /**
  * Testes da guarda de perfil. O caso central é o TESTE VERMELHO do despacho
  * ACH-07: "perfil não-dev com `?mock` ou token sintético ⇒ recusa

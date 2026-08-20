@@ -52,7 +52,7 @@ function leito(leitoId: string, alertas: Alerta[] = []): ItemGradeLeito {
     avaliacao: {
       estadoAvaliacao: "valida",
       news2Total: 3,
-      bandaRisco: "medio",
+      bandaRisco: "atencao",
       contribuicoes: [],
       insumosAusentes: [],
       insumosVelhos: [],
@@ -74,7 +74,7 @@ function alertaPendente(alertaId: string): Alerta {
     alertaId,
     leitoId: "SYNTH-LEITO-01",
     pacienteRef: "amh:psr:v1:SYNTH-P001",
-    severidade: "alto",
+    severidade: "alerta",
     descricao: "Alerta consultivo NEWS2 — a decisão clínica permanece com o profissional.",
     criadoEm: "2026-08-17T10:00:00.000Z",
     estado: "nao_atribuido",
@@ -404,8 +404,27 @@ describe("ACEITE L1-2 — a idade da visão está na tela e envelhece com o rel�
       />,
     );
 
+    /*
+      A ÂNCORA É O ESTADO, NÃO A EXISTÊNCIA DO RÓTULO.
+
+      `rotulo-idade-visao` já está no DOM ANTES da primeira leitura chegar — ele
+      renderiza com `data-idade-visao="sem_leitura"` ("nenhuma leitura
+      bem-sucedida ocorreu ainda", `domain/estados.ts`). Esperar apenas pela
+      PRESENÇA do nó libera a asserção seguinte num estado que ainda não é o que
+      ela descreve, e o teste vira uma corrida entre o escalonador e a primeira
+      resposta do dublê.
+
+      OBSERVADO: com a máquina sob carga (load 51), esta suíte falhou com
+      `expected 'sem_leitura' to be 'no_ciclo'` em 22 ms — vermelho que não
+      denuncia defeito de produto nenhum, só âncora fraca demais. Esperar pelo
+      marcador POSITIVO (`no_ciclo`, que só existe depois de uma leitura
+      bem-sucedida) é condição estritamente mais forte: se a leitura nunca
+      chegar, o teste continua falhando — e agora dizendo por quê.
+    */
     await waitFor(() => {
-      expect(screen.getByTestId("rotulo-idade-visao")).toBeTruthy();
+      expect(screen.getByTestId("rotulo-idade-visao").getAttribute("data-idade-visao")).toBe(
+        "no_ciclo",
+      );
     });
     const inicial = idadeExibida();
     expect(inicial).toMatch(/Última leitura bem-sucedida há 0 s/);
@@ -433,12 +452,13 @@ describe("ACEITE L1-2 — a idade da visão está na tela e envelhece com o rel�
         intervaloRecargaMs={INTERVALO}
       />,
     );
+    // Mesma âncora positiva do caso acima: `no_ciclo` é o que prova que a
+    // primeira leitura chegou. Era ESTE o caso que falhava sob carga.
     await waitFor(() => {
-      expect(screen.getByTestId("rotulo-idade-visao")).toBeTruthy();
+      expect(screen.getByTestId("rotulo-idade-visao").getAttribute("data-idade-visao")).toBe(
+        "no_ciclo",
+      );
     });
-    expect(screen.getByTestId("rotulo-idade-visao").getAttribute("data-idade-visao")).toBe(
-      "no_ciclo",
-    );
 
     await avancar(relogio, INTERVALO * CICLOS_PARA_DECLARAR_PERDA);
 
@@ -468,8 +488,13 @@ describe("ACEITE L1-2 — a idade da visão está na tela e envelhece com o rel�
         intervaloRecargaMs={INTERVALO}
       />,
     );
+    // Âncora positiva: `há 5 s` só faz sentido contado a partir de uma leitura
+    // bem-sucedida; ancorar na presença do nó deixaria o relógio começar a
+    // contar de um estado `sem_leitura`.
     await waitFor(() => {
-      expect(screen.getByTestId("rotulo-idade-visao")).toBeTruthy();
+      expect(screen.getByTestId("rotulo-idade-visao").getAttribute("data-idade-visao")).toBe(
+        "no_ciclo",
+      );
     });
 
     await avancar(relogio, INTERVALO_TIQUE_IDADE_MS);

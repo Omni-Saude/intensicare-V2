@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json && mkdir -p dist/migrations && cp -f src/migrations/*.sql dist/migrations/",
-    "test": "vitest",
+    "test": "vitest run",
     "test:fronteira": "vitest run src/postgres/fronteira-postgres.test.ts",
     "typecheck": "tsc -p tsconfig.typecheck.json --noEmit"
   },

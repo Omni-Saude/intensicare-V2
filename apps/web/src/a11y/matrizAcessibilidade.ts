@@ -174,8 +174,8 @@ export const TOTAL_CRITERIOS_WCAG_22_AA = CRITERIOS_WCAG_22_A_E_AA.length;
  *
  * O terceiro CONTINUA ABERTO e continua fora desta matriz:
  *
- *   - 2.2.1 (Timing Adjustable): depende de sessão real (ADR-0015,
- *     `not-started`). Expiração sem ajuste é barreira de acessibilidade, e
+ *   - 2.2.1 (Timing Adjustable): depende de sessão real (ADR-0015 tem direção aceita
+ *     (GDEC-0016), mas nenhum IdP real foi contratado). Expiração sem ajuste é barreira de acessibilidade, e
  *     nenhum comportamento desta fatia pode encerrá-lo — o provedor de sessão
  *     de hoje é sintético e não expira por tempo. Marcá-lo como executado seria
  *     alegar cobertura sobre um componente que não existe.

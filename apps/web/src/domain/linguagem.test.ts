@@ -1,3 +1,7 @@
+// @vitest-environment node
+// Este arquivo não toca DOM em NENHUM módulo do seu grafo (verificado). Em
+// jsdom ele custava a construção de um ambiente inteiro sem usá-lo — ver a
+// nota "CUSTO DE AMBIENTE" em `apps/web/vitest.config.ts`.
 import { describe, expect, it } from "vitest";
 import { loadingStateLabel } from "../index.js";
 import type {
@@ -65,7 +69,7 @@ const TODOS_CONECTIVIDADE: EstadoConectividade[] = [
   "reproduzindo",
   "reconciliado",
 ];
-const TODAS_BANDAS: BandaRisco[] = ["baixo", "medio", "alto", "critico"];
+const TODAS_BANDAS: BandaRisco[] = ["normal", "atencao", "alerta", "critico"];
 
 describe("módulo de linguagem — cobertura total (ADR-0021 F1/F4)", () => {
   it("textoCarregamento cobre todos os estados, sempre em pt-BR não vazio", () => {

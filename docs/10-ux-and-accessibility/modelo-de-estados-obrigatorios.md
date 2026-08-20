@@ -14,7 +14,9 @@ source: >
   ADR-0021 (F1-F8); ADR-0029 §4 (P1-P9); apps/web/src/domain/estados.ts e
   apps/web/src/domain/linguagem.ts (implementação de referência — somente leitura)
 date_collected: 2026-08-16
-last_updated: 2026-08-16
+last_updated: 2026-08-19
+addenda:
+  - "§7 item 2 (2026-08-19, especialista de consistência documental e rastreabilidade): correção datada — a divergência de TIPO entre `BandaRisco` do contrato e a escala própria da web (`baixo/medio/alto/critico`) deixou de existir no código; `mapearBanda` foi removido. A ratificação FORMAL dos quatro textos pt-BR (ADR-0029 C2) segue aberta."
 provenance:
   source_repo: intensicare-V2
   path_or_url: docs/10-ux-and-accessibility/modelo-de-estados-obrigatorios.md
@@ -197,6 +199,27 @@ reconciled". **OBSERVED:** `EstadoConectividade` em `estados.ts`.
 
 Nenhuma dessas linhas fecha pendência; elas existem para que a divergência
 seja visível e resolvida no contrato (ADR-0012), não silenciosamente na UI.
+
+> **Correção (2026-08-19, especialista de consistência documental e
+> rastreabilidade).** O item 2 acima registra uma divergência de **tipo** que
+> existia em código até HEAD `1eda4f1` e que deixou de existir:
+> `apps/web/src/domain/estados.ts` não declara mais a escala própria
+> `baixo/medio/alto/critico` — `BandaRisco` é hoje **alias direto** de
+> `@intensicare/contratos`, e o tradutor `mapearBanda` (que convertia
+> `alerta`, tier *medium* do NEWS2/RCP 2017 Chart 2, em `alto`) foi
+> **apagado**. O cuidado citado na linha — "o termo `normal` nunca pode
+> colidir com a leitura de não avaliado" — está hoje atendido pelo prefixo
+> textual "Banda de risco:" que antecede os quatro rótulos
+> (`apps/web/src/domain/linguagem.ts`, `textoBandaRisco`): a palavra nunca
+> aparece desacompanhada, e o selo só é montado quando a banda existe (nunca
+> quando o status é `nao_avaliada`). **O que permanece exatamente como
+> estava:** os quatro textos pt-BR continuam redação **PROVISÓRIA** até a
+> condição C2 da `ADR-0029` (coluna "Texto pt-BR" da tabela §4, inalterada);
+> "reconciliar via processo ADR-0029" segue sendo a direção correta para a
+> **ratificação formal** do vocabulário — o que mudou é que a engenharia
+> deixou de manter uma segunda escala paralela enquanto aguarda essa
+> ratificação. Os itens 1, 3 e 4 desta tabela **não são afetados** por esta
+> correção e seguem abertos como pendência de integração do contrato.
 
 ## 8. Validação
 

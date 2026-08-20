@@ -5,7 +5,7 @@
  * autenticação. Este arquivo declara a interface; NÃO implementa
  * autenticação, e não decide IdP, formato de token, tempo de vida nem
  * política de renovação (autoridade fora da IA — contrato comum §3;
- * ADR-0015 está `not-started`).
+ * ADR-0015 tem direção aceita (GDEC-0016), mas nenhum IdP real foi contratado).
  *
  * POR QUE ESTA PORTA EXISTE (ACH-07 §6.7). Até o ciclo 6,
  * `clienteHttp.ts:58` compilava `TOKEN_DEV` como constante de módulo e a

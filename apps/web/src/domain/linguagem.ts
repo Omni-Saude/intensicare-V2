@@ -477,17 +477,56 @@ export function textoModoDespacho(
   }
 }
 
-/** Rótulo textual (nunca só cor) para a banda de risco — nome + tom. */
+/**
+ * Rótulo textual (nunca só cor) para a banda de risco — nome + tom.
+ *
+ * O QUE MUDOU, E POR QUE NÃO É PREFERÊNCIA DE REDAÇÃO. Até HEAD 1eda4f1 esta
+ * função recebia uma escala PRÓPRIA da web (`baixo/medio/alto/critico`), para
+ * a qual `../api/clienteHttp.ts` traduzia o contrato — e a tradução era
+ * `alerta → alto`. Como o contrato ancora `alerta` ao tier *medium* do NEWS2
+ * (RCP 2017 Chart 2; `packages/contratos/src/index.ts:207-213`), a tela
+ * apresentava "Risco alto" onde a regra havia dito *medium*. Agora a entrada é
+ * o identificador do contrato e o rótulo NOMEIA esse identificador: o que está
+ * na tela é o que a regra disse, sem intermediário.
+ *
+ * POR QUE A PALAVRA EXIBIDA É A DO CONTRATO, E NÃO UMA ESCALA ORDINAL NOVA.
+ * "Baixo/médio/alto" seria vocabulário clínico que ninguém ratificou, e foi
+ * justamente ele que produziu o desvio. As quatro palavras abaixo são as do
+ * próprio contrato (`normal`, `atencao`, `alerta`, `critico`), com o acento
+ * pt-BR restituído — transcrição, não cunhagem. A ORDEM entre as bandas
+ * continua legível sem palavra ordinal: o tom e o glifo de `./estados.ts` são
+ * ordenados (✓ → ! → ▲ → ▲▲) e `./vocabularioDeBanda.test.ts` trava essa
+ * ordem como estritamente crescente.
+ *
+ * O PREFIXO "Banda de risco:" NÃO É ENFEITE. `docs/10-ux-and-accessibility/
+ * modelo-de-estados-obrigatorios.md:194` registra o cuidado exigido pelo termo
+ * `normal` como nome de banda: ele nunca pode colidir com a leitura de "não
+ * avaliado" (ADR-0029 P1; HAZ-0005). O prefixo qualifica a palavra como NOME
+ * DE UMA BANDA CALCULADA, não como afirmação sobre o paciente — e o selo só é
+ * montado quando a banda existe (`../components/CartaoLeito.tsx`,
+ * `../components/DetalhePaciente.tsx` testam `!== null` antes).
+ *
+ * O TOM DE CADA BANDA NÃO MUDOU. Cada uma recebe exatamente o tom que já
+ * recebia antes desta mudança, pela composição `mapearBanda` →
+ * `textoBandaRisco`: `normal→positivo`, `atencao→atencao`, `alerta→alerta`,
+ * `critico→critico`. Renomear identificador e re-nivelar severidade no mesmo
+ * passo recriaria, na camada de tom, o defeito corrigido na camada de texto
+ * (ADR-0021 F3). Reavaliar esses tons é matéria do processo ADR-0029, não
+ * desta correção.
+ *
+ * VALIDATION REQUIRED (ADR-0029, condição C2 ABERTA): as quatro frases são
+ * redação PROVISÓRIA. Nenhum vocabulário clínico novo foi cunhado aqui.
+ */
 export function textoBandaRisco(banda: BandaRisco): TextoComTom {
   switch (banda) {
-    case "baixo":
-      return { texto: "Risco baixo", tom: "positivo" };
-    case "medio":
-      return { texto: "Risco médio", tom: "atencao" };
-    case "alto":
-      return { texto: "Risco alto", tom: "alerta" };
+    case "normal":
+      return { texto: "Banda de risco: normal", tom: "positivo" };
+    case "atencao":
+      return { texto: "Banda de risco: atenção", tom: "atencao" };
+    case "alerta":
+      return { texto: "Banda de risco: alerta", tom: "alerta" };
     case "critico":
-      return { texto: "Risco crítico", tom: "critico" };
+      return { texto: "Banda de risco: crítico", tom: "critico" };
     default:
       return casoImpossivel(banda, "textoBandaRisco");
   }
@@ -543,6 +582,97 @@ export const ROTULO_PARAMETRO: Record<ParametroId, string> = {
   pressao_arterial_sistolica: "Pressão arterial sistólica",
   frequencia_cardiaca: "Frequência cardíaca",
   nivel_consciencia: "Nível de consciência",
+};
+
+// ---------------------------------------------------------------------------
+// Texto clínico que estava redigido FORA desta camada
+// ---------------------------------------------------------------------------
+
+/**
+ * Descrição exibida para um alerta cuja PROJEÇÃO não carrega motivo do
+ * servidor.
+ *
+ * MUDOU DE CASA, e a mudança é de responsabilidade, não de arquivo. Esta frase
+ * estava escrita dentro de `../api/clienteHttp.ts` (linha 279 em HEAD
+ * 1eda4f1), ou seja, o TRANSPORTE redigia frase clínica exibida ao
+ * profissional. Texto pt-BR pertence a esta camada e só a ela (ADR-0021 F1);
+ * fora dela, a mesma afirmação tende a existir em duas versões divergentes
+ * (ADR-0008 N3).
+ *
+ * POR QUE O FRONTEND PRECISA REDIGIR ALGO AQUI. `EntradaGradeLeitos.alerta` é
+ * um `ResumoItemTrabalho` (`packages/contratos/src/index.ts:376-381`) e
+ * carrega apenas `id`, `estado` e `versao` — não há `motivo` na projeção da
+ * grade, ao contrário de `ItemTrabalho.motivo`, que é usado quando existe
+ * (`mapearItemTrabalho`). Sem esta frase, o cartão do leito exibiria descrição
+ * vazia; com ela, exibe uma afirmação que não inventa achado clínico algum:
+ * diz apenas o que a fatia inteira já declara — que o alerta é CONSULTIVO e a
+ * decisão permanece com o profissional (ADR-0004 §6.2).
+ *
+ * VALIDATION REQUIRED (ADR-0029, condição C2 ABERTA) — redação provisória.
+ * EM ABERTO: que a projeção da grade publique a razão do alerta é matéria de
+ * contrato (`apps/api` + `packages/contratos`), fora do escopo do frontend.
+ */
+export const DESCRICAO_ALERTA_CONSULTIVO_SEM_MOTIVO =
+  "Alerta consultivo NEWS2 — a decisão clínica permanece com o profissional.";
+
+/**
+ * Uma divulgação obrigatória do banner de contexto.
+ *
+ * TRÊS CAMPOS, E OS TRÊS IMPORTAM. `id` é o identificador ESTÁVEL exposto em
+ * `data-divulgacao` (RLI-5; teste V1 da ADR-0021): telemetria, auditoria e
+ * teste provam a exibição sem depender da redação, que segue provisória.
+ * `destaque` e `complemento` ficam separados porque o banner renderiza o
+ * primeiro em `<strong>` — separar aqui evita que o componente volte a montar
+ * a frase por conta própria.
+ */
+export interface DivulgacaoObrigatoria {
+  readonly id: string;
+  readonly destaque: string;
+  readonly complemento: string;
+}
+
+/** Frase completa de uma divulgação, na mesma ordem em que é renderizada. */
+export function textoDaDivulgacao(divulgacao: DivulgacaoObrigatoria): string {
+  return `${divulgacao.destaque} ${divulgacao.complemento}`;
+}
+
+/**
+ * Divulgação de DADOS SINTÉTICOS — **temporária**.
+ *
+ * Sai quando a fatia deixar de operar sobre fixtures `SYNTH-`. É a única das
+ * duas que tem prazo, e é exatamente por isso que ela e a institucional abaixo
+ * são DOIS valores e não um só (LAC-D8): enquanto viviam numa única string,
+ * quem removesse esta levaria junto uma obrigação permanente.
+ *
+ * O literal "dados 100% sintéticos (SYNTH)" é PERMITIDO no pacote de produção
+ * de propósito — ver a nota em `../build/guardaArtefatoSintetico.ts`: proibir
+ * o termo genérico transformaria aquela guarda numa pressão para remover a
+ * divulgação.
+ */
+export const DIVULGACAO_DADOS_SINTETICOS: DivulgacaoObrigatoria = {
+  id: "dados-sinteticos",
+  destaque: "CONSULTIVO",
+  complemento:
+    "— dados 100% sintéticos (SYNTH); não é produção. A decisão clínica permanece sempre com o profissional.",
+};
+
+/**
+ * Divulgação de REGISTRO LIMITADO À INSTITUIÇÃO — **permanente e vinculante**.
+ *
+ * ADR-0004 §6.2, derivada da ata AQ-1, registra que "a UI da V2 DEVE exibir a
+ * limitação ao clínico […] Esta é uma obrigação de segurança clínica, não uma
+ * preferência de UX". Mitiga HAZ-0046 (S4/L4, Unacceptable; população exposta
+ * medida em 4.220 pacientes), cujo dano é a AUSÊNCIA da divulgação: sem ela, o
+ * clínico lê a tela como *o registro do paciente* e não como *o registro do
+ * paciente NESTA instituição*, e ausência de história prévia vira ausência de
+ * evento.
+ *
+ * Não funda esta com a de cima. Não a torne condicional a estado de UI.
+ */
+export const DIVULGACAO_REGISTRO_INSTITUCIONAL: DivulgacaoObrigatoria = {
+  id: "registro-limitado-instituicao",
+  destaque: "Registro limitado a esta instituição",
+  complemento: "— o que está fora do registro desta instituição não aparece nesta tela.",
 };
 
 // ---------------------------------------------------------------------------

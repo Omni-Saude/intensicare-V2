@@ -83,6 +83,17 @@ async function verificarAxe(container: HTMLElement): Promise<void> {
   const resultado = await axe.run(container, {
     rules: REGRAS_DESLIGADAS_EM_JSDOM as unknown as axe.RuleObject,
   });
+  // GUARDA DE NÃO-VACUIDADE. `violations` vazio significa duas coisas
+  // indistinguíveis: "o axe avaliou e nada violou" ou "o axe não avaliou nada".
+  // Medido: sobre um container vazio, `violations.length === 0` E
+  // `passes.length === 0` — a asserção abaixo ficava VERDE sobre zero
+  // evidência, e os seis casos de axe deste arquivo dependiam dela. Se um
+  // refactor passar o nó errado, ou o render sair vazio, é aqui que tem de
+  // quebrar — não no silêncio. Ancora: contrato §6 (laço/asserção sobre
+  // coleção possivelmente vazia sem guarda) e o padrão de estopim já usado
+  // neste arquivo para os critérios não executados.
+  expect(resultado.passes.length).toBeGreaterThan(0);
+
   const resumo = resultado.violations.map(
     (v) => `${v.id} (${v.impact ?? "sem impacto declarado"}): ${v.help} — ${v.nodes.length} nó(s)`,
   );
@@ -112,7 +123,7 @@ const LEITO: ItemGradeLeito = {
       alertaId: "SYNTH-ALERTA-1",
       leitoId: "SYNTH-LEITO-01",
       pacienteRef: "amh:psr:v1:SYNTH-P001",
-      severidade: "alto",
+      severidade: "alerta",
       descricao: "Alerta consultivo sintético.",
       criadoEm: "2026-08-17T10:00:00.000Z",
       estado: "nao_atribuido",
@@ -590,7 +601,7 @@ describe("matriz de acessibilidade — honestidade de estado", () => {
     // Com 2.4.11 fechado, `criteriosNaoExecutados()` fica vazio DENTRO do
     // recorte — e um recorte vazio de pendências leria como cobertura
     // completa. O que impede essa leitura é o que segue fora: 2.2.1 (Timing
-    // Adjustable) depende de sessão real (ADR-0015, `not-started`) e não pode
+    // Adjustable) depende de sessão real (ADR-0015 tem direção aceita (GDEC-0016), mas nenhum IdP real foi contratado) e não pode
     // ser encerrado por esta fatia. Incluí-lo na matriz como "executado" seria
     // alegar cobertura sobre componente inexistente.
     expect(criteriosAeAANaoEnumerados()).toContain("2.2.1");
@@ -779,7 +790,7 @@ describe("matriz de acessibilidade — honestidade de estado", () => {
    * validação manual, mais os casos de comportamento.
    *
    * 2.2.1 CONTINUA AQUI e continua sozinho. Ele depende de sessão real
-   * (ADR-0015, `not-started`): o provedor de hoje é sintético e não expira por
+   * (ADR-0015 tem direção aceita (GDEC-0016), mas nenhum IdP real foi contratado): o provedor de hoje é sintético e não expira por
    * tempo, então não existe temporização a ajustar. Marcá-lo executado seria
    * alegar cobertura sobre componente inexistente.
    */
@@ -789,7 +800,7 @@ describe("matriz de acessibilidade — honestidade de estado", () => {
 
     expect(
       criterio,
-      `${sc} entrou na matriz: ele depende de sessão real (ADR-0015, not-started)`,
+      `${sc} entrou na matriz: ele depende de sessão real (ADR-0015 com direção aceita em GDEC-0016, sem IdP real contratado)`,
     ).toBeUndefined();
 
     // Pertence ao padrão (logo, a ausência é uma LACUNA, não um número

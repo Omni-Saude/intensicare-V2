@@ -95,8 +95,11 @@ pnpm build && pnpm typecheck && pnpm lint && pnpm check:boundaries \
   && pnpm test && pnpm check:generated && pnpm check:docs && pnpm check:forbidden
 ```
 (equivalente: `pnpm verify`). Rode ao menos o subconjunto que toca seu escopo
-antes de encerrar. Baseline a preservar: **exit 0**, 1.026 testes verdes,
-1 `expected fail` documentando a limitação de RLS sob PGlite.
+antes de encerrar. Baseline a preservar (medida 2026-08-20, máquina ociosa):
+**exit 0**, **1.973 testes verdes e 1 pulado**. O pulado é
+`apps/api/src/db.test.ts`, condicionado a `PG_TEST_URL`: NÃO é P0 escondido —
+avisa em stderr e vira falha dura sob `IC_FRONTEIRA_PG=obrigatoria`.
+O `expected fail` de RLS sob PGlite foi eliminado e não deve voltar.
 
 Todo documento novo em `docs/**.md` precisa de front matter YAML com
 `status`, `source`/`provenance`, data e `owner`/`collector` — senão

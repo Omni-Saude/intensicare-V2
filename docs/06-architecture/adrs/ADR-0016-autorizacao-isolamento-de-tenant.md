@@ -83,6 +83,22 @@ provenance:
 > **Divergência conhecida de bookkeeping:** `adr-index.md` ainda registra este ADR como
 > `not-started`; a atualização do índice está fora do escopo de escrita desta tarefa (§9).
 
+> **Correção (2026-08-19, especialista de consistência documental e
+> rastreabilidade — reconciliação ADR-0016).** A frase acima estava correta em
+> 2026-08-16, quando esta minuta foi redigida, e deixou de estar: `adr-index.md`
+> já foi atualizado (tabela `§1`/`§3`, linhas 107 e 241; grafo `§4.2`) pela
+> "Correção de sincronização (ACH-09, 2026-08-17)" registrada no próprio
+> índice. O índice hoje registra `ADR-0016` como `accepted (direção GDEC-0016;
+> minuta redigida 2026-08-16, ciclo 6)` — **não** `not-started`. Isto não
+> promove `ADR-0016` além de "direção aceita, minuta materializada": a §9
+> abaixo continua correta quanto ao Gate G6, que permanece sem fechar (uma
+> ADR `accepted` não é evidência `implemented`/`verified` — `adr-index.md`
+> §5, "Lembrete"; V6 desta minuta — a campanha adversarial por verificador
+> independente, §8 — segue **NÃO EXECUTADA**). Esta é uma correção de citação
+> cruzada desatualizada, não uma nova decisão sobre o mérito do ADR; nenhuma
+> autoridade além da já registrada em `GDEC-0015`/`GDEC-0016` é invocada
+> aqui.
+
 ## 1. Contexto e problema
 
 **SOURCE** (prompt §9.1, princípio 2): *"Tenant and encounter ownership are invariants
@@ -257,6 +273,15 @@ substitui**.
 - **Supersede:** nenhuma. **Superseded por:** nenhuma.
 - **Pendência:** `adr-index.md` continua marcando `ADR-0016` como `not-started`; atualizar
   o índice está fora do escopo de escrita desta tarefa.
+
+  > **Correção (2026-08-19, especialista de consistência documental e
+  > rastreabilidade).** Esta pendência está desatualizada — ver a correção de
+  > topo deste arquivo: `adr-index.md` não marca mais `ADR-0016` como
+  > `not-started`. O Gate G6 permanece, de fato, sem fechar: `adr-index.md`
+  > §5 continua listando `ADR-0016` entre as ADRs que G6 aguarda, porque
+  > aceitação de direção não equivale a evidência `implemented`/`verified` —
+  > e V6 (campanha adversarial por verificador independente, §8) segue **NÃO
+  > EXECUTADA**.
 - **Pendência:** limitação de RLS sob papel privilegiado em PGlite (ver §4.1) — precisa de
   decisão explícita quando o motor de produção for selecionado (ADR-0019).
 - **Pendência:** break-glass (SEC-0007) e revisão de acesso (SEC-0008) permanecem sem ADR

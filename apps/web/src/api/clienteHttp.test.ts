@@ -1,3 +1,7 @@
+// @vitest-environment node
+// Este arquivo não toca DOM em NENHUM módulo do seu grafo (verificado). Em
+// jsdom ele custava a construção de um ambiente inteiro sem usá-lo — ver a
+// nota "CUSTO DE AMBIENTE" em `apps/web/vitest.config.ts`.
 /**
  * Testes dos mapeamentos PUROS do cliente HTTP real (contrato → domínio da
  * UI) — sem rede. O comportamento de fetch em si é coberto pelo E2E de
@@ -8,9 +12,9 @@
 
 import type { EntradaGradeLeitos, ResultadoAvaliacao } from "@intensicare/contratos";
 import { describe, expect, it } from "vitest";
+import * as moduloClienteHttp from "./clienteHttp.js";
 import {
   mapearAvaliacao,
-  mapearBanda,
   mapearEntradaGrade,
   mapearEstadoItem,
   mapearFrescorParametro,
@@ -27,12 +31,25 @@ describe("mapeamento de status de avaliação (contrato → UI)", () => {
     expect(mapearStatusAvaliacao("invalido")).toBe("invalida");
   });
 
-  it("banda: normal→baixo, atencao→medio, alerta→alto, critico→critico; null permanece null", () => {
-    expect(mapearBanda("normal")).toBe("baixo");
-    expect(mapearBanda("atencao")).toBe("medio");
-    expect(mapearBanda("alerta")).toBe("alto");
-    expect(mapearBanda("critico")).toBe("critico");
-    expect(mapearBanda(null)).toBeNull();
+  /**
+   * ESTE TESTE FIXAVA O DEFEITO. Até HEAD 1eda4f1 ele afirmava
+   * `expect(mapearBanda("alerta")).toBe("alto")` — isto é, exigia que o
+   * cliente renomeasse para "alto" a banda que o contrato ancora ao tier
+   * *medium* do NEWS2 (`packages/contratos/src/index.ts:207-213`, RCP 2017
+   * Chart 2). O clínico lia um nível acima do que a regra disse, e o gate
+   * ficava verde por causa desta linha.
+   *
+   * Foi REESCRITO, não removido: o que ele afirma agora é a AUSÊNCIA da
+   * tradução. A cobertura de que a banda atravessa intacta está em
+   * `../domain/vocabularioDeBanda.test.ts`, que percorre as quatro bandas do
+   * contrato pelos três mapeadores que as carregam.
+   */
+  it("não existe tradutor de banda: `mapearBanda` foi apagado do cliente", () => {
+    const exportados = Object.keys(moduloClienteHttp);
+    // Não-vacuidade: o módulo carregou e os mapeadores legítimos seguem lá.
+    expect(exportados).toContain("mapearStatusAvaliacao");
+    expect(exportados).toContain("mapearAvaliacao");
+    expect(exportados).not.toContain("mapearBanda");
   });
 
   it("parâmetros do contrato mapeiam para os sete ParametroId da UI", () => {

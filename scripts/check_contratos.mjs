@@ -121,6 +121,54 @@
  *    consome sem poder importar `apps/api/src/eventos/stream.ts`, por
  *    fronteira de módulo — ADR-0002) com `channels.fluxoDeEventos.address`.
  *
+ *    A Parte G3 aplica a MESMA comparação (a função é uma só:
+ *    `compararFormaDeInterface`) à superfície REST — `openapi.yaml` ×
+ *    `packages/contratos/src/index.ts`. Ela existe porque, até aqui, o gate
+ *    cobria da superfície REST apenas os ENUMS (Parte F1): a FORMA de
+ *    `ResultadoAvaliacao`, `EntradaGradeLeitos`, `ModoDeDespachoAvaliacao`,
+ *    `ResumoItemTrabalho` e `ItemTrabalho` não era comparada por checagem
+ *    nenhuma, e um campo acrescentado só de um lado passava. MEDIDO antes de
+ *    escrever esta parte, com o gate anterior sobre cópia mutada do
+ *    repositório: 14 mutações de forma REST — campo a mais só no TS (simples,
+ *    `readonly` e nome citado), propriedade renomeada só no YAML, campo
+ *    opcional declarado `required`, campo obrigatório removido de `required`,
+ *    ramo `allOf` alterado e base de composição trocada — **todas saíam
+ *    exit 0**. `ADR-0021` exige que `src/index.ts` seja "gerado a partir de,
+ *    ou validado contra" o contrato; a Parte F1 fez essa metade para os enums,
+ *    a G3 faz para a forma dos objetos.
+ *
+ *    G3 tem três sub-checagens por par declarado em `PARES_DE_FORMA_REST`:
+ *      G3a. conjunto de propriedades e G3b. obrigatoriedade — idênticas a
+ *           G1a/G1b, pela mesma função;
+ *      G3c. COMPOSIÇÃO: quando a interface TS usa `extends B`, o schema
+ *           correspondente tem de compor com `allOf: [$ref B, forma própria
+ *           inline]` — e o `$ref` tem de apontar para o MESMO `B`. Herança e
+ *           composição divergentes fazem os campos herdados virem de outro
+ *           contrato sem que a comparação de forma própria acuse nada.
+ *      G3d. FECHO: todo `$ref` a `#/components/schemas/X` que apareça DENTRO
+ *           de um schema guardado precisa levar a (i) outro schema guardado,
+ *           (ii) um schema ESCALAR (enum ou tipo primitivo — não há forma a
+ *           comparar), ou (iii) um nome declarado em
+ *           `SCHEMAS_REST_SEM_GUARDA_DE_FORMA`, que é impresso como pendência.
+ *           Sem G3d, a escolha dos pares seria arbitrária e um envelope novo
+ *           aninhado num schema guardado nasceria sem guarda, em silêncio —
+ *           que é exatamente como esta lacuna surgiu.
+ *
+ *    O QUE A PARTE G3 NÃO COMPARA, além dos limites (a)/(b)/(c) da Parte G:
+ *    (d) schemas REST FORA do fecho de `PARES_DE_FORMA_REST` — hoje
+ *        `ProblemDetails`, `ProblemDetailsConflitoVersao`, `ObservacaoEntrada`,
+ *        `ObservacaoEmQuarentena`, `IngestaoObservacoesRequisicao`,
+ *        `IngestaoObservacoesResposta`, `ContextoAvaliacaoPaciente`,
+ *        `GradeLeitosResposta`, `AvaliacoesPacienteResposta`,
+ *        `ReconhecerAlertaRequisicao`, `ReconhecerAlertaResposta` e os schemas
+ *        de prontidão/saúde. Foi MEDIDO que os 18 schemas com interface
+ *        homônima em `src/index.ts` conferem hoje (conjunto e obrigatoriedade),
+ *        então a exclusão é de ESCOPO, não de conformidade; ela está no
+ *        handoff como pendência nomeada. O fecho G3d garante que nenhum deles
+ *        seja alcançável a partir de um schema guardado sem reprovar.
+ *    (e) schemas alcançáveis só a partir de `paths` (corpos e respostas): G3d
+ *        parte dos schemas guardados, não das rotas.
+ *
  * Por que PyYAML via `python3`, e não uma biblioteca JS
  * ----------------------------------------------------
  * O lockfile é compartilhado e nenhuma dependência JS nova foi instalada
@@ -281,9 +329,26 @@ function extrairUniaoTipoTs(fonte, nome) {
  * `undefined` e deixa o chamador reportar com `verificar(...)`, porque um
  * gate precisa listar TODAS as falhas numa execução, não abortar na
  * primeira (ver docstring do topo deste arquivo).
+ *
+ * O RAMO `extends` NÃO É ORNAMENTO. Sem ele o padrão exige `{` logo após o
+ * nome, e `export interface ItemTrabalho extends ResumoItemTrabalho {` não
+ * casa: a função devolvia `undefined` para TODA interface derivada do
+ * repositório (MEDIDO em `src/index.ts`: `ItemTrabalho` e
+ * `ProblemDetailsConflitoVersao`). Num gate que trata "interface não
+ * encontrada" como falha, isso não seria silêncio — mas seria um par
+ * impossível de declarar, e o efeito prático é o mesmo da cegueira a
+ * `readonly`: o campo fica fora da comparação. O grupo capturado continua
+ * sendo só o corpo, isto é, as propriedades PRÓPRIAS — as herdadas vêm do
+ * schema-base, e é por isso que o lado YAML precisa da composição `allOf`
+ * (ver `formaDoSchemaOpenapi`). Ampliar o padrão só pode fazê-lo casar MAIS
+ * interfaces: nenhuma das quatro interfaces AsyncAPI usa `extends`, e o
+ * autoteste prova que a contagem de verificações da Parte G1 não mudou.
  */
 function corpoDaInterfaceTs(fonte, nome) {
-  const padrao = new RegExp(`export interface ${nome}\\s*\\{([\\s\\S]*?)\\n\\}`, "m");
+  const padrao = new RegExp(
+    `export interface ${nome}(?:\\s+extends\\s+[^{]+)?\\s*\\{([\\s\\S]*?)\\n\\}`,
+    "m",
+  );
   const encontrado = padrao.exec(fonte);
   return encontrado ? encontrado[1] : undefined;
 }
@@ -441,6 +506,241 @@ export const ENUMS_DE_DESPACHO = Object.freeze([
  * Vazia = nenhuma pendência: todo enum de despacho tem schema no documento.
  */
 export const SCHEMAS_DESPACHO_PENDENTES_NO_OPENAPI = Object.freeze([]);
+
+/**
+ * Pares da Parte G3: interface de `packages/contratos/src/index.ts` × schema
+ * de `packages/contratos/openapi.yaml` cuja FORMA é comparada.
+ *
+ * POR QUE ESTES, E NÃO OUTROS — o critério é declarado para que a escolha não
+ * seja arbitrária e para que o próximo campo novo não caia fora dela: a lista
+ * é o FECHO, sob referência de objeto, do que a superfície passou a consumir
+ * quando `ResultadoAvaliacao.despacho` e `EntradaGradeLeitos.modoAvaliacao`
+ * entraram no contrato. Sair do fecho é possível; sair dele em SILÊNCIO não é
+ * — a sub-checagem G3d reprova qualquer `$ref` de objeto alcançável a partir
+ * de um schema guardado que não esteja guardado nem declarado.
+ *
+ *   - `ResultadoAvaliacao`      raiz: o corpo de avaliação que carrega `despacho`;
+ *   - `EntradaGradeLeitos`      raiz: a linha da grade que carrega `modoAvaliacao`;
+ *   - `ContribuicaoParametro`   fecho: `ResultadoAvaliacao.parametros[]`;
+ *   - `ModoDeDespachoAvaliacao` fecho: o envelope de degradação, alvo dos dois campos;
+ *   - `ProvenienciaBundlePublicada` fecho: `ModoDeDespachoAvaliacao.bundle`;
+ *   - `ResumoItemTrabalho`      fecho: `EntradaGradeLeitos.alerta`;
+ *   - `ItemTrabalho`            resposta de reconhecimento e ÚNICO caso de
+ *                               composição (`extends`/`allOf`) do fecho.
+ *
+ * `baseTs` só é declarado quando a interface TS usa `extends`; ele liga a
+ * herança do TypeScript à composição `allOf` do documento (G3c).
+ */
+export const PARES_DE_FORMA_REST = Object.freeze([
+  Object.freeze({ tipoTs: "ResultadoAvaliacao", schemaOpenapi: "ResultadoAvaliacao" }),
+  Object.freeze({ tipoTs: "EntradaGradeLeitos", schemaOpenapi: "EntradaGradeLeitos" }),
+  Object.freeze({ tipoTs: "ContribuicaoParametro", schemaOpenapi: "ContribuicaoParametro" }),
+  Object.freeze({ tipoTs: "ModoDeDespachoAvaliacao", schemaOpenapi: "ModoDeDespachoAvaliacao" }),
+  Object.freeze({
+    tipoTs: "ProvenienciaBundlePublicada",
+    schemaOpenapi: "ProvenienciaBundlePublicada",
+  }),
+  Object.freeze({ tipoTs: "ResumoItemTrabalho", schemaOpenapi: "ResumoItemTrabalho" }),
+  Object.freeze({
+    tipoTs: "ItemTrabalho",
+    schemaOpenapi: "ItemTrabalho",
+    baseTs: "ResumoItemTrabalho",
+  }),
+]);
+
+/**
+ * Schemas de OBJETO alcançáveis a partir de um schema guardado e, ainda
+ * assim, sem guarda de forma própria. Mesmo regime de
+ * `SCHEMAS_DESPACHO_PENDENTES_NO_OPENAPI`: é a ÚNICA forma de desligar a
+ * sub-checagem G3d para um nome, ela é explícita e é impressa como pendência
+ * a cada execução.
+ *
+ * Vazia = o fecho está completo: todo objeto referenciado de dentro de um
+ * schema guardado também é guardado. Um schema de objeto novo aninhado num
+ * guardado reprova o gate até ser guardado ou declarado aqui por nome.
+ */
+export const SCHEMAS_REST_SEM_GUARDA_DE_FORMA = Object.freeze([]);
+
+/** Prefixo de todo `$ref` local para a tabela de schemas do OpenAPI. */
+const PREFIXO_REF_SCHEMA = "#/components/schemas/";
+
+/**
+ * `true` quando o schema não tem FORMA a comparar: enum, ou tipo primitivo.
+ *
+ * É o predicado que torna o fecho da Parte G3d aplicável sem exigir uma
+ * interface TS para `StatusAvaliacao` ou `ParametroClinico` — esses já são
+ * confrontados pela Parte F1, que compara os VALORES do enum. Objeto e array
+ * NÃO são escalares de propósito: array de objeto esconde a forma um nível
+ * abaixo, e é justamente o caso que precisa reprovar.
+ */
+function schemaEhEscalar(schema) {
+  if (typeof schema !== "object" || schema === null) return false;
+  if (Array.isArray(schema.enum)) return true;
+  return (
+    typeof schema.type === "string" &&
+    ["string", "number", "integer", "boolean"].includes(schema.type)
+  );
+}
+
+/**
+ * Forma comparável (`properties` + `required`) de um schema do `openapi.yaml`,
+ * resolvendo a composição `allOf` quando a interface TS correspondente usa
+ * `extends`.
+ *
+ * TODO desvio da topologia esperada devolve `erro` — nunca uma forma parcial.
+ * A razão é a lição registrada duas vezes neste arquivo: comparar metade da
+ * forma e sair verde é pior que não comparar, porque produz confiança. Se o
+ * documento passar a repartir a forma de um jeito que esta função não sabe
+ * ler, o gate REPROVA com o motivo escrito, e alguém decide.
+ *
+ * @returns {{propriedades?: string[], requeridos: string[], erro?: string, refBase?: string}}
+ */
+function formaDoSchemaOpenapi(openapi, nomeSchema, nomeTs, baseTs) {
+  const schema = openapi.components?.schemas?.[nomeSchema];
+  if (typeof schema !== "object" || schema === null) {
+    return {
+      requeridos: [],
+      erro:
+        `openapi.yaml: schema '${nomeSchema}' ausente — 'packages/contratos/src/index.ts' ` +
+        `publica a interface '${nomeTs}' e o documento não a descreve (ADR-0021: o espelho ` +
+        "manual precisa ser validado CONTRA o contrato).",
+    };
+  }
+  const composicao = Array.isArray(schema.allOf) ? schema.allOf : undefined;
+
+  if (baseTs === undefined) {
+    if (composicao !== undefined) {
+      return {
+        requeridos: [],
+        erro:
+          `openapi.yaml: schema '${nomeSchema}' passou a compor com 'allOf', mas o par de ` +
+          `forma de '${nomeTs}' não declara interface-base. Ler apenas 'properties' compararia ` +
+          "um SUBCONJUNTO da forma e aprovaria o resto por omissão — declare `baseTs` no par ou " +
+          "desfaça a composição.",
+      };
+    }
+    const propriedades = schema.properties;
+    if (typeof propriedades !== "object" || propriedades === null) return { requeridos: [] };
+    return {
+      propriedades: Object.keys(propriedades),
+      requeridos: Array.isArray(schema.required) ? schema.required : [],
+    };
+  }
+
+  if (composicao === undefined) {
+    return {
+      requeridos: [],
+      erro:
+        `openapi.yaml: a interface '${nomeTs}' estende '${baseTs}' no TypeScript, mas o schema ` +
+        `'${nomeSchema}' não compõe com 'allOf'. Sem composição, os campos herdados teriam de ` +
+        "estar repetidos no documento — e a comparação de forma própria não os veria.",
+    };
+  }
+  if (schema.properties !== undefined) {
+    return {
+      requeridos: [],
+      erro:
+        `openapi.yaml: schema '${nomeSchema}' declara 'allOf' E 'properties' de topo. A forma ` +
+        "ficaria repartida em dois lugares e esta comparação leria só um deles.",
+    };
+  }
+  const ramosRef = composicao.filter(
+    (ramo) => typeof ramo === "object" && ramo !== null && typeof ramo.$ref === "string",
+  );
+  const ramosInline = composicao.filter(
+    (ramo) => typeof ramo === "object" && ramo !== null && ramo.$ref === undefined,
+  );
+  if (composicao.length !== 2 || ramosRef.length !== 1 || ramosInline.length !== 1) {
+    return {
+      requeridos: [],
+      erro:
+        `openapi.yaml: schema '${nomeSchema}' compõe com ${String(composicao.length)} ramo(s) de ` +
+        `'allOf' (${String(ramosRef.length)} por $ref, ${String(ramosInline.length)} inline). ` +
+        "Esta parte do gate só sabe comparar a topologia 'base por $ref + forma própria inline'; " +
+        "qualquer outra é REPROVADA em vez de comparada pela metade.",
+    };
+  }
+  const inline = ramosInline[0];
+  const refBase = ramosRef[0].$ref;
+  const propriedades = inline.properties;
+  if (typeof propriedades !== "object" || propriedades === null) {
+    return { requeridos: [], refBase };
+  }
+  return {
+    propriedades: Object.keys(propriedades),
+    requeridos: Array.isArray(inline.required) ? inline.required : [],
+    refBase,
+  };
+}
+
+/**
+ * A comparação de FORMA da Parte G, para UM par interface × schema — UMA
+ * função, usada pela G1 (AsyncAPI) e pela G3 (REST).
+ *
+ * Extraída de dentro do laço da Parte G1 sem alterar a sequência nem a
+ * QUANTIDADE de chamadas a `verificar` (a contagem por par continua 2 quando
+ * um dos lados não é encontrado e 4 quando os dois existem) — a contagem total
+ * do gate é dado publicado, e um refator que a mexesse sem motivo tornaria
+ * impossível atribuir a diferença à ampliação. O chamador entrega a forma do
+ * documento já resolvida, porque a resolução difere entre os dois documentos:
+ * AsyncAPI lê `properties`/`required` direto; OpenAPI pode compor com `allOf`.
+ */
+function compararFormaDeInterface({
+  verificar,
+  fonteTs,
+  nomeTs,
+  rotuloFonteTs,
+  nomeSchema,
+  rotuloDocumento,
+  formaYaml,
+}) {
+  const detalhadoTs = propriedadesComObrigatoriedadeTs(fonteTs, nomeTs);
+  const doTs = detalhadoTs?.map((p) => p.nome);
+  verificar(
+    doTs !== undefined && doTs.length > 0,
+    `${rotuloFonteTs}: interface '${nomeTs}' não encontrada (ou sem propriedades extraídas).`,
+  );
+
+  const doYaml = formaYaml.propriedades;
+  verificar(
+    formaYaml.erro === undefined && doYaml !== undefined && doYaml.length > 0,
+    formaYaml.erro ?? `${rotuloDocumento}: schema '${nomeSchema}' sem 'properties' (ou vazio).`,
+  );
+
+  if (
+    detalhadoTs === undefined ||
+    doTs === undefined ||
+    doTs.length === 0 ||
+    doYaml === undefined ||
+    doYaml.length === 0
+  ) {
+    return;
+  }
+
+  const tsOrdenado = [...doTs].sort();
+  const yamlOrdenado = [...doYaml].sort();
+  verificar(
+    mesmaLista(tsOrdenado, yamlOrdenado),
+    `Propriedades divergentes entre a interface '${nomeTs}' (TS) e o schema '${nomeSchema}' (${rotuloDocumento}) — um campo acrescentado, removido ou renomeado só de um lado.\n      TS   : ${JSON.stringify(tsOrdenado)}\n      YAML : ${JSON.stringify(yamlOrdenado)}`,
+  );
+
+  // Obrigatoriedade. `campo?:` no TS ⇔ campo FORA de `required` no YAML. Não é
+  // preciosismo de schema: `POLITICA_EVOLUCAO_EVENTOS.quebra`
+  // (`packages/contratos/src/asyncapi.ts`) declara "estreitar tipo ou tornar
+  // campo obrigatório" como evolução INCOMPATÍVEL. Enquanto o gate comparava
+  // só o CONJUNTO de nomes, tornar um campo obrigatório de um lado só — a
+  // quebra que o próprio contrato nomeia — passava (medido: inverter `required`
+  // no YAML saía exit 0, nos dois documentos).
+  const obrigatoriosNoTs = detalhadoTs
+    .filter((p) => !p.opcional)
+    .map((p) => p.nome)
+    .sort();
+  const requeridosNoYaml = [...formaYaml.requeridos].sort();
+  verificar(
+    mesmaLista(obrigatoriosNoTs, requeridosNoYaml),
+    `Obrigatoriedade divergente entre a interface '${nomeTs}' (TS) e o schema '${nomeSchema}' (${rotuloDocumento}) — tornar campo obrigatório de um lado só é evolução INCOMPATÍVEL (POLITICA_EVOLUCAO_EVENTOS.quebra).\n      TS obrigatórios   : ${JSON.stringify(obrigatoriosNoTs)}\n      YAML required     : ${JSON.stringify(requeridosNoYaml)}`,
+  );
+}
 
 export function verificarContratos(raiz) {
   const falhas = [];
@@ -792,57 +1092,25 @@ export function verificarContratos(raiz) {
     "check_contratos: a lista de pares de interface de mensagem está vazia — o laço abaixo não verificaria nada (guarda de não-vacuidade).",
   );
   for (const [nomeTs, nomeSchema] of paresDeInterfaceDeMensagem) {
-    const detalhadoTs = propriedadesComObrigatoriedadeTs(fonteTs, nomeTs);
-    const doTs = detalhadoTs?.map((p) => p.nome);
-    verificar(
-      doTs !== undefined && doTs.length > 0,
-      `asyncapi.ts: interface '${nomeTs}' não encontrada (ou sem propriedades extraídas).`,
-    );
-
+    // O invariante de obrigatoriedade vale HOJE nas quatro interfaces, medido
+    // antes de a checagem existir: 22 propriedades, 0 desvios.
     const propriedadesYaml = asyncapi.components?.schemas?.[nomeSchema]?.properties;
-    const doYaml =
-      typeof propriedadesYaml === "object" && propriedadesYaml !== null
-        ? Object.keys(propriedadesYaml)
-        : undefined;
-    verificar(
-      doYaml !== undefined && doYaml.length > 0,
-      `asyncapi.yaml: schema '${nomeSchema}' sem 'properties' (ou vazio).`,
-    );
-
-    if (
-      detalhadoTs !== undefined &&
-      doTs !== undefined &&
-      doTs.length > 0 &&
-      doYaml !== undefined &&
-      doYaml.length > 0
-    ) {
-      const tsOrdenado = [...doTs].sort();
-      const yamlOrdenado = [...doYaml].sort();
-      verificar(
-        mesmaLista(tsOrdenado, yamlOrdenado),
-        `Propriedades divergentes entre a interface '${nomeTs}' (TS) e o schema '${nomeSchema}' (YAML) — um campo acrescentado, removido ou renomeado só de um lado.\n      TS   : ${JSON.stringify(tsOrdenado)}\n      YAML : ${JSON.stringify(yamlOrdenado)}`,
-      );
-
-      // G1b. OBRIGATORIEDADE. `campo?:` no TS ⇔ campo FORA de `required` no
-      // YAML. Não é preciosismo de schema: `POLITICA_EVOLUCAO_EVENTOS.quebra`
-      // (`packages/contratos/src/asyncapi.ts`) declara "estreitar tipo ou
-      // tornar campo obrigatório" como evolução INCOMPATÍVEL. Enquanto o gate
-      // comparava só o CONJUNTO de nomes, tornar um campo obrigatório de um
-      // lado só — a quebra que o próprio contrato nomeia — passava (medido:
-      // inverter `required` no YAML saía exit 0). O invariante vale HOJE em
-      // todas as quatro interfaces, medido antes de escrever esta checagem:
-      // 22 propriedades, 0 desvios.
-      const obrigatoriosNoTs = detalhadoTs
-        .filter((p) => !p.opcional)
-        .map((p) => p.nome)
-        .sort();
-      const requeridoYaml = asyncapi.components?.schemas?.[nomeSchema]?.required;
-      const requeridosNoYaml = Array.isArray(requeridoYaml) ? [...requeridoYaml].sort() : [];
-      verificar(
-        mesmaLista(obrigatoriosNoTs, requeridosNoYaml),
-        `Obrigatoriedade divergente entre a interface '${nomeTs}' (TS) e o schema '${nomeSchema}' (YAML) — tornar campo obrigatório de um lado só é evolução INCOMPATÍVEL (POLITICA_EVOLUCAO_EVENTOS.quebra).\n      TS obrigatórios   : ${JSON.stringify(obrigatoriosNoTs)}\n      YAML required     : ${JSON.stringify(requeridosNoYaml)}`,
-      );
-    }
+    const requeridoYaml = asyncapi.components?.schemas?.[nomeSchema]?.required;
+    compararFormaDeInterface({
+      verificar,
+      fonteTs,
+      nomeTs,
+      rotuloFonteTs: "asyncapi.ts",
+      nomeSchema,
+      rotuloDocumento: "asyncapi.yaml",
+      formaYaml: {
+        propriedades:
+          typeof propriedadesYaml === "object" && propriedadesYaml !== null
+            ? Object.keys(propriedadesYaml)
+            : undefined,
+        requeridos: Array.isArray(requeridoYaml) ? requeridoYaml : [],
+      },
+    });
   }
 
   // --- G2. Caminho do canal de eventos publicado (TS × YAML) -------------
@@ -1009,6 +1277,98 @@ export function verificarContratos(raiz) {
     }
   }
 
+  // --- G3. FORMA dos schemas REST (openapi.yaml × src/index.ts) -----------
+  //
+  // A Parte F1 acima compara os VALORES dos enums REST; esta compara a FORMA
+  // dos objetos, com a MESMA função que a Parte G1 usa para o AsyncAPI. Antes
+  // dela, a superfície REST tinha guarda de vocabulário e nenhuma guarda de
+  // estrutura — medido sobre o gate ANTERIOR: 14 mutações de forma (campo a
+  // mais só no TS, inclusive `readonly` e nome citado; propriedade renomeada só
+  // no YAML; `required` invertido nas duas direções; ramo `allOf` alterado;
+  // base de composição trocada; schema de objeto sem guarda; schema ausente)
+  // saíam TODAS exit 0. As outras três mutações de forma REST do autoteste não
+  // medem buraco anterior: exercitam os ramos de topologia inesperada que esta
+  // parte introduz, para que nenhum deles fique sendo código nunca executado.
+  // Importa agora porque `apps/web` passou a
+  // CONSUMIR `ResultadoAvaliacao.despacho` e `EntradaGradeLeitos.modoAvaliacao`
+  // — os dois campos vivem exatamente nos schemas que não tinham guarda.
+
+  verificar(
+    PARES_DE_FORMA_REST.length > 0,
+    "check_contratos: PARES_DE_FORMA_REST está vazia — o laço abaixo não verificaria nada (guarda de não-vacuidade).",
+  );
+  for (const { tipoTs, schemaOpenapi, baseTs } of PARES_DE_FORMA_REST) {
+    const formaYaml = formaDoSchemaOpenapi(openapi, schemaOpenapi, tipoTs, baseTs);
+    compararFormaDeInterface({
+      verificar,
+      fonteTs: fonteTsIndex,
+      nomeTs: tipoTs,
+      rotuloFonteTs: "packages/contratos/src/index.ts",
+      nomeSchema: schemaOpenapi,
+      rotuloDocumento: "openapi.yaml",
+      formaYaml,
+    });
+
+    // G3c. Herança do TS × composição do documento. Comparar só a forma
+    // PRÓPRIA deixaria os campos herdados fora de qualquer confronto: um
+    // `allOf` apontando para outro schema-base traria outros campos e nenhuma
+    // asserção acusaria. Medido: trocar a base de `ItemTrabalho` para
+    // `ProblemDetails` saía exit 0 antes desta checagem.
+    if (baseTs !== undefined) {
+      verificar(
+        formaYaml.refBase === `${PREFIXO_REF_SCHEMA}${baseTs}`,
+        `Composição divergente da herança: a interface '${tipoTs}' estende '${baseTs}' em ` +
+          `packages/contratos/src/index.ts, mas o schema '${schemaOpenapi}' compõe com ` +
+          `'${String(formaYaml.refBase)}'. Herança e composição precisam apontar para o MESMO ` +
+          "schema — senão os campos herdados vêm de outro contrato.",
+      );
+    }
+  }
+
+  // G3d. FECHO do conjunto guardado. Sem isto, a lista de pares seria uma
+  // escolha sem invariante: um envelope novo aninhado dentro de um schema já
+  // guardado nasceria sem guarda de forma e ninguém veria — que é exatamente
+  // como a lacuna fechada nesta sessão surgiu (a Parte G cobria a FORMA de
+  // quatro interfaces AsyncAPI e nenhuma REST).
+  const schemasRestGuardados = new Set(PARES_DE_FORMA_REST.map((par) => par.schemaOpenapi));
+  for (const nomeSchema of SCHEMAS_REST_SEM_GUARDA_DE_FORMA) {
+    pendencias.push(
+      `openapi.yaml: o schema de objeto '${nomeSchema}' é referenciado de dentro de um schema ` +
+        "COM guarda de forma e está DECLARADO sem guarda própria: a comparação de FORMA está " +
+        "DESLIGADA para ele (Parte G3d).",
+    );
+  }
+  let refsExaminadasNoFecho = 0;
+  for (const { schemaOpenapi } of PARES_DE_FORMA_REST) {
+    const schema = openapi.components?.schemas?.[schemaOpenapi];
+    if (typeof schema !== "object" || schema === null) continue;
+    const refs = [];
+    coletarRefs(schema, schemaOpenapi, refs);
+    for (const { caminho, ref } of refs) {
+      const alvo = ref.startsWith(PREFIXO_REF_SCHEMA)
+        ? ref.slice(PREFIXO_REF_SCHEMA.length)
+        : undefined;
+      const alvoSchema = alvo === undefined ? undefined : openapi.components?.schemas?.[alvo];
+      refsExaminadasNoFecho += 1;
+      verificar(
+        alvo !== undefined &&
+          (schemasRestGuardados.has(alvo) ||
+            schemaEhEscalar(alvoSchema) ||
+            SCHEMAS_REST_SEM_GUARDA_DE_FORMA.includes(alvo)),
+        `openapi.yaml: '${caminho}' referencia '${ref}', que não é enum nem tipo primitivo e ` +
+          "NÃO tem guarda de FORMA. Um schema de objeto alcançável a partir de um schema " +
+          "guardado precisa entrar em PARES_DE_FORMA_REST (com interface espelho em " +
+          "packages/contratos/src/index.ts) ou ser declarado por nome em " +
+          "SCHEMAS_REST_SEM_GUARDA_DE_FORMA. Fecho incompleto em silêncio é como esta lacuna nasceu.",
+      );
+    }
+  }
+  verificar(
+    refsExaminadasNoFecho > 0,
+    "check_contratos: nenhum '$ref' foi examinado dentro dos schemas REST guardados — o fecho " +
+      "da Parte G3d não verificaria nada (guarda de não-vacuidade).",
+  );
+
   return { falhas, verificacoes, pendencias };
 }
 
@@ -1038,6 +1398,15 @@ const ARQUIVOS_AUTOTESTE = ARQUIVOS_LIDOS_PELO_GATE;
  * autoteste "passar" sem jamais ter mutado nada — falso-verde silencioso,
  * exatamente o que este autoteste existe para impedir.
  *
+ * A âncora também precisa ser ÚNICA no arquivo, e essa metade faltava.
+ * `String.prototype.replace` com string literal troca só a PRIMEIRA
+ * ocorrência: uma âncora ambígua muta um sítio que não é o pretendido, o gate
+ * reprova por um motivo que não é o que o caso afirma testar, e o caso sai
+ * `ok`. Não é hipótese — este arquivo já registra duas ocorrências dessa
+ * classe (a injeção que produzia chave YAML duplicada). MEDIDO sobre as 21
+ * âncoras existentes antes de acrescentar a guarda: todas únicas, nenhuma
+ * mutação mudou de comportamento.
+ *
  * @param {{arquivo: string, nome: string, de: string, para: string}[]} mutacoes
  * @returns {string} a raiz da cópia mutada.
  */
@@ -1051,6 +1420,15 @@ function criarCopiaMutada(raizOrigem, mutacoes) {
         throw new Error(
           `autoteste: mutação "${mutacao.nome}" não encontrou o texto-alvo em '${relativo}' — ` +
             "o arquivo real mudou; atualize o texto-alvo da mutação antes de confiar no autoteste.",
+        );
+      }
+      if (conteudo.indexOf(mutacao.de) !== conteudo.lastIndexOf(mutacao.de)) {
+        rmSync(raizDestino, { recursive: true, force: true });
+        throw new Error(
+          `autoteste: o texto-alvo da mutação "${mutacao.nome}" aparece MAIS DE UMA VEZ em ` +
+            `'${relativo}'. 'replace' com literal troca só a primeira ocorrência, então a ` +
+            "mutação atingiria um sítio ambíguo e o caso poderia sair verde pelo motivo errado. " +
+            "Estenda a âncora até que ela seja única.",
         );
       }
       conteudo = conteudo.replace(mutacao.de, mutacao.para);
@@ -1088,24 +1466,39 @@ function autoteste() {
   );
   registrar("repositório real produz verificações não-vazias", true, base.verificacoes > 0);
 
+  /**
+   * O CAMPO `marcador` É O QUE SEPARA "reprovou" DE "reprovou POR ISTO".
+   *
+   * Até aqui cada caso afirmava `falhas.length > 0`. É a versão-gate de
+   * `expect(...).rejects.toThrow()` sem classe: "documento com enum divergente"
+   * e "documento que nem parseia" viram o mesmo verde, e uma mutação que
+   * passasse a reprovar por outro motivo continuaria `ok` medindo outra coisa —
+   * defeito que este arquivo já registra duas vezes (a injeção que produzia
+   * chave YAML duplicada e reprovava ANTES de a comparação rodar). Cada
+   * `marcador` foi MEDIDO na saída real do gate sobre a cópia mutada, não
+   * suposto.
+   */
   const mutacoesRest = [
     {
       nome: "valor a mais em StatusAvaliacao (YAML) sem par no TS",
       arquivo: "packages/contratos/openapi.yaml",
       de: "enum: [valido, parcial, indisponivel, desatualizado, invalido]",
       para: "enum: [valido, parcial, indisponivel, desatualizado, invalido, bugado]",
+      marcador: "Enum REST divergente entre openapi.yaml e src/index.ts para 'StatusAvaliacao'",
     },
     {
       nome: "valor a mais em BandaRisco (TS) sem par no YAML",
       arquivo: "packages/contratos/src/index.ts",
       de: 'export type BandaRisco = "normal" | "atencao" | "alerta" | "critico";',
       para: 'export type BandaRisco = "normal" | "atencao" | "alerta" | "critico" | "bugado";',
+      marcador: "Enum REST divergente entre openapi.yaml e src/index.ts para 'BandaRisco'",
     },
     {
       nome: "valor renomeado em Frescor (YAML) diverge do TS",
       arquivo: "packages/contratos/openapi.yaml",
       de: "enum: [atual, envelhecendo, desatualizado]",
       para: "enum: [atual, envelhecendo2, desatualizado]",
+      marcador: "Enum REST divergente entre openapi.yaml e src/index.ts para 'Frescor'",
     },
     {
       nome: "enum EstadoItemTrabalho inteiro removido do TS",
@@ -1114,6 +1507,7 @@ function autoteste() {
         'export type EstadoItemTrabalho =\n  | "nao-atribuido"\n  | "atribuido"\n  | "reconhecido"' +
         '\n  | "escalado"\n  | "sobreposto"\n  | "resolvido"\n  | "suprimido"\n  | "reaberto";',
       para: "",
+      marcador: "tipo 'EstadoItemTrabalho' não encontrado (enum REST sem espelho TS)",
     },
   ];
 
@@ -1130,36 +1524,44 @@ function autoteste() {
       arquivo: "packages/contratos/openapi.yaml",
       de: "        - degradation_unsurfaced\n",
       para: "        - degradation_unsurfaced\n        - razao_que_ninguem_publica\n",
+      marcador: "Códigos de razão de prontidão divergentes entre openapi.yaml e src/index.ts",
     },
     {
       nome: "valor renomeado em VereditoProntidao (TS) diverge do YAML",
       arquivo: "packages/contratos/src/index.ts",
       de: 'export type VereditoProntidao = "ready" | "degraded" | "not_ready";',
       para: 'export type VereditoProntidao = "ready" | "degradado" | "not_ready";',
+      marcador: "Enum REST divergente entre openapi.yaml e src/index.ts para 'VereditoProntidao'",
     },
     {
       nome: "tupla CODIGOS_RAZAO_PRONTIDAO com um código a menos que o YAML",
       arquivo: "packages/contratos/src/index.ts",
       de: '  "degradation_unsurfaced",\n] as const;',
       para: "] as const;",
+      marcador: "Códigos de razão de prontidão divergentes entre openapi.yaml e src/index.ts",
     },
     {
       nome: "motivo de recusa a mais no contrato, sem par no registro da API",
       arquivo: "packages/contratos/src/index.ts",
       de: '  | "regra_indisponivel";',
       para: '  | "regra_indisponivel"\n  | "motivo_que_o_registro_nao_conhece";',
+      marcador:
+        "Enum de despacho divergente entre o contrato e o registro imutável: 'MotivoRecusaDespacho'",
     },
     {
       nome: "enum ModoDespachoRegra inteiro removido do contrato",
       arquivo: "packages/contratos/src/index.ts",
       de: 'export type ModoDespachoRegra = "sombra" | "acionavel";',
       para: "",
+      marcador: "tipo 'ModoDespachoRegra' não encontrado (ou sem valores)",
     },
     {
       nome: "estado de assinatura renomeado no registro (apps/api/src/regras/tipos.ts)",
       arquivo: "apps/api/src/regras/tipos.ts",
       de: 'export type EstadoAssinatura = "assinatura_verificada" | "assinatura_ausente" | "sem_bundle";',
       para: 'export type EstadoAssinatura = "assinatura_verificada" | "assinatura_faltando" | "sem_bundle";',
+      marcador:
+        "Enum de despacho divergente entre o contrato e o registro imutável: 'EstadoAssinaturaBundle'",
     },
     {
       /**
@@ -1180,6 +1582,8 @@ function autoteste() {
       arquivo: "packages/contratos/openapi.yaml",
       de: "      enum: [sombra, acionavel]\n",
       para: "      enum: [sombra, promovido]\n",
+      marcador:
+        "Enum de despacho divergente entre openapi.yaml e src/index.ts para 'ModoDespachoRegra'",
     },
   ];
 
@@ -1221,18 +1625,21 @@ function autoteste() {
       arquivo: "packages/contratos/asyncapi.yaml",
       de: "conexão observável em vez de invisível (ADR-0011 P5/P10).\n        intervaloPulsacaoMs:",
       para: "conexão observável em vez de invisível (ADR-0011 P5/P10).\n        intervaloPulsacaoMsRenomeado:",
+      marcador: "Propriedades divergentes entre a interface 'MensagemPulsacao'",
     },
     {
       nome: "propriedade acrescentada SÓ na interface PoliticaReconexao do TS (Parte G1)",
       arquivo: "packages/contratos/src/asyncapi.ts",
       de: "  jitter: number;\n}",
       para: "  jitter: number;\n  campoFantasma: string;\n}",
+      marcador: "Propriedades divergentes entre a interface 'PoliticaReconexao'",
     },
     {
       nome: "address do canal fluxoDeEventos renomeado SÓ no YAML (Parte G2)",
       arquivo: "packages/contratos/asyncapi.yaml",
       de: "address: /v1/eventos/stream",
       para: "address: /v1/eventos/stream-renomeado",
+      marcador: "Caminho do canal de eventos divergente",
     },
     {
       /**
@@ -1249,6 +1656,7 @@ function autoteste() {
       arquivo: "packages/contratos/src/asyncapi.ts",
       de: "  jitter: number;\n}",
       para: "  jitter: number;\n  readonly campoFantasmaReadonly: string;\n}",
+      marcador: "campoFantasmaReadonly",
     },
     {
       /**
@@ -1260,6 +1668,7 @@ function autoteste() {
       arquivo: "packages/contratos/src/asyncapi.ts",
       de: "  jitter: number;\n}",
       para: "  jitter: number;\n  readonly campoFantasmaOpcional?: string;\n}",
+      marcador: "campoFantasmaOpcional",
     },
     {
       /**
@@ -1272,6 +1681,7 @@ function autoteste() {
       arquivo: "packages/contratos/src/asyncapi.ts",
       de: "  jitter: number;\n}",
       para: '  jitter: number;\n  "campo-fantasma-citado": string;\n}',
+      marcador: "campo-fantasma-citado",
     },
     {
       /**
@@ -1285,6 +1695,7 @@ function autoteste() {
       arquivo: "packages/contratos/asyncapi.yaml",
       de: "        jitter:\n          type: number",
       para: "        jitterRenomeado:\n          type: number",
+      marcador: "jitterRenomeado",
     },
     {
       /**
@@ -1298,6 +1709,7 @@ function autoteste() {
       arquivo: "packages/contratos/asyncapi.yaml",
       de: "      required: [emitidoEm, estado, cursor, pendentes]",
       para: "      required: [emitidoEm, estado, cursor, pendentes, intervaloPulsacaoMs]",
+      marcador: "Obrigatoriedade divergente entre a interface 'MensagemPulsacao'",
     },
     {
       /**
@@ -1310,14 +1722,211 @@ function autoteste() {
       arquivo: "packages/contratos/asyncapi.yaml",
       de: "      required: [esperaMinimaMs, esperaMaximaMs, jitter]",
       para: "      required: [esperaMinimaMs, esperaMaximaMs]",
+      marcador: "Obrigatoriedade divergente entre a interface 'PoliticaReconexao'",
     },
   ];
 
-  for (const mutacao of [
+  /**
+   * Mutações da Parte G3 — FORMA dos schemas REST. Cada uma foi MEDIDA saindo
+   * exit 0 no gate ANTERIOR (o que só cobria enums REST e a forma das quatro
+   * interfaces AsyncAPI): as catorze eram buraco aberto, não hipótese.
+   *
+   * A bateria cobre deliberadamente as VIZINHAS de cada caso, porque foi a
+   * vizinha que passou da última vez (HOLE-1):
+   *   - o mesmo defeito nos TRÊS estilos de declaração do TS — simples,
+   *     `readonly` (o estilo dominante do repositório e o de
+   *     `ModoDeDespachoAvaliacao`/`ProvenienciaBundlePublicada`) e nome CITADO;
+   *   - nos DOIS lados — campo a mais no TS e propriedade renomeada no YAML;
+   *   - nas DUAS direções de obrigatoriedade — opcional virando `required` e
+   *     obrigatório saindo de `required`;
+   *   - nas DUAS topologias de schema — `properties` direto e composição
+   *     `allOf` (`ItemTrabalho`), incluindo a troca da BASE da composição, que
+   *     nenhuma comparação de forma própria detectaria;
+   *   - e no FECHO (G3d), com um envelope de objeto novo que nasce sem guarda.
+   *
+   * Todas MUTAM IN LOCO ou acrescentam texto que não colide com chave YAML
+   * existente — a lição registrada na Parte F2 (injeção que produzia chave
+   * duplicada e reprovava ANTES da comparação, deixando o caso `ok` pelo
+   * motivo errado). O `marcador` de cada uma é a segunda metade dessa mesma
+   * lição, agora imposta a TODOS os casos desta função.
+   */
+  const mutacoesFormaRest = [
+    {
+      nome: "campo acrescentado SÓ na interface ResultadoAvaliacao do TS (Parte G3a)",
+      arquivo: "packages/contratos/src/index.ts",
+      de: "  despacho?: ModoDeDespachoAvaliacao | null;\n}",
+      para: "  despacho?: ModoDeDespachoAvaliacao | null;\n  campoFantasmaRest: string;\n}",
+      marcador: "Propriedades divergentes entre a interface 'ResultadoAvaliacao'",
+    },
+    {
+      nome: "campo READONLY acrescentado SÓ na interface EntradaGradeLeitos do TS (Parte G3a)",
+      arquivo: "packages/contratos/src/index.ts",
+      de: "  modoAvaliacao?: ModoDeDespachoAvaliacao | null;\n}",
+      para: "  modoAvaliacao?: ModoDeDespachoAvaliacao | null;\n  readonly campoFantasmaReadonly: string;\n}",
+      marcador: "campoFantasmaReadonly",
+    },
+    {
+      nome: "propriedade de nome CITADO acrescentada SÓ na interface ResumoItemTrabalho do TS (Parte G3a)",
+      arquivo: "packages/contratos/src/index.ts",
+      de: "  versao: number;\n}",
+      para: '  versao: number;\n  "campo-rest-citado": string;\n}',
+      marcador: "campo-rest-citado",
+    },
+    {
+      nome: "propriedade renomeada SÓ no schema EntradaGradeLeitos do YAML (Parte G3a — lado espelho)",
+      arquivo: "packages/contratos/openapi.yaml",
+      de: '        frescor:\n          $ref: "#/components/schemas/Frescor"',
+      para: '        frescorRenomeado:\n          $ref: "#/components/schemas/Frescor"',
+      marcador: "Propriedades divergentes entre a interface 'EntradaGradeLeitos'",
+    },
+    {
+      nome: "propriedade renomeada SÓ no schema ModoDeDespachoAvaliacao do YAML (Parte G3a)",
+      arquivo: "packages/contratos/openapi.yaml",
+      de: "        acionavel:\n          type: boolean",
+      para: "        acionavelRenomeado:\n          type: boolean",
+      marcador: "Propriedades divergentes entre a interface 'ModoDeDespachoAvaliacao'",
+    },
+    {
+      nome: "campo READONLY acrescentado SÓ na interface ProvenienciaBundlePublicada do TS (Parte G3a)",
+      arquivo: "packages/contratos/src/index.ts",
+      de: "  readonly ativoDesde: string | null;\n}",
+      para: "  readonly ativoDesde: string | null;\n  readonly campoFantasmaProveniencia: string;\n}",
+      marcador: "campoFantasmaProveniencia",
+    },
+    {
+      /**
+       * G3b na direção que o contrato nomeia como QUEBRA. O conjunto de nomes
+       * continua idêntico dos dois lados — G3a passa, e era exatamente por isso
+       * que este defeito atravessava. `despacho` é o campo que a Onda 1 passou
+       * a consumir: torná-lo obrigatório no documento inverteria a semântica
+       * declarada ("ausente ⇒ NÃO acionável") para respostas antigas.
+       */
+      nome: "campo OPCIONAL no TS declarado obrigatório no YAML (ResultadoAvaliacao.despacho — Parte G3b)",
+      arquivo: "packages/contratos/openapi.yaml",
+      de: "        - parametroVermelho\n        - versaoRegra\n      properties:",
+      para: "        - parametroVermelho\n        - versaoRegra\n        - despacho\n      properties:",
+      marcador: "Obrigatoriedade divergente entre a interface 'ResultadoAvaliacao'",
+    },
+    {
+      nome: "campo OPCIONAL no TS declarado obrigatório no YAML (ContribuicaoParametro.valor — Parte G3b)",
+      arquivo: "packages/contratos/openapi.yaml",
+      de: "      required: [parametro, presente]",
+      para: "      required: [parametro, presente, valor]",
+      marcador: "Obrigatoriedade divergente entre a interface 'ContribuicaoParametro'",
+    },
+    {
+      /**
+       * Direção inversa: campo OBRIGATÓRIO no TS some de `required`. O
+       * documento passa a prometer menos do que o tipo promete, e um consumidor
+       * que confie no YAML aceita envelope de despacho SEM `acionavel` — o
+       * único campo que decide acionabilidade.
+       */
+      nome: "campo OBRIGATÓRIO no TS removido de 'required' no YAML (ModoDeDespachoAvaliacao.acionavel — Parte G3b)",
+      arquivo: "packages/contratos/openapi.yaml",
+      de: "        - desfecho\n        - modo\n        - acionavel\n",
+      para: "        - desfecho\n        - modo\n",
+      marcador: "Obrigatoriedade divergente entre a interface 'ModoDeDespachoAvaliacao'",
+    },
+    {
+      nome: "campo acrescentado SÓ na interface ItemTrabalho do TS (schema com allOf — Parte G3a)",
+      arquivo: "packages/contratos/src/index.ts",
+      de: "  reconhecidoEm?: string;\n}",
+      para: "  reconhecidoEm?: string;\n  campoFantasmaComposto: string;\n}",
+      marcador: "Propriedades divergentes entre a interface 'ItemTrabalho'",
+    },
+    {
+      nome: "propriedade renomeada SÓ no ramo inline do allOf de ItemTrabalho (Parte G3a)",
+      arquivo: "packages/contratos/openapi.yaml",
+      de: "            tenantId:\n              type: string",
+      para: "            tenantIdRenomeado:\n              type: string",
+      marcador: "tenantIdRenomeado",
+    },
+    {
+      /**
+       * G3c. Nenhuma comparação de forma PRÓPRIA detecta isto: os campos
+       * próprios de `ItemTrabalho` continuam idênticos dos dois lados, e só os
+       * HERDADOS passam a vir de outro contrato.
+       */
+      nome: "base do allOf de ItemTrabalho trocada — herança e composição divergem (Parte G3c)",
+      arquivo: "packages/contratos/openapi.yaml",
+      de: '      allOf:\n        - $ref: "#/components/schemas/ResumoItemTrabalho"',
+      para: '      allOf:\n        - $ref: "#/components/schemas/ProblemDetails"',
+      marcador: "Composição divergente da herança",
+    },
+    {
+      /**
+       * G3d. O documento e o contrato podem CONCORDAR entre si e ainda assim
+       * abrir buraco: `despacho` passa a apontar para um envelope novo, com
+       * forma própria, que ninguém guarda. É como a lacuna desta sessão
+       * nasceu — schema de objeto sem par declarado, invisível ao gate.
+       */
+      nome: "ResultadoAvaliacao.despacho aponta para schema de OBJETO sem guarda de forma (Parte G3d)",
+      arquivo: "packages/contratos/openapi.yaml",
+      de: '          oneOf:\n            - $ref: "#/components/schemas/ModoDeDespachoAvaliacao"\n            - type: "null"\n\n    ModoDespachoRegra:',
+      para: '          oneOf:\n            - $ref: "#/components/schemas/EnvelopeSemGuarda"\n            - type: "null"\n\n    EnvelopeSemGuarda:\n      type: object\n      required: [campo]\n      properties:\n        campo:\n          type: string\n\n    ModoDespachoRegra:',
+      marcador: "não é enum nem tipo primitivo e NÃO tem guarda de FORMA",
+    },
+    {
+      /**
+       * O schema simplesmente some do documento. Sem esta mutação, "schema
+       * ausente" seria um ramo de `formaDoSchemaOpenapi` que nenhuma execução
+       * exercita — e ramo não exercitado de gate é código que se acredita, não
+       * que se sabe.
+       */
+      nome: "schema ResumoItemTrabalho renomeado no documento — o par perde o lado YAML (Parte G3)",
+      arquivo: "packages/contratos/openapi.yaml",
+      de: "    ResumoItemTrabalho:\n      type: object\n      required: [id, estado, versao]",
+      para: "    ResumoItemTrabalhoRenomeado:\n      type: object\n      required: [id, estado, versao]",
+      marcador: "schema 'ResumoItemTrabalho' ausente",
+    },
+    /*
+     * OS TRÊS CASOS ABAIXO EXERCITAM OS RAMOS DE TOPOLOGIA INESPERADA de
+     * `formaDoSchemaOpenapi`. Sem eles, cada um seria um caminho do gate que
+     * nunca roda — e ramo de gate que nunca roda é código que se acredita, não
+     * que se sabe. Todos existem por uma razão só: quando a topologia do
+     * documento sai do que esta comparação sabe ler, o gate REPROVA dizendo o
+     * quê, em vez de comparar metade da forma e sair verde.
+     */
+    {
+      nome: "schema ItemTrabalho com 'allOf' E 'properties' de topo — forma repartida (Parte G3)",
+      arquivo: "packages/contratos/openapi.yaml",
+      de: '      allOf:\n        - $ref: "#/components/schemas/ResumoItemTrabalho"',
+      para:
+        "      properties:\n        campoDeTopo:\n          type: string\n" +
+        '      allOf:\n        - $ref: "#/components/schemas/ResumoItemTrabalho"',
+      marcador: "declara 'allOf' E 'properties' de topo",
+    },
+    {
+      nome: "schema ItemTrabalho com TRÊS ramos de 'allOf' — topologia que a comparação não sabe ler (Parte G3)",
+      arquivo: "packages/contratos/openapi.yaml",
+      de: '      allOf:\n        - $ref: "#/components/schemas/ResumoItemTrabalho"',
+      para:
+        "      allOf:\n        - type: object\n          properties:\n            ramoExtra:\n              type: string\n" +
+        '        - $ref: "#/components/schemas/ResumoItemTrabalho"',
+      marcador: "compõe com 3 ramo(s) de 'allOf'",
+    },
+    {
+      /**
+       * A direção inversa da composição: um schema SEM base declarada no par
+       * passa a compor. Ler só `properties` compararia um subconjunto da forma
+       * e aprovaria o resto por omissão — precisamente o modo de falhar que
+       * esta parte do gate existe para não ter.
+       */
+      nome: "schema ResultadoAvaliacao passa a compor com 'allOf' sem base declarada no par (Parte G3)",
+      arquivo: "packages/contratos/openapi.yaml",
+      de: "    ResultadoAvaliacao:\n      type: object\n      required:",
+      para: "    ResultadoAvaliacao:\n      allOf: [{ type: object }]\n      type: object\n      required:",
+      marcador: "não declara interface-base",
+    },
+  ];
+
+  const todasAsMutacoes = [
     ...mutacoesRest,
     ...mutacoesProntidaoEDespacho,
     ...mutacoesFormaDeInterface,
-  ]) {
+    ...mutacoesFormaRest,
+  ];
+  for (const mutacao of todasAsMutacoes) {
     let raizTemp;
     try {
       raizTemp = criarCopiaMutada(RAIZ_PADRAO, [mutacao]);
@@ -1328,10 +1937,32 @@ function autoteste() {
         resultado.falhas.length > 0,
         `${String(resultado.falhas.length)} falha(s)`,
       );
+      // A segunda metade: reprovar não basta, tem de reprovar POR ISTO. Sem
+      // esta asserção, uma mutação que passasse a ser interceptada por outra
+      // parte do gate (parsing, `$ref` que não resolve, chave duplicada)
+      // continuaria `ok` medindo outra coisa — já aconteceu neste arquivo.
+      registrar(
+        `a reprovação NOMEIA o motivo esperado: ${mutacao.nome}`,
+        true,
+        resultado.falhas.some((f) => f.includes(mutacao.marcador)),
+        `esperava conter ${JSON.stringify(mutacao.marcador)}; obtive: ${resultado.falhas.join(" | ").slice(0, 400)}`,
+      );
     } finally {
       if (raizTemp) rmSync(raizTemp, { recursive: true, force: true });
     }
   }
+  // Guarda de não-vacuidade do `marcador`: uma mutação sem marcador declarado
+  // faria `String(undefined)`... ou pior, `f.includes(undefined)` — que é
+  // sempre falso e produziria vermelho confuso. Aqui a ausência é NOMEADA.
+  registrar(
+    "toda mutação declara o marcador do motivo pelo qual deve reprovar",
+    true,
+    todasAsMutacoes.every((m) => typeof m.marcador === "string" && m.marcador.length > 0),
+    todasAsMutacoes
+      .filter((m) => typeof m.marcador !== "string" || m.marcador.length === 0)
+      .map((m) => m.nome)
+      .join(" | "),
+  );
 
   /**
    * A OUTRA DIREÇÃO DE HOLE-1 — e a única que uma bateria só de mutações
@@ -1386,6 +2017,83 @@ function autoteste() {
       );
     } finally {
       if (raizAnotada) rmSync(raizAnotada, { recursive: true, force: true });
+      if (raizIntocada) rmSync(raizIntocada, { recursive: true, force: true });
+    }
+  }
+
+  /**
+   * CONFORMIDADE DA PARTE G3 — a direção que bateria de mutação não alcança.
+   *
+   * As catorze mutações acima provam que o gate REPROVA forma REST divergente.
+   * Nenhuma delas pode provar o simétrico: que ele ACEITA forma REST
+   * conforme escrita em estilo diferente. Foi essa metade que faltou em HOLE-1
+   * e que custou caro — um gate que reprova o correto ensina quem corrige a
+   * apagar a propriedade do documento, isto é, a CRIAR a divergência real.
+   *
+   * `src/index.ts` mistura os três estilos que o extrator precisa aceitar
+   * (medido: 15 propriedades com `readonly` e o resto sem), então cada caso
+   * abaixo reescreve UMA propriedade JÁ conforme no estilo vizinho, sem tocar
+   * o `openapi.yaml`. O documento continua conforme; o gate PRECISA aceitar.
+   *
+   * A segunda asserção de cada caso é a que impede o "verde por checagem
+   * pulada": "0 falhas" é exatamente o que sai quando uma comparação deixou de
+   * rodar. A contagem de verificações da cópia reescrita tem de ser IGUAL à da
+   * intocada — comparação entre duas execuções, jamais número transcrito (a
+   * versão com número mágico deste arquivo quebrou no dia em que foi escrita).
+   */
+  {
+    const reescritasConformes = [
+      {
+        nome: "ResultadoAvaliacao.versaoRegra anotada `readonly` (estilo dominante do repositório)",
+        arquivo: "packages/contratos/src/index.ts",
+        de: "  versaoRegra: string;\n",
+        para: "  readonly versaoRegra: string;\n",
+      },
+      {
+        nome: "ModoDeDespachoAvaliacao.acionavel SEM `readonly` (a vizinha inversa)",
+        arquivo: "packages/contratos/src/index.ts",
+        de: "  readonly acionavel: boolean;\n",
+        para: "  acionavel: boolean;\n",
+      },
+      {
+        nome: "ResumoItemTrabalho.versao com nome CITADO (HOLE-3, direção falso-positivo)",
+        arquivo: "packages/contratos/src/index.ts",
+        de: "  versao: number;\n",
+        para: '  "versao": number;\n',
+      },
+    ];
+    registrar(
+      "há reescritas conformes de forma REST declaradas",
+      true,
+      reescritasConformes.length > 0,
+    );
+
+    let raizIntocada;
+    try {
+      raizIntocada = criarCopiaMutada(RAIZ_PADRAO, []);
+      const intocada = verificarContratos(raizIntocada);
+      for (const reescrita of reescritasConformes) {
+        let raizReescrita;
+        try {
+          raizReescrita = criarCopiaMutada(RAIZ_PADRAO, [reescrita]);
+          const resultado = verificarContratos(raizReescrita);
+          registrar(
+            `forma REST conforme continua ACEITA: ${reescrita.nome}`,
+            0,
+            resultado.falhas.length,
+            resultado.falhas.join(" | "),
+          );
+          registrar(
+            `a cópia reescrita roda o MESMO número de verificações que a intocada: ${reescrita.nome}`,
+            intocada.verificacoes,
+            resultado.verificacoes,
+            `intocada=${String(intocada.verificacoes)} reescrita=${String(resultado.verificacoes)}`,
+          );
+        } finally {
+          if (raizReescrita) rmSync(raizReescrita, { recursive: true, force: true });
+        }
+      }
+    } finally {
       if (raizIntocada) rmSync(raizIntocada, { recursive: true, force: true });
     }
   }
@@ -1533,6 +2241,30 @@ function autoteste() {
     true,
     mutacoesFormaDeInterface.length > 0,
   );
+  registrar(
+    "há mutações de forma de schema REST (Parte G3) declaradas",
+    true,
+    mutacoesFormaRest.length > 0,
+  );
+  // Par repetido em PARES_DE_FORMA_REST infla a contagem de verificações e
+  // esconde um par AUSENTE atrás de um número que parece maior. A asserção é
+  // sobre a lista real (7 entradas hoje), não sobre uma lista vazia.
+  registrar(
+    "PARES_DE_FORMA_REST não repete interface nem schema",
+    true,
+    new Set(PARES_DE_FORMA_REST.map((p) => p.tipoTs)).size === PARES_DE_FORMA_REST.length &&
+      new Set(PARES_DE_FORMA_REST.map((p) => p.schemaOpenapi)).size === PARES_DE_FORMA_REST.length,
+    JSON.stringify(PARES_DE_FORMA_REST.map((p) => p.tipoTs)),
+  );
+  // NÃO existe caso sobre `SCHEMAS_REST_SEM_GUARDA_DE_FORMA`, e a ausência é
+  // deliberada. A lista está VAZIA: qualquer `every`/`for` sobre ela passaria
+  // trivialmente e mediria zero — verde vácuo, que é justamente o que este
+  // autoteste existe para não produzir. O que precisa estar provado é o
+  // MECANISMO, e ele está: a mutação "Parte G3d" acima faz um schema de objeto
+  // ficar sem guarda e o gate REPROVA nomeando-o. LIMITE DECLARADO: o caminho
+  // de DESLIGAMENTO (declarar um nome na lista e ver a falha virar pendência)
+  // não é exercitado, porque a lista é estado do módulo e não conteúdo de
+  // arquivo — `criarCopiaMutada` não a alcança. Está no handoff.
   // A não-vacuidade de `paresDeInterfaceDeMensagem` (Parte G1) NÃO é checada
   // aqui — a variável é local a `verificarContratos` e não está em escopo
   // nesta função. A guarda equivalente já roda DENTRO de `verificarContratos`
@@ -1567,10 +2299,13 @@ function autoteste() {
   }
   console.log(
     `\nautoteste: OK — ${String(casos.length)} casos; o gate aceita o conforme e reprova ` +
-      "cada mutação testada de enum REST, de prontidão, de despacho e de FORMA de interface " +
-      "(Parte G: conjunto de propriedades — inclusive escritas com `readonly` ou nome citado — " +
-      "e obrigatoriedade). NÃO cobre o TIPO da propriedade nem declaração em meio de linha: " +
-      "limites declarados na docstring da Parte G, no topo deste arquivo.",
+      "cada mutação testada de enum REST, de prontidão, de despacho e de FORMA — tanto das " +
+      "interfaces AsyncAPI (Parte G1) quanto dos schemas REST (Parte G3: conjunto de " +
+      "propriedades, obrigatoriedade, composição `allOf`×`extends` e fecho do conjunto " +
+      "guardado), com o MOTIVO de cada reprovação nomeado. NÃO cobre o TIPO da propriedade nem " +
+      "declaração em meio de linha, e não exercita o desligamento por " +
+      "SCHEMAS_REST_SEM_GUARDA_DE_FORMA: limites declarados na docstring da Parte G, no topo " +
+      "deste arquivo.",
   );
   return 0;
 }

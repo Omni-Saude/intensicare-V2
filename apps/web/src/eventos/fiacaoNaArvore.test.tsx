@@ -59,7 +59,7 @@ function item(leitoId: string, apelido: string): ItemGradeLeito {
     avaliacao: {
       estadoAvaliacao: "valida",
       news2Total: 3,
-      bandaRisco: "baixo",
+      bandaRisco: "normal",
       contribuicoes: [],
       insumosAusentes: [],
       insumosVelhos: [],

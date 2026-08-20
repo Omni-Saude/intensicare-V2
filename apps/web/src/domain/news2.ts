@@ -24,11 +24,14 @@
  * Tree-shaking removia a tabela hoje, mas é otimização, não garantia
  * contratual — a aresta de importação existia e nada a impedia de crescer.
  *
- * Faixas de banda de risco (baixo/médio/alto/crítico) são um recorte
- * ILUSTRATIVO em quatro níveis (inspirado na "clear four-tier
- * prioritization" citada no prompt §11), não um limiar clinicamente
- * validado.
+ * As faixas de banda de risco produzidas por `calcularBandaRisco` NÃO são
+ * limiar clinicamente validado. Elas emitem o vocabulário do contrato
+ * (`normal`/`atencao`/`alerta`/`critico`) porque o dublê ocupa o lugar do
+ * backend perante a UI — a justificativa completa, e o que exatamente foi
+ * transcrito do contrato em vez de decidido aqui, está na própria função.
  */
+import type { BandaRisco } from "./estados.js";
+
 /**
  * Marcador de proveniência da tabela ILUSTRATIVA. `../build/guardaArtefatoSintetico.ts`
  * proíbe este literal no pacote de produção — se ele chegar lá, a tela pode
@@ -100,17 +103,46 @@ export function somarPontos(pontos: Array<number | null>): number {
  * Deriva a banda de risco a partir do total e da presença de um único
  * parâmetro "vermelho" (pontuação 3 isolada) — no espírito do NEWS2
  * publicado, que eleva o caso mesmo com total baixo quando um único
- * parâmetro pontua o máximo. Recorte em quatro faixas, ILUSTRATIVO (ver
- * aviso no topo do arquivo).
+ * parâmetro pontua o máximo. ILUSTRATIVO (ver aviso no topo do arquivo);
+ * alimenta APENAS `../api/fixtures.ts`, jamais o caminho de produção.
+ *
+ * POR QUE OS NOMES E OS CORTES MUDARAM NESTA REVISÃO — e o que NÃO foi
+ * decidido aqui.
+ *
+ * O dublê ocupa, para a UI, o lugar do BACKEND: `../api/clienteMock.ts` produz
+ * os mesmos campos que o cliente HTTP real. Desde que `./estados.ts` passou a
+ * fazer alias do vocabulário do contrato, a saída desta função precisa ser
+ * esse vocabulário — senão o dublê exibiria uma escala que o produto não tem.
+ *
+ * A CORRESPONDÊNCIA É TRANSCRITA, NÃO ESCOLHIDA. O contrato declara, verbatim
+ * (`packages/contratos/src/index.ts:207-213`), a ancoragem aos tiers do NEWS2
+ * publicado (RCP 2017 Chart 2): `normal ↔ low`; `atencao ↔ low_medium`
+ * (parâmetro vermelho isolado); `alerta ↔ medium`; `critico ↔ high`. Os cortes
+ * numéricos abaixo (5 e 7) são os MESMOS que esta função já usava; o que
+ * mudou é que:
+ *
+ *   - o tier `atencao` passou a ser DISTINTO de `alerta`. O sinalizador
+ *     `algumParametroPontuouMaximo` sempre foi exatamente o caso que o
+ *     contrato nomeia "parâmetro vermelho isolado"; ele estava misturado com
+ *     total 5-6 numa faixa só, que a escala antiga não sabia separar;
+ *   - a faixa `>= 10` DESAPARECEU. Ela era um quarto nível inventado por este
+ *     arquivo ("recorte ILUSTRATIVO em quatro níveis") sem contraparte no RCP:
+ *     total >= 7 é *high*, e *high* é `critico`. Um nível a menos, não um a
+ *     mais — nenhum caso é rebaixado por esta mudança.
+ *
+ * VALIDATION REQUIRED: nada aqui é limiar clinicamente validado, e nada aqui
+ * ratifica limiar algum. A regra do produto é RULE-NEWS2 0.2.0, calculada pela
+ * API com `@intensicare/kernel-clinico`; se ela e este recorte divergirem, ela
+ * vence e este arquivo está errado por definição.
  */
 export function calcularBandaRisco(
   totalPontos: number,
   algumParametroPontuouMaximo: boolean,
-): "baixo" | "medio" | "alto" | "critico" {
-  if (totalPontos >= 10) return "critico";
-  if (totalPontos >= 7) return "alto";
-  if (totalPontos >= 5 || algumParametroPontuouMaximo) return "medio";
-  return "baixo";
+): BandaRisco {
+  if (totalPontos >= 7) return "critico";
+  if (totalPontos >= 5) return "alerta";
+  if (algumParametroPontuouMaximo) return "atencao";
+  return "normal";
 }
 
 /*

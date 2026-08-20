@@ -150,11 +150,30 @@ function carregarYamlDoPacote(relativo: string): Record<string, unknown> {
   return JSON.parse(execucao.stdout) as Record<string, unknown>;
 }
 
-/** Corpo textual de uma `export interface` do fonte TypeScript. */
+/**
+ * Número de verificações que o gate imprime ao aprovar. `undefined` quando a
+ * saída não é a de aprovação — quem chama precisa distinguir "aprovou com N
+ * checagens" de "não aprovou", e um `0` inventado apagaria a diferença.
+ */
+function contarVerificacoes(saida: string): string | undefined {
+  return /OK — (\d+) verificações/.exec(saida)?.[1];
+}
+
+/**
+ * Corpo textual de uma `export interface` do fonte TypeScript.
+ *
+ * O ramo `extends` acompanha a cópia gêmea de `scripts/check_contratos.mjs`
+ * (as duas precisam ver o mesmo conjunto de interfaces; foi "duas cópias do
+ * mesmo regex, ambas cegas ao mesmo estilo" que produziu HOLE-1). Sem ele,
+ * `export interface X extends Y {` não casa e a interface derivada fica
+ * inteiramente fora da comparação. O grupo capturado continua sendo só o
+ * corpo — as propriedades PRÓPRIAS, sem as herdadas.
+ */
 function corpoDaInterfaceTs(fonte: string, nome: string): string {
-  const encontrado = new RegExp(`export interface ${nome}\\s*\\{([\\s\\S]*?)\\n\\}`, "m").exec(
-    fonte,
-  );
+  const encontrado = new RegExp(
+    `export interface ${nome}(?:\\s+extends\\s+[^{]+)?\\s*\\{([\\s\\S]*?)\\n\\}`,
+    "m",
+  ).exec(fonte);
   if (encontrado?.[1] === undefined) {
     throw new Error(`interface '${nome}' não encontrada em src/asyncapi.ts`);
   }
@@ -616,10 +635,18 @@ describe("caminhos do canal publicados pelo contrato", () => {
 // ---------------------------------------------------------------------------
 
 describe("check_contratos: o gate APROVA os documentos reais", () => {
-  it("passa sobre uma cópia intocada do repositório", () => {
+  /**
+   * `toContain("OK")` sozinho aceitava "OK — 0 verificações": exatamente a
+   * saída de um gate que aprovou sem ter checado nada, que é a forma de verde
+   * vácuo mais cara de encontrar depois. A contagem é LIDA da saída e exigida
+   * positiva — sem número transcrito, que envelheceria a cada checagem nova.
+   */
+  it("passa sobre uma cópia intocada do repositório, tendo de fato verificado algo", () => {
     const { status, saida } = rodarGate(montarRaizTemporaria());
-    expect(saida).toContain("OK");
-    expect(status).toBe(0);
+    expect(status, saida).toBe(0);
+    const verificacoes = contarVerificacoes(saida);
+    expect(verificacoes, `saída sem contagem de verificações: ${saida}`).toBeDefined();
+    expect(Number(verificacoes)).toBeGreaterThan(0);
   }, 60_000);
 
   /**
@@ -711,7 +738,10 @@ describe("check_contratos: o gate REPROVA — a metade que prova que ele serve",
     );
     const { status, saida } = rodarGate(raiz);
     expect(status).toBe(1);
-    expect(saida).toContain("duplicada");
+    // "duplicada" sozinho aceitaria qualquer falha que por acaso contivesse a
+    // palavra. A chave DUPLICADA precisa ser nomeada: é ela que um parser
+    // tolerante engole, e é ela que este caso afirma detectar.
+    expect(saida).toContain("chave YAML duplicada: 'operations'");
   }, 60_000);
 
   it("reprova referência que não resolve", () => {
@@ -724,9 +754,20 @@ describe("check_contratos: o gate REPROVA — a metade que prova que ele serve",
     );
     const { status, saida } = rodarGate(raiz);
     expect(status).toBe(1);
-    expect(saida).toContain("não resolve");
+    expect(saida).toContain("referência não resolve");
+    // Nomear a referência INVENTADA: sem isto, o caso passaria se o gate
+    // reprovasse por qualquer OUTRA referência quebrada do documento.
+    expect(saida).toContain("#/components/schemas/EsquemaQueNaoExiste");
   }, 60_000);
 
+  /**
+   * A asserção era `toMatch(/sem 'payload'|não resolve/)` — uma alternação que
+   * aceitava dois defeitos DIFERENTES como se fossem o mesmo: "mensagem sem
+   * esquema" e "referência quebrada". É a versão-texto de `toThrow()` sem
+   * classe; qualquer futura mutação que quebrasse o `$ref` em vez de remover o
+   * payload manteria o caso verde medindo outra coisa. MEDIDO sobre a mutação
+   * real: uma única falha, "mensagem 'Pulsacao' sem 'payload'".
+   */
   it("reprova mensagem sem payload — mensagem sem esquema não é contrato", () => {
     const raiz = montarRaizTemporaria();
     mutar(raiz, "packages/contratos/asyncapi.yaml", (texto) =>
@@ -734,7 +775,7 @@ describe("check_contratos: o gate REPROVA — a metade que prova que ele serve",
     );
     const { status, saida } = rodarGate(raiz);
     expect(status).toBe(1);
-    expect(saida).toMatch(/sem 'payload'|não resolve/);
+    expect(saida).toContain("mensagem 'Pulsacao' sem 'payload'");
   }, 60_000);
 
   it("reprova vocabulário de plano de controle divergente", () => {
@@ -757,7 +798,9 @@ describe("check_contratos: o gate REPROVA — a metade que prova que ele serve",
     );
     const { status, saida } = rodarGate(raiz);
     expect(status).toBe(1);
-    expect(saida).toContain("proibido");
+    // "proibido" aparece em mais de uma mensagem do gate. O que este caso
+    // afirma é o parâmetro de CONSULTA proibido, e com o nome que foi injetado.
+    expect(saida).toContain("declara o parâmetro de consulta proibido 'token'");
   }, 60_000);
 
   it("reprova esquema de segurança que trafega em query string", () => {
@@ -767,7 +810,10 @@ describe("check_contratos: o gate REPROVA — a metade que prova que ele serve",
     );
     const { status, saida } = rodarGate(raiz);
     expect(status).toBe(1);
-    expect(saida).toContain("query string");
+    // "query string" também sai na checagem de ENDEREÇO de canal e na de
+    // parâmetro de rota — três defeitos distintos com a mesma substring. Este
+    // caso é sobre o ESQUEMA DE SEGURANÇA, e o nomeia.
+    expect(saida).toContain("esquema de segurança 'ticketEfemeroCookie' trafega em query string");
   }, 60_000);
 
   it("reprova divergência do nome do cookie de ticket entre TS e AsyncAPI", () => {
@@ -785,7 +831,11 @@ describe("check_contratos: o gate REPROVA — a metade que prova que ele serve",
     rmSync(join(raiz, "packages/contratos/asyncapi.yaml"));
     const { status, saida } = rodarGate(raiz);
     expect(status).toBe(1);
-    expect(saida).toContain("ausente");
+    // "ausente" é substring de meia dúzia de mensagens deste gate (schema
+    // ausente, enum ausente, bloco ausente, arquivo do catálogo ausente). O
+    // que este caso afirma é o ARQUIVO DE CONTRATO, e qual.
+    expect(saida).toContain("Arquivo de contrato ausente");
+    expect(saida).toContain("packages/contratos/asyncapi.yaml");
   }, 60_000);
 
   /**
@@ -828,13 +878,11 @@ describe("check_contratos: o gate REPROVA — a metade que prova que ele serve",
     // PULADA. A cópia anotada tem de rodar o MESMO número de verificações que
     // a intocada — comparação entre duas execuções, não número transcrito.
     const intocada = rodarGate(montarRaizTemporaria());
-    const contar = (texto: string): string | undefined =>
-      /OK — (\d+) verificações/.exec(texto)?.[1];
     expect(
-      contar(intocada.saida),
+      contarVerificacoes(intocada.saida),
       "não foi possível ler a contagem da execução intocada",
     ).toBeDefined();
-    expect(contar(saida)).toBe(contar(intocada.saida));
+    expect(contarVerificacoes(saida)).toBe(contarVerificacoes(intocada.saida));
   }, 120_000);
 
   /**
@@ -855,4 +903,213 @@ describe("check_contratos: o gate REPROVA — a metade que prova que ele serve",
     expect(status).toBe(1);
     expect(saida).toContain("Obrigatoriedade divergente");
   }, 60_000);
+});
+
+// ---------------------------------------------------------------------------
+// FORMA dos schemas REST — a Parte G aplicada a `openapi.yaml` × `index.ts`
+// ---------------------------------------------------------------------------
+
+/**
+ * ATÉ AQUI, A SUPERFÍCIE REST TINHA GUARDA DE VOCABULÁRIO E NENHUMA DE FORMA.
+ *
+ * A Parte F1 do gate confronta os ENUMS REST (`StatusAvaliacao`, `BandaRisco`,
+ * `Frescor`, `EstadoItemTrabalho`, prontidão) e a Parte G comparava a FORMA de
+ * exatamente quatro interfaces, todas do AsyncAPI. `ResultadoAvaliacao`,
+ * `EntradaGradeLeitos`, `ModoDeDespachoAvaliacao`, `ResumoItemTrabalho` e
+ * `ItemTrabalho` ficavam de fora: um campo acrescentado só de um lado passava.
+ * MEDIDO com o gate anterior sobre cópia mutada — as catorze mutações de forma
+ * REST hoje cobertas saíam TODAS exit 0.
+ *
+ * Importa agora porque `apps/web` passou a CONSUMIR
+ * `ResultadoAvaliacao.despacho` e `EntradaGradeLeitos.modoAvaliacao` — os dois
+ * campos vivem exatamente nos schemas que não tinham guarda.
+ *
+ * Estes casos observam o gate pelo canal INDEPENDENTE do autoteste de
+ * `scripts/check_contratos.mjs`: subprocesso, código de saída e texto em
+ * stderr. O autoteste chama `verificarContratos` em processo e acredita no que
+ * a própria função devolve; aqui a evidência é o binário saindo 1.
+ */
+describe("check_contratos: a FORMA dos schemas REST (Parte G3)", () => {
+  it("reprova campo acrescentado só na interface ResultadoAvaliacao do TS", () => {
+    const raiz = montarRaizTemporaria();
+    mutar(raiz, "packages/contratos/src/index.ts", (texto) =>
+      texto.replace(
+        "  despacho?: ModoDeDespachoAvaliacao | null;\n}",
+        "  despacho?: ModoDeDespachoAvaliacao | null;\n  campoFantasmaRest: string;\n}",
+      ),
+    );
+    const { status, saida } = rodarGate(raiz);
+    expect(status, saida).toBe(1);
+    expect(saida).toContain("Propriedades divergentes entre a interface 'ResultadoAvaliacao'");
+    expect(saida).toContain("campoFantasmaRest");
+  }, 60_000);
+
+  /**
+   * A VIZINHA, no estilo que `src/index.ts` de fato escreve. `readonly` é o
+   * estilo dominante do repositório e o de `ModoDeDespachoAvaliacao` /
+   * `ProvenienciaBundlePublicada` inteiras — um extrator cego a ele aprovaria
+   * campo fantasma justamente nos schemas do envelope de despacho. É a mesma
+   * classe de HOLE-1, agora do lado REST.
+   */
+  it("reprova campo `readonly` acrescentado só na interface EntradaGradeLeitos do TS", () => {
+    const raiz = montarRaizTemporaria();
+    mutar(raiz, "packages/contratos/src/index.ts", (texto) =>
+      texto.replace(
+        "  modoAvaliacao?: ModoDeDespachoAvaliacao | null;\n}",
+        "  modoAvaliacao?: ModoDeDespachoAvaliacao | null;\n  readonly campoFantasmaReadonly: string;\n}",
+      ),
+    );
+    const { status, saida } = rodarGate(raiz);
+    expect(status, saida).toBe(1);
+    expect(saida).toContain("Propriedades divergentes entre a interface 'EntradaGradeLeitos'");
+    expect(saida).toContain("campoFantasmaReadonly");
+  }, 60_000);
+
+  /**
+   * O OUTRO LADO: a propriedade muda só no documento. Renomear em loco mantém
+   * o YAML válido — injetar bloco novo já produziu, neste repositório, caso
+   * verde pelo motivo errado (chave duplicada reprovando antes da comparação).
+   */
+  it("reprova propriedade renomeada só no schema EntradaGradeLeitos do YAML", () => {
+    const raiz = montarRaizTemporaria();
+    mutar(raiz, "packages/contratos/openapi.yaml", (texto) =>
+      texto.replace(
+        '        frescor:\n          $ref: "#/components/schemas/Frescor"',
+        '        frescorRenomeado:\n          $ref: "#/components/schemas/Frescor"',
+      ),
+    );
+    const { status, saida } = rodarGate(raiz);
+    expect(status, saida).toBe(1);
+    expect(saida).toContain("Propriedades divergentes entre a interface 'EntradaGradeLeitos'");
+    expect(saida).toContain("frescorRenomeado");
+  }, 60_000);
+
+  /**
+   * Obrigatoriedade, no campo que a Onda 1 passou a consumir. O CONJUNTO de
+   * nomes continua idêntico dos dois lados — é por isso que este defeito
+   * atravessa uma comparação só de nomes. Tornar `despacho` obrigatório no
+   * documento inverteria a semântica que o próprio contrato declara ("ausente
+   * ou `null` ⇒ modo NÃO registrado ⇒ NÃO acionável") para toda resposta
+   * gravada antes desta versão.
+   */
+  it("reprova ResultadoAvaliacao.despacho — opcional no TS — declarado obrigatório no YAML", () => {
+    const raiz = montarRaizTemporaria();
+    mutar(raiz, "packages/contratos/openapi.yaml", (texto) =>
+      texto.replace(
+        "        - parametroVermelho\n        - versaoRegra\n      properties:",
+        "        - parametroVermelho\n        - versaoRegra\n        - despacho\n      properties:",
+      ),
+    );
+    const { status, saida } = rodarGate(raiz);
+    expect(status, saida).toBe(1);
+    expect(saida).toContain("Obrigatoriedade divergente entre a interface 'ResultadoAvaliacao'");
+  }, 60_000);
+
+  /**
+   * A direção inversa, no único campo que decide acionabilidade. Sem
+   * `acionavel` em `required`, o documento aceita envelope de despacho sem ele
+   * — e um consumidor que confie no documento lê `undefined` onde o contrato
+   * TypeScript promete `boolean`.
+   */
+  it("reprova ModoDeDespachoAvaliacao.acionavel — obrigatório no TS — fora de `required` no YAML", () => {
+    const raiz = montarRaizTemporaria();
+    mutar(raiz, "packages/contratos/openapi.yaml", (texto) =>
+      texto.replace(
+        "        - desfecho\n        - modo\n        - acionavel\n",
+        "        - desfecho\n        - modo\n",
+      ),
+    );
+    const { status, saida } = rodarGate(raiz);
+    expect(status, saida).toBe(1);
+    expect(saida).toContain(
+      "Obrigatoriedade divergente entre a interface 'ModoDeDespachoAvaliacao'",
+    );
+  }, 60_000);
+
+  /**
+   * COMPOSIÇÃO × HERANÇA. `ItemTrabalho` é o único schema do conjunto guardado
+   * que compõe (`allOf`) e a única interface que herda (`extends`). Os campos
+   * PRÓPRIOS continuam idênticos dos dois lados depois desta mutação: nenhuma
+   * comparação de forma própria a detecta. O que muda são os campos HERDADOS,
+   * que passam a vir de outro contrato inteiro.
+   */
+  it("reprova base de composição divergente da herança em ItemTrabalho", () => {
+    const raiz = montarRaizTemporaria();
+    mutar(raiz, "packages/contratos/openapi.yaml", (texto) =>
+      texto.replace(
+        '      allOf:\n        - $ref: "#/components/schemas/ResumoItemTrabalho"',
+        '      allOf:\n        - $ref: "#/components/schemas/ProblemDetails"',
+      ),
+    );
+    const { status, saida } = rodarGate(raiz);
+    expect(status, saida).toBe(1);
+    expect(saida).toContain("Composição divergente da herança");
+    expect(saida).toContain("ItemTrabalho");
+  }, 60_000);
+
+  /**
+   * O FECHO. Aqui o documento e o contrato TypeScript podem CONCORDAR entre si
+   * e a lacuna existir mesmo assim: `despacho` passa a apontar para um envelope
+   * novo, com forma própria, que ninguém guarda. É literalmente como a lacuna
+   * desta sessão nasceu — schema de objeto sem par declarado, invisível a todo
+   * o gate. Sem esta checagem, a lista de pares guardados seria uma escolha sem
+   * invariante, e a próxima ficaria igualmente incompleta em silêncio.
+   */
+  it("reprova schema de OBJETO alcançável a partir de um guardado e sem guarda de forma", () => {
+    const raiz = montarRaizTemporaria();
+    mutar(raiz, "packages/contratos/openapi.yaml", (texto) =>
+      texto.replace(
+        '          oneOf:\n            - $ref: "#/components/schemas/ModoDeDespachoAvaliacao"\n            - type: "null"\n\n    ModoDespachoRegra:',
+        '          oneOf:\n            - $ref: "#/components/schemas/EnvelopeSemGuarda"\n            - type: "null"\n\n    EnvelopeSemGuarda:\n      type: object\n      required: [campo]\n      properties:\n        campo:\n          type: string\n\n    ModoDespachoRegra:',
+      ),
+    );
+    const { status, saida } = rodarGate(raiz);
+    expect(status, saida).toBe(1);
+    expect(saida).toContain("não é enum nem tipo primitivo e NÃO tem guarda de FORMA");
+    expect(saida).toContain("EnvelopeSemGuarda");
+  }, 60_000);
+
+  /**
+   * A DIREÇÃO QUE BATERIA DE MUTAÇÃO NUNCA PEGA — o gate reprovando o CORRETO.
+   *
+   * `src/index.ts` mistura os estilos: `ResultadoAvaliacao` escreve
+   * `versaoRegra: string`, `ModoDeDespachoAvaliacao` escreve `readonly
+   * versaoRegra: string`. Reescrever uma propriedade JÁ conforme no estilo
+   * vizinho não muda o contrato — e o gate PRECISA aceitar. Se reprovasse,
+   * ensinaria quem corrige a apagar a propriedade do `openapi.yaml`, isto é, a
+   * CRIAR a divergência real. Foi assim que HOLE-1 doeu.
+   *
+   * A segunda metade da asserção é a que importa: "0 falhas" é também o que
+   * sai quando uma comparação deixou de rodar. A contagem tem de ser IGUAL à
+   * da cópia intocada — duas execuções comparadas entre si, nunca um número
+   * transcrito.
+   *
+   * AS DUAS METADES FORAM MEDIDAS VERMELHAS, e por motivos DIFERENTES — vale
+   * registrar qual, para ninguém tomar uma pela outra. Com o ramo `readonly`
+   * removido do extrator de `scripts/check_contratos.mjs`:
+   *   - este teste falha na PRIMEIRA asserção (`AssertionError: expected 1 to
+   *     be +0`): o gate passa a REPROVAR a cópia conforme, que é o defeito
+   *     HOLE-1 em si;
+   *   - a asserção de CONTAGEM falha por conta própria no autoteste irmão
+   *     (`node scripts/check_contratos.mjs autoteste`, caso
+   *     "ModoDeDespachoAvaliacao.acionavel SEM `readonly`"): intocada=254,
+   *     reescrita=256. Ali as duas execuções divergem em número de checagens
+   *     sem que "0 falhas" seja violado do lado que importa — que é exatamente
+   *     a classe de defeito que a contagem existe para pegar.
+   */
+  it("ACEITA propriedade REST conforme reescrita com `readonly`, com a MESMA contagem", () => {
+    const raiz = montarRaizTemporaria();
+    mutar(raiz, "packages/contratos/src/index.ts", (texto) =>
+      texto.replace("  versaoRegra: string;\n", "  readonly versaoRegra: string;\n"),
+    );
+    const { status, saida } = rodarGate(raiz);
+    expect(status, saida).toBe(0);
+
+    const intocada = rodarGate(montarRaizTemporaria());
+    expect(
+      contarVerificacoes(intocada.saida),
+      "não foi possível ler a contagem da execução intocada",
+    ).toBeDefined();
+    expect(contarVerificacoes(saida)).toBe(contarVerificacoes(intocada.saida));
+  }, 120_000);
 });

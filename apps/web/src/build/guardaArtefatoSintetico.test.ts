@@ -1,3 +1,7 @@
+// @vitest-environment node
+// Este arquivo não toca DOM em NENHUM módulo do seu grafo (verificado). Em
+// jsdom ele custava a construção de um ambiente inteiro sem usá-lo — ver a
+// nota "CUSTO DE AMBIENTE" em `apps/web/vitest.config.ts`.
 /**
  * Testes da guarda de bundle. Ela é PURA de propósito: a lógica que decide o
  * que reprova um build de produção precisa ser exercitável sem rodar um build.

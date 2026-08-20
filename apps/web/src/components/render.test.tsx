@@ -42,7 +42,7 @@ const alertaPendente: Alerta = {
   alertaId: "SYNTH-ALERTA-TESTE-1",
   leitoId: "Leito 01",
   pacienteRef: "amh:psr:v1:SYNTH-teste",
-  severidade: "alto",
+  severidade: "alerta",
   descricao: "Descrição sintética de teste.",
   criadoEm: "2026-08-16T10:00:00Z",
   estado: "nao_atribuido",
@@ -64,7 +64,7 @@ const itemLeitoCompleto: ItemGradeLeito = {
   avaliacao: {
     estadoAvaliacao: "valida",
     news2Total: 2,
-    bandaRisco: "baixo",
+    bandaRisco: "normal",
     contribuicoes: [
       {
         parametro: "frequencia_respiratoria",
@@ -215,7 +215,7 @@ describe("CartaoLeito", () => {
     expect(html).toMatch(/Leito 01/);
     expect(html).toMatch(/Paciente SYNTH-teste/);
     expect(html).toMatch(/NEWS2/);
-    expect(html).toMatch(/Risco baixo/);
+    expect(html).toMatch(/Banda de risco: normal/);
     expect(html).toMatch(/badge-tom--positivo/);
   });
 
@@ -357,7 +357,7 @@ describe("PainelAlertas", () => {
         tituloRegiao="Teste"
       />,
     );
-    expect(html).toMatch(/Risco alto/);
+    expect(html).toMatch(/Banda de risco: alerta/);
     expect(html).toMatch(/Reconhecer alerta/);
   });
 });

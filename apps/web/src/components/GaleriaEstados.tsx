@@ -198,7 +198,7 @@ export function GaleriaEstados() {
       <Familia
         titulo="6. Sessão"
         idSecao="galeria-sessao"
-        nota="Originada no provedor de sessão (ADR-0015, `not-started`). `trabalho_nao_salvo_protegido` declara preservação e reapresentação para confirmação — jamais reenvio automático (ADR-0009 W2)."
+        nota="Originada no provedor de sessão (ADR-0015 tem direção aceita (GDEC-0016), mas nenhum IdP real foi contratado). `trabalho_nao_salvo_protegido` declara preservação e reapresentação para confirmação — jamais reenvio automático (ADR-0009 W2)."
         valores={SESSAO}
         traduzir={textoSessao}
       />

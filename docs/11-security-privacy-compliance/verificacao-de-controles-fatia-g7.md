@@ -37,12 +37,14 @@ links:
   pr: null
 supersedes: null
 superseded_by: null
-last_updated: 2026-08-18
+last_updated: 2026-08-19
 addenda:
   - "§8 (2026-08-18): janela de DDL das migrações 0005/0006"
   - "§9 (2026-08-18): ACH-O3-1, ABERTO"
   - "§9.1 (2026-08-18): emenda datada — alcance de ACH-O3-1 estava subdimensionado; continua ABERTO"
   - "§10 (2026-08-18): quarta onda adversarial — ACH-O3-3/4/5/7 FECHADOS, ACH-O3-8/15 ABERTOS"
+  - "§4.1, linha SEC-0004 (2026-08-19): correção de citação cruzada — ADR-0015 não está mais not-started (direção aceita GDEC-0016; minuta materializada GDEC-0015); o stub de apps/api/src/auth.ts continua forjável, sem mudança de código"
+  - "§10.7 (2026-08-19): correção de contagem — check_contratos passou de 209 para 258 verificações e o autoteste de 35 para 99 casos (Parte G3 acrescentada, comparação de forma dos schemas REST); números históricos de 2026-08-18 preservados, não reescritos"
 ---
 
 # Verificação de controles na fatia sintética G7
@@ -140,7 +142,7 @@ isso é dívida desta rodada, não limite da fatia.
 
 | Controle | O que exige | Por que a fatia sintética não pode verificar | O que produziria a evidência |
 |---|---|---|---|
-| **SEC-0004** | Validação de token contra chave confiável fixada (`iss`/`aud`/`exp`/`nbf`/`sub`/tenant), **sem caminho de fallback** | Não existe validação: `apps/api/src/auth.ts` é um stub declarado — reconhece a **forma** `SYNTH-TOKEN.<tenant>.<ator>` e nada mais. Não há assinatura, emissor, expiração nem revogação. **Qualquer chamador pode forjar o token de qualquer tenant.** ADR-0015 está `not-started` | ADR-0015/ADR-0016 aceitos e implementados; teste de fallback negativo (falha de JWKS ⇒ nega) sob THR-0021/THR-0022 |
+| **SEC-0004** | Validação de token contra chave confiável fixada (`iss`/`aud`/`exp`/`nbf`/`sub`/tenant), **sem caminho de fallback** | Não existe validação: `apps/api/src/auth.ts` é um stub declarado — reconhece a **forma** `SYNTH-TOKEN.<tenant>.<ator>` e nada mais. Não há assinatura, emissor, expiração nem revogação. **Qualquer chamador pode forjar o token de qualquer tenant.** ADR-0015 está `not-started` (nota de correção 2026-08-19 logo após esta tabela) | ADR-0015/ADR-0016 aceitos e implementados (nota de correção 2026-08-19); teste de fallback negativo (falha de JWKS ⇒ nega) sob THR-0021/THR-0022 |
 | **SEC-0005**, **SEC-0007**, **SEC-0008** | Higiene de sessão/token; *break-glass* governado; revisão de acesso e ciclo entra/move/sai | Não existe sessão, nem diretório de identidade, nem papel humano no sistema | Plataforma de identidade escolhida e operada |
 | **SEC-0006**, **THR-0026** | Identidade de carga de trabalho distinta da de usuário; delegação carrega contexto | Não existe chamada serviço-a-serviço nesta fatia: um processo, um banco embutido | Topologia multi-serviço com identidade de carga verificável |
 | **SEC-0011** | Criptografia em trânsito com par verificado | Não há transporte: os testes usam `app.inject()`, sem socket, sem TLS | Ambiente *production-like* + verificação de certificado/mTLS |
@@ -162,6 +164,19 @@ isso é dívida desta rodada, não limite da fatia.
 | **SAF-0033**, **THR-0046** | Verificação contínua de aptidão sobre fonte ao vivo | Não há fonte ao vivo: todos os dados são fixtures sintéticas | Integração AMH em ambiente *production-like* |
 | **SAF-0034** | Anúncio acessível e sinalização não visual de mudança de estado clínico | Superfície de UI, fora do escopo destes dois pacotes | Testes de componente + verificação de acessibilidade |
 | **SAF-0037**, **SAF-0030**, **DEC-G0-02**, **MG-G6** | Independência como controle de processo; gate que valida zero casos FALHA; verificador terceiro; aceite nominal | **Nenhum teste pode verificar a própria independência de quem o escreveu.** Este é o limite estrutural desta rodada inteira | Verificador terceiro nomeado + aceite humano registrado com regra de supersessão |
+
+> **Correção (2026-08-19, especialista de consistência documental e
+> rastreabilidade).** Linha `SEC-0004` acima: `ADR-0015` não está mais
+> `not-started` — a direção (Opção A) foi aceita pelo titular em `GDEC-0016`
+> (2026-08-16) e a minuta foi materializada no mesmo dia (`GDEC-0015`;
+> `adr-index.md:106`). O que continua verdadeiro e não muda com esta
+> correção: **nenhum código de verificação real existe** —
+> `apps/api/src/auth.ts` continua sendo o stub descrito, forjável por
+> qualquer chamador; "aceito" não é "implementado" (`adr-index.md` §2.1). A
+> coluna "O que produziria a evidência" já apontava corretamente que
+> ADR-0015/ADR-0016 precisam estar **implementados**; o que estava
+> desatualizado era só o bookkeeping da aceitação de direção, hoje
+> satisfeita.
 
 ### 4.2 Verificável em princípio — NÃO verificado nesta rodada (dívida declarada)
 
@@ -775,6 +790,23 @@ resultado também é **209** — logo a divergência **não** foi introduzida pe
 edições de `docs/**` desta rodada. Nenhuma autoridade é necessária para
 dispor deste item; ele fica registrado para que o próximo leitor não trate
 "208" como o número corrente.
+
+> **Correção (2026-08-19, especialista de consistência documental e
+> rastreabilidade).** A tabela e o parágrafo acima registram os números sob
+> os quais este adendo foi escrito (2026-08-18) e **permanecem como estavam**
+> — não são reescritos; é o registro histórico correto para aquela data.
+> Desde então, `scripts/check_contratos.mjs` ganhou a Parte G3 (comparação da
+> FORMA dos schemas REST, não só dos enums — sete pares interface×schema,
+> `ADR-0021`), e a contagem cresceu de novo por motivo **legítimo e
+> nomeado**, não por deriva silenciosa. Medido por este agente, executando
+> diretamente `node scripts/check_contratos.mjs` e
+> `node scripts/check_contratos.mjs autoteste` sobre o working tree desta
+> data: **258 verificações** (`0 pendência(s) declarada(s)`, exit 0) e **99
+> casos** de autoteste — não mais 209/35. Nenhuma alegação deste documento
+> depende do número exato (mesma nota do parágrafo acima); nenhum gate foi
+> aprovado por esta correção. Quem procurar "209" ou "35 casos" como o valor
+> **corrente** deve ler **258**/**99**; "209"/"35" seguem corretos apenas
+> como o registro histórico de 2026-08-18.
 
 ### 10.8 Provenance deste adendo
 

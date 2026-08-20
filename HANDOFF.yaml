@@ -1042,6 +1042,93 @@ ondas_3_e_4_2026_08_18:
     Estado factual duro INALTERADO: 0 vias acionaveis, 47/47 inelegiveis,
     Observation nao consumivel, safety case M0, nenhum dado real acessado.
 
+lacunas_de_escopo_2026_08_20:
+  aviso: >-
+    ESTADO VIVO E MAIS RECENTE. Supersede ondas_3_e_4_2026_08_18 no que toca ao
+    codigo. As secoes anteriores NAO foram reescritas: seus numeros eram
+    corretos quando escritos. Estado factual duro INALTERADO.
+  branch: main
+  metodo: >-
+    Analise de causa-raiz das 6 lacunas de escopo e dos 8 atos humanos, MEDIDA
+    contra o codigo atual e nao contra o documento que as nomeou. Quatro
+    diagnosticos estavam errados por isso.
+
+  diagnosticos_que_a_medicao_derrubou:
+    LAC_L2: "O registro dizia 'nao cabe em apps/web, exige o backend publicar'. O backend JA publicava; era omissao de 2 mapeadores no cliente."
+    selo_de_frescor: "Registrado como decisao humana (aceitar × mudar contrato). FALSO DILEMA: a projecao ja publica `frescor`; o cliente descartava e recalculava de lista VAZIA. Era defeito, ADR-0011 P7."
+    LAC_L6: "Recusa em bloco dos 6 comandos era ampla demais. So `suppress` (W7), `override` (W8) e `escalate` (W5) tem bloqueador citado; assign/resolve/reopen nao."
+    LAC_L8: "Nao era 'vai virar problema': `clienteHttp.ts` e `DetalhePaciente.tsx` ja importavam o modulo ilustrativo. MAS a tabela NAO entrava no bundle (tree-shaking) — o risco real era a aresta sustentada so por otimizacao."
+    WCAG_2_4_11: "A nota da matriz descrevia um risco que o CSS nao realiza: o banner e' `position: static`, sem z-index, e sai da viewport ao rolar."
+
+  onda_1_mesclada_PR_10: >-
+    Seis defeitos medidos: LAC-L2 (selo de despacho derivado do campo do
+    servidor, fail-closed em `null`), frescor da grade, LAC-L8 (teste de GRAFO
+    DE IMPORTACAO + marcador de bundle — o grep no artefato sozinho e' vacuo
+    contra vazamento tree-shaken), WCAG 2.4.11, Intl para instantes ISO. E o
+    achado que nenhum verificador de contraste pegaria: no tema escuro os selos
+    invertiam a SALIENCIA — `critico` caia a 1,47:1 contra o cartao enquanto os
+    benignos subiam a ~14:1. O selo do estado mais grave era o MENOS visivel.
+
+  onda_2: >-
+    BandaRisco adota os identificadores do contrato e `mapearBanda` foi apagado
+    — a tela dizia "alto" onde a regra dizia *medium* (RCP 2017). O TOM foi
+    medido e esta' INALTERADO: o defeito era so de texto. Parte G3 do gate passa
+    a confrontar a FORMA dos schemas REST, com invariante de FECHO por `$ref`
+    (criterio declaravel, em vez de lista arbitraria). ADR-0015 e ADR-0016
+    reconciliadas — a deriva era o ADR citando o indice, nao o indice. Criterios
+    de aceite de WCAG 2.2.1 pre-estagiados como PROPOSAL.
+
+  ACH_O3_17: >-
+    ACHADO NOVO E GRAVE, sobre o proprio gate. `pnpm -r run test -- --run`
+    executa `vitest -- --run`, e o cac TRUNCA argv no primeiro `--`. Provado:
+    `vitest -- --version` RODA a suite em vez de imprimir a versao. Como
+    `watch: !isCI && isTTY && !isAgent`, num terminal HUMANO o passo `test`
+    entrava em watch e `check:generated`, `check:contratos`, `check:docs` e
+    `check:forbidden` NUNCA rodavam. So passava para agente porque `CLAUDECODE`
+    (e tambem `AI_AGENT`) zeram `isAgent`. FECHADO nos 11 package.json, na ordem
+    segura (pacotes primeiro, raiz depois), com o passo intermediario MEDIDO.
+    O que mais importa: o gate consertado voltou a saber ficar VERMELHO — antes,
+    falha e sucesso eram indistinguiveis para um humano, porque ambos travavam.
+
+  tres_vacuidades_fechadas:
+    - "verificarAxe assertava `violations === []` sem garantir que o axe avaliou algo. Sobre container vazio, `passes.length` tambem e' 0 — VERDE SOBRE ZERO EVIDENCIA, sustentando 6 casos de axe."
+    - "recargaAutoritativa.test.tsx esperava o rotulo EXISTIR, mas ele existe tambem em `sem_leitura`. Ancora fraca em 3 lugares."
+    - "Nenhuma das 21 mutacoes do autoteste do gate afirmava o MOTIVO da reprovacao — a versao-gate de `.rejects.toThrow()` sem classe. Hoje as 37 nomeiam."
+
+  custo_de_ambiente: >-
+    Metade do tempo de trabalhador da suite de apps/web era CONSTRUIR JSDOM:
+    85,04 s de CPU para 21,36 s de parede. Vinte arquivos sem qualquer global de
+    DOM no grafo transitivo passaram a `environment: node` — environment caiu
+    70% e a parede 51%, com os mesmos 549 testes verdes.
+
+  verificacao_maquina_ociosa:
+    pnpm_verify: "exit 0 — 1.973 passed | 1 skipped (carga 2,89)"
+    e2e_navegador: "57/57 — `cd apps/web && pnpm exec playwright test --workers=1`"
+    check_contratos: "258 verificacoes + autoteste 99 casos"
+    unico_pulado: "apps/api/src/db.test.ts, condicionado a PG_TEST_URL. Avisa em stderr e vira falha dura sob IC_FRONTEIRA_PG=obrigatoria — NAO e' P0 escondido."
+
+  ABERTO_e_honesto:
+    margem_de_render: >-
+      O flake de navegacao.test.tsx NAO esta fechado. Distribuicao medida
+      (n=10): 9 de 10 execucoes ACIMA de 1000 ms; o `findByRole` mediu 1002 ms
+      numa execucao que PASSOU. A margem hoje e' ~1,0-1,1×. Fechar de verdade
+      exige atacar os ~146 ms que o pipeline de render leva JA OCIOSO — codigo
+      de PRODUCAO (useRecursoRemoto/GradeLeitos), nao teste. Margem sugerida
+      pelo especialista: &gt;=5× (consulta &lt;=200 ms), porque um runner de CI 3-4×
+      mais lento e' plausivel. SUBIR O TIMEOUT E' PROIBIDO: o penhasco
+      continuaria 50 ms adiante. Vizinhos na mesma classe, medidos e NAO lentos
+      isolados: acessibilidade.test.tsx `grade de leitos carregada` (239 ms
+      isolado / 793 ms sob a suite) e `galeria` (188 / 710 ms).
+    residuo_de_ACH_O3_17: "`pnpm test <arquivo>` volta a filtrar, mas `pnpm test -- <arquivo>` continua descartando o filtro. Interacao pnpm×vitest. Efeito hoje e' ergonomico — o CI usa `pnpm verify`, que nao passa `--`."
+    ADR_0011_e_ADR_0012: "Ambas tem a mesma alegacao obsoleta sobre ADR-0016 que ADR-0015 tinha, MAS dentro do estado de uma CONDICAO. Julgar se a evidencia-alvo da condicao esta satisfeita e' do dono da ADR, nao bookkeeping. Nao tocadas de proposito."
+    LAC_L3_nao_fecha: "A divergencia de BandaRisco fechou; a ausencia de geracao de codigo e a divergencia de Frescor (3 no contrato × 9 na UI) seguem abertas."
+
+  nada_foi_declarado: >-
+    Nenhum gate aprovado, nenhum MG-* satisfeito, nenhum hazard fechado.
+    declaracaoDeAcessibilidade() segue NAO VALIDADA; VAL-0033 segue ato humano.
+    Estado factual duro INALTERADO: 0 vias acionaveis, 47/47 inelegiveis,
+    Observation nao consumivel, safety case M0, nenhum dado real acessado.
+
 rules_for_any_resuming_agent:
   - Read docs/00-governance/evidence-notation.md before writing anything; front-matter is CI-enforced
   - Never name an owner, mark DECIDED, accept a risk, or resolve a contradiction — humans do that
