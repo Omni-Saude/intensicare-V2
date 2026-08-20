@@ -1,196 +1,193 @@
-# Encargo — o que a onda 4 derrubou, e o que ficou de pé
+# Encargo — a margem que falta, o vocabulário que espera ratificação
 
-**Escrito em** 2026-08-18, ao fim das ondas 3 e 4.
-**Branch** `codex/lacunas-frontend-a11y`. **PR #8 aberto e NÃO mesclado.**
-**`main`** = `7eef8c0`. Nada foi mesclado; merge é ato do titular (`GDEC-0014`).
+**Escrito em** 2026-08-20, ao fim das ondas de lacunas de escopo.
+**`main` = `d1bbde6`.** Tudo mesclado (PR #10, PR #11). Repositório com **uma
+única branch**; árvore limpa.
 
 ---
 
 ## 0. Leia primeiro, nesta ordem
 
-1. `HANDOFF.yaml`, seção **`ondas_3_e_4_2026_08_18`** — é o estado vivo e
-   supersede tudo o que veio antes no que toca ao código. As seções anteriores
-   **não** foram reescritas: os números delas eram corretos quando escritos.
-2. `.claude/CONTRATO-DE-AGENTES.md` e `.claude/agents/`.
-3. Os registros de `ACH-O3-1` a `ACH-O3-16` em `docs/**`.
+1. `HANDOFF.yaml`, seção **`lacunas_de_escopo_2026_08_20`** — estado vivo.
+   As seções anteriores **não** foram reescritas.
+2. `.claude/CONTRATO-DE-AGENTES.md` — §7 tem a baseline **corrigida** (dizia
+   1.026 e era lida por todo especialista antes de editar).
+3. Os registros de `ACH-O3-1` a `ACH-O3-17` em `docs/**`.
 
-> **Este arquivo é ROLANTE.** Ele carrega sempre o encargo da PRÓXIMA sessão, e
-> é reescrito ao fim de cada uma. O encargo que a sessão anterior executou está
-> arquivado, íntegro e sob nome datado, em
-> **`ENCARGO_ONDAS_3_E_4_2026-08-18.md`** — leia-o se precisar saber o que foi
-> pedido, e não só o que foi entregue. Ao encerrar a sua sessão, **arquive este
-> arquivo do mesmo modo antes de sobrescrevê-lo**: o `git log` guarda a versão
-> antiga, mas quem lê a árvore de trabalho não a vê, e foi assim que a fronteira
-> entre "o que foi pedido" e "o que se pede agora" quase se perdeu.
+> **Este arquivo é ROLANTE.** Arquive-o sob nome datado antes de sobrescrever —
+> precedentes: `ENCARGO_ONDAS_3_E_4_2026-08-18.md` e
+> `ENCARGO_LACUNAS_DE_ESCOPO_2026-08-20.md`.
 
-## 1. As duas regras que mais economizam tempo aqui
+## 1. As regras que mais economizam tempo aqui
 
-**Nunca rode `pnpm verify` com outro trabalho em curso.** Um sozinho leva esta
-máquina a load ~28; com quatro agentes em paralelo eu medi **76**. Confira
-`uptime` (média de 5 min < 4) **antes** de concluir de um vermelho.
+**Nunca meça exit code através de um pipe.** `| tail` devolve o exit do `tail`.
+Eu quase reportei verde uma `verify` reprovada por isso.
 
-**Nunca meça exit code através de um pipe.** `pnpm verify | tail` devolve o exit
-do `tail`. Eu li "exit 0" e quase reportei verde uma `verify` que havia
-**reprovado** por formatação. E note: `pnpm lint` da raiz é
-`biome ci --error-on-warnings .` e cobre **formatação** — um agente que roda
-`biome check <caminhos>` não vê isso.
+**A heurística de esperar `load5 < 4` tem um limite**: ela presume que a carga
+vem dos seus testes. Se vier de outro app — ou de um processo pendurado — o laço
+espera para sempre. **Confira o que está consumindo CPU antes de esperar.** Nesta
+sessão havia um `biome __run` travado há **dois dias** a 97%.
 
-**Antes de qualquer execução alvo:** `pnpm --filter @intensicare/contratos build`.
-`apps/api` e `apps/web` resolvem o contrato por `dist/`; sem rebuild você vê ~33
-vermelhos com mensagem que não aponta a causa.
+**Não meça em sequência.** Eu deixei a carga ir de 4,8 a 26,9 rodando suítes
+seguidas e perdi a capacidade de distinguir contenção de defeito. Espere esfriar.
+
+**Antes de execução alvo:** `pnpm --filter @intensicare/contratos build`.
 
 ---
 
-## 2. O que a onda 4 provou sobre método — leia antes de escrever qualquer teste
+## 2. O que a última rodada provou sobre método
 
-Três revisores adversariais com lentes distintas, somente leitura, contra árvore
-congelada. **Os três refutaram.** 25 achados numa branch com `pnpm verify` exit 0.
+### 2.1 Mutação prova que um gate REPROVA o errado. Nunca que ACEITA o certo
 
-### 2.1 Mutação prova que um gate REPROVA o errado. Nunca que ele ACEITA o certo.
+O extrator da Parte G era cego a `readonly`, e a direção pior — **fazer o gate
+reprovar documento correto** — nenhuma bateria de mutação pegaria. Todo gate
+precisa de bloco de **conformidade**, não só de mutação.
 
-O extrator da Parte G do gate de contrato era cego a `readonly` — milhares de
-ocorrências no repositório, **zero** no único arquivo contra o qual foi testado.
-A direção conhecida (propriedade `readonly` só de um lado passa) já era ruim. A
-outra é pior e **nenhuma bateria de mutação a pegaria**: anotar `readonly` numa
-propriedade **já conforme** fazia o gate **reprovar documento correto**, e o
-conserto natural de quem lesse a falha era apagar a propriedade do YAML — **o
-gate ensinava a criar a divergência que existe para impedir.**
+### 2.2 Um gate pode não terminar, e ninguém percebe (`ACH-O3-17`)
 
-Todo gate precisa de um bloco de **conformidade** ("a entrada correta continua
-sendo aceita, e roda o mesmo número de verificações"), não só de mutação.
+`pnpm -r run test -- --run` virava `vitest -- --run`; o cac **trunca argv no
+`--`**. Num terminal humano o passo `test` entrava em **watch** e os quatro
+últimos gates **nunca rodavam**. Passava para agente porque `CLAUDECODE` — e
+também `AI_AGENT` — zeram `isAgent`. O conserto devolveu algo mais importante
+que o verde: **o vermelho voltou a ser observável.** Antes, falha e sucesso
+travavam igual.
 
-### 2.2 Uma tripwire pode estar testando a imaginação do autor
+### 2.3 Teste de ausência sem âncora positiva é verde sobre nada
 
-`expect(JSON.stringify(saneado)).not.toContain('"acionavel":true')` parecia
-guarda forte. Passava porque a forja do autor punha o campo **dentro** de
-`despacho`. No **topo**, atravessava — código e asserção juntos. A correção certa
-foi enumerar **17 posições** de injeção, cada uma com âncora própria, com e sem
-autoridade, mais varredura recursiva.
+`verificarAxe` assertava `violations === []`. Sobre container vazio,
+`passes.length` também é 0 — a asserção passava medindo **zero**, e seis casos
+de axe dependiam dela.
 
-### 2.3 Uma guarda pode ser invisível à suíte inteira
+### 2.4 Meça antes de diagnosticar
 
-Duas das três guardas fail-closed de `lerModoDeDespacho` podiam ser **removidas**
-com os 387 testes de `apps/api` **verdes** — porque todo vetor carregava
-`assinatura_verificada` e só a terceira guarda decidia. Ao provar não-vacuidade,
-**mute também a vizinha óbvia**, não só a que confirma sua hipótese.
-
-### 2.4 Fiar código morto é o que revela defeito
-
-O transporte SSE tinha **80 testes verdes e zero consumidores**. Foi a fiação —
-não mais teste do módulo isolado — que expôs três defeitos, o pior deles: um
-`EventSource` ausente derrubava a aplicação inteira e levava junto o **polling**,
-que é o caminho de verdade de `ADR-0011` P8 e não depende de push.
+**Quatro dos cinco diagnósticos herdados estavam errados** porque o código mudara
+sob eles. E três hipóteses minhas foram refutadas por medição: a tabela
+ilustrativa **não** entrava no bundle (tree-shaking); os selos escuros **não**
+violavam 1.4.3 (era inversão de saliência, pior e invisível ao axe); o flake
+**não** era poluição de estado (era um penhasco de 50 ms).
 
 ---
 
 ## 3. O que continua ABERTO
 
+### A margem de render — o item mais concreto
+
+O flake de `apps/web/src/roteamento/navegacao.test.tsx` **não fechou**.
+Distribuição medida (n=10): **9 de 10 execuções acima de 1000 ms**; o
+`findByRole` mediu **1002 ms numa execução que passou**. Margem hoje ~1,0–1,1×.
+
+O custo de ambiente já caiu 70% (20 arquivos foram para `environment: node`), o
+que ajudou mas **não afasta da parede**. Fechar exige atacar os **~146 ms que o
+pipeline de render leva já ocioso** — `useRecursoRemoto`/`GradeLeitos`, **código
+de produção**. Margem sugerida: **≥5×** (consulta ≤200 ms), porque um runner de
+CI 3–4× mais lento é plausível.
+
+**Subir `asyncUtilTimeout` é proibido** — o penhasco continuaria 50 ms adiante.
+
+Vizinhos na mesma classe, medidos e **não lentos isolados**:
+`acessibilidade.test.tsx :: grade de leitos carregada` (239 ms isolado / 793 ms
+sob a suíte) e `:: galeria` (188 / 710 ms).
+
+Vale tratar como pergunta de UI antes de teste: **por que renderizar 48 nós leva
+146 ms numa tela clínica?**
+
 ### `ACH-O3-1` (P1) — integridade do registro persistido
 
-**Alcance corrigido, e é maior do que a versão anterior dizia.** Não é "fabrica
-só um escore". Quem escreve em `evaluation_records` no escopo do tenant:
-**oculta deterioração** (11/`critico` → 0/`normal` mantendo `statusAvaliacao:
-"valido"` e `frescor: "atual"`), **substitui o item de trabalho**, e
-`explicacao`/`anotacoes`/`motivos` **são renderizados** — o atacante escreve
-prosa em português na tela do intensivista.
+A allow-list filtra por **CHAVE**, não por **VALOR**. Há teste que afirma isso.
+**Quando alguém estender a valores, essa asserção precisa ser INVERTIDA para
+provar o fecho — nunca enfraquecida.** Ligado a `ADR-0007` C5.
 
-A allow-list que fechou `ACH-O3-5` filtra por **CHAVE**, não por **VALOR**. Há
-teste que afirma isso explicitamente. **Quando alguém estender a filtragem a
-valores, essa asserção precisa ser INVERTIDA para provar o fecho — nunca
-enfraquecida nem removida.**
+### `ACH-O3-15`, `ACH-O3-16`, `ACH-O3-6`, `ACH-O3-8`
 
-Fechar exige assinatura/HMAC/digest de linha em `packages/persistencia`, e
-provavelmente a mesma custódia de chave que `ADR-0007` C5 mantém aberta.
+Recusa legítima nunca concilia (exige desenho); catálogo §5.2 já diverge do
+código (**não copie dele** ao tipar `dados`); `sequencia` negativa fechada mas
+tipar `dados` aberto; cursor `bigserial` global mede escrita de outros tenants.
 
-### `ACH-O3-15` (novo, pré-existente) — recusa legítima nunca concilia
+### `LAC-L3` — fechou só metade
 
-`desfecho: "nao_avaliada"` com `modo: null` **nunca** concilia com autoridade,
-porque a conciliação exige `modoAlegado === entrada.modo` e esse é sempre
-`sombra`/`acionavel`. Resultado: despacho recusado publica `null` em vez do
-envelope com `motivoRecusa` visível. Direção fail-closed, mas **perde a razão
-nomeada** — toca `QAS-0023`. **Exige desenho, não ajuste.**
+A divergência de `BandaRisco` fechou. **Seguem abertas** a ausência de geração de
+código e a divergência de `Frescor` (3 no contrato × 9 na UI, e
+`mapearFrescorParametro` nunca produz 4 deles).
 
-### `ACH-O3-16` (novo) — o catálogo de eventos já diverge do código
+### `LAC-L6` — e a conexão que ninguém tinha feito
 
-`docs/09-api-events-and-mcp/catalogo-de-eventos.md` §5.2 lista 4 tipos onde o
-enum tem 5, e duas formas de payload não batem com o que `db.ts` emite.
-**Quem for tipar `dados` por variante NÃO pode copiar do §5.2** — precisa
-redigir contra o código e ratificar.
-
-### `ACH-O3-6` (parcial), `ACH-O3-8`, F3 residual
-
-`sequencia` negativa fechada; tipar `dados` segue aberto. O cursor é derivado de
-`bigserial` **global** e mede o volume de escrita dos outros tenants (nenhuma
-linha vaza). F3 foi varrido por amostra, não exaustivamente.
+`transitionWorkItem` **já suporta os 7 comandos**. Só três têm bloqueador citado:
+`suppress` (W7, vocabulário de razão), `override` (W8, racional) e `escalate`
+(W5, limiares do bundle). **`assign`, `resolve` e `reopen` não têm.**
+E `ADR-0029` **C6** (lista de ambiguidade proibida) contém **P5** = *"resolvido"
+× "reconhecido"* e **P6** = *"suprimido" × ausência não rotulada* — exatamente
+estes estados. Ratificar C6 destrava o vocabulário.
 
 ### A verificação criptográfica nunca roda
 
-`portaDeBundleDoLivroRazao` e `registrarBundleAprovado` **não têm chamador fora
-de teste**. `verifyBundle` — a única verificação criptográfica do repositório —
-**nunca roda em runtime**. A "autoridade" contra a qual tudo é conciliado é
-"este processo carregou este artefato do disco". É autoridade real contra o
-modelo de ameaça vigente (escrita no banco) e **nula** contra atacante com
-escrita no sistema de arquivos ou no artefato de build. Diga isso com todas as
-letras antes de alegar qualquer coisa sobre assinatura.
+`verifyBundle` não tem chamador fora de teste. "Autoridade" significa "este
+processo leu este artefato do disco" — real contra escrita no banco, **nula**
+contra escrita no sistema de arquivos.
+
+### Resíduos menores
+
+`pnpm test <arquivo>` voltou a filtrar; `pnpm test -- <arquivo>` **ainda
+descarta** (interação pnpm×vitest). `ADR-0011:387` e `ADR-0012:278` têm a mesma
+alegação obsoleta sobre `ADR-0016`, mas **dentro do estado de uma condição** —
+julgar se a evidência-alvo está satisfeita é do dono da ADR, não bookkeeping.
 
 ---
 
-## 4. O que permanece ATO HUMANO — não fabrique, não simule
+## 4. ATO HUMANO — e o que você pode decidir sozinho
 
-| Pendência | Quem |
-|---|---|
-| **Ordem de severidade de frescor EXIBIDA** — só a direção fail-closed foi engenharia | `AUTH-CLINSAFETY` |
-| **Ausência de selo de frescor em TODO cartão** — a projeção não publica contribuições; não afirmar é correto, mas a aceitabilidade clínica (ou publicar frescor na projeção) é decisão de contrato | `AUTH-CLINSAFETY` + titular |
-| **Texto de "entrega em tempo quase-real interrompida em definitivo"** — hoje reusa o genérico de `degradado` | `ADR-0029` C2 |
-| `ADR-0007` C5 — custódia de chave (bloqueia `ACH-O3-1`) | titular |
-| `ADR-0015` — IdP real; direção aceita (`GDEC-0016`), IdP ainda não contratado (bloqueia WCAG 2.2.1) | titular |
-| `MG-G4`, `MG-G6`, `MG-G7`, `MG-G8` | titular / autoridades nomeadas |
-| `VAL-0023` (cadência de releitura), `VAL-0027/0029/0031/0033` (piso de 3 usuários **reais** de TA) | pesquisa de campo |
-| Topologia: `ACH-O3-8` (cursor escopado) e ambiente que permita `CREATE EVENT TRIGGER` | titular |
-| Merge do PR #8 | titular (`GDEC-0014`) |
+Você é **`AUTH-CLINSAFETY`** (parcial, `BLK-0002`) e **`AUTH-UX`** (interino),
+com uma restrição decisiva: seu conhecimento clínico vale como **hipótese de
+especialista, nunca como evidência de observação do Gate G1**.
 
-**Nenhum gate foi aprovado. Nenhum hazard foi fechado.** Os achados fechados
-**não** fecham `HAZ-0025`, `SAF-0025`, `QAS-0023` nem `HAZ-0001/0002` — reduzem
-exposição medida. Estado factual duro, inalterado: **0 vias clínicas acionáveis;
-47/47 inelegíveis; `Observation` da AMH não consumível; safety case M0; nenhum
-dado real acessado.**
+**Decide sozinho hoje** (são decisões, não observações):
+`ADR-0029` C6 (destrava `LAC-L6`) · ordem de severidade de frescor exibida ·
+vocabulário de razão W7 · consolidar os 6 prefixos documento-locais numa única
+entrada `GDEC` (**311 ocorrências, 89 IDs**; precedente D4 já exercido).
+
+**Precisa de segundo humano nomeado:** `ADR-0007` C5 — a saída escolhida é
+`GDEC` de **escopo `dev`-apenas** (o próprio ADR a oferece); exige também
+**nomear `AUTH-SECURITY`** (C2 aberta).
+
+**Nenhuma autoridade substitui:** `VAL-0027/0029/0031/0033` e `MG-G4` — exigem
+observação de campo; `VAL-0033` exige **≥3 usuários reais de TA**, jamais
+simulado.
+
+**Topologia:** `ACH-O3-8` — prefira **cursor escopado** ao opaco, que
+reintroduziria a custódia de chave bloqueada. E decida a classe do ambiente-alvo
+para `CREATE EVENT TRIGGER`.
+
+### O caminho crítico
+
+**Formalizar o aceite e a credencial do Dr. Marcelo Villaca Lima (`BLK-0002`).**
+Está no caminho de `MG-G7`, `ADR-0007` C1, `ADR-0029` C1 e de **toda**
+ratificação que exija autor ≠ aprovador.
 
 ---
 
-## 5. Comandos de retomada — cada número nomeia o comando que o produz
+## 5. Comandos de retomada — cada número nomeia seu comando
 
 ```bash
-git checkout codex/lacunas-frontend-a11y
-uptime                                     # média de 5 min < 4 antes de medir
+uptime                                     # e VEJA o que consome CPU antes de esperar
 pnpm --filter @intensicare/contratos build # SEMPRE antes de execução alvo
 
 pnpm verify                                # exit 0 — 1.973 passed | 1 skipped
 cd apps/web && pnpm exec playwright test --workers=1          # 57/57
 cd packages/persistencia && IC_FRONTEIRA_PG=obrigatoria pnpm exec vitest run  # 99/99
-pnpm test:fronteira                        # 63/63 — UM arquivo, escopo DIFERENTE
 pnpm check:contratos                       # 258 verificações + autoteste 99 casos
 ```
 
-O **único** teste pulado é `apps/api/src/db.test.ts`, condicionado a
-`PG_TEST_URL`. **Não é skip permanente** — com PostgreSQL real dá 3/3, e ele
-falha alto em CI e sob `IC_FRONTEIRA_PG=obrigatoria`.
-
-**PERIGO:** `cycle-4/*`, `cycle-5/*`, `codex/finalizacao-plataforma-v2` e
-`codex/sexta-revisao-adversarial` **não são ancestrais da `main` nem desta
-branch** (verificado com `git merge-base --is-ancestor`). Não os mescle para
-"recuperar" trabalho sem análise de conflito — o PR #6 foi fechado sem merge
-exatamente por isso.
+O **único** pulado é `apps/api/src/db.test.ts`, condicionado a `PG_TEST_URL`.
+Avisa em stderr e vira falha dura sob `IC_FRONTEIRA_PG=obrigatoria` — **não é P0
+escondido.**
 
 ---
 
 ## 6. Não presuma convergência
 
-A taxa de achado **nunca** convergiu neste projeto: **8, 6, 9, 12, 12** nas
-rodadas anteriores, e **25** nesta. A quinta reabriu classe que a quarta
-declarava fechada. A revisão do PR #8 achou 4 P1 com CI verde. E esta onda achou
-um **P0** numa superfície que dois fechos anteriores nunca enumeraram — porque
-`ACH-REV8-3` foi fechado em **duas** superfícies de leitura e havia uma
-**terceira**.
+A taxa de achado **nunca** convergiu: **8, 6, 9, 12, 12, 25** — e esta rodada,
+que era para ser de fechamento de lacunas conhecidas, achou `ACH-O3-17` (o gate
+não terminava), três vacuidades e dois flakes que ninguém sabia existirem.
 
-Se você fechar um achado, **enumere todas as superfícies** antes de dizer
-"fechado". Foi exatamente isso que faltou duas vezes seguidas.
+**Ao fechar um achado, enumere TODAS as superfícies antes de dizer "fechado".**
+Foi o que faltou quando `ACH-REV8-3` foi declarado fechado em duas superfícies
+de leitura e havia uma terceira.
