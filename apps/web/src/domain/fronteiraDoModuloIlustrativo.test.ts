@@ -1,3 +1,7 @@
+// @vitest-environment node
+// Este arquivo não toca DOM em NENHUM módulo do seu grafo (verificado). Em
+// jsdom ele custava a construção de um ambiente inteiro sem usá-lo — ver a
+// nota "CUSTO DE AMBIENTE" em `apps/web/vitest.config.ts`.
 /**
  * apps/web/src/domain/fronteiraDoModuloIlustrativo.test.ts
  *

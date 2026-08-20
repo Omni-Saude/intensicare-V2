@@ -14,7 +14,9 @@ source: >
   apps/web/src/ (implementação de referência — somente leitura);
   ADR-0009 W1-W12; ADR-0011 P1-P7; ADR-0021 F1-F8
 date_collected: 2026-08-16
-last_updated: 2026-08-16
+last_updated: 2026-08-19
+addenda:
+  - "§5 item 3 (2026-08-19, especialista de consistência documental e rastreabilidade): correção datada — a divergência de TIPO entre `BandaRisco` do contrato e a escala própria da web (`baixo/medio/alto/critico`) deixou de existir no código; `mapearBanda` foi removido. A ratificação FORMAL do vocabulário exibido (ADR-0029 C2) segue aberta; ver nota após a tabela da §5."
 provenance:
   source_repo: intensicare-V2
   path_or_url: docs/10-ux-and-accessibility/tabela-contrato-ui-backend.md
@@ -104,6 +106,38 @@ provenance:
 | 5 | O cliente da fatia (`ClienteApiIntensiCare.reconhecerAlerta`) não transporta o token de versão (`If-Match`) que o contrato e ADR-0009 W3 exigem; o mock não produz 412/409 | `apps/web/src/api/` | Na troca pelo cliente HTTP real, o comando carrega a versão vista e a UI implementa a tela de conflito com estado corrente (linha §3 acima) |
 | 6 | Identificadores com grafia divergente (`nao-atribuido` × `nao_atribuido`) | contrato × web | Normalização única na geração de tipos |
 | 7 | Nenhum evento de auditoria consultável no contrato | `openapi.yaml` | Superfície de auditoria é ADR-0018; até lá a coluna de auditoria desta tabela permanece "pendente de contrato" |
+
+> **Correção (2026-08-19, especialista de consistência documental e
+> rastreabilidade).** O item 3 acima registra uma divergência de **tipo** que
+> existia no código até HEAD `1eda4f1` e que deixou de existir:
+> `apps/web/src/domain/estados.ts` não declara mais uma escala própria
+> (`baixo/medio/alto/critico`); `BandaRisco` é hoje **alias direto** de
+> `@intensicare/contratos` (`normal/atencao/alerta/critico`), e o tradutor
+> manual `mapearBanda` — que convertia `alerta` (tier *medium* do NEWS2, RCP
+> 2017 Chart 2) em `alto`, fazendo a tela ler um nível **acima** do que a
+> regra dizia — foi **apagado** do cliente HTTP (`apps/web/src/api/
+> clienteHttp.ts`; ausência coberta por teste dedicado em
+> `clienteHttp.test.ts` e `domain/vocabularioDeBanda.test.ts`). Qualquer banda
+> nova do contrato passa a quebrar em **compilação** o switch exaustivo de
+> `apps/web/src/domain/linguagem.ts`, em vez de cair silenciosamente num valor
+> traduzido à mão — a forma executável de ADR-0021 F1 ("o identificador é do
+> backend; o texto é do frontend"). Os quatro rótulos hoje exibidos levam o
+> prefixo "Banda de risco:" precisamente para atender ao cuidado de P1 citado
+> na coluna ao lado: a palavra `normal` nunca aparece desacompanhada, e não
+> pode ser lida como "não avaliado" (mesma correção registrada em
+> `modelo-de-estados-obrigatorios.md` §7 item 2).
+>
+> **O que NÃO fechou.** A "Direção de resolução" desta linha — "Reconciliar
+> via processo ADR-0029" — permanece correta quanto à **ratificação formal**
+> do vocabulário: os quatro textos (`normal`/`atenção`/`alerta`/`crítico`)
+> continuam redação **PROVISÓRIA**, `VALIDATION REQUIRED` até a condição C2 da
+> `ADR-0029`. O que mudou é que o frontend deixou de manter uma **segunda**
+> escala paralela enquanto aguarda essa ratificação — a fonte do vocabulário
+> exibido agora é uma só. `LAC-L3` (`analise-de-lacunas-frontend.md`) **não
+> fecha** por esta correção: a ausência de geração de código para os
+> enums/formas REST e a divergência de `Frescor` (3 valores publicados pelo
+> contrato × 9 exigidos pelo §11 — item 4 abaixo, inalterado) seguem abertas.
+> Nenhuma ADR foi promovida a `implemented`/`verified` por esta nota.
 
 ## 6. Regras de aceitação transversais (herdadas, vinculantes)
 

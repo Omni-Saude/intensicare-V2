@@ -26,10 +26,17 @@
  * da UI (ADR-0021 F1: o identificador é do backend; o texto é do
  * frontend, em `../domain/linguagem.ts`). Nenhum mapeamento aqui inventa
  * normalidade: status não-computável NUNCA vira escore/banda (HAZ-0005).
+ *
+ * A BANDA DE RISCO NÃO TEM MAPEADOR — e a ausência é o conserto. `mapearBanda`
+ * existia aqui até HEAD 1eda4f1 e traduzia `alerta → alto`, enquanto o
+ * contrato ancora `alerta` ao tier *medium* do NEWS2 (RCP 2017 Chart 2;
+ * `packages/contratos/src/index.ts:207-213`): a tela mostrava um nível acima
+ * do que a regra disse. Hoje `../domain/estados.ts` faz alias do tipo do
+ * contrato e a banda ATRAVESSA esta camada sem tocar em nada
+ * (`../domain/vocabularioDeBanda.test.ts` reprova se um tradutor voltar).
  */
 import type {
   AvaliacoesPacienteResposta,
-  BandaRisco as BandaRiscoContrato,
   ContribuicaoParametro as ContribuicaoContrato,
   EntradaGradeLeitos,
   EstadoItemTrabalho as EstadoItemContrato,
@@ -52,13 +59,12 @@ import type {
 } from "../domain/clinico.js";
 import { apelidoDePaciente } from "../domain/clinico.js";
 import type {
-  BandaRisco,
   EstadoAvaliacao,
   EstadoCarregamento,
   EstadoFrescor,
   EstadoItemTrabalho,
 } from "../domain/estados.js";
-import { ROTULO_PARAMETRO } from "../domain/linguagem.js";
+import { DESCRICAO_ALERTA_CONSULTIVO_SEM_MOTIVO, ROTULO_PARAMETRO } from "../domain/linguagem.js";
 import { exigirPerfilDesenvolvimento } from "../perfil.js";
 import type { ProvedorSessao } from "./sessao.js";
 import type {
@@ -87,21 +93,6 @@ export function mapearStatusAvaliacao(status: StatusAvaliacao): EstadoAvaliacao 
       return "desatualizada";
     case "invalido":
       return "invalida";
-  }
-}
-
-export function mapearBanda(banda: BandaRiscoContrato | null): BandaRisco | null {
-  switch (banda) {
-    case "normal":
-      return "baixo";
-    case "atencao":
-      return "medio";
-    case "alerta":
-      return "alto";
-    case "critico":
-      return "critico";
-    case null:
-      return null;
   }
 }
 
@@ -207,7 +198,9 @@ export function mapearAvaliacao(resultado: ResultadoAvaliacao): AvaliacaoPacient
     despacho: resultado.despacho ?? null,
     estadoAvaliacao: mapearStatusAvaliacao(resultado.status),
     news2Total: resultado.escore,
-    bandaRisco: mapearBanda(resultado.banda),
+    // A banda ATRAVESSA. Não há tradução aqui, e a ausência é deliberada —
+    // ver a nota do cabeçalho sobre `mapearBanda`.
+    bandaRisco: resultado.banda,
     contribuicoes: resultado.parametros.map(mapearContribuicao),
     insumosAusentes: resultado.parametrosAusentes.map(mapearParametro),
     insumosVelhos: resultado.parametros
@@ -269,14 +262,18 @@ export function mapearEntradaGrade(entrada: EntradaGradeLeitos): ItemGradeLeito 
             alertaId: entrada.alerta.id,
             leitoId: entrada.leitoId,
             pacienteRef: entrada.pacienteRef,
-            // SEM `?? "alto"`. A banda é do backend ou não existe: ADR-0011 P7
-            // ("o cliente não a deriva") e ADR-0021 F3 ("nunca promove
-            // severidade"). O `??` anterior fazia um item sem avaliação
-            // computável renderizar como severidade alta, tornando-o
-            // indistinguível de um item genuinamente grave — o inverso de
-            // QAS-0017 e de VAL-0027.
-            severidade: mapearBanda(entrada.banda),
-            descricao: "Alerta consultivo NEWS2 — a decisão clínica permanece com o profissional.",
+            // SEM VALOR PADRÃO, e sem tradução. A banda é do backend ou não
+            // existe: ADR-0011 P7 ("o cliente não a deriva") e ADR-0021 F3
+            // ("nunca promove severidade"). O `?? "alto"` que existia aqui
+            // fazia um item sem avaliação computável renderizar como
+            // severidade alta, tornando-o indistinguível de um item
+            // genuinamente grave — o inverso de QAS-0017 e de VAL-0027.
+            severidade: entrada.banda,
+            // A frase é da camada de linguagem (ADR-0021 F1). A projeção da
+            // grade não publica motivo — `ResumoItemTrabalho` tem só id,
+            // estado e versão —, e o porquê de o frontend redigir algo aqui
+            // está documentado na própria constante.
+            descricao: DESCRICAO_ALERTA_CONSULTIVO_SEM_MOTIVO,
             criadoEm: entrada.atualizadoEm ?? "",
             estado: mapearEstadoItem(entrada.alerta.estado),
             versao: entrada.alerta.versao,
@@ -289,7 +286,7 @@ export function mapearEntradaGrade(entrada: EntradaGradeLeitos): ItemGradeLeito 
       : {
           estadoAvaliacao: mapearStatusAvaliacao(entrada.statusAvaliacao),
           news2Total: entrada.escore,
-          bandaRisco: mapearBanda(entrada.banda),
+          bandaRisco: entrada.banda,
           contribuicoes: [],
           insumosAusentes: [],
           insumosVelhos: [],
@@ -333,7 +330,9 @@ export function mapearItemTrabalho(item: ItemTrabalho): Alerta {
     alertaId: item.id,
     leitoId: item.leitoId,
     pacienteRef: item.pacienteRef,
-    severidade: mapearBanda(item.banda),
+    severidade: item.banda,
+    // O motivo é do SERVIDOR (`ItemTrabalho.motivo`) e vai verbatim — ao
+    // contrário da projeção da grade, que não o publica.
     descricao: item.motivo,
     criadoEm: item.criadoEm,
     estado: mapearEstadoItem(item.estado),

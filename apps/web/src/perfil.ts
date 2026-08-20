@@ -19,7 +19,7 @@
  * artefato sintético chegar ao pacote emitido — as duas defesas são
  * independentes de propósito.
  *
- * Rastreio: ADR-0021 (frontend/BFF), ADR-0015 (autenticação, `not-started`),
+ * Rastreio: ADR-0021 (frontend/BFF), ADR-0015 (autenticação — direção aceita em GDEC-0016; nenhum IdP real contratado),
  * PRE-07, MG-G4.
  */
 

@@ -20,6 +20,7 @@
  * declaradas no tipo (para não inventar semântica depois) mas não têm
  * necessariamente uma tela dedicada ainda.
  */
+import type { BandaRisco as BandaRiscoDoContrato } from "@intensicare/contratos";
 
 /** Estado de carregamento de uma tela ou lista (prompt §11, 1ª família). */
 export type EstadoCarregamento =
@@ -76,7 +77,7 @@ export type EstadoConectividade =
  * Estado de sessão (prompt §11, 6ª família). Desde ACH-07 há renderização
  * dedicada (`../components/AvisosDeEstado.tsx`), alimentada pelo provedor de
  * sessão (`../api/sessao.ts`) — a autenticação em si continua sendo do
- * backend (ADR-0015, `not-started`).
+ * backend (ADR-0015 tem direção aceita (GDEC-0016), mas nenhum IdP real foi contratado).
  */
 export type EstadoSessao =
   | "ativa"
@@ -129,12 +130,38 @@ export type FrescorVisao = "atual" | "desatualizado_apos_falha";
 export type IdadeVisao = "sem_leitura" | "no_ciclo" | "ciclo_perdido";
 
 /**
- * Banda de risco clínico — sempre exibida com rótulo textual, nunca só
- * cor (ADR-0029 lista de ambiguidade proibida; prompt §11 "non-color-only
- * cues"). Quatro faixas, no espírito da "clear four-tier prioritization"
- * citada no prompt §11 como padrão útil a preservar.
+ * Banda de risco clínico — **o vocabulário é o do contrato, por alias
+ * direto**: `normal`, `atencao`, `alerta`, `critico`
+ * (`@intensicare/contratos`, `BandaRisco`). Sempre exibida com rótulo
+ * textual, nunca só cor (ADR-0029 lista de ambiguidade proibida; prompt §11
+ * "non-color-only cues").
+ *
+ * POR QUE ISTO DEIXOU DE SER UMA UNIÃO PRÓPRIA. Até HEAD 1eda4f1 a web
+ * declarava `"baixo" | "medio" | "alto" | "critico"` e `../api/clienteHttp.ts`
+ * traduzia o contrato para essa escala. A tradução era `alerta → alto` — e o
+ * contrato ancora `alerta` ao tier *medium* do NEWS2 (RCP 2017 Chart 2;
+ * `packages/contratos/src/index.ts:207-213`). O efeito não era estético: a
+ * tela apresentava "Risco alto" onde a regra havia dito *medium*, ou seja, o
+ * clínico lia UM NÍVEL ACIMA do que a regra disse.
+ * `docs/10-ux-and-accessibility/tabela-contrato-ui-backend.md:102` já
+ * registrava a divergência e proíbe "tradução manual por tela".
+ *
+ * O ALIAS É DELIBERADO, e não um `type` reescrito à mão com os mesmos quatro
+ * nomes: reescrever permitiria a divergência silenciosa voltar na primeira
+ * banda nova do contrato. Com o alias, qualquer mudança do vocabulário do
+ * backend quebra o `switch` exaustivo de `./linguagem.ts` em tempo de
+ * compilação — que é exatamente a ADR-0021 F1 ("o identificador é do backend;
+ * o texto é do frontend") tornada executável. O import é apenas de TIPO:
+ * nenhuma aresta de runtime é criada.
+ *
+ * CUIDADO CONHECIDO (não resolvido aqui): três destes identificadores
+ * (`atencao`, `alerta`, `critico`) coincidem, como strings, com valores de
+ * `Tom` abaixo. São conceitos distintos — banda é fato clínico do backend,
+ * tom é decisão de apresentação — e o TypeScript não distingue duas uniões de
+ * literais que se sobrepõem. `./vocabularioDeBanda.test.ts` cobre o risco de
+ * conflação pelo lado que importa (o tom de cada banda é uma trava explícita).
  */
-export type BandaRisco = "baixo" | "medio" | "alto" | "critico";
+export type BandaRisco = BandaRiscoDoContrato;
 
 /**
  * Tom semântico não-dependente de cor isolada: cada tom carrega um

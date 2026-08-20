@@ -19,12 +19,14 @@ source: >
   docs/10-ux-and-accessibility/ (os cinco artefatos de SPR-G4-3);
   packages/contratos/openapi.yaml, asyncapi.yaml, src/index.ts, src/asyncapi.ts
 date_collected: 2026-08-18
-last_updated: 2026-08-18
+last_updated: 2026-08-19
 addenda:
   - "§0 (2026-08-18): aviso de que a tabela dos oito LAC-D* é da PRIMEIRA rodada e não contém os achados da quarta onda"
   - "LAC-L1 (2026-08-18): conferência de obsolescência contra apps/web/README.md + quarto defeito da fiação (tempestade de requisição)"
   - "§5 (2026-08-18): ACH-O3-9 a ACH-O3-14 — seis achados de apresentação da quarta onda adversarial"
   - "§6 (2026-08-18): três pendências humanas criadas pelos fechos de §5, sem dono e sem DECIDED"
+  - "LAC-L4/LAC-L5 (2026-08-19): correção de citação cruzada desatualizada — `ADR-0015` não está mais `not-started` (direção aceita GDEC-0016; minuta materializada GDEC-0015); 2.2.1 permanece corretamente FORA da matriz, mas pela ausência de sessão real/IdP contratado, não por pendência de aceite do ADR. Critérios de aceite pré-estagiados em `criterios-de-aceite-wcag-2-2-1-timing-adjustable.md`"
+  - "LAC-L3 (2026-08-19): correção datada — a divergência de `BandaRisco` (tipo) fechou no código (`mapearBanda` removido, `BandaRisco` alias direto do contrato); a frase de abertura sobre enums REST 'não verificados contra nada' também estava desatualizada (Parte F1/G3 acrescentadas a `check_contratos.mjs`: 258 verificações, eram 209; 99 casos de autoteste, eram 35); `Frescor` (3×9) e ausência de geração de código a partir do contrato seguem abertas"
 provenance:
   source_repo: intensicare-V2
   path_or_url: docs/10-ux-and-accessibility/analise-de-lacunas-frontend.md
@@ -450,6 +452,43 @@ abertas, agora com consequência verificada:
   não sobreviver por esquecimento; o caminho do detalhe do paciente, que tem o
   campo, já usa o motivo do backend.
 
+> **Correção (2026-08-19, especialista de consistência documental e
+> rastreabilidade).** Duas metades deste item mudaram de estado desde que foi
+> escrito; uma não mudou.
+>
+> **A tradução de `BandaRisco` fechou.** `apps/web/src/domain/estados.ts` não
+> declara mais a escala própria `baixo/medio/alto/critico`; `BandaRisco` é
+> hoje **alias direto** de `@intensicare/contratos`, e `mapearBanda` — o
+> tradutor que convertia `alerta` (tier *medium* do NEWS2, RCP 2017 Chart 2)
+> em `alto` — foi **apagado** (ausência coberta por teste dedicado em
+> `apps/web/src/api/clienteHttp.test.ts` e
+> `apps/web/src/domain/vocabularioDeBanda.test.ts`). A mesma correção foi
+> registrada, na mesma data, em `tabela-contrato-ui-backend.md` §5 item 3 e em
+> `modelo-de-estados-obrigatorios.md` §7 item 2.
+>
+> **A frase de abertura deste item também ficou desatualizada.** "Os enums
+> REST (...) não são verificados contra nada" não é mais verdade:
+> `scripts/check_contratos.mjs` ganhou, na mesma linha de trabalho, a Parte F1
+> (`StatusAvaliacao`, `BandaRisco`, `Frescor`, `EstadoItemTrabalho`
+> confrontados byte a byte contra `openapi.yaml`) e a Parte G3 (a FORMA de
+> sete pares interface×schema REST, incluindo `EntradaGradeLeitos` e
+> `ResumoItemTrabalho`) — o próprio script cita este achado como a razão da
+> mudança ("achado LAC-L3 / tabela-contrato-ui-backend.md §5"). Medido por
+> este agente executando diretamente `node scripts/check_contratos.mjs` e
+> `node scripts/check_contratos.mjs autoteste`: **258 verificações** (era
+> 209) e **99 casos** de autoteste (eram 35).
+>
+> **O que NÃO fechou — `LAC-L3` continua ABERTA.** `ADR-0021` exige "gerado a
+> partir de, OU validado contra"; só a segunda metade avançou.
+> `packages/contratos/src/index.ts` continua escrito à mão, sem geração
+> alguma a partir de `openapi.yaml`. `Frescor` continua com **3** valores no
+> contrato (`packages/contratos/src/index.ts:414`) contra **9** exigidos pelo
+> §11 — confirmado nesta correção, inalterado. O terceiro marcador acima
+> (ausência de `versaoRegra`/`motivo` em `EntradaGradeLeitos`/
+> `ResumoItemTrabalho`) segue **inalterado**, também confirmado por leitura
+> direta do arquivo na mesma data. Nenhuma ADR foi promovida a
+> `implemented`/`verified` por esta nota.
+
 ### LAC-L4 — Roteamento: CORRIGIDO nesta rodada, exceto 2.2.1 (Timing Adjustable)
 
 **Permanece registrada em §2, por continuidade de numeração e de citação
@@ -485,6 +524,19 @@ Permanece aberto **apenas 2.2.1** (Timing Adjustable): depende de sessão real
 com expiração por tempo ajustável, e o provedor de sessão desta fatia é
 sintético e não expira — `ADR-0015` segue `not-started`, ato do titular. Nada
 nesta correção pode encerrá-lo.
+
+> **Correção (2026-08-19, especialista de consistência documental e
+> rastreabilidade).** `ADR-0015` não está mais `not-started`: a direção
+> (Opção A, verificador OIDC próprio) foi aceita pelo titular em `GDEC-0016`
+> (2026-08-16), e a minuta foi materializada no mesmo dia (`GDEC-0015`;
+> `adr-index.md:106`). O que segue verdadeiro e não muda com esta correção:
+> nenhuma sessão real existe nesta fatia — o emissor sintético (`dev-issuer`)
+> não expira por tempo (`ADR-0015` §4.1) —, então não há temporização a
+> ajustar, e 2.2.1 permanece corretamente FORA da matriz. O ato pendente do
+> titular não é aceitar o ADR (já aceito); é a contratação de um IdP real
+> (gatilho T2, `ADR-0015` §7). Critérios de aceite para quando isso ocorrer
+> estão pré-estagiados, como `PROPOSAL`, em
+> `criterios-de-aceite-wcag-2-2-1-timing-adjustable.md`.
 
 **Achado que a implementação produziu, registrado com todas as letras.** A
 navegação direta entre leitos — que passou a existir com esta correção —
@@ -543,6 +595,14 @@ dedicado que barra especificamente essa regressão em qualquer direção
 (`a11y/acessibilidade.test.tsx`: um caso prova que 2.2.1 segue ausente da
 matriz, outro prova que 2.4.1/2.4.2 só podem estar `executado` com a
 pendência manual presa ao rótulo).
+
+> **Correção (2026-08-19, especialista de consistência documental e
+> rastreabilidade).** "`ADR-0015`, `not-started`" acima está desatualizado —
+> ver a correção equivalente registrada em LAC-L4 (§ imediatamente anterior)
+> para a fonte e o alcance exato da correção. A ausência de 2.2.1 da matriz
+> continua correta e o teste dedicado continua exigindo essa ausência; o que
+> mudou é apenas o rótulo de bookkeeping do ADR, não a substância clínica ou
+> técnica da lacuna.
 
 **Ação tomada em rodada anterior (preservada; o alcance do teste descrito
 mudou como consequência da correção acima).** O recorte passou a ser

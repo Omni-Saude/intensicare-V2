@@ -1,3 +1,7 @@
+// @vitest-environment node
+// Este arquivo não toca DOM em NENHUM módulo do seu grafo (verificado). Em
+// jsdom ele custava a construção de um ambiente inteiro sem usá-lo — ver a
+// nota "CUSTO DE AMBIENTE" em `apps/web/vitest.config.ts`.
 import { describe, expect, it } from "vitest";
 import {
   calcularBandaRisco,
@@ -67,26 +71,67 @@ describe("news2 (tabela de pontos ilustrativa)", () => {
     expect(somarPontos([])).toBe(0);
   });
 
+  /**
+   * A SAÍDA É O VOCABULÁRIO DO CONTRATO. Antes destes testes serem
+   * reescritos, esta função devolvia `baixo/medio/alto/critico` — escala
+   * própria da web, que já não existe (`./estados.ts` faz alias do contrato).
+   * A correspondência entre os cortes e as bandas está transcrita da ancoragem
+   * declarada em `packages/contratos/src/index.ts:207-213` (RCP 2017 Chart 2)
+   * e explicada em `./news2.ts`; nada aqui ratifica limiar clínico.
+   */
   describe("calcularBandaRisco", () => {
-    it("classifica baixo quando total < 5 e nenhum parâmetro pontuou o máximo", () => {
-      expect(calcularBandaRisco(0, false)).toBe("baixo");
-      expect(calcularBandaRisco(4, false)).toBe("baixo");
+    it("`normal` quando total < 5 e nenhum parâmetro pontuou o máximo", () => {
+      expect(calcularBandaRisco(0, false)).toBe("normal");
+      expect(calcularBandaRisco(4, false)).toBe("normal");
     });
 
-    it("classifica médio quando total está em 5-6, ou quando um único parâmetro pontuou 3", () => {
-      expect(calcularBandaRisco(5, false)).toBe("medio");
-      expect(calcularBandaRisco(6, false)).toBe("medio");
-      expect(calcularBandaRisco(2, true)).toBe("medio");
+    it("`atencao` no parâmetro vermelho ISOLADO — distinto de `alerta`, não fundido nele", () => {
+      // O contrato nomeia este caso: `atencao ↔ low_medium` (parâmetro
+      // vermelho isolado). A escala antiga o misturava com total 5-6.
+      expect(calcularBandaRisco(2, true)).toBe("atencao");
+      expect(calcularBandaRisco(4, true)).toBe("atencao");
+      expect(calcularBandaRisco(2, true)).not.toBe(calcularBandaRisco(5, false));
     });
 
-    it("classifica alto quando total está em 7-9", () => {
-      expect(calcularBandaRisco(7, false)).toBe("alto");
-      expect(calcularBandaRisco(9, false)).toBe("alto");
+    it("`alerta` quando total está em 5-6 (↔ medium)", () => {
+      expect(calcularBandaRisco(5, false)).toBe("alerta");
+      expect(calcularBandaRisco(6, false)).toBe("alerta");
+      // Total na faixa domina o vermelho isolado — não rebaixa.
+      expect(calcularBandaRisco(5, true)).toBe("alerta");
     });
 
-    it("classifica crítico quando total >= 10", () => {
+    it("`critico` quando total >= 7 (↔ high) — a faixa `>= 10` era um nível inventado", () => {
+      expect(calcularBandaRisco(7, false)).toBe("critico");
+      expect(calcularBandaRisco(9, false)).toBe("critico");
       expect(calcularBandaRisco(10, false)).toBe("critico");
       expect(calcularBandaRisco(15, false)).toBe("critico");
+    });
+
+    it("nenhum caso do dublê é REBAIXADO pela mudança de escala", () => {
+      // O yardstick comum entre as duas escalas é o TOM renderizado, que é o
+      // sinal de severidade que o clínico de fato vê (`./linguagem.ts`).
+      // Antes: baixo→positivo(0), medio→atencao(1), alto→alerta(2),
+      // critico→critico(3). Depois: normal→positivo(0), atencao→atencao(1),
+      // alerta→alerta(2), critico→critico(3).
+      const tomDepois = { normal: 0, atencao: 1, alerta: 2, critico: 3 } as const;
+      const tomAntes = (total: number, vermelho: boolean): number => {
+        if (total >= 10) return 3; // critico → tom critico
+        if (total >= 7) return 2; // alto    → tom alerta
+        if (total >= 5 || vermelho) return 1; // medio → tom atencao
+        return 0; // baixo → tom positivo
+      };
+      let subiuAlgum = false;
+      for (let total = 0; total <= 20; total += 1) {
+        for (const vermelho of [false, true]) {
+          const depois = tomDepois[calcularBandaRisco(total, vermelho)];
+          const antes = tomAntes(total, vermelho);
+          expect(depois, `total=${total} vermelho=${vermelho}`).toBeGreaterThanOrEqual(antes);
+          if (depois > antes) subiuAlgum = true;
+        }
+      }
+      // Não-vacuidade: a comparação precisa ter encontrado diferença — se
+      // nada mudasse, este teste passaria sem ter medido correção alguma.
+      expect(subiuAlgum, "a mudança de escala não alterou nenhum caso").toBe(true);
     });
   });
 });

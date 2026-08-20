@@ -45,7 +45,7 @@ function itemDoLeitoA(): ItemGradeLeito {
     avaliacao: {
       estadoAvaliacao: "valida",
       news2Total: 7,
-      bandaRisco: "alto",
+      bandaRisco: "alerta",
       contribuicoes: [],
       insumosAusentes: [],
       insumosVelhos: [],
@@ -132,7 +132,7 @@ describe("navegação direta entre leitos — nada do leito anterior sobrevive s
       "o escore do leito A sobreviveu à troca de leito",
     ).toBeNull();
     expect(
-      screen.queryByText(/Risco alto/),
+      screen.queryByText(/Banda de risco: alerta/),
       "a banda de risco do leito A sobreviveu à troca de leito",
     ).toBeNull();
 

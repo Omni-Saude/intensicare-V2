@@ -75,7 +75,7 @@ function leito(sobrepor: Partial<ItemGradeLeito> = {}): ItemGradeLeito {
     avaliacao: {
       estadoAvaliacao: "valida",
       news2Total: 3,
-      bandaRisco: "medio",
+      bandaRisco: "atencao",
       contribuicoes: [],
       insumosAusentes: [],
       insumosVelhos: [],

@@ -11,7 +11,7 @@ source: >
   OBSERVADO, 2026-08-16)
 date_collected: 2026-08-16
 collector: especialista de publicação de contratos como documentação (SPR-G4-4, ciclo 6)
-last_updated: 2026-08-16
+last_updated: 2026-08-19
 ---
 
 # Política MCP — espelho operacional da ADR-0014 (fatia SPR-G7-2)
@@ -97,6 +97,15 @@ Toda chamada MCP porta identidade autenticada (mecanismo real: ADR-0015,
 **as mesmas políticas, os mesmos pontos de aplicação** das APIs de primeira
 parte. Sessão MCP jamais eleva privilégio; defesas de "confused deputy" são
 exigidas.
+
+> **Correção (2026-08-19, especialista de consistência documental e
+> rastreabilidade).** `ADR-0015` e `ADR-0016` não estão mais `not-started`:
+> ambos têm a direção aceita pelo titular (`GDEC-0016`, 2026-08-16) e a minuta
+> materializada no mesmo dia (`GDEC-0015`; `adr-index.md:106` para ADR-0015,
+> `:107`/`:241` para ADR-0016). O que continua verdadeiro: nenhum dos dois
+> está **implementado** em código — a premissa do parágrafo seguinte
+> ("enquanto as minutas... não estão materializadas em implementação") já
+> descrevia corretamente essa pendência e não muda com esta correção.
 
 PREMISSA (reversível, GDEC-0015/0017): enquanto as minutas de ADR-0015/0016
 não estão materializadas em implementação, e enquanto nenhuma ferramenta MCP

@@ -54,7 +54,7 @@ export interface AvaliacaoPaciente {
   estadoAvaliacao: EstadoAvaliacao;
   /** Escore total — `null` quando `estadoAvaliacao` é fail-closed (`nao_avaliada`/`invalida`). */
   news2Total: number | null;
-  /** Banda de risco — `null` sob o mesmo fail-closed acima; nunca "baixo" por omissão (HAZ-0005). */
+  /** Banda de risco — `null` sob o mesmo fail-closed acima; nunca `normal` por omissão (HAZ-0005). */
   bandaRisco: BandaRisco | null;
   contribuicoes: ContribuicaoParametro[];
   /** Insumos ausentes DECLARADOS (nunca silenciosamente tratados como normais). */

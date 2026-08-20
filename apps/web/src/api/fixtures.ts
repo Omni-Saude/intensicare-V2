@@ -482,8 +482,12 @@ function alertasSinteticos(): Alerta[] {
       alertaId: "SYNTH-ALERTA-0001",
       leitoId: "Leito 02",
       pacienteRef: gerarPsrSintetico("B2"),
-      severidade: "alto",
-      descricao: "NEWS2 em faixa de risco alto — reavaliação sugerida.",
+      // Banda no vocabulário do CONTRATO (`normal`/`atencao`/`alerta`/`critico`)
+      // — o dublê ocupa o lugar do backend perante a UI e não pode falar uma
+      // escala que o produto não tem. `alerta` é a mesma banda que este item
+      // sintético já exibia; o que muda é o nome, que agora é o do contrato.
+      severidade: "alerta",
+      descricao: "SYNTH — NEWS2 na banda alerta; reavaliação sugerida.",
       criadoEm: "2026-08-16T11:45:00Z",
       estado: "nao_atribuido",
       versao: 0,
@@ -493,7 +497,7 @@ function alertasSinteticos(): Alerta[] {
       leitoId: "Leito 05",
       pacienteRef: gerarPsrSintetico("E5"),
       severidade: "critico",
-      descricao: "NEWS2 em faixa de risco crítico, com dado de origem desatualizado.",
+      descricao: "SYNTH — NEWS2 na banda crítico, com dado de origem desatualizado.",
       criadoEm: "2026-08-16T08:05:00Z",
       estado: "escalado",
       versao: 1,
@@ -502,8 +506,8 @@ function alertasSinteticos(): Alerta[] {
       alertaId: "SYNTH-ALERTA-0003",
       leitoId: "Leito 01",
       pacienteRef: gerarPsrSintetico("A1"),
-      severidade: "baixo",
-      descricao: "Verificação de rotina concluída sem novos achados.",
+      severidade: "normal",
+      descricao: "SYNTH — verificação de rotina concluída sem novos achados.",
       criadoEm: "2026-08-16T09:00:00Z",
       estado: "resolvido",
       versao: 2,

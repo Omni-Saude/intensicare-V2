@@ -10,7 +10,7 @@ source: >
   (MODO CONSTRUÇÃO; UX/UI de primeira classe — GDEC-0016/ADR-0021);
   docs/02-users-and-workflows/dossie-substituto-multi-fonte-g1.md v0.1.1
 date_collected: 2026-08-16
-last_updated: 2026-08-16
+last_updated: 2026-08-19
 ---
 
 # 10 — UX e acessibilidade
@@ -39,6 +39,7 @@ titular); a validação com usuários é SPR-G4-5 e retroalimenta tudo aqui.
 | Artefato | Conteúdo |
 |---|---|
 | [`analise-de-lacunas-frontend.md`](./analise-de-lacunas-frontend.md) | Confronto entre `apps/web` e as cláusulas vinculantes deste diretório: oito defeitos de correção verificados e corrigidos (LAC-D1..D8) e nove lacunas de escopo registradas (LAC-L1..L9), entre elas a ausência total de atualização automática na tela de vigilância |
+| [`criterios-de-aceite-wcag-2-2-1-timing-adjustable.md`](./criterios-de-aceite-wcag-2-2-1-timing-adjustable.md) | `PROPOSAL` — critérios de aceite pré-estagiados para 2.2.1 (Timing Adjustable), a única lacuna WCAG A+AA aberta por ausência de sessão real (`ADR-0015`); nenhum número de tempo é fixado |
 
 ## Regras transversais do diretório
 

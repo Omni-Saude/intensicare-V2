@@ -13,7 +13,7 @@ source: >
   designado); mapa-de-projeto-ate-producao.md, item SPR-G4-4
 date_collected: 2026-08-16
 collector: especialista de publicação de contratos como documentação (SPR-G4-4, ciclo 6)
-last_updated: 2026-08-16
+last_updated: 2026-08-19
 ---
 
 # Índice de contratos — API, eventos, MCP e FHIR (fatia SPR-G7-2)
@@ -92,6 +92,14 @@ regra acionável.
    e a camada de persistência não estão conectados a `apps/api` nesta fatia.
 3. Autenticação é um stub sintético sem verificação criptográfica (ADR-0015
    `not-started`).
+
+> **Correção (2026-08-19, especialista de consistência documental e
+> rastreabilidade).** Item 3: `ADR-0015` não está mais `not-started` —
+> direção aceita (`GDEC-0016`, 2026-08-16), minuta materializada no mesmo dia
+> (`GDEC-0015`; `adr-index.md:106`). O stub sintético sem verificação
+> criptográfica em `apps/api/src/auth.ts` continua existindo tal como
+> descrito — "aceito" não é "implementado" (`adr-index.md` §2.1); nada aqui
+> muda o estado do código.
 
 ## 3. Contrato de eventos (outbox) — estado atual e AsyncAPI
 
