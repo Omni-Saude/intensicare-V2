@@ -106,6 +106,60 @@ export type {
 export { GCS_COMPONENT_ORDER } from "./types.js";
 
 // ---------------------------------------------------------------------------
+// Piso de unidades (edge-normalização) — consumo OBRIGATÓRIO do RULE-SOFA;
+// a conversão acontece SOMENTE aqui (HAZ-0032). Piso aditivo do escopo
+// ORQ-4; quantidades são tipos marcados — um `number` cru jamais ocupa o
+// lugar de uma quantidade convertida.
+// ---------------------------------------------------------------------------
+
+export {
+  doseUgKgMinDe,
+  paraBilirrubinaMgDl,
+  paraCreatininaMgDl,
+  paraFio2Fracao,
+  paraPaO2MmHg,
+  paraPlaquetasContagem,
+} from "./unidades/index.js";
+export type {
+  ConversaoEscalar,
+  ConversaoFio2,
+  DoseUgKgMin,
+  Fio2Fracao,
+  LeituraDose,
+  QuantidadeComUnidade,
+} from "./unidades/index.js";
+
+// ---------------------------------------------------------------------------
+// API da avaliação SOFA (RULE-SOFA 0.2.0 — terceira via)
+// ---------------------------------------------------------------------------
+
+export {
+  SOFA_ANOTACAO_AGENTE_NAO_TABELADO_PT,
+  SOFA_ANOTACAO_LIMITACAO_PT,
+  SOFA_ANOTACAO_PAM_DERIVADA_PT,
+  SOFA_ANOTACAO_PROVISORIO_PT,
+  SOFA_ANOTACAO_TSR_PT,
+  SOFA_DIVULGACAO_RENAL_PT,
+  evaluateSofa,
+  SOFA_RULE_ID,
+  SOFA_RULE_VERSION,
+} from "./sofa.js";
+export type {
+  SofaComponentContribution,
+  SofaComponentId,
+  SofaEvaluationInput,
+  SofaEvaluationRecord,
+  SofaMapObservation,
+  SofaNoFireReason,
+  SofaQuantityObservation,
+  SofaRespiratorySupportObservation,
+  SofaRespiratorySupportValue,
+  SofaUrineOutputObservation,
+  SofaVasoactiveAgentObservation,
+} from "./types.js";
+export { SOFA_COMPONENT_ORDER } from "./types.js";
+
+// ---------------------------------------------------------------------------
 // Exports legados do esqueleto SPR-G7-1 — mantidos porque @intensicare/dominio
 // os importa; NÃO usar em código novo (o vocabulário real dos cinco estados é
 // `EvaluationStatus`, da ADR-0008). Remoção planejada quando o consumidor

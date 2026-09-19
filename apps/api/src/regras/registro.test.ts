@@ -35,12 +35,15 @@ import {
   BLOQUEIO_ASSINATURA_AUSENTE,
   CHAVE_GCS,
   CHAVE_NEWS2,
+  CHAVE_SOFA,
   chaveRegra,
   criarProvedorNews2,
   despacharGcs,
   despacharNews2,
+  despacharSofa,
   type IdentidadeRegra,
   montarManifestoNews2,
+  montarManifestoSofa,
   montarRegistroDeRegras,
   type PortaDeBundle,
   type ProvedorDeRegra,
@@ -52,6 +55,7 @@ import {
   ROTULO_SOMBRA_PT,
   registrarBundleAprovado,
 } from "./index.js";
+import type { InsumoSofa } from "./sofa.js";
 
 // ---------------------------------------------------------------------------
 // Instantes e insumos
@@ -90,6 +94,15 @@ const CAMINHO_VETORES = fileURLToPath(
 
 const { manifesto: MANIFESTO_NEWS2, vetores: VETORES_NEWS2 } = montarManifestoNews2({
   jsonDeVetores: readFileSync(CAMINHO_VETORES, "utf8"),
+  authoredAt: AUTORIA,
+});
+
+const CAMINHO_VETORES_SOFA = fileURLToPath(
+  new URL("../../../../packages/kernel-clinico/test/vetores-sofa.json", import.meta.url),
+);
+
+const { manifesto: MANIFESTO_SOFA, vetores: VETORES_SOFA } = montarManifestoSofa({
+  jsonDeVetores: readFileSync(CAMINHO_VETORES_SOFA, "utf8"),
   authoredAt: AUTORIA,
 });
 
@@ -138,6 +151,53 @@ function serieGcs(): ClinicalObservationRow[] {
 }
 
 const INSUMO_NEWS2 = { observacoes: serieNews2(), contexto: { idadeAnos: 62 } } as const;
+
+/**
+ * Painel normal sintético do SOFA (PANEL-NORMAL do corpus CRV-SOFA,
+ * compactado): todos os insumos presentes, em janela, normais — seis
+ * componentes 0, total 0, `valid`. Dados 100% sintéticos.
+ */
+function insumoSofaPainel(): InsumoSofa {
+  const proc = { sourceSystem: "SYNTH-amh-01", sourceDataQuality: "valid" } as const;
+  const q = (value: number, unit: string, minutosAtras: number) => ({
+    value,
+    unit,
+    effectiveTime: new Date(Date.parse(AVALIACAO) - minutosAtras * 60_000).toISOString(),
+    provenance: proc,
+  });
+  return {
+    evaluationTime: AVALIACAO,
+    age: { kind: "verified", years: 64 },
+    pao2: [q(96, "mm[Hg]", 240)],
+    fio2: [q(0.21, "1", 240)],
+    respiratorySupportStatus: {
+      value: "none",
+      effectiveTime: q(0, "", 240).effectiveTime,
+      provenance: proc,
+    },
+    platelets: [q(250, "10*3/uL", 360)],
+    bilirubin: [q(0.6, "mg/dL", 360)],
+    map: {
+      kind: "measured",
+      value: 85,
+      unit: "mm[Hg]",
+      effectiveTime: q(0, "mm[Hg]", 120).effectiveTime,
+      provenance: proc,
+    },
+    vasoactiveAgents: [],
+    gcsTotal: q(15, "{score}", 180),
+    rass: { value: 0, effectiveTime: q(0, "", 180).effectiveTime, provenance: proc },
+    sedativeExposure: "none_active",
+    creatinine: [q(0.8, "mg/dL", 360)],
+    urineOutput24h: {
+      value: 1800,
+      unit: "mL",
+      intervalStart: new Date(Date.parse(AVALIACAO) - 26 * 3_600_000).toISOString(),
+      intervalEnd: new Date(Date.parse(AVALIACAO) - 2 * 3_600_000).toISOString(),
+      provenance: proc,
+    },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Bundle real do NEWS2, assinado com pares efêmeros
@@ -381,11 +441,15 @@ function assinarSintetico(manifesto: RuleBundleManifest): {
 // ---------------------------------------------------------------------------
 
 describe("regra não registrada", () => {
-  it("erro EXPLÍCITO — jamais NEWS2 por default", () => {
+  it("erro EXPLÍCITO para versão não registrada — jamais NEWS2 (nem SOFA) por default", () => {
     const registro = montarRegistroDeRegras({
       news2: { porta: portaNews2Ativa(), vetores: VETORES_NEWS2 },
     });
 
+    // A REALIDADE do RULE-SOFA mudou: RULE-SOFA@0.2.0 agora é REGISTRADO
+    // (avaliável em sombra, despacho bloqueado). A chave inclui a versão, e
+    // a versão 0.1.0 (nunca existiu como registro) segue sendo erro
+    // explícito — nenhuma avaliação roda, nenhuma outra regra a substitui.
     expect(() => registro.despachar("RULE-SOFA@0.1.0", {}, CONTEXTO)).toThrow(
       RegraNaoRegistradaError,
     );
@@ -396,6 +460,85 @@ describe("regra não registrada", () => {
     expect(() => registro.despachar("RULE-SOFA@0.1.0", {}, CONTEXTO)).toThrow(
       /Nenhuma avaliação foi executada e nenhuma outra regra foi usada em seu lugar/,
     );
+  });
+
+  it("RULE-SOFA@0.2.0 é REGISTRADO e sua realidade é despacho BLOQUEADO — nunca fallback, nunca acionável", () => {
+    const registro = montarRegistroDeRegras({
+      news2: { porta: portaNews2Ativa(), vetores: VETORES_NEWS2 },
+    });
+
+    expect(registro.temRegra("RULE-SOFA@0.2.0")).toBe(true);
+
+    // Sem material SOFA fornecido à composição, o despacho é RECUSADO com
+    // motivo explícito (bundle_ausente) — nunca avaliação disfarçada.
+    const despacho = despacharSofa(registro, insumoSofaPainel(), CONTEXTO);
+    expect(despacho.tipo).toBe("nao_avaliada");
+    expect(despacho.registro.motivoRecusa).toBe("bundle_ausente");
+    expect(despacho.registro.acionavel).toBe(false);
+    expect(despacho.registro.razoes.join(" ")).toContain("buildSofaBundleManifest");
+    expect(despacho.registro.chaveRegra).toBe("RULE-SOFA@0.2.0");
+  });
+
+  it("RULE-SOFA com MATERIAL (manifesto + vetores): avaliação REAL em SOMBRA — assinatura_ausente_adr0007_c5 na proveniência", () => {
+    const registro = montarRegistroDeRegras({
+      news2: { porta: portaNews2Ativa(), vetores: VETORES_NEWS2 },
+      sofa: {
+        porta: portaDeBundleNaoAssinado({
+          identidade: { ruleId: "RULE-SOFA", ruleVersion: "0.2.0" },
+          manifesto: MANIFESTO_SOFA,
+          justificativaAdrC5:
+            "Perfil sintético: manifesto do RULE-SOFA montado a partir da cópia de " +
+            "referência do kernel, SEM cadeia de assinatura (ADR-0007 C5 aberta). " +
+            "Aprovação de bundle é ato humano distinto (C1 aberta); nada aqui se torna " +
+            "acionável.",
+        }),
+        vetores: VETORES_SOFA,
+      },
+    });
+
+    const despacho = despacharSofa(registro, insumoSofaPainel(), CONTEXTO);
+    expect(despacho.tipo).toBe("avaliada");
+    if (despacho.tipo !== "avaliada") throw new Error("estreitamento");
+
+    // Avaliação REAL do kernel (painel normal: seis zeros), rotulada sombra.
+    expect(despacho.resultado.registroKernel.ruleId).toBe("RULE-SOFA");
+    expect(despacho.resultado.registroKernel.ruleVersion).toBe("0.2.0");
+    expect(despacho.resultado.registroKernel.status).toBe("valid");
+    expect(despacho.resultado.registroKernel.total).toBe(0);
+    expect(despacho.resultado.registroKernel.fires).toBe(false);
+
+    expect(despacho.registro.modo).toBe("sombra");
+    expect(despacho.registro.acionavel).toBe(false);
+    expect(despacho.registro.rotuloPt).toBe(ROTULO_SOMBRA_PT);
+    // O bloqueio nomeado da condição C5 — o despacho acionável está
+    // bloqueado e a razão viaja no registro imutável.
+    expect(despacho.registro.bundle.bloqueiosDeAtivacao).toContain(BLOQUEIO_ASSINATURA_AUSENTE);
+    expect(despacho.registro.bundle.bloqueiosDeAtivacao).toContain(
+      "test_pack_sem_autoria_independente",
+    );
+    expect(despacho.registro.bundle.assinatura).toBe("assinatura_ausente");
+    expect(despacho.registro.bundle.versaoBundle).toBe("0.2.0");
+    expect(despacho.registro.bundle.behaviorHash).toMatch(/^sha256:[0-9a-f]{64}$/);
+  });
+
+  it("RULE-SOFA com hash pinado e vetores NÃO fornecidos → motor_divergente (fail-closed)", () => {
+    const registro = montarRegistroDeRegras({
+      news2: { porta: portaNews2Ativa(), vetores: VETORES_NEWS2 },
+      sofa: {
+        porta: portaDeBundleNaoAssinado({
+          identidade: { ruleId: "RULE-SOFA", ruleVersion: "0.2.0" },
+          manifesto: MANIFESTO_SOFA,
+          justificativaAdrC5: "justificativa SYNTH — exercita a recusa sem vetores",
+        }),
+        // vetores AUSENTES de propósito: motor não verificável nunca avalia.
+      },
+    });
+
+    const despacho = despacharSofa(registro, insumoSofaPainel(), CONTEXTO);
+    expect(despacho.tipo).toBe("nao_avaliada");
+    expect(despacho.registro.motivoRecusa).toBe("motor_divergente");
+    expect(despacho.registro.acionavel).toBe(false);
+    expect(despacho.registro.razoes.join(" ")).toContain("vetores do test pack não fornecidos");
   });
 
   it("versão errada da MESMA regra também é não registrada (identidade inclui versão)", () => {
@@ -409,11 +552,11 @@ describe("regra não registrada", () => {
     );
   });
 
-  it("a tabela é única e ordenada — as duas vias registradas, nada mais", () => {
+  it("a tabela é única e ordenada — as TRÊS vias registradas, nada mais", () => {
     const registro = montarRegistroDeRegras({
       news2: { porta: portaNews2Ativa(), vetores: VETORES_NEWS2 },
     });
-    expect(registro.chaves()).toEqual([CHAVE_GCS, CHAVE_NEWS2]);
+    expect(registro.chaves()).toEqual([CHAVE_GCS, CHAVE_NEWS2, CHAVE_SOFA]);
   });
 });
 

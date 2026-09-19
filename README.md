@@ -71,7 +71,11 @@ caminho sólido é o fluxo já exercitado com fixtures sintéticas.
   aplicação**, pois ainda não existe bundle GCS aprovado/carregável;
 - assinatura, ativação, rollback, retirada e kill switch modelados no pacote de
   rule bundle;
-- SOFA não implementado.
+- regra SOFA implementada no kernel e testada contra o corpus de referência
+  (38 vetores ativos, CRV-SOFA-0301..0341), registrada e avaliável em
+  **sombra**, porém **não despachável**: não existe bundle SOFA aprovado/assinado
+  (ADR-0007) e a ingestão de insumos SOFA (vasopressor, débito urinário, RASS,
+  sedação) não existe — atualizado em 2026-09-19 (ORQ-8).
 
 Nenhuma regra está aprovada para uso clínico acionável. A execução do NEWS2
 serve à demonstração e validação técnica da arquitetura.

@@ -103,6 +103,23 @@ export {
   signAsAuthor,
   verifyBundle,
 } from "./signing.js";
+export type { SofaBundleBuildOptions } from "./sofa-bundle.js";
+export {
+  buildSofaBundleManifest,
+  computeSofaBehaviorHash,
+  verifySofaEngineBehavior,
+} from "./sofa-bundle.js";
+export type {
+  SofaExpectedOutcome,
+  SofaTestPack,
+  SofaTestVector,
+  SofaVectorDelta,
+} from "./sofa-test-pack.js";
+export {
+  expandSofaVector,
+  parseSofaTestPack,
+  SOFA_TEST_PACK_EVALUATION_TIME,
+} from "./sofa-test-pack.js";
 export type {
   Accountability,
   ApprovalRecord,
