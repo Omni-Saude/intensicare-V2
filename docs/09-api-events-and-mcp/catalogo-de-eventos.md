@@ -21,11 +21,12 @@ source: >
   OBSERVADO
 date_collected: 2026-08-16
 collector: especialista de publicação de contratos como documentação (SPR-G4-4, ciclo 6)
-last_updated: 2026-08-18
+last_updated: 2026-09-19
 addenda:
   - "§5.4 (2026-08-18): três campos novos no plano de controle"
   - "§5.5 (2026-08-18): ACH-O3-16, ABERTO — o §5.2 diverge do código em três pontos; a divergência é REGISTRADA, o §5.2 fica intacto"
   - "§5.6 (2026-08-18): ACH-O3-6, fecho PARCIAL — sequencia negativa fechada; tipar `dados` por variante segue aberto"
+  - "§5.8 (2026-09-19): contabilidade 6/5/1 do outbox — seis tipos emitidos, cinco mapeados ao contrato, `regra-despachada` deliberadamente fora do vocabulário e omitida no replay (achado MAJ-7)"
 ---
 
 # Catálogo de eventos — outbox da fatia SPR-G7-2 (semente de AsyncAPI)
@@ -360,6 +361,31 @@ fecham `SR-*`/`MG-*` algum e **não** aceitam risco residual. Nenhum dado real
 foi acessado; todo exemplo segue sob o marcador `SYNTH-` (GDEC-0014). Estado
 factual duro inalterado: 0 vias clínicas acionáveis, 47/47 inelegíveis,
 `Observation` da AMH não consumível, safety case **M0**.
+
+### 5.8 Contabilidade 6/5/1 do outbox (adendo da varredura de verdade documental, 2026-09-19 — achado MAJ-7)
+
+O outbox emite **seis** `event_type` distintos; o replay mapeia **cinco** ao
+vocabulário de `EventoFluxo`; **um** fica deliberadamente de fora. Esta
+contabilidade é o registro que não existia em lugar algum (achado MAJ-7 da
+auditoria forense de 2026-09-19):
+
+| `event_type` (outbox) | Emitido em | Destino no replay |
+|---|---|---|
+| `clinical_observation_recorded` | `clinical-repository.ts:263` | → `observacao-clinica-registrada` |
+| `observacoes-ingeridas` | `apps/api/src/db.ts:591` | → `observacoes-ingeridas` |
+| `avaliacao-computada` | `apps/api/src/db.ts:650` | → `avaliacao-computada` |
+| `alerta-criado` | `apps/api/src/db.ts:697` | → `alerta-criado` |
+| `alerta-atualizado` | `apps/api/src/db.ts:1068,1086` (transição de item de trabalho, via `outboxEventType`) | → `alerta-atualizado` |
+| `regra-despachada` | `apps/api/src/db.ts:670-677` | **SEM mapeamento — deliberado** |
+
+O mapa é `OUTBOX_TO_CONTRACT_EVENT` (`apps/api/src/db.ts:1120-1126`). O
+sexto tipo, `regra-despachada`, NÃO pertence ao vocabulário de `EventoFluxo`
+do contrato — comentário de `db.ts:666-669`: "ele é registro durável
+interno, não mensagem de canal" — e o replay o OMITE (`db.ts:1145-1146`,
+`if (tipo === undefined) continue;`): o que não é publicável não é
+publicado. O §5.2 permanece INTACTO (ver §5.5, ACH-O3-16): quem for redigir
+payloads contra o código não pode copiar o §5.2, e esta subseção não tipa
+`dados`, não fecha `ACH-O3-16` e não altera o estado factual duro acima.
 
 ## 6. Envelope-alvo (ADR-0010 B8) vs. o que existe — gaps declarados
 
