@@ -14,14 +14,18 @@
  *     execução — nenhuma alegação de isolamento deriva dele (anti-padrão 6 do
  *     contrato de agentes: não generalizar RLS de PGlite para produção).
  *
- * POR QUE O CALLBACK RECEBE O TIPO `Transaction` DO PGlite
+ * POR QUE O CALLBACK RECEBE UM RECORTE DE `Transaction` DO PGlite
  * --------------------------------------------------------
- * Os repositórios deste pacote (`../repositories/*.ts`) já estão escritos
- * contra `Transaction`, e eles usam exatamente UM membro dele: `query`. Reusar
- * esse tipo como forma da porta — em vez de cunhar um tipo novo e reescrever
- * todos os consumidores — deixa a troca de adaptador SEM impacto em
- * `apps/api/**` e nos repositórios. É importação apenas de TIPO: o adaptador
- * de PostgreSQL não carrega PGlite em tempo de execução.
+ * Os repositórios deste pacote (`../repositories/*.ts`) estão escritos contra
+ * `ExecutorTenant` e usam `query` (e, pontualmente, `sql`/`rollback`). O
+ * recorte estrutural (`Pick`) mantém a troca de adaptador SEM impacto em
+ * `apps/api/**` e nos repositórios — e mantém FORA da porta o `exec` de
+ * string crua: produto não emite SQL não parametrizado por aqui; o único
+ * fluxo bruto legítimo é o bootstrap de sessão superusuário (`session.ts`),
+ * fora de transação de tenant. Fecho estrutural do achado CWE-78 na `exec`
+ * de `TransacaoPostgres` (varredura de segurança selada de 2026-09-19).
+ * É importação apenas de TIPO: o adaptador de PostgreSQL não carrega PGlite
+ * em tempo de execução.
  */
 
 import type { Transaction } from "@electric-sql/pglite";
@@ -29,8 +33,12 @@ import type { Transaction } from "@electric-sql/pglite";
 /**
  * Executor SQL com escopo de tenant já instalado. Toda leitura/escrita de dado
  * clínico passa por aqui; fora deste escopo a RLS nega qualquer linha.
+ *
+ * Recorte DELIBERADO de `Transaction` (PGlite): sem `exec` de string crua.
+ * Um `tx.exec("…")` em código de produto é erro de COMPILAÇÃO, não uma
+ * convenção — quem precisa de DDL bruto está no caminho errado da porta.
  */
-export type ExecutorTenant = Transaction;
+export type ExecutorTenant = Pick<Transaction, "query" | "sql" | "rollback" | "listen" | "closed">;
 
 /**
  * Rótulo do adaptador em uso. Existe para que log, verificação de perfil e

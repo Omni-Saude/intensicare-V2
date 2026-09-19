@@ -57,6 +57,7 @@ import {
   AdaptadorPglite,
   bootstrapDatabase,
   createInMemoryDatabase,
+  type ExecutorTenant,
   type PortaBancoDeDados,
 } from "@intensicare/persistencia";
 import type { FastifyInstance } from "fastify";
@@ -112,7 +113,7 @@ let injecaoAntesDoEscopo: string | null = null;
  * A sondagem usa `select`, que não escreve e portanto não atribui id — medir
  * não perturba o que se mede.
  */
-function envolverExecutor(tx: Transaction, registro: TransacaoObservada): Transaction {
+function envolverExecutor(tx: Transaction, registro: TransacaoObservada): ExecutorTenant {
   const registrar = async (sql: string): Promise<void> => {
     const sondagem = await tx.query<{ atribuido: boolean }>(
       "select pg_current_xact_id_if_assigned() is not null as atribuido",
@@ -132,10 +133,6 @@ function envolverExecutor(tx: Transaction, registro: TransacaoObservada): Transa
     async sql<T>(sqlStrings: TemplateStringsArray, ...params: unknown[]) {
       await registrar(sqlStrings.join("$?"));
       return tx.sql<T>(sqlStrings, ...params);
-    },
-    async exec(query: string, options?: Parameters<Transaction["exec"]>[1]) {
-      await registrar(query);
-      return tx.exec(query, options);
     },
     async rollback() {
       await registrar("rollback");
@@ -161,7 +158,7 @@ function espiarPGlite(real: PGlite): PGlite {
   return new Proxy(real, {
     get(alvo, propriedade) {
       if (propriedade === "transaction") {
-        return async <T>(corpo: (tx: Transaction) => Promise<T>): Promise<T> =>
+        return async <T>(corpo: (tx: ExecutorTenant) => Promise<T>): Promise<T> =>
           alvo.transaction(async (tx) => {
             const registro: TransacaoObservada = { instrucoes: [] };
             transacoesObservadas.push(registro);

@@ -515,14 +515,6 @@ export class TransacaoPostgres {
     return this.conexao.consultar<T>(texto, params);
   }
 
-  async exec(query: string): Promise<ResultadoSql[]> {
-    const morta = this.erroSeMorta();
-    if (morta) {
-      throw morta;
-    }
-    return [await this.conexao.executar(query)];
-  }
-
   async rollback(): Promise<void> {
     const morta = this.erroSeMorta();
     if (morta) {
@@ -553,10 +545,11 @@ export class TransacaoPostgres {
 
 /**
  * Verificação em tempo de COMPILAÇÃO de que `TransacaoPostgres` serve onde os
- * repositórios pedem `Transaction`. Se alguém quebrar a forma, o typecheck
+ * repositórios pedem `ExecutorTenant` — a porta SEM `exec` de string crua. Se
+ * alguém quebrar a forma, ou tentar reapresentar o `exec` bruto, o typecheck
  * falha aqui — e não num consumidor distante.
  */
-type ExigeCompatibilidade<T extends Transaction> = T;
+type ExigeCompatibilidade<T extends ExecutorTenant> = T;
 export type CompatibilidadeComRepositorios = ExigeCompatibilidade<TransacaoPostgres>;
 
 /**

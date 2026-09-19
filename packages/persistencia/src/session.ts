@@ -31,8 +31,8 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { PGlite, Transaction } from "@electric-sql/pglite";
-import type { PortaBancoDeDados } from "./postgres/porta.js";
+import type { PGlite } from "@electric-sql/pglite";
+import type { ExecutorTenant, PortaBancoDeDados } from "./postgres/porta.js";
 
 const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = join(MODULE_DIR, "migrations");
@@ -155,7 +155,7 @@ function ehPorta(alvo: PGlite | PortaBancoDeDados): alvo is PortaBancoDeDados {
 export async function withTenantTransaction<T>(
   db: PGlite | PortaBancoDeDados,
   tenantId: string,
-  fn: (tx: Transaction) => Promise<T>,
+  fn: (tx: ExecutorTenant) => Promise<T>,
 ): Promise<T> {
   if (ehPorta(db)) {
     return db.comTenant(tenantId, fn);
