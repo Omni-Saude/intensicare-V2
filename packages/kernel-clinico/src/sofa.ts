@@ -780,18 +780,21 @@ type Fio2Resultado =
       readonly idadeMin: number;
       readonly convertido: boolean;
     }
-  | { readonly tipo: "invalido"; readonly motivo: string }
+  | { readonly tipo: "invalido" | "quarentena" | "tempo_ausente"; readonly motivo: string }
   | null;
 
 /**
  * Resolve o grupo de FiO2 com a disciplina própria de unidade (nunca
  * adivinhar fração/percentual — CRV-SOFA-0330) e a melhor pareabilidade
  * (a leitura em janela mais recente; conflito simultâneo envenena).
+ * Falhas DISTINTAS: unidade ausente/inmapeável ⇒ unmappable_unit (HAZ-0032);
+ * valor fora da faixa com unidade LEGAL ⇒ implausible_value; quarentena e
+ * tempo clínico ausente não são invalidade (§5.1).
  */
 function resolverFio2(leituras: readonly SofaQuantityObservation[]): Fio2Resultado {
   if (leituras.length === 0) return null;
   if (leituras.some((l) => l.provenance.sourceDataQuality === "quarantined")) {
-    return { tipo: "invalido", motivo: "quarantined_input:respiration" };
+    return { tipo: "quarentena", motivo: "quarantined_input:respiration" };
   }
   const pares: { fracao: number; tempoMs: number; tempoIso: string; convertido: boolean }[] = [];
   for (const leitura of leituras) {
@@ -801,11 +804,15 @@ function resolverFio2(leituras: readonly SofaQuantityObservation[]): Fio2Resulta
     const conversao = paraFio2Fracao({ value: leitura.value, unit: leitura.unit });
     if (!conversao.ok) {
       // Ausente ou inmapeável: a MESMA recusa — nunca heurística ÷100 (0330).
+      // Fora da faixa com unidade LEGAL é falha distinta: implausível.
+      if (conversao.motivo === "fora_da_faixa") {
+        return { tipo: "invalido", motivo: "implausible_value:respiration" };
+      }
       return { tipo: "invalido", motivo: "unmappable_unit:respiration" };
     }
     const tempoMs = parseIsoTime(leitura.effectiveTime);
     if (tempoMs === null) {
-      return { tipo: "invalido", motivo: "missing_clinical_time:respiration" };
+      return { tipo: "tempo_ausente", motivo: "missing_clinical_time:respiration" };
     }
     pares.push({
       fracao: conversao.fracao,
@@ -849,11 +856,15 @@ function avaliarCardiovascular(
   const component: SofaComponentId = "cv";
   const agentes = input.vasoactiveAgents ?? [];
 
-  type FalhaCv = { readonly tipo: "invalido" | "stale" | "expirado"; readonly motivo: string };
+  type FalhaCv = {
+    readonly tipo: "invalido" | "stale" | "expirado" | "quarentena";
+    readonly motivo: string;
+  };
   const precedenciaTipo: Readonly<Record<FalhaCv["tipo"], number>> = {
     invalido: 0,
     expirado: 1,
     stale: 2,
+    quarentena: 3,
   };
   let falha: FalhaCv | null = null;
   const registrarFalha = (candidata: FalhaCv): void => {
@@ -870,6 +881,10 @@ function avaliarCardiovascular(
   let maiorIdadeMin: number | null = null;
 
   for (const bruto of agentes) {
+    if (bruto.provenance.sourceDataQuality === "quarantined") {
+      registrarFalha({ tipo: "quarentena", motivo: "quarantined_input:cardiovascular" });
+      continue;
+    }
     const agente = normalizarAgente(bruto.agent);
     const tabelado = AGENTES_TABELADOS.includes(agente);
 

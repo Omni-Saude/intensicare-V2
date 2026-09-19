@@ -193,7 +193,7 @@ function deltaParaQuantidades(
   return [
     quantidade(
       delta.value ?? valorPadrao,
-      delta.unit ?? unidadePadrao,
+      delta.unit === undefined ? unidadePadrao : delta.unit,
       delta.observed ?? observedPadrao,
     ),
   ];

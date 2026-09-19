@@ -139,7 +139,15 @@ function deltaParaQuantidades(
     );
   }
   const observed = delta.observed ?? observedPadrao;
-  return [quantidade(delta.value ?? valorPadrao, delta.unit ?? unidadePadrao, observed)];
+  // `unit: null` é unidade EXPLICITAMENTE ausente (CRV-SOFA-0330) — só
+  // `unit` AUSENTE herda a unidade do painel.
+  return [
+    quantidade(
+      delta.value ?? valorPadrao,
+      delta.unit === undefined ? unidadePadrao : delta.unit,
+      observed,
+    ),
+  ];
 }
 
 /**
