@@ -409,7 +409,7 @@ export interface ReconhecerAlertaResposta {
 /**
  * Estado de frescor do dado exibido (ADR-0011 P6). Limiares concretos são
  * ilustrativos nesta fatia — `VALIDATION REQUIRED` no ADR-0011 §3 D-alvos;
- * ver `apps/api/src/store.ts`.
+ * ver `apps/api/src/db.ts` (sucessor do removido `store.ts`).
  */
 export type Frescor = "atual" | "envelhecendo" | "desatualizado";
 

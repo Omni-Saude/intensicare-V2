@@ -43,7 +43,7 @@ export interface LimitesConexao {
 
 /**
  * Valores ILUSTRATIVOS da fatia sintética G7 — mesmo regime dos limiares
- * de frescor já usados em `apps/api/src/store.ts`. **NÃO são SLO, não são
+ * de frescor já usados em `apps/api/src/db.ts`. **NÃO são SLO, não são
  * banda aceitável e não foram validados** (ADR-0011 §3 D6/D7 seguem
  * `VALIDATION REQUIRED`; nenhum alvo de latência de entrega é declarado
  * aqui nem em lugar algum desta entrega).
