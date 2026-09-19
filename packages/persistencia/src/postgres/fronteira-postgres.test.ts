@@ -286,8 +286,9 @@ async function semearTenant(porta: AdaptadorPostgres, tenantId: string): Promise
     );
     await tx.query(
       `insert into evaluation_records
-         (id, tenant_id, encounter_id, subject_ref, status, evaluated_at, result, kernel_record)
-       values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+         (id, tenant_id, encounter_id, subject_ref, status, evaluated_at, result, kernel_record,
+          rule_id, rule_versao)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         t.evaluationId,
         tenantId,
@@ -297,6 +298,10 @@ async function semearTenant(porta: AdaptadorPostgres, tenantId: string): Promise
         instante("2026-08-16T10:06:00.000Z"),
         { status: "valido" },
         { status: "valid" },
+        // Identidade durável (MAJ-5): o JSON da semente não declara
+        // identidade — estado legítimo de recusa legada para o CHECK.
+        "RULE-NEWS2",
+        "0.2.0",
       ],
     );
     await tx.query(
@@ -1272,6 +1277,34 @@ function registrarSuite(urlSuperusuario: string): void {
     });
 
     // -----------------------------------------------------------------------
+    // (c2) identidade durável da regra — fatiamento SQL real (MAJ-5, ORQ-5)
+    //      ADR-0025 §5.2 item 4 + §2.1 E3: a identidade do algoritmo que de
+    //      facto correu tem que ser consultável em nível SQL (retenção,
+    //      vigilância de deriva, recomputação), não só dentro do JSON.
+    // -----------------------------------------------------------------------
+
+    it(
+      "MAJ-5 — fatia SQL por rule_id/rule_versao enxerga a avaliação persistida, e só ela (PostgreSQL real)",
+      async () => {
+        await porta.comTenant(TENANT_A, async (tx) => {
+          const fatia = await tx.query<{ n: number }>(
+            `select count(*)::int as n from evaluation_records
+              where rule_id = 'RULE-NEWS2' and rule_versao = '0.2.0'`,
+          );
+          expect(
+            fatia.rows[0]?.n,
+            "o fatiamento SQL por identidade precisa enxergar a semente do tenant",
+          ).toBe(1);
+          const outra = await tx.query<{ n: number }>(
+            "select count(*)::int as n from evaluation_records where rule_versao = '9.9.9'",
+          );
+          expect(outra.rows[0]?.n, "versão que nunca correu não pode aparecer na fatia").toBe(0);
+        });
+      },
+      TEMPO_LIMITE_MS,
+    );
+
+    // -----------------------------------------------------------------------
     // (e) IDOR sem oráculo de enumeração
     //     SEC-0003, SEC-0009 | THR-0019 (P0)
     // -----------------------------------------------------------------------
@@ -1506,7 +1539,7 @@ function registrarSuite(urlSuperusuario: string): void {
 
     describe("(g) migrações em instalação limpa e em atualização", () => {
       it(
-        "instalação limpa: as seis migrações aplicadas pelo papel migrador deixam o invariante de pé",
+        "instalação limpa: as sete migrações aplicadas pelo papel migrador deixam o invariante de pé",
         async () => {
           expect(banco.migracoesAplicadas).toEqual([
             "0001_init.sql",
@@ -1518,6 +1551,8 @@ function registrarSuite(urlSuperusuario: string): void {
             // precisa de CREATE ROLE e CREATE EVENT TRIGGER, que ele não tem);
             // quem faz o trabalho é o passe de superusuário do provisionamento.
             "0006_ancora_isolada.sql",
+            // Identidade durável da regra (MAJ-5, ADR-0025 §5.2 item 4).
+            "0007_identidade_versao_regra.sql",
           ]);
           const papel = await porta.comTenant(TENANT_A, (tx) =>
             tx.query<{
@@ -1638,6 +1673,19 @@ function registrarSuite(urlSuperusuario: string): void {
               contagem?.frouxas,
               "reaplicar a 0003 rebaixou políticas já ancoradas na função selada",
             ).toBe(0);
+
+            // A verificação final semeia tenants e consulta dados clínicos —
+            // e a semente carrega as colunas de identidade da 0007 (MAJ-5).
+            // A atualização de um banco legado, na produção, percorre a cadeia
+            // INTEIRA; completá-la aqui (0005, 0006, 0007, na ordem) reproduz
+            // o caminho real sem enfraquecer nenhuma asserção do ACHADO-10
+            // acima — todas já rodaram sobre o estado 0003+0004.
+            await aplicarMigracao(legado.urlSuperusuarioNoBanco, "0005_fecho_de_privilegio.sql");
+            await aplicarMigracao(legado.urlSuperusuarioNoBanco, "0006_ancora_isolada.sql");
+            await aplicarMigracao(
+              legado.urlSuperusuarioNoBanco,
+              "0007_identidade_versao_regra.sql",
+            );
           } finally {
             await administrativa.fechar();
           }

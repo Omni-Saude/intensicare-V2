@@ -361,6 +361,13 @@ export interface EvaluationRecordInput {
   readonly result: Record<string, unknown>;
   /** Registro integral do kernel clínico (replay/auditoria — nunca truncado). */
   readonly kernelRecord: Record<string, unknown>;
+  /**
+   * Identidade durável da regra que de facto correu (ou foi despachada e
+   * recusada) — MAJ-5, ADR-0025 §5.2 item 4. Escrita na MESMA inserção que
+   * persiste `kernelRecord`; o banco recusa inserção sem ela.
+   */
+  readonly ruleId: string;
+  readonly ruleVersion: string;
 }
 
 export async function insertEvaluationRecord(
@@ -370,8 +377,8 @@ export async function insertEvaluationRecord(
   await tx.query(
     `insert into evaluation_records
        (id, tenant_id, encounter_id, subject_ref, status, total_score, risk_tier,
-        red_parameter, fires, evaluated_at, result, kernel_record)
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+        red_parameter, fires, evaluated_at, result, kernel_record, rule_id, rule_versao)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
     [
       input.id,
       input.tenantId,
@@ -385,6 +392,8 @@ export async function insertEvaluationRecord(
       input.evaluatedAt,
       input.result,
       input.kernelRecord,
+      input.ruleId,
+      input.ruleVersion,
     ],
   );
 }

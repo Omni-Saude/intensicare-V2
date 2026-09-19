@@ -992,9 +992,9 @@ describe("ACH-REV8-3 ponta a ponta: linha forjada no banco não vira recomendaç
       await tx.query(
         `insert into evaluation_records
            (id, tenant_id, encounter_id, subject_ref, status, total_score, risk_tier,
-            red_parameter, fires, evaluated_at, result, kernel_record)
+            red_parameter, fires, evaluated_at, result, kernel_record, rule_id, rule_versao)
          select $1, tenant_id, encounter_id, subject_ref, status, total_score, risk_tier,
-            red_parameter, fires, evaluated_at, $2, kernel_record
+            red_parameter, fires, evaluated_at, $2, kernel_record, rule_id, rule_versao
            from evaluation_records where id = $3`,
         ["SYNTH-AVAL-FORJADA-ACH8-3", forjado, original!.id],
       );

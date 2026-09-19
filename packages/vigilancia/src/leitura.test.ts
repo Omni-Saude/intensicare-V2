@@ -131,6 +131,11 @@ beforeAll(async () => {
             ruleId: "RULE-NEWS2",
             ruleVersion: dia === "2026-08-12" ? "0.3.0" : "0.2.0",
           },
+          // Identidade durável (MAJ-5): as colunas precisam CONCORDAR com o
+          // JSON que declara identidade — é o mesmo registro, uma vez no blob
+          // e outra nas colunas.
+          ruleId: "RULE-NEWS2",
+          ruleVersion: dia === "2026-08-12" ? "0.3.0" : "0.2.0",
         });
 
         await insertAlert(tx, {
