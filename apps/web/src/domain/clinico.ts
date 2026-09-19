@@ -152,6 +152,32 @@ export interface ItemGradeLeito {
    * `AvaliacaoPaciente.despacho`: ausente ou `null` ⇒ NÃO acionável.
    */
   modoAvaliacao?: ModoDeDespachoAvaliacao | null;
+  /**
+   * SÉRIE de avaliações do paciente deste leito, tal como o backend a
+   * publicou (MAJ-4 / WF-02) — mais recente primeiro, na ordem do contrato
+   * (`AvaliacoesPacienteResposta.avaliacoes`), PRESERVADA: reordenar aqui
+   * seria o cliente redecidindo a verdade do produtor. Cada ponto é uma
+   * `AvaliacaoPaciente` completa mapeada pelo mesmo `mapearAvaliacao` da
+   * avaliação corrente — os pontos fail-closed (`nao_avaliada`/`invalida`)
+   * chegam como ESTADOS, com escore/banda `null`, e as lacunas ENTRE
+   * avaliações não existem como dado: nunca são interpoladas nem
+   * preenchidas por camada nenhuma do cliente (ADR-0011 P7, ADR-0021 F3;
+   * HM-03: alargar a janela nunca fabrica tranquilidade).
+   *
+   * Opcional com TRÊS significados distintos, e a diferença é conteúdo da
+   * tela, não detalhe de tipo:
+   *   - AUSENTE (`undefined`): esta origem não consultou o histórico (item
+   *     montado à mão, dublê, leito vago) — a tela NÃO afirma nada sobre a
+   *     série, nem presença nem ausência;
+   *   - `[]`: o histórico foi consultado e veio vazio — fato clínico
+   *     declarável ("nenhuma avaliação no período");
+   *   - `null`: a consulta foi feita e FALHOU — a indisponibilidade do
+   *     histórico é DECLARADA, jamais apresentada como "não há série".
+   *
+   * Nenhum delta, tendência ou direção ("melhorando"/"piorando") é derivado
+   * daqui para baixo: a série é apresentada; a interpretação é do clínico.
+   */
+  serieAvaliacoes?: AvaliacaoPaciente[] | null;
 }
 
 // ---------------------------------------------------------------------------

@@ -611,14 +611,39 @@ export function criarClienteHttp(opcoes: OpcoesClienteHttp): ClienteApiIntensiCa
           `/v1/pacientes/${encodeURIComponent(entrada.pacienteRef)}/avaliacoes`,
           opcoes?.sinal,
         );
+
+        // MAJ-4 (WF-02): o histórico INTEIRO atravessa o mapeamento — não só
+        // `avaliacoes[0]`. Antes, a lista que a API já devolvia morria aqui e
+        // a intenção de corroboração do drill-down ("provenance + trend matter
+        // more than the current value") ficava sem matéria-prima. Três
+        // desfechos distintos, cada um honesto:
+        //   - ok (lista vazia inclusive): a série vai mapeada ponto a ponto,
+        //     na ordem do backend (mais recente primeiro). Vazio é fato.
+        //   - falha da chamada de histórico: `null` — a indisponibilidade da
+        //     série é declarada; jamais vira lista vazia, que afirmaria
+        //     "nenhuma avaliação" sobre o que na verdade é "não sei".
+        //   - cancelamento: o aborto PROPAGA (o `chamar` lança), preservando
+        //     a distinção "cancelei" × "falhou" de ACH-07.
+        const serie: AvaliacaoPaciente[] | null = avaliacoes.ok
+          ? (avaliacoes.corpo?.avaliacoes ?? []).map(mapearAvaliacao)
+          : null;
         const maisRecente = avaliacoes.ok ? avaliacoes.corpo?.avaliacoes[0] : undefined;
         if (maisRecente !== undefined) {
           return {
             estadoCarregamento: "pronto",
-            dados: { ...item, avaliacao: mapearAvaliacao(maisRecente) },
+            dados: { ...item, avaliacao: mapearAvaliacao(maisRecente), serieAvaliacoes: serie },
             problema: null,
           };
         }
+        // Sem avaliação por paciente (lista vazia ou falha): a linha segue com
+        // a avaliação da projeção — comportamento existente PRESERVADO — e a
+        // série vai no mesmo desfecho (`[]` ou `null`, nunca `undefined`,
+        // que apagaria a diferença entre "consultei e não há" e "não sei").
+        return {
+          estadoCarregamento: "pronto",
+          dados: { ...item, serieAvaliacoes: serie },
+          problema: null,
+        };
       }
       return { estadoCarregamento: "pronto", dados: item, problema: null };
     },
