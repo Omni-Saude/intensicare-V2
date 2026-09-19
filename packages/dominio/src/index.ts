@@ -16,6 +16,7 @@ export const packageVersion = "0.0.0" as const;
 export * from "./audit-event.js";
 export * from "./clinical-observation.js";
 export * from "./identity.js";
+export * from "./supressao-alertas.js";
 export * from "./tenancy.js";
 export * from "./time.js";
 export * from "./work-item.js";

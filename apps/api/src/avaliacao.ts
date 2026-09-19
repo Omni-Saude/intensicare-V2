@@ -27,6 +27,11 @@ import type {
   ResultadoAvaliacao,
   StatusAvaliacao,
 } from "@intensicare/contratos";
+import {
+  type PoliticaSupressaoAlerta,
+  PREMISSA_COOLDOWN_NEWS2_MS,
+  PREMISSA_TAXA_MAXIMA_NEWS2_24H,
+} from "@intensicare/dominio";
 import { SYNTHETIC_CONCEPTS } from "@intensicare/fixtures-sinteticas";
 import {
   type EvaluationRecord,
@@ -37,7 +42,7 @@ import {
   type RiskTier,
   type SourceDataQuality,
 } from "@intensicare/kernel-clinico";
-import type { ClinicalObservationRow } from "@intensicare/persistencia";
+import type { ClinicalObservationRow, EvaluationRecordRow } from "@intensicare/persistencia";
 
 // ---------------------------------------------------------------------------
 // Vocabulários: contrato pt-BR ↔ kernel ↔ conceitos persistidos
@@ -174,11 +179,49 @@ export function toKernelObservation(row: ClinicalObservationRow): ObservationInp
 // Avaliação real + tradução para o contrato
 // ---------------------------------------------------------------------------
 
+/**
+ * Estado anterior da série do paciente para o gatilho de borda (`news2_prev`
+ * + conjunto vermelho anterior). `totalScore: null` ⇒ total anterior não
+ * computável; `redParameters` vazio ⇒ anterior conhecido sem vermelho.
+ */
+export interface EstadoAnteriorNews2 {
+  readonly totalScore: number | null;
+  readonly redParameters: readonly News2ParameterId[];
+}
+
+/**
+ * Chave de dedup do alerta de deterioração NEWS2 (catálogo irmão:
+ * `dedup_key: patient_id+alert_id`). PREMISSA reversível: no V2 o substrato
+ * de leitura em-transação existente é por ENCONTRO (`listWorkItemsWithAlerts`
+ * filtrado por `encounter_id`) — transferências entre encontros do mesmo
+ * paciente podem emitir de novo; substrato por paciente exigiria consulta
+ * que `packages/persistencia` não oferece e que este stream não pode criar.
+ * Pendente ratificação (RAT-EWS).
+ */
+export function chaveDeDedupNews2(pacienteRef: string): string {
+  return `${pacienteRef}+news2-deterioration`;
+}
+
+/**
+ * Política de supressão do alerta de deterioração NEWS2 — premissas de
+ * engenharia do catálogo irmão (`cooldown: PT4H`, `rate_limit: 3/24h/patient`,
+ * `maintenance_window_aware: true`), pendentes de ratificação clínica
+ * (RAT-EWS). Constantes PARAMETRIZADAS — nunca números mágicos na lógica.
+ * O V2 ainda não tem janela de manutenção: o mecanismo é parametrizado na
+ * primitiva e aqui a janela é `null` (nenhuma ativa).
+ */
+export const POLITICA_SUPRESSAO_NEWS2: PoliticaSupressaoAlerta = {
+  cooldownMs: PREMISSA_COOLDOWN_NEWS2_MS,
+  taxaMaxima24h: PREMISSA_TAXA_MAXIMA_NEWS2_24H,
+  conscienteJanelaManutencao: true,
+};
+
 /** Avalia NEWS2 (kernel REAL) sobre as observações persistidas de um encontro. */
 export function evaluateEncounter(
   rows: readonly ClinicalObservationRow[],
   contexto: ContextoAvaliacaoPaciente | undefined,
   evaluationTimeIso: string,
+  estadoAnterior?: EstadoAnteriorNews2 | undefined,
 ): EvaluationRecord {
   const observations = rows
     .map(toKernelObservation)
@@ -190,6 +233,7 @@ export function evaluateEncounter(
     age: typeof idade === "number" ? { kind: "verified", years: idade } : { kind: "unknown" },
     pregnancy: contexto?.gravidezDocumentada === true ? "documented" : "not_documented",
     observations,
+    ...(estadoAnterior !== undefined ? { priorState: estadoAnterior } : {}),
   });
 }
 
@@ -274,11 +318,46 @@ export function toResultadoAvaliacao(record: EvaluationRecord): ResultadoAvaliac
 }
 
 /**
- * Condição de criação de alerta durável: avaliação VÁLIDA cuja banda
- * consultiva atinge condição de exibição de escalonamento (`fires`, spec
- * §4.2) e sem ordem de limitação terapêutica suprimindo exibição.
- * Semântica consultiva: o alerta comunica, jamais decide (ADR-0009 W12).
+ * Estado anterior da série do paciente, extraído da última linha de
+ * avaliação persistida — o `news2_prev` do gatilho de borda do catálogo
+ * irmão (ALERT-EWS-NEWS2-DETERIORATION-01; CRIT-1).
+ *
+ * `null` ⇒ estado anterior DESCONHECIDO (nenhuma avaliação anterior, última
+ * avaliação não computável, ou registro de kernel de forma inesperada) — e
+ * o kernel, por premissa reversível documentada, ARMA o gatilho para estado
+ * desconhecido (a primeira piora observada alerta). A extração é DEFENSIVA
+ * por forma: `kernel_record` é coluna `jsonb` — quem lê valida; forma
+ * inesperada vira "desconhecido", nunca exceção de ingestão.
+ */
+export function estadoAnteriorDeAvaliacao(row: EvaluationRecordRow): EstadoAnteriorNews2 | null {
+  if (row.status !== "valid") return null;
+  const parametros = (row.kernelRecord as { parameters?: unknown }).parameters;
+  if (!Array.isArray(parametros)) return null;
+  const redParameters: News2ParameterId[] = [];
+  for (const contribuicao of parametros) {
+    if (
+      typeof contribuicao === "object" &&
+      contribuicao !== null &&
+      (contribuicao as { status?: unknown }).status === "valid" &&
+      (contribuicao as { score?: unknown }).score === 3 &&
+      typeof (contribuicao as { parameter?: unknown }).parameter === "string"
+    ) {
+      redParameters.push((contribuicao as { parameter: News2ParameterId }).parameter);
+    }
+  }
+  return { totalScore: row.totalScore, redParameters };
+}
+
+/**
+ * Condição de criação de alerta durável (CRIT-1): avaliação VÁLIDA que
+ * atinge o GATILHO DE BORDA do catálogo irmão (`alertCrossing` — cruzamento
+ * ascendente do total OU novo parâmetro vermelho) e sem ordem de limitação
+ * terapêutica suprimindo escalonamento (N-3). A condição de EXIBIÇÃO
+ * consultiva (`fires`, spec §4.2) permanece estática por desenho — é o
+ * gatilho que é de borda, nunca a exibição. Política de gatilho pendente de
+ * ratificação (RAT-EWS trigger policy). Semântica consultiva: o alerta
+ * comunica, jamais decide (ADR-0009 W12).
  */
 export function requerAlerta(record: EvaluationRecord): boolean {
-  return record.status === "valid" && record.fires && !record.escalationSuppressed;
+  return record.status === "valid" && record.alertCrossing && !record.escalationSuppressed;
 }

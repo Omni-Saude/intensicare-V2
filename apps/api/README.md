@@ -80,9 +80,27 @@ implícita ao próprio ator + reconhecimento na mesma transação (`db.ts`).
    catch-up. Push contínuo em conexão aberta, autorizado a cada entrega
    (ADR-0011 P3/P5/P6, gateway único de tempo real), **não** está
    implementado — pendência de integração futura.
-3. **Deduplicação de alerta ativo por leito**: cada ingestão que dispara
-   condição de exibição cria um novo item de trabalho, mesmo que já exista
-   um ativo para o mesmo leito — sem deduplicação nesta fatia.
+3. **Higiene de alarmes do alerta de deterioração NEWS2 (ORQ-3,
+   CRIT-1/CRIT-2)**: o alerta durável é **de borda** — dispara no cruzamento
+   ascendente do total (≥7 com anterior <7 ou desconhecido) ou num **novo**
+   parâmetro vermelho; o patamar alto PERSISTENTE não re-dispara (catálogo
+   irmão `ALERT-EWS-NEWS2-DETERIORATION-01`). Ingestões acima do patamar
+   dentro da janela de supressão continuam **avaliadas e auditadas**, e não
+   criam itens de trabalho duplicados: a política de supressão
+   (dedup `paciente+news2-deterioration`, cooldown PT4H que re-arma após a
+   queda abaixo de 7, teto de 3 emissões/24 h) é consultada em-transação
+   sobre os itens de trabalho já existentes do encontro, e toda supressão é
+   **auditada com motivo** (`command: "alerta-suprimido"` no livro de
+   auditoria) — supressão silenciosa é o mesmo defeito de alerta silencioso.
+   Cooldown, teto e consciência de janela de manutenção são **premissas de
+   engenharia** do catálogo irmão, pendentes de ratificação clínica
+   (RAT-EWS). Residuais declarados: (a) o substrato de dedup é por
+   **encontro** (a consulta por paciente não existe em `persistencia`) —
+   transferências entre encontros do mesmo paciente podem re-emitir;
+   (b) ingestões concorrentes do mesmo paciente sob PostgreSQL real podem,
+   numa corrida de leitura READ COMMITTED, emitir em duplicidade numa
+   janela estreita — o teto de 3/24 h limita o dano; serialização estrita
+   exigiria `SELECT FOR UPDATE` (fora do escopo de escrita deste stream).
 
 ### Correções da revisão única SPR-G7-2 aplicadas neste pacote
 

@@ -22,7 +22,7 @@ import {
 } from "@intensicare/contratos";
 import { buildG7SyntheticScenario } from "@intensicare/fixtures-sinteticas";
 import type { FastifyInstance } from "fastify";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { gerarTokenSintetico } from "./auth.js";
 import { buildServer } from "./index.js";
 
@@ -158,6 +158,27 @@ function envelopeCritico(overrides: Partial<Record<string, unknown>> = {}) {
       { parametro: "FC", valor: 122, unidade: "bpm", coletadoEm: t },
       { parametro: "NivelConsciencia", codigo: "A", coletadoEm: t },
       { parametro: "Temperatura", valor: 38.3, unidade: "Cel", coletadoEm: t },
+    ],
+    ...overrides,
+  };
+}
+
+/** Envelope de QUEDA (total 0, sem vermelho) — não cruza o gatilho de borda. */
+function envelopeQueda(overrides: Partial<Record<string, unknown>> = {}) {
+  const t = tempoClinicoFresco();
+  return {
+    encontroId: ENC_P002.id,
+    leitoId: ENC_P002.bedId,
+    pacienteRef: P002.subjectRef,
+    contexto: { idadeAnos: 62 },
+    observacoes: [
+      { parametro: "FR", valor: 16, unidade: "rpm", coletadoEm: t },
+      { parametro: "SpO2", valor: 97, unidade: "%", coletadoEm: t },
+      { parametro: "FluxoO2", valor: 0, unidade: "L/min", coletadoEm: t },
+      { parametro: "PAS", valor: 120, unidade: "mmHg", coletadoEm: t },
+      { parametro: "FC", valor: 70, unidade: "bpm", coletadoEm: t },
+      { parametro: "NivelConsciencia", codigo: "A", coletadoEm: t },
+      { parametro: "Temperatura", valor: 36.8, unidade: "Cel", coletadoEm: t },
     ],
     ...overrides,
   };
@@ -402,7 +423,13 @@ describe("rotas /v1 (fatia SPR-G7-2 — integração real: PGlite + kernel NEWS2
     let alertaOriginal: string | undefined;
 
     it("primeira chamada => 201 com Idempotency-Replayed: false", async () => {
-      payloadOriginal = envelopeCritico();
+      // Série de QUEDA (sem cruzamento, sem alerta): o objeto deste bloco é
+      // a IDEMPOTÊNCIA (resposta original preservada), e o P002 já tem
+      // anterior alto + emissão recente do caminho feliz — sob o gatilho de
+      // borda (CRIT-1) uma nova série alta NÃO emitiria. A cobertura
+      // "replay preserva o alerta original" vive em `e2e.fatia.test.ts` e
+      // `db.test.ts` (ACH-O3-3), ambos com alerta real.
+      payloadOriginal = envelopeQueda();
       const resposta = await app.inject({
         method: "POST",
         url: "/v1/ingestao/observacoes",
@@ -412,7 +439,7 @@ describe("rotas /v1 (fatia SPR-G7-2 — integração real: PGlite + kernel NEWS2
       expect(resposta.statusCode).toBe(201);
       expect(resposta.headers[IDEMPOTENCY_REPLAYED_HEADER.toLowerCase()]).toBe("false");
       alertaOriginal = (resposta.json() as IngestaoObservacoesResposta).alerta?.id;
-      expect(alertaOriginal).toBeTruthy();
+      expect(alertaOriginal).toBeUndefined();
     });
 
     it("replay com corpo IDÊNTICO => resposta original + Idempotency-Replayed: true, sem duplicar alerta", async () => {
@@ -463,13 +490,38 @@ describe("rotas /v1 (fatia SPR-G7-2 — integração real: PGlite + kernel NEWS2
     let alertaId: string;
 
     beforeAll(async () => {
-      const resposta = await app.inject({
+      // O P002 do caminho feliz tem anterior 11 (não cruza de novo) e
+      // emissão recente (cooldown PT4H). Para obter um item PRÓPRIO em v0,
+      // este bloco segue a SEMÂNTICA do rearme (ORQ-3/CRIT-1/CRIT-2):
+      // 1) QUEDA sem alerta (arma o rearmamento); 2) relógio além do
+      // cooldown — SOMENTE `Date` é falsificado (injeção de TESTE; timers
+      // de verdade ficam intactos); 3) recruzamento ⇒ emissão própria.
+      // Token cunhado no relógio simulado: um bearer pré-emitido expiraria
+      // contra o `exp` — o verificador está certo em recusar.
+      await app.inject({
         method: "POST",
         url: "/v1/ingestao/observacoes",
-        headers: { ...AUTH_A, "idempotency-key": "SYNTH-IDEM-CONC-01" },
-        payload: envelopeCritico(),
+        headers: { ...AUTH_A, "idempotency-key": "SYNTH-IDEM-CONC-QUEDA" },
+        payload: envelopeQueda(),
       });
-      alertaId = String((resposta.json() as IngestaoObservacoesResposta).alerta?.id);
+      vi.useFakeTimers({ toFake: ["Date"] });
+      try {
+        vi.setSystemTime(Date.now() + 5 * 60 * 60 * 1000); // +5h > PT4H
+        const resposta = await app.inject({
+          method: "POST",
+          url: "/v1/ingestao/observacoes",
+          headers: {
+            authorization: `Bearer ${gerarTokenSintetico(TENANT, "SYNTH-USER-A1")}`,
+            "idempotency-key": "SYNTH-IDEM-CONC-01",
+          },
+          payload: envelopeCritico(),
+        });
+        expect(resposta.statusCode, resposta.body).toBe(201);
+        alertaId = String((resposta.json() as IngestaoObservacoesResposta).alerta?.id);
+      } finally {
+        vi.useRealTimers();
+      }
+      expect(alertaId, "o recruzamento após o cooldown emite item próprio").not.toBe("undefined");
     });
 
     it("If-Match ausente => 428", async () => {

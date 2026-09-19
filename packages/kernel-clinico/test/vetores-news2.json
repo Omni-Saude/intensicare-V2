@@ -10,8 +10,10 @@
       "§2.4 SpO2 Scale 2 band boundaries",
       "§2.5 Scale 1 and remaining parameter band boundaries",
       "§2.6 Aggregate thresholds and tiers",
-      "§2.7 Decision-driven vectors (GDEC-0007)"
+      "§2.7 Decision-driven vectors (GDEC-0007)",
+      "§3.1 catálogo irmão de alertas — ALERT-EWS-NEWS2-DETERIORATION-01: gatilho de borda (edge trigger) + rearme (vectors CRV-NEWS2-0201..0211)"
     ],
+    "edge_trigger_source": "docs/plan/clinical/domains/early-warning-scores.md §3.1 e docs/plan/clinical/alert-catalog.md (repositório irmão, SOMENTE LEITURA) — edge_trigger := (news2 >= 7 E news2_prev < 7) OU novo parâmetro vermelho; política de gatilho pendente de ratificação (RAT-EWS trigger policy); premissa de engenharia: estado anterior desconhecido ARMA o gatilho (a primeira piora observada alerta)",
     "rule": "RULE-NEWS2 0.2.0 (precursor — não assinado; NOT ACTIONABLE)",
     "data_provenance": "synthetic-only — todos os valores sintéticos; nenhum dado real de paciente",
     "note": "Transcrição para execução red/green (TDD) conforme a própria disciplina do conjunto CRV (§0): a aprovação destes vetores NÃO é evidência clínica; autoria independente segue pendente. Os rótulos de razão agregada do documento-fonte (insufficient_data/stale_data/invalid_data/criteria_not_met) são representados aqui pelos tokens por parâmetro da spec §5.2 (missing_required_input:*, stale_input:*, expired_input:*, implausible_value:*, unmappable_code:*, conflicting_sources:*, quarantined_input:*, unknown_age, out_of_population_scope), que o documento-fonte lista entre parênteses em cada linha.",
@@ -1938,6 +1940,385 @@
         "paramScores": {
           "sbp": 1
         }
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0201",
+      "source_section": "§3.1 catálogo irmão ALERT-EWS-NEWS2-DETERIORATION-01 — TV-1 (gatilho de borda)",
+      "description": "TV-1: anterior 4 → agora 7 — CRUZAMENTO ASCENDENTE dispara o gatilho de alerta (alertCrossing true); exibição consultiva (fires) permanece a de exibição estática de banda",
+      "delta": {
+        "values": {
+          "rr": 21,
+          "spo2": 92,
+          "sbp": 99,
+          "pulse": 95
+        },
+        "priorState": {
+          "total": 4,
+          "redParameters": []
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 7,
+        "tier": "high",
+        "fires": true,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 2,
+          "spo2": 2,
+          "sbp": 2,
+          "pulse": 1,
+          "o2_status": 0,
+          "consciousness": 0,
+          "temperature": 0
+        },
+        "alertCrossing": true,
+        "alertCrossingReason": "ascending_total_crossing"
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0202",
+      "source_section": "§3.1 catálogo irmão ALERT-EWS-NEWS2-DETERIORATION-01 — TV-3 (gatilho de borda)",
+      "description": "TV-3: anterior 7 → agora 7 — patamar alto PERSISTENTE não é cruzamento (alertCrossing false); a supressão do crônico-alto de UTI é exatamente este caso",
+      "delta": {
+        "values": {
+          "rr": 21,
+          "spo2": 92,
+          "sbp": 99,
+          "pulse": 95
+        },
+        "priorState": {
+          "total": 7,
+          "redParameters": []
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 7,
+        "tier": "high",
+        "fires": true,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 2,
+          "spo2": 2,
+          "sbp": 2,
+          "pulse": 1,
+          "o2_status": 0,
+          "consciousness": 0,
+          "temperature": 0
+        },
+        "alertCrossing": false,
+        "alertCrossingReason": null
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0203",
+      "source_section": "§3.1 catálogo irmão ALERT-EWS-NEWS2-DETERIORATION-01 (gatilho de borda)",
+      "description": "anterior 8 → agora 7 — ainda >=7 na medição anterior; sem cruzamento ascendente (alertCrossing false)",
+      "delta": {
+        "values": {
+          "rr": 21,
+          "spo2": 92,
+          "sbp": 99,
+          "pulse": 95
+        },
+        "priorState": {
+          "total": 8,
+          "redParameters": []
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 7,
+        "tier": "high",
+        "fires": true,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 2,
+          "spo2": 2,
+          "sbp": 2,
+          "pulse": 1,
+          "o2_status": 0,
+          "consciousness": 0,
+          "temperature": 0
+        },
+        "alertCrossing": false,
+        "alertCrossingReason": null
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0204",
+      "source_section": "§3.1 catálogo irmão ALERT-EWS-NEWS2-DETERIORATION-01 (premissa de engenharia)",
+      "description": "PRIMEIRA medição sem estado anterior (news2_prev ausente) com total 7 — premissa reversível: desconhecido arma o gatilho (a primeira piora observada alerta); pendente ratificação (RAT-EWS trigger policy)",
+      "delta": {
+        "values": {
+          "rr": 21,
+          "spo2": 92,
+          "sbp": 99,
+          "pulse": 95
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 7,
+        "tier": "high",
+        "fires": true,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 2,
+          "spo2": 2,
+          "sbp": 2,
+          "pulse": 1,
+          "o2_status": 0,
+          "consciousness": 0,
+          "temperature": 0
+        },
+        "alertCrossing": true,
+        "alertCrossingReason": "ascending_total_crossing"
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0205",
+      "source_section": "§3.1 catálogo irmão ALERT-EWS-NEWS2-DETERIORATION-01 — TV-4 (gatilho de borda)",
+      "description": "TV-4: FR >=25 (3 pontos, VERMELHO) novo — anterior 4 sem vermelho → dispara por NOVO parâmetro vermelho mesmo com total 5 (alertCrossing true, new_red_parameter); banda média é exibição, não gatilho",
+      "delta": {
+        "values": {
+          "rr": 25,
+          "temperature": 38.5,
+          "pulse": 95
+        },
+        "priorState": {
+          "total": 4,
+          "redParameters": []
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 5,
+        "tier": "medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "rr": 3,
+          "temperature": 1,
+          "pulse": 1
+        },
+        "alertCrossing": true,
+        "alertCrossingReason": "new_red_parameter"
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0206",
+      "source_section": "§3.1 catálogo irmão ALERT-EWS-NEWS2-DETERIORATION-01 (gatilho de borda)",
+      "description": "parâmetro vermelho TRANSPORTADO — anterior 5 já com FR vermelho, agora o mesmo FR vermelho: sem cruzamento (alertCrossing false); vermelho persistente não re-dispara",
+      "delta": {
+        "values": {
+          "rr": 25,
+          "temperature": 38.5,
+          "pulse": 95
+        },
+        "priorState": {
+          "total": 5,
+          "redParameters": ["rr"]
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 5,
+        "tier": "medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "rr": 3,
+          "temperature": 1,
+          "pulse": 1
+        },
+        "alertCrossing": false,
+        "alertCrossingReason": null
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0207",
+      "source_section": "§3.1 catálogo irmão ALERT-EWS-NEWS2-DETERIORATION-01 (rearme — queda)",
+      "description": "QUEDA abaixo de 7 — anterior 7 → agora 6: não é cruzamento (alertCrossing false) embora a exibição consultiva da banda média persista (fires true); a queda arma o rearmamento",
+      "delta": {
+        "values": {
+          "rr": 21,
+          "spo2": 94,
+          "sbp": 105,
+          "pulse": 95,
+          "temperature": 38.5
+        },
+        "priorState": {
+          "total": 7,
+          "redParameters": []
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 6,
+        "tier": "medium",
+        "fires": true,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 2,
+          "spo2": 1,
+          "sbp": 1,
+          "pulse": 1,
+          "temperature": 1,
+          "o2_status": 0,
+          "consciousness": 0
+        },
+        "alertCrossing": false,
+        "alertCrossingReason": null
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0208",
+      "source_section": "§3.1 catálogo irmão ALERT-EWS-NEWS2-DETERIORATION-01 (rearme — recruzamento)",
+      "description": "REARME — anterior 6 (abaixo de 7) → agora 7: cruzamento ascendente de novo (alertCrossing true); a janela de cooldown do rearme é política da camada de supressão, não do kernel puro",
+      "delta": {
+        "values": {
+          "rr": 21,
+          "spo2": 92,
+          "sbp": 99,
+          "pulse": 95
+        },
+        "priorState": {
+          "total": 6,
+          "redParameters": []
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 7,
+        "tier": "high",
+        "fires": true,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 2,
+          "spo2": 2,
+          "sbp": 2,
+          "pulse": 1,
+          "o2_status": 0,
+          "consciousness": 0,
+          "temperature": 0
+        },
+        "alertCrossing": true,
+        "alertCrossingReason": "ascending_total_crossing"
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0209",
+      "source_section": "§3.1 catálogo irmão ALERT-EWS-NEWS2-DETERIORATION-01 (gatilho de borda)",
+      "description": "NOVO vermelho com total já alto — anterior 8 → agora 7 com FR vermelho novo: sem cruzamento de total, MAS o novo parâmetro vermelho dispara (alertCrossing true, new_red_parameter)",
+      "delta": {
+        "values": {
+          "rr": 25,
+          "spo2": 92,
+          "pulse": 95,
+          "temperature": 38.5
+        },
+        "priorState": {
+          "total": 8,
+          "redParameters": []
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 7,
+        "tier": "high",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "rr": 3,
+          "spo2": 2,
+          "pulse": 1,
+          "temperature": 1,
+          "sbp": 0,
+          "o2_status": 0,
+          "consciousness": 0
+        },
+        "alertCrossing": true,
+        "alertCrossingReason": "new_red_parameter"
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0210",
+      "source_section": "§3.1 catálogo irmão ALERT-EWS-NEWS2-DETERIORATION-01 (gatilho de borda)",
+      "description": "vermelho RESOLVIDO e outro NOVO — anterior 5 com FC vermelha, agora FC normal e FR vermelho: o novo vermelho (FR) dispara (alertCrossing true, new_red_parameter)",
+      "delta": {
+        "values": {
+          "rr": 25,
+          "temperature": 38.5,
+          "pulse": 95
+        },
+        "priorState": {
+          "total": 5,
+          "redParameters": ["pulse"]
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 5,
+        "tier": "medium",
+        "fires": true,
+        "redParameter": true,
+        "reasons": [],
+        "paramScores": {
+          "rr": 3,
+          "temperature": 1,
+          "pulse": 1
+        },
+        "alertCrossing": true,
+        "alertCrossingReason": "new_red_parameter"
+      }
+    },
+    {
+      "id": "CRV-NEWS2-0211",
+      "source_section": "§3.1 catálogo irmão ALERT-EWS-NEWS2-DETERIORATION-01 — TV-2 (gatilho de borda)",
+      "description": "TV-2: anterior 5 → agora 6 — banda média (5–6) NÃO é gatilho deste alerta (rota da tendência, ALERT-EWS-TREND-RISING-02, irmão); alertCrossing false",
+      "delta": {
+        "values": {
+          "rr": 21,
+          "spo2": 94,
+          "sbp": 105,
+          "pulse": 95,
+          "temperature": 38.5
+        },
+        "priorState": {
+          "total": 5,
+          "redParameters": []
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 6,
+        "tier": "medium",
+        "fires": true,
+        "redParameter": false,
+        "reasons": [],
+        "paramScores": {
+          "rr": 2,
+          "spo2": 1,
+          "sbp": 1,
+          "pulse": 1,
+          "temperature": 1,
+          "o2_status": 0,
+          "consciousness": 0
+        },
+        "alertCrossing": false,
+        "alertCrossingReason": null
       }
     }
   ]

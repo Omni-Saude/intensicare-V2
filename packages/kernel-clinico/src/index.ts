@@ -41,6 +41,7 @@ export {
 export type {
   AcvpuToken,
   AgeInput,
+  AlertCrossingReason,
   ConflictResolutionRecord,
   EvaluationRecord,
   EvaluationStatus,

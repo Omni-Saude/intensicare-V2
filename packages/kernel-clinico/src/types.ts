@@ -138,6 +138,24 @@ export interface News2EvaluationInput {
   readonly treatmentLimitationOrderDocumented?: boolean;
   /** Última avaliação válida conhecida (para o texto de não-avaliado da spec §7). */
   readonly lastValidEvaluationTime?: string | null;
+  /**
+   * Estado ANTERIOR da série do paciente, para o gatilho de borda do alerta
+   * de deterioração (catálogo irmão ALERT-EWS-NEWS2-DETERIORATION-01:
+   * edge_trigger := (news2 >= 7 E news2_prev < 7) OU novo parâmetro
+   * vermelho). O kernel permanece PURO: comparação entra, veredito sai.
+   *
+   * `totalScore: null` ⇒ total anterior desconhecido (avaliação anterior não
+   * computável ou ausente). `redParameters` vazio ⇒ anterior conhecido SEM
+   * vermelho; a união inteira `priorState: undefined` ⇒ estado anterior
+   * DESCONHECIDO — premissa reversível: desconhecido ARMA o gatilho (a
+   * primeira piora observada alerta). Política de gatilho pendente de
+   * ratificação (RAT-EWS trigger policy); NENHUMA banda ou escala é tocada
+   * por este campo (NEWS2-C-01).
+   */
+  readonly priorState?: {
+    readonly totalScore: number | null;
+    readonly redParameters: readonly News2ParameterId[];
+  } | null;
 }
 
 /**
@@ -197,6 +215,13 @@ export interface PopulationGateResult {
 }
 
 /**
+ * Motivo do veredito do gatilho de borda do alerta de deterioração
+ * (catálogo irmão ALERT-EWS-NEWS2-DETERIORATION-01). Cruzamento ascendente
+ * do total tem precedência sobre novo vermelho quando ambos ocorrem.
+ */
+export type AlertCrossingReason = "ascending_total_crossing" | "new_red_parameter";
+
+/**
  * Registro de avaliação NEWS2 — imutável, determinístico, replayável.
  * Um total numérico existe SOMENTE quando `status === "valid"` (spec §5.1).
  */
@@ -221,9 +246,31 @@ export interface EvaluationRecord {
   /**
    * Condição de exibição de escalonamento consultivo atingida
    * (tier low_medium/medium/high) — semântica de EXIBIÇÃO, nunca
-   * auto-escalonamento (spec §4.2).
+   * auto-escalonamento (spec §4.2). NÃO é o gatilho do alerta de
+   * deterioração: para o gatilho de borda, ver `alertCrossing`.
    */
   readonly fires: boolean;
+  /**
+   * Veredito do GATILHO DE BORDA do alerta de deterioração (catálogo irmão
+   * ALERT-EWS-NEWS2-DETERIORATION-01): cruzamento ascendente do total
+   * (>=7 com anterior <7 ou desconhecido) OU novo parâmetro vermelho (==3
+   * não vermelho na medição anterior). `true` SOMENTE sob `status ===
+   * "valid"`; patamar alto PERSISTENTE não é cruzamento. Política de
+   * gatilho pendente de ratificação (RAT-EWS trigger policy).
+   */
+  readonly alertCrossing: boolean;
+  /** Motivo do veredito; `null` quando `alertCrossing` é `false`. */
+  readonly alertCrossingReason: AlertCrossingReason | null;
+  /**
+   * Estado anterior EFETIVAMENTE CONSIDERADO no veredito (`null` quando
+   * nenhum veredito foi computado — registro não pontuável). `news2Prev:
+   * null` e `prevRedParameters: null` preservam a distinção "desconhecido"
+   * vs. "conhecido e vazio" para replay byte a byte.
+   */
+  readonly alertCrossingInputs: {
+    readonly news2Prev: number | null;
+    readonly prevRedParameters: readonly News2ParameterId[] | null;
+  } | null;
   /** Escala de SpO2 efetivamente usada (null quando SpO2 não pôde ser pontuada). */
   readonly spo2ScaleUsed: Spo2Scale | null;
   readonly populationGate: PopulationGateResult;
