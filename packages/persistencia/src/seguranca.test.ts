@@ -191,6 +191,11 @@ async function semearTenantCompleto(db: PGlite, tenantId: string): Promise<Tenan
       evaluatedAt: syntheticInstant("2026-08-16T10:06:00.000Z"),
       result: { status: "valido" },
       kernelRecord: { status: "valid" },
+      // Identidade durável (MAJ-5): o JSON desta semente não declara
+      // identidade, então o CHECK de coerência a aceita — é o estado legítimo
+      // de recusa legada, não uma contradição.
+      ruleId: "RULE-NEWS2",
+      ruleVersion: "0.2.0",
     });
     await insertAlert(tx, {
       id: alertId,

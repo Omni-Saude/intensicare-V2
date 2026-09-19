@@ -52,6 +52,7 @@ export const ARQUIVOS_DE_MIGRACAO = [
   "0004_escopo_selado.sql",
   "0005_fecho_de_privilegio.sql",
   "0006_ancora_isolada.sql",
+  "0007_identidade_versao_regra.sql",
 ] as const;
 
 /**

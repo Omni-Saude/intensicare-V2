@@ -636,6 +636,13 @@ export async function ingestObservations(
       totalScore: avaliacao.escore,
       riskTier: avaliacao.banda,
       redParameter: avaliacao.parametroVermelho,
+      // Identidade durável da regra (MAJ-5, ADR-0025 §5.2 item 4): vem de
+      // `despacho.registro` — presente TANTO na avaliação quanto na recusa
+      // (onde `record` é null) — e na MESMA inserção que persiste o
+      // `kernel_record`. O JSON deixa de ser o único lugar onde a versão
+      // persistida identifica o algoritmo que de facto correu.
+      ruleId: despacho.registro.ruleId,
+      ruleVersion: despacho.registro.ruleVersion,
       // Recusa de despacho ⇒ nenhum registro de kernel: `fires` é `false` e o
       // registro persistido fica vazio. Herdar `true` de uma avaliação que não
       // aconteceu seria fabricar condição de exibição.
