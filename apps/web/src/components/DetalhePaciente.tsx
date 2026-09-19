@@ -30,6 +30,7 @@ import { ContribuicaoParametroLinha } from "./ContribuicaoParametroLinha.js";
 import { EstadoTela } from "./EstadoTela.js";
 import { PainelAlertas } from "./PainelAlertas.js";
 import { SeloModoDespacho } from "./SeloModoDespacho.js";
+import { TendenciaAvaliacoes } from "./TendenciaAvaliacoes.js";
 
 interface DetalhePacienteProps {
   leitoId: string;
@@ -312,6 +313,18 @@ export function DetalhePaciente({
           </ul>
         </>
       )}
+
+      {/*
+        MAJ-4 (WF-02): a corroboração pede proveniência E tendência. A série é
+        do MESMO leito que o cabeçalho anuncia — entra aqui, dentro do bloco
+        governado por `itemDesteLeito`, para que a guarda de identidade
+        (HAZ-0001/0002) a cubra como cobre o resto do conteúdo: nada de
+        atribuição cruzada entre leitos, nem no desenho nem na tabela.
+      */}
+      <TendenciaAvaliacoes
+        serie={itemDesteLeito.serieAvaliacoes}
+        {...(relogio !== undefined ? { agoraMs: relogio.agoraMs() } : {})}
+      />
 
       <PainelAlertas
         alertas={itemDesteLeito.alertas}

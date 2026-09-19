@@ -14,6 +14,7 @@ import type { EntradaGradeLeitos, ResultadoAvaliacao } from "@intensicare/contra
 import { describe, expect, it } from "vitest";
 import * as moduloClienteHttp from "./clienteHttp.js";
 import {
+  criarClienteHttp,
   mapearAvaliacao,
   mapearEntradaGrade,
   mapearEstadoItem,
@@ -21,6 +22,7 @@ import {
   mapearParametro,
   mapearStatusAvaliacao,
 } from "./clienteHttp.js";
+import type { ProvedorSessao } from "./sessao.js";
 
 describe("mapeamento de status de avaliação (contrato → UI)", () => {
   it("cobre os cinco estados da ADR-0008 sem inventar normalidade", () => {
@@ -384,5 +386,185 @@ describe("modo de despacho na avaliação por paciente (LAC-L2)", () => {
 
   it("resposta gravada ANTES desta versão do contrato chega como `null`, não como `undefined`", () => {
     expect(mapearAvaliacao(base).despacho).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// MAJ-4 — o histórico de avaliações deixa de ser descartado (WF-02)
+//
+// `obterAvaliacaoPaciente` buscava `/v1/pacientes/:ref/avaliacoes` (a LISTA)
+// e mantinha só `avaliacoes[0]` — a série que o backend já entregava morria
+// no cliente, e a intenção de corroboração do WF-02 ("provenance + trend
+// matter more than the current value") ficava sem matéria-prima. Estes
+// testes fixam o ponto de conserto na camada de dados: a lista INTEIRA
+// atravessa o mapeamento, os pontos fail-closed incluídos, e o consumidor
+// do "mais recente" não muda de comportamento em nenhum caminho.
+// ---------------------------------------------------------------------------
+
+const CABECALHO_AUTORIZACAO = "Bearer SYNTH-TOKEN.SYNTH-TENANT-G7.SYNTH-PROFISSIONAL-WEB";
+
+function sessaoDeTeste(): ProvedorSessao {
+  return {
+    estadoAtual: () => "ativa",
+    cabecalhoAutorizacao: () => Promise.resolve(CABECALHO_AUTORIZACAO),
+    registrarRespostaNaoAutorizada: () => undefined,
+    assinar: () => () => undefined,
+  };
+}
+
+function respostaJson(corpo: unknown, status = 200): Response {
+  return new Response(JSON.stringify(corpo), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+/** `fetch` de mentira que responde por prefixo de caminho — grade e avaliações. */
+function fetchPorCaminho(rotas: Record<string, () => Response>): typeof fetch {
+  return ((entrada: RequestInfo | URL) => {
+    const url = String(entrada);
+    const caminho = url.replace(/^https?:\/\/[^/]+/, "");
+    for (const [prefixo, responder] of Object.entries(rotas)) {
+      if (caminho.startsWith(prefixo)) return Promise.resolve(responder());
+    }
+    return Promise.resolve(respostaJson({ title: "Rota não programada" }, 404));
+  }) as unknown as typeof fetch;
+}
+
+const ENTRADA_GRADE = {
+  leitoId: "SYNTH-LEITO-01",
+  encontroId: "SYNTH-ENC-P001",
+  pacienteRef: "amh:psr:v1:SYNTH-P001",
+  escore: 7,
+  banda: "alerta",
+  statusAvaliacao: "valido",
+  frescor: "atual",
+  atualizadoEm: "2026-09-19T10:00:00.000Z",
+  alerta: null,
+};
+
+function avaliacaoContrato(
+  escore: number | null,
+  status: "valido" | "indisponivel",
+  avaliadoEm: string,
+) {
+  return {
+    status,
+    parametrosAusentes: [],
+    parametros: [],
+    escore,
+    banda: escore === null ? null : "atencao",
+    avaliadoEm,
+    motivos: [],
+    anotacoes: [],
+    explicacao: "SYNTH — explicação agregada do backend.",
+    parametroVermelho: false,
+    versaoRegra: "RULE-NEWS2@0.2.0",
+  };
+}
+
+describe("obterAvaliacaoPaciente — retenção do histórico (MAJ-4)", () => {
+  it("retém a SÉRIE completa quando a API devolve N>1 avaliações — hoje só avaliacoes[0] sobrevive", async () => {
+    const impl = fetchPorCaminho({
+      "/v1/projecoes/grade-leitos": () => respostaJson({ leitos: [ENTRADA_GRADE] }),
+      "/v1/pacientes/": () =>
+        respostaJson({
+          pacienteRef: "amh:psr:v1:SYNTH-P001",
+          avaliacoes: [
+            avaliacaoContrato(7, "valido", "2026-09-19T10:00:00.000Z"),
+            avaliacaoContrato(5, "valido", "2026-09-19T06:00:00.000Z"),
+            avaliacaoContrato(2, "valido", "2026-09-19T02:00:00.000Z"),
+          ],
+        }),
+    });
+    const cliente = criarClienteHttp({ sessao: sessaoDeTeste(), fetchImpl: impl });
+
+    const resposta = await cliente.obterAvaliacaoPaciente("SYNTH-LEITO-01");
+
+    expect(resposta.estadoCarregamento).toBe("pronto");
+    expect(
+      resposta.dados?.serieAvaliacoes,
+      "a série completa deve atravessar o mapeamento",
+    ).toHaveLength(3);
+    // Ordem do backend preservada (mais recente primeiro), sem reordenação no cliente.
+    expect(resposta.dados?.serieAvaliacoes?.[0]?.news2Total).toBe(7);
+    expect(resposta.dados?.serieAvaliacoes?.[2]?.news2Total).toBe(2);
+    // O consumidor do "mais recente" NÃO muda: continua o avaliacoes[0] mapeado.
+    expect(resposta.dados?.avaliacao?.news2Total).toBe(7);
+  });
+
+  it("lista VAZIA vira série vazia honesta (não ausência silenciosa)", async () => {
+    const impl = fetchPorCaminho({
+      "/v1/projecoes/grade-leitos": () => respostaJson({ leitos: [ENTRADA_GRADE] }),
+      "/v1/pacientes/": () =>
+        respostaJson({ pacienteRef: "amh:psr:v1:SYNTH-P001", avaliacoes: [] }),
+    });
+    const cliente = criarClienteHttp({ sessao: sessaoDeTeste(), fetchImpl: impl });
+
+    const resposta = await cliente.obterAvaliacaoPaciente("SYNTH-LEITO-01");
+
+    expect(resposta.dados?.serieAvaliacoes).toEqual([]);
+    // A avaliação da linha continua a da projeção (nenhuma avaliação por paciente).
+    expect(resposta.dados?.avaliacao?.news2Total).toBe(7);
+  });
+
+  it("FALHA da chamada de histórico vira `serieAvaliacoes: null` — indisponibilidade DECLARADA, nunca vazia normal", async () => {
+    const impl = fetchPorCaminho({
+      "/v1/projecoes/grade-leitos": () => respostaJson({ leitos: [ENTRADA_GRADE] }),
+      "/v1/pacientes/": () => respostaJson({ title: "Erro interno" }, 500),
+    });
+    const cliente = criarClienteHttp({ sessao: sessaoDeTeste(), fetchImpl: impl });
+
+    const resposta = await cliente.obterAvaliacaoPaciente("SYNTH-LEITO-01");
+
+    expect(resposta.estadoCarregamento).toBe("pronto");
+    expect(resposta.dados?.serieAvaliacoes).toBeNull();
+    // Comportamento existente preservado: a avaliação exibida segue sendo a da projeção.
+    expect(resposta.dados?.avaliacao?.news2Total).toBe(7);
+  });
+
+  it("pontos fail-closed do histórico chegam mapeados (nao_avaliada), sem virar valor", async () => {
+    const impl = fetchPorCaminho({
+      "/v1/projecoes/grade-leitos": () => respostaJson({ leitos: [ENTRADA_GRADE] }),
+      "/v1/pacientes/": () =>
+        respostaJson({
+          pacienteRef: "amh:psr:v1:SYNTH-P001",
+          avaliacoes: [
+            avaliacaoContrato(7, "valido", "2026-09-19T10:00:00.000Z"),
+            avaliacaoContrato(null, "indisponivel", "2026-09-19T06:00:00.000Z"),
+          ],
+        }),
+    });
+    const cliente = criarClienteHttp({ sessao: sessaoDeTeste(), fetchImpl: impl });
+
+    const resposta = await cliente.obterAvaliacaoPaciente("SYNTH-LEITO-01");
+
+    expect(resposta.dados?.serieAvaliacoes).toHaveLength(2);
+    expect(resposta.dados?.serieAvaliacoes?.[1]?.estadoAvaliacao).toBe("nao_avaliada");
+    expect(resposta.dados?.serieAvaliacoes?.[1]?.news2Total).toBeNull();
+  });
+
+  it("leito vago não busca histórico — campo ausente, nunca série inventada", async () => {
+    const impl = fetchPorCaminho({
+      "/v1/projecoes/grade-leitos": () =>
+        respostaJson({
+          leitos: [
+            {
+              ...ENTRADA_GRADE,
+              pacienteRef: null,
+              encontroId: null,
+              escore: null,
+              banda: null,
+              statusAvaliacao: null,
+            },
+          ],
+        }),
+    });
+    const cliente = criarClienteHttp({ sessao: sessaoDeTeste(), fetchImpl: impl });
+
+    const resposta = await cliente.obterAvaliacaoPaciente("SYNTH-LEITO-01");
+
+    expect(resposta.dados?.pacienteRef).toBeNull();
+    expect(resposta.dados?.serieAvaliacoes).toBeUndefined();
   });
 });
