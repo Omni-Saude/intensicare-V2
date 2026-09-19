@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { ItemGradeLeito } from "../domain/clinico.js";
 import { textoAvaliacao, textoBandaRisco, textoFrescor } from "../domain/linguagem.js";
 import { BadgeTom } from "./BadgeTom.js";
@@ -15,8 +16,16 @@ const ESTADOS_FAIL_CLOSED = new Set(["nao_avaliada", "invalida"]);
  * acessível + rótulo textual), frescor do dado e modo de despacho da regra.
  * `<button>` nativo (não `<div onClick>`): foco de teclado e ativação
  * por Enter/Espaço vêm de graça, sem `tabIndex`/`onKeyDown` manuais.
+ *
+ * MEMO (margem de render, MIN-7): a grade re-renderiza a cada tique de idade
+ * (5s), a cada mudança de cadência/frescor/conectividade e a cada anúncio —
+ * e nenhum deles muda UM CARTÃO que seja. Sem `memo`, cada tique re-renderizava
+ * os 48 cartões (com o custo de nome acessível que consultas por papel pagam
+ * em jsdom sob a suíte). `item` é estável entre leituras (mesma referência do
+ * array do recurso) e `aoSelecionar` é `useCallback` em `useRoteador` — as duas
+ * condições para o memo valer.
  */
-export function CartaoLeito({ item, aoSelecionar }: CartaoLeitoProps) {
+export const CartaoLeito = memo(function CartaoLeito({ item, aoSelecionar }: CartaoLeitoProps) {
   const { avaliacao } = item;
   /*
     FRESCOR VEM DO SERVIDOR (ADR-0011 P7: "a projeção entrega o status pronto;
@@ -80,4 +89,4 @@ export function CartaoLeito({ item, aoSelecionar }: CartaoLeitoProps) {
       </button>
     </li>
   );
-}
+});

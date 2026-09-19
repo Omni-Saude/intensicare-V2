@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LeitorDeProntidao } from "../api/prontidao.js";
 import type { ClienteApiIntensiCare, ModoDemonstracao } from "../api/tipos.js";
 import type { Alerta, ItemGradeLeito } from "../domain/clinico.js";
@@ -213,6 +213,22 @@ export function GradeLeitos({
     setItens(recurso.dados);
   }, [recurso.dados]);
 
+  /*
+    MARGEM DE RENDER (MIN-7): o conteúdo NÃO precisa esperar a rodada extra do
+    efeito acima. `itens` só existe para a EDIÇÃO otimista do reconhecimento de
+    alerta; enquanto nenhuma edição ocorreu, exibir `recurso.dados` direto elimina
+    um commit inteiro entre o dado chegar e o conteúdo existir — commit que, sob
+    a suíte, era uma rodada a mais de act/consulta (a diferença entre a consulta
+    de conteúdo custar 1 ciclo ou 2). Com a primeira edição, `itens` (não-nulo)
+    passa a ter precedência e o comportamento otimista é PRESERVADO; o efeito
+    acima continua colando a cópia a cada leitura nova.
+  */
+  const itensExibidos = itens ?? recurso.dados;
+  const alertasPendentesDaTela = useMemo(
+    () => (itensExibidos === null ? [] : alertasPendentes(itensExibidos)),
+    [itensExibidos],
+  );
+
   /**
    * Anúncio COALESCIDO (uma mensagem por leitura, com contagem), nunca uma
    * rajada por alerta — IA-P2/HAZ-0037. A dependência é `obtidoEm`, que muda
@@ -297,15 +313,15 @@ export function GradeLeitos({
         aoTentarNovamente={recurso.recarregar}
         tentativas={recurso.tentativas}
       >
-        {itens && (
+        {itensExibidos && (
           <>
             <ul className="grade-leitos">
-              {itens.map((item) => (
+              {itensExibidos.map((item) => (
                 <CartaoLeito key={item.leitoId} item={item} aoSelecionar={aoSelecionarLeito} />
               ))}
             </ul>
             <PainelAlertas
-              alertas={alertasPendentes(itens)}
+              alertas={alertasPendentesDaTela}
               cliente={cliente}
               aoAlertaAtualizado={lidarComAlertaAtualizado}
               tituloRegiao="Alertas ativos"
@@ -322,9 +338,9 @@ export function GradeLeitos({
         este bloco, uma falha esconderia a grade inteira; com ele, o dado
         aparece sempre acompanhado do seu rótulo de frescor.
       */}
-      {recurso.exibindoDadoDesatualizado && itens && (
+      {recurso.exibindoDadoDesatualizado && itensExibidos && (
         <ul className="grade-leitos grade-leitos--desatualizada">
-          {itens.map((item) => (
+          {itensExibidos.map((item) => (
             <CartaoLeito key={item.leitoId} item={item} aoSelecionar={aoSelecionarLeito} />
           ))}
         </ul>
