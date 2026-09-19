@@ -1175,6 +1175,78 @@ lacunas_de_escopo_2026_08_20:
     Estado factual duro INALTERADO: 0 vias acionaveis, 47/47 inelegiveis,
     Observation nao consumivel, safety case M0, nenhum dado real acessado.
 
+orq7_verdade_documental_2026_09_19:
+  aviso: >-
+    ESTADO VIVO E MAIS RECENTE no que toca ao escopo de ORQ-7 (varredura de
+    verdade documental + dossies de ratificacao). Secoes anteriores NAO foram
+    reescritas; numeros delas eram corretos quando escritos. Execucao da
+    PROMPT_ORQ-7_DOCS_TRUTH_SWEEP.md, com sesao autorizada pelo titular para
+    merge dos PRs. Estado factual duro INALTERADO.
+  entregue_e_mesclado:
+    PR_14_sec: >-
+      Fora do escopo de ORQ-7, autorizado pelo titular na sessao: fecho
+      estrutural do achado CWE-78 que o gate de commit Mimosa apontava —
+      ExecutorTenant = Pick<Transaction, query|sql|rollback|listen|closed>
+      (porta.ts), TransacaoPostgres.exec APAGADO (sem chamadores), duplo de
+      teste sem o encaminhador de exec, canario fecho-exec-porta.test.ts.
+      Varreduras seladas antes/depois; a de depois (scan-2026-09-19T18-16-10
+      .786Z-2945b1ba6d3d) nao tem achado estatico. Mesclado 6141cf8.
+    PR_16_A: >-
+      MIN-1 (2 comentarios apontavam o removido store.ts -> agora db.ts,
+      sucessor autodeclarado), MIN-2 (adendo datado
+      duplicacoes_estruturais_vivas_adendo_2026_09_19; original preservado
+      verbatim), MIN-6 (adendo
+      limites_declarados_do_gate_de_contratos_adendo_2026_09_19 — torna
+      verdadeira a afirmacao do proprio script de que a exclusao "esta no
+      handoff como pendencia nomeada"; pendencias SEM DONO; script
+      INTOCADO). Mesclado ffd86a4.
+    PR_17_B: >-
+      Quatro dossies PROPOSAL em docs/05-clinical-safety/: CRIT-4
+      (dossie-news2-escala-2-divergencia.md — os DOIS lados com citacoes,
+      default RECOMENDADO, nada decidido), ponteiros com ID estavel para
+      §6.1/§6.2 de docs/10 (UX-FRESCOR-ORDEM-SEVERIDADE,
+      UX-FRESCOR-SELO-GRADE; conteudo NAO duplicado; docs/10 com entrada
+      datada de volta), e MAJ-5 (dossie-esquema-versao-regra.md — registro
+      vivo ruleId@ruleVersion vs algorithm_version do irmao; nenhuma
+      correspondencia inventada). Spec pinada INTOCADA. Mesclado b04935b.
+  ABERTO_leia_antes_de_agir:
+    PR_18_C_wave_2: >-
+      DRAFT (branch orq7/varredura-verdade 49bce1e, base b04935b — ATRASADA:
+      main andou com #22/#23). Conteúdo: MAJ-6 (README SSE), MAJ-7 (§5.8,
+      contabilidade 6/5/1; §5.2 INTACTO, ACH-O3-16 segue ABERTO), MIN-3
+      (adendo docs/07; stub permanece). SO fundir apos ORQ-2 (#21) E ORQ-3
+      (sem PR ainda). Ao desrascunhar: rebase, RECONFERIR as citacoes de
+      linha contra o codigo fundido (ORQ-3 edita territorio de db.ts/stream
+      e apps/api/README.md:83-85), rodar gates.
+    mecanica_do_gate_de_commit: >-
+      O git-gate do Mimosa varre a ARVORE DO CHECKOUT PRINCIPAL, nao a do
+      worktree que committa; bloqueou a sessao inteira ate o fecho do CWE-78
+      existir nessa arvore (resolvido por mudanca autorizada do checkout para
+      a branch sec; verificacao de que o hook foi desabilitado por sessao
+      irma em [[orq5]] do repositorio de memoria do agente). commit/push de
+      agente voltou a funcionar no fim do dia.
+    gate_change_metadata: >-
+      O CI exige ID de taxonomia (ADR-*/THR-*/HAZ-*/...) no corpo do PR ou
+      de algum commit do intervalo; IDs forenses (MIN-*/MAJ-*/CRIT-*) NAO
+      contam. Repositorio aceita SOMENTE squash; branch protection exige
+      branch atualizada com main — a cada merge de sessao concorrente,
+      rebase + force-push antes do proximo merge.
+    supply_chain_base_image: >-
+      artefato-api/web vermelhos por CVE-2026-14456 (libcrypto3 3.5.7-r0,
+      fix 3.5.8-r0) no node:22-alpine pinado por digest — condicao temporal
+      repo-wide, remédio = repin de base pela plataforma (precedente PR #5),
+      nao feito por nenhuma stream. Nao-required para merge.
+    higiene_local: >-
+      .mimosa/ e apps/web/.mimosa/ (estado do hook, nao versionados, NAO
+      gitignored — MIN-5) fazem o biome local reprovar formatacao; CI nao os
+      ve. 5 usos de useLiteralKeys em apps/web sao infos, nao erros.
+  nada_foi_declarado: >-
+    Nenhum gate aprovado, nenhum MG-* satisfeito, nenhum hazard fechado,
+    nenhuma decisao clinica tomada — os dossies registram divergencias e
+    enfileiram decisoes; ratificar e ato de autoridade humana nomeada.
+    Estado factual duro INALTERADO: 0 vias acionaveis, 47/47 inelegiveis,
+    Observation nao consumivel, safety case M0, nenhum dado real acessado.
+
 rules_for_any_resuming_agent:
   - Read docs/00-governance/evidence-notation.md before writing anything; front-matter is CI-enforced
   - Never name an owner, mark DECIDED, accept a risk, or resolve a contradiction — humans do that
