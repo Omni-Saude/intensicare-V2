@@ -19,7 +19,7 @@ source: >
   docs/10-ux-and-accessibility/ (os cinco artefatos de SPR-G4-3);
   packages/contratos/openapi.yaml, asyncapi.yaml, src/index.ts, src/asyncapi.ts
 date_collected: 2026-08-18
-last_updated: 2026-08-19
+last_updated: 2026-09-19
 addenda:
   - "§0 (2026-08-18): aviso de que a tabela dos oito LAC-D* é da PRIMEIRA rodada e não contém os achados da quarta onda"
   - "LAC-L1 (2026-08-18): conferência de obsolescência contra apps/web/README.md + quarto defeito da fiação (tempestade de requisição)"
@@ -27,6 +27,7 @@ addenda:
   - "§6 (2026-08-18): três pendências humanas criadas pelos fechos de §5, sem dono e sem DECIDED"
   - "LAC-L4/LAC-L5 (2026-08-19): correção de citação cruzada desatualizada — `ADR-0015` não está mais `not-started` (direção aceita GDEC-0016; minuta materializada GDEC-0015); 2.2.1 permanece corretamente FORA da matriz, mas pela ausência de sessão real/IdP contratado, não por pendência de aceite do ADR. Critérios de aceite pré-estagiados em `criterios-de-aceite-wcag-2-2-1-timing-adjustable.md`"
   - "LAC-L3 (2026-08-19): correção datada — a divergência de `BandaRisco` (tipo) fechou no código (`mapearBanda` removido, `BandaRisco` alias direto do contrato); a frase de abertura sobre enums REST 'não verificados contra nada' também estava desatualizada (Parte F1/G3 acrescentadas a `check_contratos.mjs`: 258 verificações, eram 209; 99 casos de autoteste, eram 35); `Frescor` (3×9) e ausência de geração de código a partir do contrato seguem abertas"
+  - "(2026-09-19): §6.1 e §6.2 ganharam dossiês rastreáveis com ID estável — `docs/05-clinical-safety/dossie-ordem-severidade-frescor.md` (UX-FRESCOR-ORDEM-SEVERIDADE) e `docs/05-clinical-safety/dossie-selo-frescor-grade.md` (UX-FRESCOR-SELO-GRADE); os blocos inline de §6 permanecem a análise autoritativa, sem duplicação de conteúdo"
 provenance:
   source_repo: intensicare-V2
   path_or_url: docs/10-ux-and-accessibility/analise-de-lacunas-frontend.md
