@@ -8,10 +8,11 @@
  * removidos — as entradas agora são os tipos canônicos de
  * `@intensicare/dominio` (`Organization`, `CareUnit`, `Bed`).
  */
-import type { Transaction } from "@electric-sql/pglite";
-import type { Bed, CareUnit, Organization } from "@intensicare/dominio";
 
-export async function insertOrganization(tx: Transaction, input: Organization): Promise<void> {
+import type { Bed, CareUnit, Organization } from "@intensicare/dominio";
+import type { ExecutorTenant } from "../postgres/porta.js";
+
+export async function insertOrganization(tx: ExecutorTenant, input: Organization): Promise<void> {
   await tx.query(`insert into organizations (id, tenant_id, name) values ($1, $2, $3)`, [
     input.id,
     input.tenantId,
@@ -19,14 +20,14 @@ export async function insertOrganization(tx: Transaction, input: Organization): 
   ]);
 }
 
-export async function insertCareUnit(tx: Transaction, input: CareUnit): Promise<void> {
+export async function insertCareUnit(tx: ExecutorTenant, input: CareUnit): Promise<void> {
   await tx.query(
     `insert into care_units (id, tenant_id, organization_id, name) values ($1, $2, $3, $4)`,
     [input.id, input.tenantId, input.organizationId, input.name],
   );
 }
 
-export async function insertBed(tx: Transaction, input: Bed): Promise<void> {
+export async function insertBed(tx: ExecutorTenant, input: Bed): Promise<void> {
   await tx.query(`insert into beds (id, tenant_id, care_unit_id, code) values ($1, $2, $3, $4)`, [
     input.id,
     input.tenantId,
@@ -42,7 +43,7 @@ export interface OrganizationRow {
 }
 
 /** Lê todas as organizações VISÍVEIS na transação corrente (sujeito a RLS). */
-export async function listOrganizations(tx: Transaction): Promise<readonly OrganizationRow[]> {
+export async function listOrganizations(tx: ExecutorTenant): Promise<readonly OrganizationRow[]> {
   const result = await tx.query<{ id: string; tenant_id: string; name: string }>(
     `select id, tenant_id, name from organizations order by id`,
   );
@@ -57,7 +58,7 @@ export interface BedRow {
 }
 
 /** Lê todos os leitos VISÍVEIS na transação corrente (sujeito a RLS). */
-export async function listBeds(tx: Transaction): Promise<readonly BedRow[]> {
+export async function listBeds(tx: ExecutorTenant): Promise<readonly BedRow[]> {
   const result = await tx.query<{
     id: string;
     tenant_id: string;

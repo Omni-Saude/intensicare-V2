@@ -17,7 +17,7 @@
  * também o `AuditEvent` — acontecem na MESMA transação: nunca existe uma
  * janela em que o efeito foi gravado e o evento não, nem o inverso.
  */
-import type { Transaction } from "@electric-sql/pglite";
+
 import type {
   Alert,
   AuditEvent,
@@ -27,11 +27,12 @@ import type {
   SourceEnvelope,
   TemporalValue,
 } from "@intensicare/dominio";
+import type { ExecutorTenant } from "../postgres/porta.js";
 
 // --- pacientes e encontros -------------------------------------------------
 
 export async function insertPatientIdentity(
-  tx: Transaction,
+  tx: ExecutorTenant,
   input: PatientIdentity,
 ): Promise<void> {
   await tx.query(
@@ -40,7 +41,7 @@ export async function insertPatientIdentity(
   );
 }
 
-export async function insertEncounter(tx: Transaction, input: Encounter): Promise<void> {
+export async function insertEncounter(tx: ExecutorTenant, input: Encounter): Promise<void> {
   await tx.query(
     `insert into encounters (id, tenant_id, patient_id, bed_id, admitted_at, discharged_at)
      values ($1, $2, $3, $4, $5, $6)`,
@@ -64,7 +65,7 @@ export interface ActiveEncounterRow {
 
 /** Encontros SEM alta (em andamento) do tenant corrente, com o PSR do paciente. */
 export async function listActiveEncounters(
-  tx: Transaction,
+  tx: ExecutorTenant,
 ): Promise<readonly ActiveEncounterRow[]> {
   const result = await tx.query<{
     id: string;
@@ -84,7 +85,10 @@ export async function listActiveEncounters(
   }));
 }
 
-export async function insertSourceEnvelope(tx: Transaction, input: SourceEnvelope): Promise<void> {
+export async function insertSourceEnvelope(
+  tx: ExecutorTenant,
+  input: SourceEnvelope,
+): Promise<void> {
   await tx.query(
     `insert into source_envelopes (id, tenant_id, source_system, received_at, raw_payload)
      values ($1, $2, $3, $4, $5)`,
@@ -103,7 +107,10 @@ export interface OutboxEventInput {
   readonly payload: Record<string, unknown>;
 }
 
-export async function insertOutboxEvent(tx: Transaction, input: OutboxEventInput): Promise<void> {
+export async function insertOutboxEvent(
+  tx: ExecutorTenant,
+  input: OutboxEventInput,
+): Promise<void> {
   await tx.query(
     `insert into outbox_events (tenant_id, ordering_scope, event_type, aggregate_type, aggregate_id, payload)
      values ($1, $2, $3, $4, $5, $6)`,
@@ -131,7 +138,7 @@ export interface OutboxEventRow {
 
 /** Lê os eventos de outbox VISÍVEIS na transação corrente (sujeito a RLS), na ordem de inserção (B3). */
 export async function listOutboxEvents(
-  tx: Transaction,
+  tx: ExecutorTenant,
   afterId = 0,
 ): Promise<readonly OutboxEventRow[]> {
   const result = await tx.query<{
@@ -163,7 +170,7 @@ export async function listOutboxEvents(
 
 // --- auditoria (append-only, ADR-0009 W6 / ADR-0010 B1) ---------------------
 
-export async function insertAuditEvent(tx: Transaction, input: AuditEvent): Promise<void> {
+export async function insertAuditEvent(tx: ExecutorTenant, input: AuditEvent): Promise<void> {
   await tx.query(
     `insert into audit_events
        (id, tenant_id, actor_id, command, aggregate_type, aggregate_id, previous_state, new_state, occurred_at, idempotency_key)
@@ -194,7 +201,7 @@ export interface AuditEventRow {
 }
 
 /** Lê os eventos de auditoria VISÍVEIS na transação corrente (sujeito a RLS). */
-export async function listAuditEvents(tx: Transaction): Promise<readonly AuditEventRow[]> {
+export async function listAuditEvents(tx: ExecutorTenant): Promise<readonly AuditEventRow[]> {
   const result = await tx.query<{
     id: string;
     tenant_id: string;
@@ -225,7 +232,7 @@ export async function listAuditEvents(tx: Transaction): Promise<readonly AuditEv
  * transação inteira reverte e nenhuma das duas fica persistida.
  */
 export async function insertClinicalObservationWithOutbox(
-  tx: Transaction,
+  tx: ExecutorTenant,
   input: ClinicalObservation,
   orderingScope: string,
 ): Promise<void> {
@@ -316,7 +323,7 @@ function mapObservationRow(row: RawObservationRow): ClinicalObservationRow {
 
 /** Lê as observações VISÍVEIS na transação corrente (sujeito a RLS). */
 export async function listClinicalObservations(
-  tx: Transaction,
+  tx: ExecutorTenant,
 ): Promise<readonly ClinicalObservationRow[]> {
   const result = await tx.query<RawObservationRow>(
     `select ${OBSERVATION_ROW_COLUMNS} from clinical_observations order by id`,
@@ -326,7 +333,7 @@ export async function listClinicalObservations(
 
 /** Observações de UM encontro (insumo da avaliação pelo kernel clínico). */
 export async function listClinicalObservationsForEncounter(
-  tx: Transaction,
+  tx: ExecutorTenant,
   encounterId: string,
 ): Promise<readonly ClinicalObservationRow[]> {
   const result = await tx.query<RawObservationRow>(
@@ -357,7 +364,7 @@ export interface EvaluationRecordInput {
 }
 
 export async function insertEvaluationRecord(
-  tx: Transaction,
+  tx: ExecutorTenant,
   input: EvaluationRecordInput,
 ): Promise<void> {
   await tx.query(
@@ -437,7 +444,7 @@ const EVALUATION_ROW_COLUMNS = `id, tenant_id, encounter_id, subject_ref, status
 
 /** Avaliações de um paciente (PSR), mais recente primeiro. */
 export async function listEvaluationRecordsBySubject(
-  tx: Transaction,
+  tx: ExecutorTenant,
   subjectRef: string,
 ): Promise<readonly EvaluationRecordRow[]> {
   const result = await tx.query<RawEvaluationRow>(
@@ -449,7 +456,7 @@ export async function listEvaluationRecordsBySubject(
 
 /** A avaliação MAIS RECENTE de cada encontro do tenant corrente. */
 export async function listLatestEvaluationPerEncounter(
-  tx: Transaction,
+  tx: ExecutorTenant,
 ): Promise<readonly EvaluationRecordRow[]> {
   const result = await tx.query<RawEvaluationRow>(
     `select distinct on (encounter_id) ${EVALUATION_ROW_COLUMNS}
@@ -470,7 +477,7 @@ export interface IdempotencyRecordInput {
 }
 
 export async function insertIdempotencyRecord(
-  tx: Transaction,
+  tx: ExecutorTenant,
   input: IdempotencyRecordInput,
 ): Promise<void> {
   await tx.query(
@@ -489,7 +496,7 @@ export interface IdempotencyRecordRow {
 }
 
 export async function getIdempotencyRecord(
-  tx: Transaction,
+  tx: ExecutorTenant,
   idempotencyKey: string,
 ): Promise<IdempotencyRecordRow | undefined> {
   const result = await tx.query<{
@@ -516,7 +523,7 @@ export async function getIdempotencyRecord(
 
 // --- alertas e itens de trabalho (ADR-0009) ---------------------------------
 
-export async function insertAlert(tx: Transaction, input: Alert): Promise<void> {
+export async function insertAlert(tx: ExecutorTenant, input: Alert): Promise<void> {
   await tx.query(
     `insert into alerts (id, tenant_id, encounter_id, raised_at, evaluated_at, severity, reason, score)
      values ($1, $2, $3, $4, $5, $6, $7, $8)`,
@@ -540,7 +547,7 @@ export interface NewWorkItemInput {
 }
 
 /** Cria um `WorkItem` no estado inicial `nao_atribuido`, versão 0 (ADR-0009 W1). */
-export async function insertWorkItem(tx: Transaction, input: NewWorkItemInput): Promise<void> {
+export async function insertWorkItem(tx: ExecutorTenant, input: NewWorkItemInput): Promise<void> {
   await tx.query(
     `insert into work_items (id, tenant_id, alert_id, state, version) values ($1, $2, $3, 'nao_atribuido', 0)`,
     [input.id, input.tenantId, input.alertId],
@@ -556,7 +563,10 @@ export interface WorkItemRow {
   readonly assigneeId: string | null;
 }
 
-export async function getWorkItem(tx: Transaction, id: string): Promise<WorkItemRow | undefined> {
+export async function getWorkItem(
+  tx: ExecutorTenant,
+  id: string,
+): Promise<WorkItemRow | undefined> {
   const result = await tx.query<{
     id: string;
     tenant_id: string;
@@ -590,7 +600,7 @@ export interface WorkItemWithAlertRow extends WorkItemRow {
 
 /** Itens de trabalho do tenant, com o alerta de origem, mais recente primeiro. */
 export async function listWorkItemsWithAlerts(
-  tx: Transaction,
+  tx: ExecutorTenant,
 ): Promise<readonly WorkItemWithAlertRow[]> {
   const result = await tx.query<{
     id: string;
@@ -656,7 +666,7 @@ export type WorkItemTransitionOutcome =
  * concorrência e de atomicidade transacional.
  */
 export async function transitionWorkItem(
-  tx: Transaction,
+  tx: ExecutorTenant,
   input: WorkItemTransitionInput,
 ): Promise<WorkItemTransitionOutcome> {
   const before = await tx.query<{ state: string }>(`select state from work_items where id = $1`, [
