@@ -116,7 +116,7 @@ test.describe("LAC-L2 — a degradação declarada por /v1/readyz chega ao ponto
       if (!resposta.url().includes("/v1/readyz")) return;
       statusDeProntidao.push(resposta.status());
       const cabecalhos = resposta.request().headers();
-      if (cabecalhos["authorization"] !== undefined) {
+      if (cabecalhos.authorization !== undefined) {
         prontidaoComCredencial.push(resposta.url());
       }
     });

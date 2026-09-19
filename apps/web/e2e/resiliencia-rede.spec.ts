@@ -142,7 +142,7 @@ test.describe("sessão autenticada", () => {
     for (const sonda of sondas) {
       const cabecalhos = await sonda.allHeaders();
       expect(
-        cabecalhos["authorization"],
+        cabecalhos.authorization,
         `sonda anônima com credencial: ${sonda.url()}`,
       ).toBeUndefined();
     }
@@ -150,7 +150,7 @@ test.describe("sessão autenticada", () => {
     expect(chamadasDeDados.length).toBeGreaterThan(0);
     for (const requisicao of chamadasDeDados) {
       const cabecalhos = await requisicao.allHeaders();
-      expect(cabecalhos["authorization"], `sem Authorization em ${requisicao.url()}`).toBeTruthy();
+      expect(cabecalhos.authorization, `sem Authorization em ${requisicao.url()}`).toBeTruthy();
       expect(cabecalhos["authorization"]).toMatch(/^Bearer /);
     }
   });
