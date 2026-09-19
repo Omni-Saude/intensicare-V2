@@ -33,6 +33,7 @@ import { evaluateAgeGate, MINIMUM_AGE_YEARS } from "./population.js";
 import {
   type AcvpuToken,
   type AgeInput,
+  type AlertCrossingReason,
   type ConflictResolutionRecord,
   type EvaluationRecord,
   type EvaluationStatus,
@@ -750,6 +751,46 @@ export function evaluateNews2(input: News2EvaluationInput): EvaluationRecord {
 
   const fires = status === "valid" && riskTier !== null && riskTier !== "low";
 
+  // ---- Gatilho de borda do alerta de deterioração (catálogo irmão
+  // ALERT-EWS-NEWS2-DETERIORATION-01; política pendente de ratificação
+  // RAT-EWS trigger policy). edge_trigger := (news2 >= 7 E news2_prev < 7)
+  // OU novo parâmetro vermelho (==3 não vermelho na medição anterior).
+  // Patamar alto PERSISTENTE (>=7 → >=7) NÃO é cruzamento — é exatamente o
+  // crônico-alto de UTI que o gatilho existe para não inundar. O kernel
+  // permanece PURO: o estado anterior entra por `input.priorState`, nada é
+  // lembrado aqui. Cooldown/rearme temporal (PT4H após queda abaixo de 7)
+  // é política da camada de supressão do consumidor, não deste registro.
+  // PREMISSA (reversível): estado anterior DESCONHECIDO (`priorState`
+  // ausente) ARMA o gatilho — a primeira piora observada alerta; total
+  // anterior não computável (`totalScore: null`) trata-se do mesmo modo.
+  // PREMISSA (reversível): conjunto vermelho anterior desconhecido trata
+  // qualquer vermelho atual como NOVO. Nenhuma banda, escala ou mapeamento
+  // ACVPU é tocado aqui (NEWS2-C-01).
+  const priorState = input.priorState ?? null;
+  const redParametersNow = contributions
+    .filter((c) => c.status === "valid" && c.score === 3)
+    .map((c) => c.parameter);
+  let alertCrossing = false;
+  let alertCrossingReason: AlertCrossingReason | null = null;
+  let alertCrossingInputs: EvaluationRecord["alertCrossingInputs"] = null;
+  if (status === "valid" && totalScore !== null) {
+    const news2Prev = priorState?.totalScore ?? null;
+    const prevRedParameters = priorState?.redParameters ?? null;
+    const totalCrossing = totalScore >= 7 && (news2Prev === null || news2Prev < 7);
+    const newRedParameters =
+      prevRedParameters === null
+        ? redParametersNow
+        : redParametersNow.filter((p) => !prevRedParameters.includes(p));
+    if (totalCrossing) {
+      alertCrossing = true;
+      alertCrossingReason = "ascending_total_crossing";
+    } else if (newRedParameters.length > 0) {
+      alertCrossing = true;
+      alertCrossingReason = "new_red_parameter";
+    }
+    alertCrossingInputs = { news2Prev, prevRedParameters };
+  }
+
   // ---- Anotações obrigatórias (N-2/N-3/N-4/N-6), sempre visíveis quando aplicáveis.
   const annotations: string[] = [];
   if (input.pregnancy === "not_documented") {
@@ -811,6 +852,9 @@ export function evaluateNews2(input: News2EvaluationInput): EvaluationRecord {
     riskTier,
     redParameter,
     fires,
+    alertCrossing,
+    alertCrossingReason,
+    alertCrossingInputs,
     spo2ScaleUsed,
     populationGate: gate,
     parameters: contributions,
@@ -1078,6 +1122,9 @@ function buildNonScoringRecord(
     riskTier: null,
     redParameter: false,
     fires: false,
+    alertCrossing: false,
+    alertCrossingReason: null,
+    alertCrossingInputs: null,
     spo2ScaleUsed: null,
     populationGate: gate,
     parameters: contributions,

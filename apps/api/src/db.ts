@@ -36,6 +36,7 @@ import type {
 } from "@intensicare/contratos";
 import {
   absentInstant,
+  deveriaEmitirAlerta,
   isLegalWorkItemTransition,
   presentInstant,
   type TemporalValue,
@@ -73,7 +74,15 @@ import {
   type WorkItemWithAlertRow,
   withTenantTransaction,
 } from "@intensicare/persistencia";
-import { canonicalUnitFor, PARAM_TO_CONCEPT, PARAM_TO_KERNEL, requerAlerta } from "./avaliacao.js";
+import {
+  canonicalUnitFor,
+  chaveDeDedupNews2,
+  estadoAnteriorDeAvaliacao,
+  PARAM_TO_CONCEPT,
+  PARAM_TO_KERNEL,
+  POLITICA_SUPRESSAO_NEWS2,
+  requerAlerta,
+} from "./avaliacao.js";
 import type { ConfiguracaoRuntime } from "./config/index.js";
 import {
   type AutoridadeDeLeitura,
@@ -608,9 +617,26 @@ export async function ingestObservations(
     // recusa (HAZ-0005 — ausência de resultado nunca vira zero, e ausência de
     // resultado não é ausência de risco; ADR-0008 §8.3).
     const persisted = await listClinicalObservationsForEncounter(tx, args.encontroId);
+
+    // news2_prev — estado anterior da série do paciente, lido EM-TRANSAÇÃO
+    // ANTES de a nova avaliação existir (CRIT-1; gatilho de borda do
+    // catálogo irmão ALERT-EWS-NEWS2-DETERIORATION-01). A última avaliação
+    // persistida do sujeito (seq desc) fornece total + vermelhos. Ausente,
+    // não computável ou de forma inesperada ⇒ DESCONHECIDO — o kernel ARMA
+    // o gatilho (premissa reversível documentada; pendente ratificação
+    // RAT-EWS trigger policy).
+    const avaliacoesAnteriores = await listEvaluationRecordsBySubject(tx, args.pacienteRef);
+    const estadoAnteriorLido =
+      avaliacoesAnteriores.length > 0
+        ? estadoAnteriorDeAvaliacao(avaliacoesAnteriores[0]!)
+        : undefined;
     const despacho = despacharNews2(
       args.registroDeRegras,
-      { observacoes: persisted, contexto: args.contexto },
+      {
+        observacoes: persisted,
+        contexto: args.contexto,
+        estadoAnterior: estadoAnteriorLido ?? undefined,
+      },
       { instanteIso: agoraIso, correlacaoId: envelopeId },
     );
     const record = despacho.tipo === "avaliada" ? despacho.resultado.registroKernel : null;
@@ -683,30 +709,76 @@ export async function ingestObservations(
       payload: despacho.registro as unknown as Record<string, unknown>,
     });
 
-    // Alerta durável + item de trabalho + outbox — MESMA transação.
+    // Alerta durável + item de trabalho + outbox — MESMA transação. O
+    // GATILHO é de BORDA (requerAlerta → `record.alertCrossing`; catálogo
+    // irmão ALERT-EWS-NEWS2-DETERIORATION-01; CRIT-1) e, sempre que a
+    // condição de EXIBIÇÃO de escalonamento está acima do patamar (`fires`,
+    // spec §4.2), a política de SUPRESSÃO é consultada ANTES de criar o
+    // item (CRIT-2): dedup `paciente+news2-deterioration`, cooldown PT4H,
+    // teto 3/24h — premissas de engenharia do catálogo irmão, pendentes de
+    // ratificação (RAT-EWS), parametrizadas em `POLITICA_SUPRESSAO_NEWS2`.
+    //
+    // Substrato do last-emit: leitura EM-TRANSAÇÃO dos itens de trabalho já
+    // existentes deste encontro (a consulta por paciente não existe em
+    // `packages/persistencia` e este stream não a cria — premissa
+    // reversível; transferências entre encontros podem re-emitir).
+    //
+    // Ingestão suprimida CONTINUA avaliada e auditada; a supressão é
+    // AUDITADA com motivo (`command: "alerta-suprimido"`) — supressão
+    // silenciosa é o mesmo defeito de alerta silencioso.
     let alerta: ResumoItemTrabalho | null = null;
-    if (record !== null && requerAlerta(record)) {
-      const alertId = `SYNTH-ALERTA-${randomUUID()}`;
-      await insertAlert(tx, {
-        id: alertId,
-        tenantId: args.tenantId,
-        encounterId: args.encontroId,
-        raisedAt: nowInstant(),
-        evaluatedAt: nowInstant(),
-        severity: avaliacao.banda ?? "critico",
-        reason: avaliacao.explicacao,
-        ...(avaliacao.escore !== null ? { score: avaliacao.escore } : {}),
-      });
-      await insertWorkItem(tx, { id: alertId, tenantId: args.tenantId, alertId });
-      await insertOutboxEvent(tx, {
-        tenantId: args.tenantId,
-        orderingScope: `encounter:${args.encontroId}`,
-        eventType: "alerta-criado",
-        aggregateType: "work_item",
-        aggregateId: alertId,
-        payload: { id: alertId, estado: "nao-atribuido", versao: 0 },
-      });
-      alerta = { id: alertId, estado: "nao-atribuido", versao: 0 };
+    if (record?.fires && !record.escalationSuppressed) {
+      const itensDoEncontro = (await listWorkItemsWithAlerts(tx)).filter(
+        (i) => i.encounterId === args.encontroId,
+      );
+      const emitesMs = itensDoEncontro
+        .map((i) => (i.raisedAt.kind === "present" ? Date.parse(i.raisedAt.instant.utc) : null))
+        .filter((t): t is number => t !== null);
+      const veredito = deveriaEmitirAlerta(
+        chaveDeDedupNews2(args.pacienteRef),
+        Date.parse(agoraIso),
+        {
+          ultimoEmitMs: emitesMs.length > 0 ? Math.max(...emitesMs) : null,
+          emitesMs24h: emitesMs,
+        },
+        POLITICA_SUPRESSAO_NEWS2,
+        null,
+      );
+      if (veredito.tipo === "emitir" && requerAlerta(record)) {
+        const alertId = `SYNTH-ALERTA-${randomUUID()}`;
+        await insertAlert(tx, {
+          id: alertId,
+          tenantId: args.tenantId,
+          encounterId: args.encontroId,
+          raisedAt: nowInstant(),
+          evaluatedAt: nowInstant(),
+          severity: avaliacao.banda ?? "critico",
+          reason: avaliacao.explicacao,
+          ...(avaliacao.escore !== null ? { score: avaliacao.escore } : {}),
+        });
+        await insertWorkItem(tx, { id: alertId, tenantId: args.tenantId, alertId });
+        await insertOutboxEvent(tx, {
+          tenantId: args.tenantId,
+          orderingScope: `encounter:${args.encontroId}`,
+          eventType: "alerta-criado",
+          aggregateType: "work_item",
+          aggregateId: alertId,
+          payload: { id: alertId, estado: "nao-atribuido", versao: 0 },
+        });
+        alerta = { id: alertId, estado: "nao-atribuido", versao: 0 };
+      } else if (veredito.tipo === "suprimir") {
+        await insertAuditEvent(tx, {
+          id: `SYNTH-AUDIT-${randomUUID()}`,
+          tenantId: args.tenantId,
+          actorId: args.actorId,
+          command: "alerta-suprimido",
+          aggregateType: "evaluation_record",
+          aggregateId: evaluationId,
+          newState: veredito.motivo,
+          occurredAt: nowInstant(),
+          idempotencyKey: `${args.idempotencyKey}-alerta-suprimido`,
+        });
+      }
     }
 
     await auditAction(tx, {

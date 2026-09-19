@@ -62,10 +62,13 @@ const testPack = carregarTestPack();
 const manifesto = buildNews2BundleManifest({ testPack, authoredAt: INSTANTE_AUTORIA });
 
 describe("test pack expandido a partir dos vetores publicados", () => {
-  it("traz os 93 vetores CRV-NEWS2, sem lacuna de ID", () => {
-    expect(testPack.vectors).toHaveLength(93);
+  it("traz os 104 vetores CRV-NEWS2 (93 originais + 11 de gatilho de borda), sem lacuna de ID", () => {
+    expect(testPack.vectors).toHaveLength(104);
     const ids = new Set(testPack.vectors.map((v) => v.id));
     for (let n = 101; n <= 193; n++) {
+      expect(ids.has(`CRV-NEWS2-0${n}`), `CRV-NEWS2-0${n} presente`).toBe(true);
+    }
+    for (let n = 201; n <= 211; n++) {
       expect(ids.has(`CRV-NEWS2-0${n}`), `CRV-NEWS2-0${n} presente`).toBe(true);
     }
   });
@@ -86,7 +89,7 @@ describe("test pack expandido a partir dos vetores publicados", () => {
   });
 });
 
-describe("o motor real reproduz os desfechos documentados dos 93 vetores", () => {
+describe("o motor real reproduz os desfechos documentados dos 104 vetores", () => {
   it.each(testPack.vectors.map((vetor) => ({ id: vetor.id, vetor })))("$id", ({ vetor }) => {
     const registro = evaluateNews2(vetor.input);
 
@@ -98,6 +101,16 @@ describe("o motor real reproduz os desfechos documentados dos 93 vetores", () =>
     expect(registro.fires, "condição de exibição de escalonamento").toBe(vetor.expected.fires);
     expect(registro.redParameter, "parâmetro vermelho").toBe(vetor.expected.redParameter);
     expect([...registro.reasons].sort()).toEqual([...vetor.expected.reasons].sort());
+
+    // Gatilho de borda: veredito presente quando o vetor o declara.
+    if (vetor.expected.alertCrossing !== undefined) {
+      expect(registro.alertCrossing, "gatilho de borda (alertCrossing)").toBe(
+        vetor.expected.alertCrossing,
+      );
+      expect(registro.alertCrossingReason, "motivo do gatilho").toBe(
+        vetor.expected.alertCrossingReason ?? null,
+      );
+    }
 
     // Invariante HAZ-0005, verificado em TODO vetor: status não-válido
     // jamais carrega total numérico.
@@ -178,7 +191,7 @@ describe("manifesto do RULE-NEWS2 0.2.0", () => {
     expect(manifesto.logic.behaviorHash).toMatch(/^sha256:[0-9a-f]{64}$/);
     expect(manifesto.terminology.bindings).toHaveLength(7);
     expect(manifesto.inputPolicy).toHaveLength(7);
-    expect(manifesto.testPack.vectorCount).toBe(93);
+    expect(manifesto.testPack.vectorCount).toBe(104);
     expect(manifesto.safety.hazards).toContain("HAZ-0005");
     expect(manifesto.explainability.languageTags).toContain("pt-BR");
     expect(manifesto.validation.retrospective).toBe("not_started");

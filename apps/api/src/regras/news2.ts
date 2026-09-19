@@ -28,7 +28,7 @@ import {
   parseNews2TestPack,
   type RuleBundleManifest,
 } from "@intensicare/rule-bundle";
-import { evaluateEncounter, toResultadoAvaliacao } from "../avaliacao.js";
+import { type EstadoAnteriorNews2, evaluateEncounter, toResultadoAvaliacao } from "../avaliacao.js";
 import type { PortaDeBundle } from "./bundle.js";
 import type { ProvedorDeRegra, VerificacaoDeMotor } from "./registro.js";
 import {
@@ -51,6 +51,15 @@ export const CHAVE_NEWS2 = chaveRegra(IDENTIDADE_NEWS2);
 export interface InsumoNews2 {
   readonly observacoes: readonly ClinicalObservationRow[];
   readonly contexto: ContextoAvaliacaoPaciente | undefined;
+  /**
+   * Estado anterior da série do paciente (`news2_prev`) para o gatilho de
+   * borda do alerta de deterioração (catálogo irmão
+   * ALERT-EWS-NEWS2-DETERIORATION-01; CRIT-1). Ausente ⇒ estado anterior
+   * desconhecido — o kernel arma o gatilho (premissa reversível
+   * documentada). Não é dado clínico novo: é MEMÓRIA da mesma regra, lida
+   * em-transação pelo chamador.
+   */
+  readonly estadoAnterior?: EstadoAnteriorNews2 | undefined;
 }
 
 /**
@@ -111,6 +120,13 @@ export function digestDeEntradasNews2(insumo: InsumoNews2): DigestDeEntradas {
       observacoes: projetarEntradas(insumo.observacoes),
       idadeConhecida: typeof insumo.contexto?.idadeAnos === "number",
       gravidezDocumentada: insumo.contexto?.gravidezDocumentada === true,
+      // O estado anterior participa do digest por FORMA (não por valor —
+      // nenhum identificador de sujeito entra no digest): o veredito de
+      // borda depende dele, e o registro imutável do despacho precisa
+      // distinguir despachos com e sem memória.
+      estadoAnteriorPresente: insumo.estadoAnterior !== undefined,
+      totalAnteriorConhecido: insumo.estadoAnterior?.totalScore != null,
+      vermelhosAnteriores: insumo.estadoAnterior?.redParameters.length ?? 0,
     }),
   };
 }
@@ -152,7 +168,12 @@ export function criarProvedorNews2(opcoes: {
     digestDeEntradas: digestDeEntradasNews2,
 
     avaliar(insumo: InsumoNews2, instanteIso: string): SaidaNews2 {
-      const registroKernel = evaluateEncounter(insumo.observacoes, insumo.contexto, instanteIso);
+      const registroKernel = evaluateEncounter(
+        insumo.observacoes,
+        insumo.contexto,
+        instanteIso,
+        insumo.estadoAnterior,
+      );
       return { registroKernel, resultado: toResultadoAvaliacao(registroKernel) };
     },
 

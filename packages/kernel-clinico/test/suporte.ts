@@ -28,6 +28,17 @@ export interface VectorDelta {
   readonly pregnancy?: "documented" | "not_documented";
   readonly quarantined?: readonly News2ParameterId[];
   readonly conflictValues?: Readonly<Partial<Record<News2ParameterId, readonly number[]>>>;
+  /**
+   * Estado ANTERIOR da série do paciente (gatilho de borda, catálogo irmão
+   * ALERT-EWS-NEWS2-DETERIORATION-01): total e conjunto de parâmetros
+   * vermelhos da medição anterior. Ausente ⇒ primeira medição conhecida
+   * (premissa reversível: desconhecido ARMA o gatilho — pendente ratificação
+   * RAT-EWS trigger policy).
+   */
+  readonly priorState?: {
+    readonly total: number | null;
+    readonly redParameters: readonly News2ParameterId[];
+  };
 }
 
 export interface VectorExpected {
@@ -39,6 +50,9 @@ export interface VectorExpected {
   readonly reasons: readonly string[];
   readonly paramScores?: Readonly<Partial<Record<News2ParameterId, number>>>;
   readonly annotations?: readonly string[];
+  /** Veredito do gatilho de borda (opcional — vetores 0201+). */
+  readonly alertCrossing?: boolean;
+  readonly alertCrossingReason?: string | null;
 }
 
 export interface VectorEntry {
@@ -152,6 +166,14 @@ export function buildVectorInput(delta: VectorDelta): News2EvaluationInput {
       delta.age === "unknown" ? { kind: "unknown" } : { kind: "verified", years: delta.age ?? 45 },
     pregnancy: delta.pregnancy ?? "not_documented",
     observations,
+    ...(delta.priorState !== undefined
+      ? {
+          priorState: {
+            totalScore: delta.priorState.total,
+            redParameters: [...delta.priorState.redParameters],
+          },
+        }
+      : {}),
     ...(delta.scale2Order === true
       ? {
           spo2ScaleAssignments: [

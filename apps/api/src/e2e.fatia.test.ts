@@ -110,6 +110,9 @@ const scenario = buildG7SyntheticScenario();
 const TENANT = scenario.organization.id;
 const P002 = scenario.patients[1]!;
 const ENC_P002 = scenario.encounters[1]!;
+/** Par VIRGEM (nenhum caso deste arquivo ingere para P001) — usado pelos degradados. */
+const P001 = scenario.patients[0]!;
+const ENC_P001 = scenario.encounters[0]!;
 
 const ATOR = "SYNTH-MEDICO-E2E";
 const AUTH = { authorization: `Bearer ${gerarTokenSintetico(TENANT, ATOR)}` };
@@ -391,10 +394,16 @@ describe("E2E da fatia G7 — feliz e degradados sobre a fiação real", () => {
     let payloadOriginal: Record<string, unknown>;
 
     beforeAll(async () => {
+      // Par VIRGEM (P001/ENC_P001): sob o gatilho de BORDA (ORQ-3/CRIT-1),
+      // re-ingerir alto para o P002 NÃO cruza (anterior 11 do caminho feliz)
+      // e o cooldown da emissão feliz suprimiria o rearme — a própria
+      // série de degradados precisa de um alerta próprio, e a primeira
+      // medição conhecida do paciente virgem acima do patamar ARMA o
+      // gatilho (premissa reversível, dossiê RAT-EWS).
       payloadOriginal = {
-        encontroId: ENC_P002.id,
-        leitoId: ENC_P002.bedId,
-        pacienteRef: P002.subjectRef,
+        encontroId: ENC_P001.id,
+        leitoId: ENC_P001.bedId,
+        pacienteRef: P001.subjectRef,
         contexto: { idadeAnos: 62 },
         observacoes: serieCompleta(tempoClinicoFresco()),
       };

@@ -746,3 +746,268 @@ describe("ACH-O3-6: quadro de fluxo com sequencia não publicável não é emiti
     expect(JSON.stringify(eventos)).not.toContain("conduta clínica autorizada");
   }, 60_000);
 });
+
+// ---------------------------------------------------------------------------
+// ORQ-3 — gatilho de borda + supressão de alerta (CRIT-1/CRIT-2)
+//
+// O QUÊ: a ingestão que cruza o gatilho de borda (catálogo irmão
+// ALERT-EWS-NEWS2-DETERIORATION-01: cruzamento ascendente >=7 OU novo
+// parâmetro vermelho) cria EXATAMENTE UM item de trabalho durável por janela
+// de cooldown; ingestões seguintes acima do patamar DENTRO do cooldown
+// continuam avaliando e auditando, e não criam itens duplicados. Queda
+// abaixo de 7 + recruzamento após o cooldown REARMA.
+//
+// POR QUE ASSIM: tempestade de ingestão (≥5 acima do patamar dentro do
+// cooldown) ⇒ 1 item + N−1 supressões AUDITADAS — supressão silenciosa é o
+// mesmo defeito de alerta silencioso. Todo tempo é INJETADO (vi.setSystemTime):
+// um teste de supressão que dorme é defeito de desenho.
+//
+// PREMISSA do substrato: a leitura do last-emit é EM-TRANSAÇÃO sobre itens
+// de trabalho existentes do ENCONTRO (a consulta por paciente não existe em
+// persistencia e este stream não pode criá-la) — premissa reversível
+// documentada no PR (RAT-EWS). Dados 100% sintéticos (SYNTH-).
+// ---------------------------------------------------------------------------
+
+import { listAuditEvents, listWorkItemsWithAlerts } from "@intensicare/persistencia";
+import { vi } from "vitest";
+
+const cenarioOrq3 = buildG7SyntheticScenario();
+const TENANT_ORQ3 = cenarioOrq3.organization.id;
+const PACIENTE_ORQ3 = cenarioOrq3.patients[2] ?? cenarioOrq3.patients[1]!;
+const ENCONTRO_ORQ3 = cenarioOrq3.encounters[2] ?? cenarioOrq3.encounters[1]!;
+
+/** As fixtures sintéticas param neste instante; toda observação nova o supera. */
+const FIXTURE_MAX_MS_ORQ3 = Date.parse("2026-08-16T11:30:00.000Z");
+let contadorOrq3 = 0;
+function instanteClinicoFrescoOrq3(): string {
+  contadorOrq3 += 1;
+  return new Date(Math.max(Date.now(), FIXTURE_MAX_MS_ORQ3) + contadorOrq3 * 60_000).toISOString();
+}
+
+/** Série acima do patamar: FR 26(3) SpO2 89(3) PAS 92(2) FC 122(2) T 38,3(1) = 11, vermelhos rr+spo2. */
+function envelopeAltoOrq3(encontro = ENCONTRO_ORQ3, paciente = PACIENTE_ORQ3) {
+  const t = instanteClinicoFrescoOrq3();
+  return {
+    encontroId: encontro.id,
+    leitoId: encontro.bedId,
+    pacienteRef: paciente.subjectRef,
+    contexto: { idadeAnos: 62 },
+    observacoes: [
+      { parametro: "FR", valor: 26, unidade: "rpm", coletadoEm: t },
+      { parametro: "SpO2", valor: 89, unidade: "%", coletadoEm: t },
+      { parametro: "FluxoO2", valor: 0, unidade: "L/min", coletadoEm: t },
+      { parametro: "PAS", valor: 92, unidade: "mmHg", coletadoEm: t },
+      { parametro: "FC", valor: 122, unidade: "bpm", coletadoEm: t },
+      { parametro: "NivelConsciencia", codigo: "A", coletadoEm: t },
+      { parametro: "Temperatura", valor: 38.3, unidade: "Cel", coletadoEm: t },
+    ],
+  };
+}
+
+/** Série de QUEDA: todos os parâmetros 0 — total 0, sem vermelho. */
+function envelopeDeQuedaOrq3(encontro = ENCONTRO_ORQ3, paciente = PACIENTE_ORQ3) {
+  const t = instanteClinicoFrescoOrq3();
+  return {
+    encontroId: encontro.id,
+    leitoId: encontro.bedId,
+    pacienteRef: paciente.subjectRef,
+    contexto: { idadeAnos: 62 },
+    observacoes: [
+      { parametro: "FR", valor: 16, unidade: "rpm", coletadoEm: t },
+      { parametro: "SpO2", valor: 97, unidade: "%", coletadoEm: t },
+      { parametro: "FluxoO2", valor: 0, unidade: "L/min", coletadoEm: t },
+      { parametro: "PAS", valor: 120, unidade: "mmHg", coletadoEm: t },
+      { parametro: "FC", valor: 70, unidade: "bpm", coletadoEm: t },
+      { parametro: "NivelConsciencia", codigo: "A", coletadoEm: t },
+      { parametro: "Temperatura", valor: 36.8, unidade: "Cel", coletadoEm: t },
+    ],
+  };
+}
+
+describe("ORQ-3: gatilho de borda + supressão de alerta durável (CRIT-1/CRIT-2)", () => {
+  let db: PGlite;
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    db = createInMemoryDatabase();
+    await bootstrapDatabase(db);
+    await loadIntoDatabase(db);
+    app = await buildServer({ db });
+  }, 60_000);
+
+  afterAll(async () => {
+    await app.close();
+    vi.useRealTimers();
+  });
+
+  async function ingerir(chave: string, payload: ReturnType<typeof envelopeAltoOrq3>) {
+    // Token cunhado NO INSTANTE da chamada: sob relógio falso (+4h/+5h do
+    // rearme), um token pré-emitido expira (`exp` contra o relógio simulado)
+    // — o verificador está CERTO em recusar; o teste que se adapta.
+    const auth = {
+      authorization: `Bearer ${gerarTokenSintetico(TENANT_ORQ3, "SYNTH-MEDICO-ORQ-3")}`,
+    };
+    const resposta = await app.inject({
+      method: "POST",
+      url: "/v1/ingestao/observacoes",
+      headers: { ...auth, "idempotency-key": chave },
+      payload,
+    });
+    expect(resposta.statusCode, resposta.body).toBe(201);
+    return resposta.json() as IngestaoObservacoesResposta;
+  }
+
+  // ORDEM DE DECLARAÇÃO IMPORTA (cada teste usa par paciente/encontro
+  // próprio; a suíte roda sequencial nesta ordem): 1) banda média em P001
+  // virgem (nenhum item, nenhuma supressão); 2) tempestade em P002;
+  // 3) rearme de volta em P001 (a supressão é contada por DELTA, não
+  // absoluta, para não herdar a contagem da tempestade).
+  it("banda média (5–6) não cria item de deterioração NEM supressão — rota da tendência (TV-2)", async () => {
+    // Paciente e encontro PRÓPRIOS e VIRGENS: primeira medição, total 6.
+    const pacienteMedio = cenarioOrq3.patients[0]!;
+    const encontroMedio = cenarioOrq3.encounters[0]!;
+    const t = instanteClinicoFrescoOrq3();
+    const resposta = await app.inject({
+      method: "POST",
+      url: "/v1/ingestao/observacoes",
+      headers: {
+        authorization: `Bearer ${gerarTokenSintetico(TENANT_ORQ3, "SYNTH-MEDICO-ORQ-3")}`,
+        "idempotency-key": "SYNTH-IDEM-ORQ3-MEDIA",
+      },
+      payload: {
+        encontroId: encontroMedio.id,
+        leitoId: encontroMedio.bedId,
+        pacienteRef: pacienteMedio.subjectRef,
+        contexto: { idadeAnos: 45 },
+        observacoes: [
+          { parametro: "FR", valor: 21, unidade: "rpm", coletadoEm: t },
+          { parametro: "SpO2", valor: 94, unidade: "%", coletadoEm: t },
+          { parametro: "FluxoO2", valor: 0, unidade: "L/min", coletadoEm: t },
+          { parametro: "PAS", valor: 105, unidade: "mmHg", coletadoEm: t },
+          { parametro: "FC", valor: 95, unidade: "bpm", coletadoEm: t },
+          { parametro: "NivelConsciencia", codigo: "A", coletadoEm: t },
+          { parametro: "Temperatura", valor: 38.5, unidade: "Cel", coletadoEm: t },
+        ],
+      },
+    });
+    expect(resposta.statusCode).toBe(201);
+    const corpo = resposta.json() as IngestaoObservacoesResposta;
+    expect(corpo.avaliacao.escore).toBe(6);
+    expect(corpo.avaliacao.banda).toBe("alerta");
+    expect(corpo.alerta).toBeNull();
+
+    const contagem = await withTenantTransaction(db, TENANT_ORQ3, async (tx) => {
+      const itens = (await listWorkItemsWithAlerts(tx)).filter(
+        (i) => i.encounterId === encontroMedio.id,
+      );
+      return itens.length;
+    });
+    expect(contagem).toBe(0);
+  }, 120_000);
+
+  it("TEMPESTADE: 5 ingestões acima do patamar dentro do cooldown ⇒ 1 item durável + 4 supressões AUDITADAS", async () => {
+    const corpos = [];
+    for (let n = 1; n <= 5; n++) {
+      corpos.push(await ingerir(`SYNTH-IDEM-ORQ3-TEMPESTADE-${n}`, envelopeAltoOrq3()));
+    }
+
+    // 1ª ingestão: primeira medição conhecida acima do patamar → emite.
+    expect(corpos[0]!.alerta, "a 1ª ingestão cria o item durável").not.toBeNull();
+    for (let n = 1; n <= 4; n++) {
+      expect(corpos[n]!.alerta, `a ${n + 1}ª ingestão NÃO cria item duplicado`).toBeNull();
+      // A avaliação CONTINUA acontecendo (não é no-fire silencioso).
+      expect(corpos[n]!.avaliacao.escore).toBe(11);
+    }
+
+    const contagem = await withTenantTransaction(db, TENANT_ORQ3, async (tx) => {
+      const itens = (await listWorkItemsWithAlerts(tx)).filter(
+        (i) => i.encounterId === ENCONTRO_ORQ3.id,
+      );
+      const eventos = await listAuditEvents(tx);
+      return {
+        itens: itens.length,
+        supressoes: eventos.filter((e) => e.command === "alerta-suprimido").length,
+      };
+    });
+    expect(contagem.itens).toBe(1);
+    expect(contagem.supressoes).toBe(4);
+  }, 120_000);
+
+  it("REARME: queda abaixo de 7 não emite; recruzamento após o cooldown re-emite (tempo injetado)", async () => {
+    // Encontro e paciente PRÓPRIOS (P001 — o mesmo da banda média, cuja
+    // avaliação anterior 6 torna o T0 um cruzamento legítimo).
+    const encontroRearme = cenarioOrq3.encounters[0]!;
+    const pacienteRearme = cenarioOrq3.patients[0]!;
+
+    // T0 — emissão ORIGINAL (anterior 6 → agora 11: cruzamento): emite.
+    const original = await ingerir(
+      "SYNTH-IDEM-ORQ3-REARME-T0",
+      envelopeAltoOrq3(encontroRearme, pacienteRearme),
+    );
+    expect(original.alerta, "a emissão original cria o item durável").not.toBeNull();
+
+    // SOMENTE `Date` é falsificado: falsificar timers de verdade congela os
+    // temporizadores internos de I/O (PGlite/fastify) e a ingestão pende.
+    // Relógio é injeção de TESTE, não mudança de produto.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      // +1h: recruzamento (a queda já ocorreu: anterior 0 → agora 11) — o
+      // cooldown da emissão original ainda vale (1h < PT4H) ⇒ SUPRIMIDO e
+      // AUDITADO, mesmo sendo cruzamento legítimo (o rearme exige também o
+      // cooldown cumprido).
+      vi.setSystemTime(Date.now() + 60 * 60 * 1000); // +1h < PT4H
+      const cedo = await ingerir(
+        "SYNTH-IDEM-ORQ3-REARME-CEDO",
+        envelopeDeQuedaOrq3(encontroRearme, pacienteRearme),
+      );
+      // A queda em si não cruza (11 → 0) e não emite: nem item nem supressão.
+      expect(cedo.alerta).toBeNull();
+
+      // Recruzamento em +1h (anterior 0 → agora 11): cruzamento legítimo,
+      // mas cooldown da emissão original (1h < PT4H) ⇒ SUPRIMIDO e AUDITADO.
+      const supressoesPorDelta = async () => {
+        return withTenantTransaction(db, TENANT_ORQ3, async (tx) => {
+          const eventos = await listAuditEvents(tx);
+          return eventos.filter((e) => e.command === "alerta-suprimido").length;
+        });
+      };
+      const supressoesAntes = await supressoesPorDelta();
+      const cedo2 = await ingerir(
+        "SYNTH-IDEM-ORQ3-REARME-CEDO2",
+        envelopeAltoOrq3(encontroRearme, pacienteRearme),
+      );
+      expect(cedo2.alerta).toBeNull();
+
+      // DELTA (não absoluto): a tempestade anterior já deixou supressões
+      // auditadas no tenant; este teste soma exatamente MAIS UMA.
+      const supressoesDepois = await supressoesPorDelta();
+      expect(supressoesDepois - supressoesAntes).toBe(1);
+
+      // +2h: QUEDA abaixo de 7 (total 0) — sem cruzamento, sem emissão,
+      // sem supressão: a queda ARMA o rearmamento.
+      vi.setSystemTime(Date.now() + 60 * 60 * 1000); // +2h
+      const queda = await ingerir(
+        "SYNTH-IDEM-ORQ3-REARME-QUEDA",
+        envelopeDeQuedaOrq3(encontroRearme, pacienteRearme),
+      );
+      expect(queda.alerta).toBeNull();
+
+      // +5h: RECRUZAMENTO (anterior 0 → agora 11) após o cooldown da
+      // emissão original (T0+5h > PT4H) ⇒ RE-EMITE (novo item durável).
+      vi.setSystemTime(Date.now() + 3 * 60 * 60 * 1000); // +5h do rearme > PT4H
+      const tarde = await ingerir(
+        "SYNTH-IDEM-ORQ3-REARME-TARDE",
+        envelopeAltoOrq3(encontroRearme, pacienteRearme),
+      );
+      expect(tarde.alerta, "recruzamento após queda + cooldown RE-EMITE").not.toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+
+    const depois = await withTenantTransaction(db, TENANT_ORQ3, async (tx) => {
+      return (await listWorkItemsWithAlerts(tx)).filter((i) => i.encounterId === encontroRearme.id)
+        .length;
+    });
+    expect(depois).toBe(2);
+  }, 120_000);
+});

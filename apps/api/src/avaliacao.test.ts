@@ -6,10 +6,12 @@
  */
 
 import { SYNTHETIC_CONCEPTS } from "@intensicare/fixtures-sinteticas";
+import type { EvaluationRecord } from "@intensicare/kernel-clinico";
 import type { ClinicalObservationRow } from "@intensicare/persistencia";
 import { describe, expect, it } from "vitest";
 import {
   canonicalUnitFor,
+  estadoAnteriorDeAvaliacao,
   evaluateEncounter,
   mapStatusNews2,
   requerAlerta,
@@ -123,5 +125,125 @@ describe("correção 3 (revisão única): 'parcial' inalcançável para NEWS2", 
     expect(mapStatusNews2("not_evaluated")).toBe("indisponivel");
     expect(mapStatusNews2("stale")).toBe("desatualizado");
     expect(mapStatusNews2("invalid")).toBe("invalido");
+  });
+});
+
+describe("gatilho de borda do alerta de deterioração (CRIT-1; catálogo irmão ALERT-EWS-NEWS2-DETERIORATION-01)", () => {
+  it("primeira medição (sem estado anterior) com total 11 → gatilho ARMADO dispara (premissa reversível documentada)", () => {
+    const record = evaluateEncounter(fullSeries(), { idadeAnos: 62 }, EVAL_TIME);
+    expect(record.alertCrossing).toBe(true);
+    expect(record.alertCrossingReason).toBe("ascending_total_crossing");
+    expect(record.alertCrossingInputs).toEqual({ news2Prev: null, prevRedParameters: null });
+    expect(requerAlerta(record)).toBe(true);
+  });
+
+  it("estado anterior já alto com os MESMOS vermelhos (11 → 11) → patamar PERSISTENTE não dispara; exibição (fires) permanece", () => {
+    const record = evaluateEncounter(fullSeries(), { idadeAnos: 62 }, EVAL_TIME, {
+      totalScore: 11,
+      redParameters: ["rr", "spo2"],
+    });
+    expect(record.totalScore).toBe(11);
+    expect(record.fires).toBe(true);
+    expect(record.alertCrossing).toBe(false);
+    expect(record.alertCrossingReason).toBeNull();
+    expect(requerAlerta(record)).toBe(false);
+  });
+
+  it("estado anterior abaixo de 7 (4 → 11) → cruzamento ascendente dispara", () => {
+    const record = evaluateEncounter(fullSeries(), { idadeAnos: 62 }, EVAL_TIME, {
+      totalScore: 4,
+      redParameters: [],
+    });
+    expect(record.alertCrossing).toBe(true);
+    expect(record.alertCrossingReason).toBe("ascending_total_crossing");
+    expect(requerAlerta(record)).toBe(true);
+  });
+
+  it("banda média (5–6) NUNCA cria alerta de deterioração — rota da tendência (TV-2 do catálogo irmão)", () => {
+    const media = [
+      row(SYNTHETIC_CONCEPTS.respiratoryRate, 21, "rpm"),
+      row(SYNTHETIC_CONCEPTS.oxygenSaturation, 94, "%"),
+      row("SYNTH-CONCEPT-O2-FLOW", 0, "L/min"),
+      row(SYNTHETIC_CONCEPTS.systolicBloodPressure, 105, "mmHg"),
+      row(SYNTHETIC_CONCEPTS.heartRate, 95, "bpm"),
+      row("SYNTH-CONCEPT-CONSCIOUSNESS", null, null, "A"),
+      row(SYNTHETIC_CONCEPTS.temperature, 38.5, "Cel"),
+    ];
+    const record = evaluateEncounter(media, { idadeAnos: 62 }, EVAL_TIME);
+    expect(record.totalScore).toBe(6);
+    expect(record.fires).toBe(true);
+    expect(record.alertCrossing).toBe(false);
+    expect(requerAlerta(record)).toBe(false);
+  });
+
+  it("ordem de limitação terapêutica suprime o alerta mesmo com cruzamento (N-3)", () => {
+    const record = evaluateEncounter(fullSeries(), { idadeAnos: 62 }, EVAL_TIME);
+    const comLimitacao: EvaluationRecord = {
+      ...record,
+      escalationSuppressed: true,
+      escalationSuppressionReason:
+        "escalonamento suprimido — ordem de limitação terapêutica documentada",
+    };
+    expect(record.alertCrossing).toBe(true);
+    expect(requerAlerta(comLimitacao)).toBe(false);
+  });
+});
+
+describe("estadoAnteriorDeAvaliacao — extração do news2_prev da última linha persistida", () => {
+  const base = {
+    id: "SYNTH-AVAL-1",
+    tenantId: "SYNTH-TENANT-G7",
+    encounterId: "SYNTH-TENANT-G7-ENC-P002",
+    subjectRef: "SYNTH-P002",
+    evaluatedAt: { kind: "present" as const, instant: { utc: EVAL_TIME, offset: "+00:00" } },
+    result: {},
+    seq: 1,
+  };
+
+  it("linha válida com kernel_record íntegro → total + vermelhos extraídos", () => {
+    const extraida = estadoAnteriorDeAvaliacao({
+      ...base,
+      status: "valid",
+      totalScore: 11,
+      riskTier: "high",
+      redParameter: true,
+      fires: true,
+      kernelRecord: {
+        parameters: [
+          { parameter: "rr", status: "valid", score: 3 },
+          { parameter: "spo2", status: "valid", score: 3 },
+          { parameter: "pulse", status: "valid", score: 2 },
+        ],
+      },
+    });
+    expect(extraida).toEqual({ totalScore: 11, redParameters: ["rr", "spo2"] });
+  });
+
+  it("linha não computável → null (estado anterior DESCONHECIDO — kernel arma)", () => {
+    expect(
+      estadoAnteriorDeAvaliacao({
+        ...base,
+        status: "not_evaluated",
+        totalScore: null,
+        riskTier: null,
+        redParameter: false,
+        fires: false,
+        kernelRecord: {},
+      }),
+    ).toBeNull();
+  });
+
+  it("kernel_record de forma inesperada → null (defensivo; nunca exceção de ingestão)", () => {
+    expect(
+      estadoAnteriorDeAvaliacao({
+        ...base,
+        status: "valid",
+        totalScore: 7,
+        riskTier: "high",
+        redParameter: false,
+        fires: true,
+        kernelRecord: { parameters: "lixo" },
+      }),
+    ).toBeNull();
   });
 });

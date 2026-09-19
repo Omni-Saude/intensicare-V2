@@ -127,6 +127,9 @@ const cenario = buildG7SyntheticScenario();
 const TENANT_G7 = cenario.organization.id;
 const P002 = cenario.patients[1]!;
 const ENC_P002 = cenario.encounters[1]!;
+/** Par VIRGEM (paciente/encontro sem ingestão em nenhum caso deste arquivo). */
+const P001 = cenario.patients[0]!;
+const ENC_P001 = cenario.encounters[0]!;
 
 const ATOR_G7 = "SYNTH-MEDICO-SEG";
 const AUTH_G7 = { authorization: `Bearer ${gerarTokenSintetico(TENANT_G7, ATOR_G7)}` };
@@ -965,21 +968,29 @@ describe("I. ação clínica exige token de concorrência e ator identificado", 
   it(
     "HAZ-0023/SEC-0027 — dois atores com a MESMA versão: o segundo recebe 412 e a atribuição do primeiro é preservada (nunca last-write-wins)",
     async () => {
-      // Alerta próprio para esta corrida (o do bootstrap é usado por outros casos).
+      // Alerta próprio para esta corrida (o do bootstrap é usado por outros
+      // casos). Sob o gatilho de BORDA (ORQ-3/CRIT-1): o P002 do bootstrap
+      // já tem anterior 11 (nova série alta NÃO cruza e o cooldown
+      // bloquearia o rearme) e o ENC_VAZIO é queimado por DESIGN pelos
+      // casos fail-closed da describe G (o FR inmapeável fica persistido).
+      // A ingestão corre no par VIRGEM P001/ENC_P001: primeira medição
+      // conhecida acima do patamar ARMA o gatilho (premissa reversível
+      // documentada no dossiê RAT-EWS) e emite o item desta corrida.
       const ingestao = await app.inject({
         method: "POST",
         url: "/v1/ingestao/observacoes",
         headers: { ...AUTH_G7, "idempotency-key": "SYNTH-IDEM-SEG-CORRIDA" },
         payload: {
-          encontroId: ENC_P002.id,
-          leitoId: ENC_P002.bedId,
-          pacienteRef: P002.subjectRef,
+          encontroId: ENC_P001.id,
+          leitoId: ENC_P001.bedId,
+          pacienteRef: P001.subjectRef,
           contexto: { idadeAnos: 62 },
           observacoes: serieCompleta(tempoClinicoFresco()),
         },
       });
       const alvo = String((ingestao.json() as IngestaoObservacoesResposta).alerta?.id);
-      expect(alvo).not.toBe("undefined");
+      expect(ingestao.statusCode, ingestao.body).toBe(201);
+      expect(alvo, `corpo: ${ingestao.body}`).not.toBe("undefined");
 
       const primeiroAtor = "SYNTH-MEDICO-PRIMEIRO";
       const segundoAtor = "SYNTH-MEDICO-SEGUNDO";

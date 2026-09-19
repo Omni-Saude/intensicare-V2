@@ -19,11 +19,14 @@ import vetoresJson from "./vetores-news2.json" with { type: "json" };
 
 const vetores = vetoresJson as unknown as VectorFile;
 
-describe("RULE-NEWS2 0.2.0 — vetores de referência clínica (CRV-NEWS2-0101..0193)", () => {
-  it("o conjunto transcrito tem exatamente 93 vetores, sem lacunas de ID", () => {
-    expect(vetores.vectors).toHaveLength(93);
+describe("RULE-NEWS2 0.2.0 — vetores de referência clínica (CRV-NEWS2-0101..0193, 0201..0211)", () => {
+  it("o conjunto tem exatamente 104 vetores (93 CRV originais + 11 de gatilho de borda), sem lacunas de ID", () => {
+    expect(vetores.vectors).toHaveLength(104);
     const ids = new Set(vetores.vectors.map((v) => v.id));
     for (let n = 101; n <= 193; n++) {
+      expect(ids.has(`CRV-NEWS2-0${n}`), `CRV-NEWS2-0${n} presente`).toBe(true);
+    }
+    for (let n = 201; n <= 211; n++) {
       expect(ids.has(`CRV-NEWS2-0${n}`), `CRV-NEWS2-0${n} presente`).toBe(true);
     }
   });
@@ -82,6 +85,18 @@ describe("RULE-NEWS2 0.2.0 — vetores de referência clínica (CRV-NEWS2-0101..
           const param = reason.split(":")[1] as News2ParameterId;
           expect(record.missingInputs).toContain(param);
         }
+      }
+
+      // Gatilho de borda (catálogo irmão ALERT-EWS-NEWS2-DETERIORATION-01):
+      // veredito presente quando o vetor o declara — cruzamento ascendente
+      // do total ou novo parâmetro vermelho, NUNCA patamar estático.
+      if (vetor.expected.alertCrossing !== undefined) {
+        expect(record.alertCrossing, "gatilho de borda (alertCrossing)").toBe(
+          vetor.expected.alertCrossing,
+        );
+        expect(record.alertCrossingReason, "motivo do gatilho").toBe(
+          vetor.expected.alertCrossingReason ?? null,
+        );
       }
     });
   }
