@@ -118,3 +118,54 @@ export type EvaluationState = "complete" | "partial" | "unavailable";
 export function normalizeEvaluationState(state: EvaluationState): EvaluationState {
   return state;
 }
+
+// ---------------------------------------------------------------------------
+// API dos normalizadores de unidades (ORQ-4, CRIT-3) — PISO APENAS, sem
+// consumidor conectado (decisão de consumo é de stream a jusante, com
+// evidência própria). Torna estruturalmente impossíveis os quatro vícios de
+// unidade que corromperam o V1: FiO2 percento-vs-fração (~100×), taxa-vs-dose
+// de vasopressor (60×/inconversível), lactato mg/dL-vs-mmol/L (~9×) e peso
+// com vírgula decimal (~10×, SYS-09). Fontes normativas: hemodynamics.md §4
+// (canônico mcg/kg/min; fórmula de taxa; vasopressina U/min apenas) e
+// units-registry.md (FiO2 fração 0.21–1.0; lactato ×0.111; parse PT-BR).
+// Quantidades são marcas opacas sobre `number`: número cru não compila onde a
+// marca é exigida (prova em src/unidades/provas-de-tipo.ts). Rejeições
+// devolvem resultado tipado — nunca lançam; `rejected_missing_inputs` é o
+// único literal definido pela especificação, os demais são módulo-local
+// pendentes de ratificação.
+// ---------------------------------------------------------------------------
+
+export {
+  type CategoriaVasopressora,
+  type DoseMcgKgMin,
+  type DoseUmin,
+  doseMcgKgMinDeMcgKgH,
+  doseMcgKgMinDeMgKgMin,
+  doseMcgKgMinDeTaxaInfusao,
+  doseUminDeUh,
+  doseUminDeUmin,
+  normalizarDoseVasopressora,
+  type UnidadeDoseVasopressora,
+} from "./unidades/dose.js";
+export {
+  type Fio2Fracao,
+  type Fio2Percentual,
+  fio2FracaoDeNumero,
+  fio2PercentualDeNumero,
+  fio2PercentualParaFracao,
+} from "./unidades/fio2.js";
+export {
+  type LactatoMgDl,
+  type LactatoMmolL,
+  lactatoMgDlDeNumero,
+  lactatoMgDlParaMmolL,
+  lactatoMmolLDeNumero,
+} from "./unidades/lactato.js";
+export {
+  PESO_KG_LIMITES_PLAUSIBILIDADE,
+  type PesoValidado,
+  parsePesoPtBr,
+  pesoDeNumeroKg,
+  pesoDeTextoAscii,
+} from "./unidades/peso.js";
+export type { MotivoRejeicao, ResultadoQuantidade } from "./unidades/tipos.js";
