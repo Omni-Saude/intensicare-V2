@@ -879,6 +879,28 @@ ondas_1_e_2_2026_08_18:
       limites que as Partes G/G3 AINDA não cobrem são declarados pelo próprio
       script (docstrings "O QUE A PARTE G NÃO COMPARA" e "O QUE A PARTE G3 NÃO
       COMPARA", no topo de scripts/check_contratos.mjs).
+    limites_declarados_do_gate_de_contratos_adendo_2026_09_19: >-
+      ADENDO DATADO (2026-09-19 — varredura de verdade documental ORQ-7; achado
+      MIN-6 da auditoria forense de 2026-09-19). Registra o que
+      scripts/check_contratos.mjs DECLARA não comparar — docstring "O QUE A
+      PARTE G NÃO COMPARA — limite DECLARADO, não omissão" (linhas 96-118) e
+      "O QUE A PARTE G3 NÃO COMPARA" (linhas 157-170): (a) o TIPO da
+      propriedade — `jitter: number` no TS contra `type: string` no YAML passa
+      hoje; (b) propriedade declarada em MEIO DE LINHA — o extrator ancora em
+      início de linha e vê só a primeira; (c) propriedades ANINHADAS — só o
+      nível de topo da interface é comparado; (d) schemas REST FORA do fecho
+      de PARES_DE_FORMA_REST — hoje ProblemDetails, ProblemDetailsConflitoVersao,
+      ObservacaoEntrada, ObservacaoEmQuarentena, IngestaoObservacoesRequisicao,
+      IngestaoObservacoesResposta, ContextoAvaliacaoPaciente,
+      GradeLeitosResposta, AvaliacoesPacienteResposta,
+      ReconhecerAlertaRequisicao, ReconhecerAlertaResposta e os schemas de
+      prontidão/saúde; (e) schemas alcançáveis só a partir de paths. O script
+      afirma que a exclusão (d) "está no handoff como pendência nomeada" —
+      este adendo é o registro que faltava para a afirmação valer; complementa
+      o adendo de MIN-2 acima. O que fecharia cada item: comparar o tipo da
+      propriedade; percorrer o aninhamento; expandir o fecho G3d aos schemas
+      listados — são mudanças de GATE (scripts/check_*) fora da fronteira de
+      escrita desta varredura documental; as pendências permanecem SEM DONO.
     fiacao_pedida_e_nao_aplicada:
       - "apps/api: passar exigirFechoDeRuntime: true onde AdaptadorPostgres.abrir({url}) roda no perfil PostgreSQL real. SEM ISSO o fecho de F1/F2 existe mas a ausência dele não é detectada em runtime."
       - "Banco pré-existente: rodar uma vez instalarFechoDeRuntime(urlSuperusuario), exportado de @intensicare/persistencia. Idempotente."
