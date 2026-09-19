@@ -84,7 +84,18 @@ export default defineConfig({
       // antes de abrir a porta se ele faltar (ADR-0019 §5.2 P4, fail-closed).
       // `dev-synthetic` é o perfil que admite adaptador sintético — e portanto
       // o único em que `POST /v1/dev/sessao` chega a ser registrado.
-      command: "PERFIL=dev-synthetic pnpm --filter @intensicare/api dev",
+      //
+      // O comando passa pelo supervisor `scripts/api-webserver.mjs` (MAJ-1).
+      // O runner é `tsx src/index.ts` SEM watch (via argv; `apps/api/package.json`
+      // não muda): na execução 1 da unidade 2 ficou PROVADO que o `tsx watch`
+      // engole a morte do próprio filho — o watcher sobrevive ocioso, a porta
+      // 3000 fica permanentemente fechada (ECONNREFUSED) e nem um sinal é
+      // anunciado. Sem watch, a morte sobe na hora ao supervisor, que registra
+      // SPAWN/EXITED/RESTART (código ou SINAL) em `test-results/api-webserver.log`,
+      // reinicia com limite e propagaria o encerramento ao grupo do processo.
+      // O caminho do log já está coberto pelo padrão `test-results/` do `.gitignore`.
+      command:
+        "PERFIL=dev-synthetic node apps/web/scripts/api-webserver.mjs --cwd apps/api node_modules/.bin/tsx src/index.ts",
       // Liveness, NÃO readiness. `/v1/readyz` responde 503 PERMANENTE neste
       // estado (sem bundle GCS, sem alvo de frescor validado) — é o retrato
       // honesto, não um defeito. Usá-lo como sonda faria o servidor "nunca
