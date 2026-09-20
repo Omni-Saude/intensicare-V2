@@ -1682,3 +1682,74 @@ describe("mutantes — disCRIMINADORES da propagação ATENÇÃO (filter §7)", 
     expect(componente(record, "cv").reason).toBe("stale_input:cardiovascular");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Sexta onda — coalescência de insumo ausente (undefined ≡ []) e flags vazios
+// ---------------------------------------------------------------------------
+
+describe("mutantes — insumo undefined coalesce para ausente (?? [])", () => {
+  const casos: readonly {
+    readonly nome: string;
+    readonly campo: "pao2" | "fio2" | "platelets" | "bilirubin" | "creatinine" | "vasoactiveAgents";
+    readonly componente: "resp" | "coag" | "liver" | "cv" | "renal";
+    readonly motivo: string;
+  }[] = [
+    { nome: "pao2", campo: "pao2", componente: "resp", motivo: "missing_required_input:resp" },
+    { nome: "fio2", campo: "fio2", componente: "resp", motivo: "missing_required_input:resp" },
+    {
+      nome: "plaquetas",
+      campo: "platelets",
+      componente: "coag",
+      motivo: "missing_required_input:coag",
+    },
+    {
+      nome: "bilirrubina",
+      campo: "bilirubin",
+      componente: "liver",
+      motivo: "missing_required_input:liver",
+    },
+    {
+      nome: "creatinina",
+      campo: "creatinine",
+      componente: "renal",
+      motivo: "missing_required_input:renal",
+    },
+  ];
+  for (const c of casos) {
+    it(`${c.nome}: undefined ⇒ ausente declarada`, () => {
+      const overrides: Partial<SofaEvaluationInput> = {};
+      (overrides as Record<string, unknown>)[c.campo] = undefined;
+      if (c.campo === "creatinine") {
+        // Creatinina undefined com débito presente seria parcial declarado
+        // (critério único, I-7); para a AUSÊNCIA ambos precisam faltar.
+        overrides.urineOutput24h = null;
+      }
+      const record = evaluateSofa(entrada(overrides));
+      expect(componente(record, c.componente).reason).toBe(c.motivo);
+    });
+  }
+
+  it("vasoactiveAgents: undefined ⇒ nenhum agente ativo (PAM obriga)", () => {
+    const overrides: Partial<SofaEvaluationInput> = { vasoactiveAgents: undefined };
+    const record = evaluateSofa(entrada(overrides));
+    expect(componente(record, "cv").status).toBe("valid");
+    expect(componente(record, "cv").flags).toEqual([]);
+  });
+
+  it("componentes válidos carregam flags vazios EXATOS", () => {
+    const record = evaluateSofa(entrada({}));
+    expect(componente(record, "resp").flags).toEqual([]);
+    expect(componente(record, "coag").flags).toEqual([]);
+    expect(componente(record, "liver").flags).toEqual([]);
+    expect(componente(record, "cv").flags).toEqual([]);
+    expect(componente(record, "cns").flags).toEqual([]);
+  });
+
+  it("instante inválido: detalhe por componente nomeia a condição", () => {
+    const record = evaluateSofa(entrada({ evaluationTime: "não-é-instante" }));
+    expect(componente(record, "resp").explanation).toContain(
+      "instante de avaliação inválido ou ausente",
+    );
+    expect(componente(record, "renal").explanation).toContain("nenhuma lógica de regra executou");
+  });
+});
