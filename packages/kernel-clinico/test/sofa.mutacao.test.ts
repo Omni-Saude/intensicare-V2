@@ -1627,3 +1627,58 @@ describe("mutantes — ramos finais de PAM derivada, dose múltipla e seleção 
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Quinta onda — disCRIMINADORES da propagação ATENÇÃO e tempo da PAM derivada
+// ---------------------------------------------------------------------------
+
+describe("mutantes — disCRIMINADORES da propagação ATENÇÃO (filter §7)", () => {
+  it("renal parcial: ATENÇÃO propaga via SOFA_DIVULGACAO_RENAL_PT", () => {
+    const parcial = evaluateSofa(entrada({ urineOutput24h: null }));
+    expect(parcial.explanation).toContain(
+      "ATENÇÃO: débito urinário não avaliado — o escore renal é um limite inferior",
+    );
+  });
+
+  it("agente não tabelado: ATENÇÃO propaga via 'não tabelado'", () => {
+    const record = evaluateSofa(
+      entrada({ vasoactiveAgents: [agente("vasopressin", { value: 0.04, unit: "U/min" }, 240)] }),
+    );
+    expect(record.explanation).toContain(
+      "ATENÇÃO: agente vasoativo não tabelado — piso CV 3; mapeamento com fonte VALIDATION REQUIRED",
+    );
+  });
+
+  it("provisório: ATENÇÃO propaga via 'provisório — infusão <1h'", () => {
+    const record = evaluateSofa(
+      entrada({
+        vasoactiveAgents: [agente("norepinephrine", { value: 0.5, unit: "ug/kg/min" }, 30)],
+      }),
+    );
+    expect(record.explanation).toContain("ATENÇÃO: provisório — infusão <1h");
+  });
+
+  it("piso por dose ausente: ATENÇÃO propaga via 'ausente — piso'", () => {
+    const record = evaluateSofa(entrada({ vasoactiveAgents: [agente("dopamine", null, 180)] }));
+    expect(record.explanation).toContain(
+      "ATENÇÃO: dose de dopamina ausente — piso 2 pela presença do agente",
+    );
+  });
+
+  it("total válido SEM divulgação não carrega ATENÇÃO (o filter não inventa)", () => {
+    const record = evaluateSofa(entrada({}));
+    expect(record.explanation).not.toContain("ATENÇÃO:");
+  });
+
+  it("PAM derivada: o tempo EFETIVO é o mais ANTIGO de PAS/PAD (Math.min decide stale)", () => {
+    const record = evaluateSofa(
+      entrada({
+        map: { kind: "derivedFromSbpDbp", sbp: q(90, "mm[Hg]", 5 * 60), dbp: q(60, "mm[Hg]", 10) },
+      }),
+    );
+    // PAS a 5 h (fora da janela de 4 h), PAD fresca: o tempo EFETIVO é o
+    // mais antigo (Math.min) → stale — mataria o mutant de Math.min→Math.max.
+    expect(record.status).toBe("not_evaluated");
+    expect(componente(record, "cv").reason).toBe("stale_input:cardiovascular");
+  });
+});
