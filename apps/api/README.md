@@ -82,16 +82,17 @@ implícita ao próprio ator + reconhecimento na mesma transação (`db.ts`).
    que o push contínuo "**não** está implementado" — ambos falsos hoje. O
    que o código faz (`src/eventos/stream.ts`): a assinatura do notificador
    ocorre ANTES do catch-up (nada se perde entre as fases, linhas 225-229),
-   a conexão transita a `online`/`degraded` depois do catch-up (linhas
-   234-235) e um heartbeat (`intervaloPulsacaoMs`, 15 s nos limites
+   a conexão transita a `online`/`degraded` depois do catch-up (linha 235)
+   e um heartbeat (`intervaloPulsacaoMs`, 15 s nos limites
    ilustrativos de `src/eventos/fila.ts:54`) percorre a conexão enquanto
    aberta (linhas 236-241). A autorização segue por ENTREGA —
    `autorizarEntrega` imediatamente antes de cada quadro (ADR-0011 P3/P5/P6,
-   linhas 503-531; a cláusula "subscrição autorizada não é entrega
-   pré-autorizada" está no cabeçalho do arquivo, linhas 23-25). O que segue
-   pendente neste item é a verificação INDEPENDENTE do caminho de push
-   (linhagem ADR-0011): este parágrafo descreve o estado do código, não uma
-   verificação concluída.
+   docstring 503 e chamada 525; a cláusula "subscrição autorizada não é
+   entrega pré-autorizada" está no cabeçalho do arquivo, linhas 23-25). O
+   que segue pendente neste item é a verificação INDEPENDENTE do caminho de
+   push (linhagem ADR-0011): este parágrafo descreve o estado do código,
+   não uma verificação concluída. Citações reconferidas contra o estado
+   fundido pós-ORQ-2/3 (7f8c541, 2026-09-19).
 3. **Higiene de alarmes do alerta de deterioração NEWS2 (ORQ-3,
    CRIT-1/CRIT-2)**: o alerta durável é **de borda** — dispara no cruzamento
    ascendente do total (≥7 com anterior <7 ou desconhecido) ou num **novo**

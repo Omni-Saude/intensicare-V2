@@ -367,21 +367,26 @@ factual duro inalterado: 0 vias clínicas acionáveis, 47/47 inelegíveis,
 O outbox emite **seis** `event_type` distintos; o replay mapeia **cinco** ao
 vocabulário de `EventoFluxo`; **um** fica deliberadamente de fora. Esta
 contabilidade é o registro que não existia em lugar algum (achado MAJ-7 da
-auditoria forense de 2026-09-19):
+auditoria forense de 2026-09-19). **Reprovada contra o estado fundido pós-
+ORQ-2/3 (7f8c541, 2026-09-19):** o fluxo ORQ-3 acrescentou supressão de
+alerta auditada — `alerta-suprimido` é command do LIVRO DE AUDITORIA, não
+`event_type` de outbox — de modo que a contabilidade 6/5/1 PERMANECE; as
+linhas abaixo foram atualizadas (as originais, contra d7a49dd, eram 263 /
+591 / 650 / 697 / 1068,1086 / 670-677 / 1120-1126 / 1145-1146):
 
 | `event_type` (outbox) | Emitido em | Destino no replay |
 |---|---|---|
-| `clinical_observation_recorded` | `clinical-repository.ts:263` | → `observacao-clinica-registrada` |
-| `observacoes-ingeridas` | `apps/api/src/db.ts:591` | → `observacoes-ingeridas` |
-| `avaliacao-computada` | `apps/api/src/db.ts:650` | → `avaliacao-computada` |
-| `alerta-criado` | `apps/api/src/db.ts:697` | → `alerta-criado` |
-| `alerta-atualizado` | `apps/api/src/db.ts:1068,1086` (transição de item de trabalho, via `outboxEventType`) | → `alerta-atualizado` |
-| `regra-despachada` | `apps/api/src/db.ts:670-677` | **SEM mapeamento — deliberado** |
+| `clinical_observation_recorded` | `clinical-repository.ts:270` | → `observacao-clinica-registrada` |
+| `observacoes-ingeridas` | `apps/api/src/db.ts:600` | → `observacoes-ingeridas` |
+| `avaliacao-computada` | `apps/api/src/db.ts:683` | → `avaliacao-computada` |
+| `alerta-criado` | `apps/api/src/db.ts:763` | → `alerta-criado` |
+| `alerta-atualizado` | `apps/api/src/db.ts:1147,1165` (transição de item de trabalho, via `outboxEventType`) | → `alerta-atualizado` |
+| `regra-despachada` | `apps/api/src/db.ts:703-710` | **SEM mapeamento — deliberado** |
 
-O mapa é `OUTBOX_TO_CONTRACT_EVENT` (`apps/api/src/db.ts:1120-1126`). O
+O mapa é `OUTBOX_TO_CONTRACT_EVENT` (`apps/api/src/db.ts:1199-1205`). O
 sexto tipo, `regra-despachada`, NÃO pertence ao vocabulário de `EventoFluxo`
-do contrato — comentário de `db.ts:666-669`: "ele é registro durável
-interno, não mensagem de canal" — e o replay o OMITE (`db.ts:1145-1146`,
+do contrato — comentário de `db.ts:699-702`: "ele é registro durável
+interno, não mensagem de canal" — e o replay o OMITE (`db.ts:1224-1225`,
 `if (tipo === undefined) continue;`): o que não é publicável não é
 publicado. O §5.2 permanece INTACTO (ver §5.5, ACH-O3-16): quem for redigir
 payloads contra o código não pode copiar o §5.2, e esta subseção não tipa
