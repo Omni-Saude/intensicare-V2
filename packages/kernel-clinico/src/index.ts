@@ -106,41 +106,17 @@ export type {
 export { GCS_COMPONENT_ORDER } from "./types.js";
 
 // ---------------------------------------------------------------------------
-// Piso de unidades (edge-normalização) — consumo OBRIGATÓRIO do RULE-SOFA;
-// a conversão acontece SOMENTE aqui (HAZ-0032). Piso aditivo do escopo
-// ORQ-4; quantidades são tipos marcados — um `number` cru jamais ocupa o
-// lugar de uma quantidade convertida.
-// ---------------------------------------------------------------------------
-
-export {
-  doseUgKgMinDe,
-  paraBilirrubinaMgDl,
-  paraCreatininaMgDl,
-  paraFio2Fracao,
-  paraPaO2MmHg,
-  paraPlaquetasContagem,
-} from "./unidades/index.js";
-export type {
-  ConversaoEscalar,
-  ConversaoFio2,
-  DoseUgKgMin,
-  Fio2Fracao,
-  LeituraDose,
-  QuantidadeComUnidade,
-} from "./unidades/index.js";
-
-// ---------------------------------------------------------------------------
 // API da avaliação SOFA (RULE-SOFA 0.2.0 — terceira via)
 // ---------------------------------------------------------------------------
 
 export {
+  evaluateSofa,
   SOFA_ANOTACAO_AGENTE_NAO_TABELADO_PT,
   SOFA_ANOTACAO_LIMITACAO_PT,
   SOFA_ANOTACAO_PAM_DERIVADA_PT,
   SOFA_ANOTACAO_PROVISORIO_PT,
   SOFA_ANOTACAO_TSR_PT,
   SOFA_DIVULGACAO_RENAL_PT,
-  evaluateSofa,
   SOFA_RULE_ID,
   SOFA_RULE_VERSION,
 } from "./sofa.js";
@@ -224,3 +200,17 @@ export {
   pesoDeTextoAscii,
 } from "./unidades/peso.js";
 export type { MotivoRejeicao, ResultadoQuantidade } from "./unidades/tipos.js";
+
+// ---------------------------------------------------------------------------
+// Conversores de EXAMES do RULE-SOFA (ORQ-8) — extensão ADITIVA ao piso do
+// ORQ-4 (hemodinâmica/FiO2/lactato/peso); fatores EXATOS da logic.yaml
+// (÷17.104, ÷88.42, ×7.50062). HAZ-0032: a conversão acontece só aqui.
+// ---------------------------------------------------------------------------
+
+export type { ConversaoEscalar, QuantidadeComUnidade } from "./unidades/exames.js";
+export {
+  paraBilirrubinaMgDl,
+  paraCreatininaMgDl,
+  paraPaO2MmHg,
+  paraPlaquetasContagem,
+} from "./unidades/exames.js";

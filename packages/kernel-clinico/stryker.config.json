@@ -8,7 +8,7 @@
   },
   "plugins": ["@stryker-mutator/vitest-runner"],
   "inPlace": true,
-  "mutate": ["src/news2.ts", "src/types.ts", "src/sofa.ts", "src/unidades/index.ts"],
+  "mutate": ["src/news2.ts", "src/types.ts", "src/sofa.ts", "src/unidades/exames.ts"],
   "coverageAnalysis": "perTest",
   "reporters": ["clear-text", "progress", "json"],
   "jsonReporter": {

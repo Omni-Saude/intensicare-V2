@@ -78,13 +78,16 @@ import {
   type SofaUrineOutputObservation,
 } from "./types.js";
 import {
-  doseUgKgMinDe,
   paraBilirrubinaMgDl,
   paraCreatininaMgDl,
-  paraFio2Fracao,
   paraPaO2MmHg,
   paraPlaquetasContagem,
-} from "./unidades/index.js";
+} from "./unidades/exames.js";
+import {
+  fio2FracaoDeNumero,
+  fio2PercentualDeNumero,
+  fio2PercentualParaFracao,
+} from "./unidades/fio2.js";
 
 export const SOFA_RULE_ID = "RULE-SOFA" as const;
 /** Versão pinada da spec 0.2.0 (precursor 0.x; GDEC-0007 incorporado). */
@@ -811,10 +814,35 @@ function resolverFio2(leituras: readonly SofaQuantityObservation[]): Fio2Resulta
     if (!Number.isFinite(leitura.value)) {
       return { tipo: "invalido", motivo: "implausible_value:respiration" };
     }
-    const conversao = paraFio2Fracao({ value: leitura.value, unit: leitura.unit });
+    // Despacho por unidade sobre as portas do ORQ-4 (fio2.ts): fração
+    // canônica em "1"; "%" pela via explícita percentual → fração (÷100);
+    // unidade ausente/inmapeável: a MESMA recusa — nunca heurística
+    // ÷100 (CRV-SOFA-0330). Fora da faixa com unidade LEGAL é falha
+    // distinta: implausível.
+    let conversao:
+      | { readonly ok: true; readonly fracao: number; readonly convertido: boolean }
+      | {
+          readonly ok: false;
+          readonly motivo: "unidade_ausente" | "unidade_inmapeavel" | "fora_da_faixa";
+        };
+    if (leitura.unit === "1") {
+      const porta = fio2FracaoDeNumero(leitura.value);
+      conversao =
+        porta.status === "convertido"
+          ? { ok: true, fracao: porta.valor, convertido: false }
+          : { ok: false, motivo: "fora_da_faixa" };
+    } else if (leitura.unit === "%") {
+      const porta = fio2PercentualDeNumero(leitura.value);
+      conversao =
+        porta.status === "convertido"
+          ? { ok: true, fracao: fio2PercentualParaFracao(porta.valor), convertido: true }
+          : { ok: false, motivo: "fora_da_faixa" };
+    } else if (leitura.unit === "") {
+      conversao = { ok: false, motivo: "unidade_ausente" };
+    } else {
+      conversao = { ok: false, motivo: "unidade_inmapeavel" };
+    }
     if (!conversao.ok) {
-      // Ausente ou inmapeável: a MESMA recusa — nunca heurística ÷100 (0330).
-      // Fora da faixa com unidade LEGAL é falha distinta: implausível.
       if (conversao.motivo === "fora_da_faixa") {
         return { tipo: "invalido", motivo: "implausible_value:respiration" };
       }
@@ -933,11 +961,13 @@ function avaliarCardiovascular(
       anotacoes.push(divulgacaoDoseAusentePt(agente, piso));
       continue;
     }
-    const leituraDose = doseUgKgMinDe(bruto.dose);
-    if (!leituraDose.ok) {
-      if (leituraDose.motivo === "unidade_reconhecida_nao_normalizavel") {
-        // Reconhecida, não normalizável sem peso + concentração (política
-        // VALIDATION REQUIRED): dose não-usável ⇒ piso, não invalid (§4.4).
+    const unidadeDose = bruto.dose.unit;
+    if (unidadeDose !== "ug/kg/min") {
+      if (unidadeDose === "ug/min" || unidadeDose === "mL/h") {
+        // Reconhecidas, não normalizáveis sem peso + concentração (a fórmula
+        // do ORQ-4 exige insumos que o insumo SOFA não carrega; política
+        // VALIDATION REQUIRED na spec §3.1 linha 9): dose não-usável ⇒ piso,
+        // não invalid (§4.4).
         tierAcumulado = Math.max(tierAcumulado, piso);
         pisoPorAusenciaDeDose = true;
         anotacoes.push(divulgacaoDoseAusentePt(agente, piso));
@@ -948,6 +978,10 @@ function avaliarCardiovascular(
     }
     const faixaDose = FAIXA_DOSE[agente];
     if (faixaDose === undefined) {
+      registrarFalha({ tipo: "invalido", motivo: `unmappable_unit:${NOME_LONGO[component]}` });
+      continue;
+    }
+    if (!Number.isFinite(bruto.dose.value)) {
       registrarFalha({ tipo: "invalido", motivo: `unmappable_unit:${NOME_LONGO[component]}` });
       continue;
     }

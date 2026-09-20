@@ -15,9 +15,9 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  doseUgKgMinDe,
   evaluateSofa,
-  paraFio2Fracao,
+  fio2FracaoDeNumero,
+  fio2PercentualDeNumero,
   SOFA_COMPONENT_ORDER,
   type SofaEvaluationInput,
   type SofaQuantityObservation,
@@ -1451,11 +1451,6 @@ describe("mutantes — fragmentos de explicação ainda vivos", () => {
       "tier 4 pela combinação de agentes ativos",
     );
   });
-
-  it("doseUgKgMinDe com valor não finito → unidade inmapeável (unidades/index)", () => {
-    const leitura = doseUgKgMinDe({ value: Number.NaN, unit: "ug/kg/min" });
-    expect(leitura).toMatchObject({ ok: false, motivo: "unidade_inmapeavel" });
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1611,19 +1606,16 @@ describe("mutantes — ramos finais de PAM derivada, dose múltipla e seleção 
   });
 
   it("unidades: limites exatos de percentual (21 → 0.21; 100 → 1.0; 20.9 e 101 rejeitados)", () => {
-    expect(paraFio2Fracao({ value: 21, unit: "%" })).toMatchObject({ ok: true, convertido: true });
-    expect(paraFio2Fracao({ value: 100, unit: "%" })).toMatchObject({ ok: true, convertido: true });
-    expect(paraFio2Fracao({ value: 20.9, unit: "%" })).toMatchObject({
-      ok: false,
-      motivo: "fora_da_faixa",
-    });
-    expect(paraFio2Fracao({ value: 101, unit: "%" })).toMatchObject({
-      ok: false,
-      motivo: "fora_da_faixa",
-    });
-    expect(paraFio2Fracao({ value: 1.01, unit: "1" })).toMatchObject({
-      ok: false,
-      motivo: "fora_da_faixa",
+    expect(fio2PercentualDeNumero(21)).toMatchObject({ status: "convertido" });
+    expect(fio2PercentualDeNumero(100)).toMatchObject({ status: "convertido" });
+    expect(fio2PercentualDeNumero(20.9)).toMatchObject({ status: "rejeitado" });
+    expect(fio2PercentualDeNumero(101)).toMatchObject({ status: "rejeitado" });
+    expect(fio2FracaoDeNumero(1.01)).toMatchObject({ status: "rejeitado" });
+    // A classe DISTINTA do ORQ-4: fração no vão percentual é rejeitada como
+    // valor-percentual (o defeito V1 morre na porta).
+    expect(fio2FracaoDeNumero(40)).toMatchObject({
+      status: "rejeitado",
+      motivo: "rejected_valor_percentual",
     });
   });
 });
@@ -1717,14 +1709,14 @@ describe("mutantes — insumo undefined coalesce para ausente (?? [])", () => {
   ];
   for (const c of casos) {
     it(`${c.nome}: undefined ⇒ ausente declarada`, () => {
-      const overrides: Partial<SofaEvaluationInput> = {};
-      (overrides as Record<string, unknown>)[c.campo] = undefined;
-      if (c.campo === "creatinine") {
-        // Creatinina undefined com débito presente seria parcial declarado
-        // (critério único, I-7); para a AUSÊNCIA ambos precisam faltar.
-        overrides.urineOutput24h = null;
-      }
-      const record = evaluateSofa(entrada(overrides));
+      const base = entrada({});
+      const overrides =
+        c.campo === "creatinine"
+          ? // Creatinina undefined com débito presente seria parcial declarado
+            // (critério único, I-7); para a AUSÊNCIA ambos precisam faltar.
+            { ...base, creatinine: undefined, urineOutput24h: null }
+          : { ...base, [c.campo]: undefined };
+      const record = evaluateSofa(overrides as SofaEvaluationInput);
       expect(componente(record, c.componente).reason).toBe(c.motivo);
     });
   }
