@@ -1,193 +1,127 @@
-# Encargo — a margem que falta, o vocabulário que espera ratificação
+# Encargo — fechar a onda (varredura de verdade) e a via SOFA
 
-**Escrito em** 2026-08-20, ao fim das ondas de lacunas de escopo.
-**`main` = `d1bbde6`.** Tudo mesclado (PR #10, PR #11). Repositório com **uma
-única branch**; árvore limpa.
+**Escrito em** 2026-09-19, ao fim da execução do ORQ-3.
+**`main` = `7f8c541`** (PR #25, ORQ-3). CI Plataforma **success** no próprio
+commit de merge. Árvore limpa; worktree de execução em
+`../intensicare-V2-orq3` (branch `orq3/alerta-borda-supressao`, já mesclada —
+pode ser removida com `git worktree remove`).
 
 ---
 
 ## 0. Leia primeiro, nesta ordem
 
-1. `HANDOFF.yaml`, seção **`lacunas_de_escopo_2026_08_20`** — estado vivo.
-   As seções anteriores **não** foram reescritas.
-2. `.claude/CONTRATO-DE-AGENTES.md` — §7 tem a baseline **corrigida** (dizia
-   1.026 e era lida por todo especialista antes de editar).
-3. Os registros de `ACH-O3-1` a `ACH-O3-17` em `docs/**`.
+1. `ENCARGO_CONTINUIDADE_2026-09-19.md` — fechamento da onda 1 (estado em
+   `d1758da`; a leitura de suprimentos de lá segue válida).
+2. `ENCARGO_ORQ_3_ALERTA_2026-09-19.md` — o que este par de sessões entregou
+   (ORQ-2 `104ef54`, ORQ-3 `7f8c541`) e os diagnósticos de ambiente que
+   economizarão horas (node 22 × engines; Stryker `--inPlace`; vitest
+   sequencial para evidência local; adaptação de fixtures à semântica de
+   borda).
+3. `HANDOFF.yaml` — estado vivo das autoridades. **Este arquivo é ROLANTE.**
+   Arquive-o sob nome datado antes de sobrescrever — precedentes:
+   `ENCARGO_CONTINUIDADE_2026-09-19.md`, `ENCARGO_ORQ_3_ALERTA_2026-09-19.md`.
 
-> **Este arquivo é ROLANTE.** Arquive-o sob nome datado antes de sobrescrever —
-> precedentes: `ENCARGO_ONDAS_3_E_4_2026-08-18.md` e
-> `ENCARGO_LACUNAS_DE_ESCOPO_2026-08-20.md`.
+## 1. O caminho crítico agora — duas frentes, nesta ordem
 
-## 1. As regras que mais economizam tempo aqui
+### Frente A — WAVE 2: fundir o PR #18 (ORQ-7 PR-C)
 
-**Nunca meça exit code através de um pipe.** `| tail` devolve o exit do `tail`.
-Eu quase reportei verde uma `verify` reprovada por isso.
+O gate de onda ("só fundir após ORQ-2 e ORQ-3") está **satisfeito**:
+ORQ-2 = `104ef54` (PR #21), ORQ-3 = `7f8c541` (PR #25). O próprio #18 pede
+**re-checagem das citações dos dossiês no un-draft** — o main moveu sob eles
+(o ORQ-3 acrescentou um dossiê novo e reescreveu o README da API §3; o ORQ-2
+trocou o webServer da API). Rebase, reverificar citação a citação, un-draft,
+deixar o CI arbitrar, fundir. Fecham com ele: MAJ-6, MAJ-7, MIN-3.
 
-**A heurística de esperar `load5 < 4` tem um limite**: ela presume que a carga
-vem dos seus testes. Se vier de outro app — ou de um processo pendurado — o laço
-espera para sempre. **Confira o que está consumindo CPU antes de esperar.** Nesta
-sessão havia um `biome __run` travado há **dois dias** a 97%.
+### Frente B — WAVE 3: ORQ-8 (SOFA, terceira via)
 
-**Não meça em sequência.** Eu deixei a carga ir de 4,8 a 26,9 rodando suítes
-seguidas e perdi a capacidade de distinguir contenção de defeito. Espere esfriar.
+Dependências prontas: ORQ-3 ✓ (a primitiva `deveriaEmitirAlerta` e o
+`alertCrossing` do kernel são o molde) e ORQ-4 ✓ (normalizadores). Prompt:
+`orchestrators/PROMPT_ORQ-8_SOFA_PATHWAY.md`. Implementar ao spec alvo
+pinado `docs/05-clinical-safety/rule-releases/sofa/`, corpus de vetores de
+referência no `rule-bundle`, registrado no despachante, **despacho
+bloqueado** pending bundle approval; baseline de mutação com `--inPlace`
+(ver `ENCARGO_ORQ_3_ALERTA_2026-09-19.md` §Stryker). Worktree próprio;
+rebasar sobre o main do dia.
+
+## 2. Vermelho remanescente do repositório — um, classificado
+
+**Cadeia de Suprimentos (`artefato-api`/`artefato-web`)**: `libcrypto3`
+CVE-2026-14456 (imagem base Alpine; correção em `3.5.8-r0`). Vermelho de
+deriva de advisory, presente no próprio `main` ANTES e DEPOIS do ORQ-3 —
+bump de imagem base é trabalho do fluxo supply-chain. Nada de código de PR
+resolve; não o "contorne".
+
+## 3. O que continua ABERTO (rolante anterior, intacto e ainda válido)
+
+- **Margem de render** (`navegacao.test.tsx`): mandato autônomo, não fluxo.
+  ATUALIZAÇÃO: o **PR #22 (MIN-7)** atacou o re-render da grade (48 cartões
+  por tique) — **re-meça a distribuição (n≥10) ANTES de diagnosticar**; o
+  penhasco de ~146 ms pode ter mudado de lugar. Proibido subir
+  `asyncUtilTimeout`; margem-alvo ≥5×.
+- `ACH-O3-1` (P1, allow-list por chave; inverter asserção ao estender —
+  nunca enfraquecer) · `ACH-O3-15/16/6/8` · `LAC-L3` (metade aberta) ·
+  `LAC-L6` (destravada por ADR-0029 C6) · `verifyBundle` sem chamador
+  (autoridade nula contra escrita no filesystem) · resíduo
+  `pnpm test -- <arquivo>`.
+- **Atos humanos** (nenhuma autoridade de agente os fecha): `BLK-0002`
+  (aceite/credencial do Dr. Marcelo Villaca Lima — caminho de MG-G7, C1 de
+  ADR-0007/0029 e de toda ratificação autor≠aprovador) · `ADR-0007` C5
+  (GDEC dev-only + nomear `AUTH-SECURITY`) · `ADR-0029` C6 (você decide —
+  destrava LAC-L6) · `VAL-0027/0029/0031/0033` e `MG-G4` (observação de
+  campo; VAL-0033 exige ≥3 usuários reais de TA).
+
+## 4. As regras que mais economizam tempo (acumulado das sessões)
+
+**Node 22, sempre.** `nvm use 22` (ou prefixe o PATH do
+`~/.nvm/versions/node/v22.23.2/bin`). Sob node 24: PGlite estoura 30 s na
+primeira instanciação e o dlx do Stryker quebra — REPRODUZIDO no main
+pristine, A/B. O PATH perde o nvm entre shells.
+
+**Nunca meça exit code através de um pipe** (`| tail` devolve o exit do
+tail; use `set -o pipefail` ou capture em arquivo).
+
+**Suíte grande de API: `--no-file-parallelism` para evidência local**; o
+paralelo estoura hooks de bootstrap do PGlite nesta máquina (reproduzido no
+main pristine). Árbitro final = CI do PR. Não confunda contenção fria
+(WASM a frio num worktree novo) com defeito — rode de novo quente antes de
+diagnosticar.
+
+**Adaptação de testes à semântica de borda (ORQ-3)**: par virgem =
+P001/ENC_P001; P002 carrega anterior 11 + cooldown; ENC_VAZIO está queimado
+por design; sob relógio falso (`toFake: ["Date"]` SOMENTE), cunhe o bearer
+dentro do relógio simulado.
 
 **Antes de execução alvo:** `pnpm --filter @intensicare/contratos build`.
-
----
-
-## 2. O que a última rodada provou sobre método
-
-### 2.1 Mutação prova que um gate REPROVA o errado. Nunca que ACEITA o certo
-
-O extrator da Parte G era cego a `readonly`, e a direção pior — **fazer o gate
-reprovar documento correto** — nenhuma bateria de mutação pegaria. Todo gate
-precisa de bloco de **conformidade**, não só de mutação.
-
-### 2.2 Um gate pode não terminar, e ninguém percebe (`ACH-O3-17`)
-
-`pnpm -r run test -- --run` virava `vitest -- --run`; o cac **trunca argv no
-`--`**. Num terminal humano o passo `test` entrava em **watch** e os quatro
-últimos gates **nunca rodavam**. Passava para agente porque `CLAUDECODE` — e
-também `AI_AGENT` — zeram `isAgent`. O conserto devolveu algo mais importante
-que o verde: **o vermelho voltou a ser observável.** Antes, falha e sucesso
-travavam igual.
-
-### 2.3 Teste de ausência sem âncora positiva é verde sobre nada
-
-`verificarAxe` assertava `violations === []`. Sobre container vazio,
-`passes.length` também é 0 — a asserção passava medindo **zero**, e seis casos
-de axe dependiam dela.
-
-### 2.4 Meça antes de diagnosticar
-
-**Quatro dos cinco diagnósticos herdados estavam errados** porque o código mudara
-sob eles. E três hipóteses minhas foram refutadas por medição: a tabela
-ilustrativa **não** entrava no bundle (tree-shaking); os selos escuros **não**
-violavam 1.4.3 (era inversão de saliência, pior e invisível ao axe); o flake
-**não** era poluição de estado (era um penhasco de 50 ms).
-
----
-
-## 3. O que continua ABERTO
-
-### A margem de render — o item mais concreto
-
-O flake de `apps/web/src/roteamento/navegacao.test.tsx` **não fechou**.
-Distribuição medida (n=10): **9 de 10 execuções acima de 1000 ms**; o
-`findByRole` mediu **1002 ms numa execução que passou**. Margem hoje ~1,0–1,1×.
-
-O custo de ambiente já caiu 70% (20 arquivos foram para `environment: node`), o
-que ajudou mas **não afasta da parede**. Fechar exige atacar os **~146 ms que o
-pipeline de render leva já ocioso** — `useRecursoRemoto`/`GradeLeitos`, **código
-de produção**. Margem sugerida: **≥5×** (consulta ≤200 ms), porque um runner de
-CI 3–4× mais lento é plausível.
-
-**Subir `asyncUtilTimeout` é proibido** — o penhasco continuaria 50 ms adiante.
-
-Vizinhos na mesma classe, medidos e **não lentos isolados**:
-`acessibilidade.test.tsx :: grade de leitos carregada` (239 ms isolado / 793 ms
-sob a suíte) e `:: galeria` (188 / 710 ms).
-
-Vale tratar como pergunta de UI antes de teste: **por que renderizar 48 nós leva
-146 ms numa tela clínica?**
-
-### `ACH-O3-1` (P1) — integridade do registro persistido
-
-A allow-list filtra por **CHAVE**, não por **VALOR**. Há teste que afirma isso.
-**Quando alguém estender a valores, essa asserção precisa ser INVERTIDA para
-provar o fecho — nunca enfraquecida.** Ligado a `ADR-0007` C5.
-
-### `ACH-O3-15`, `ACH-O3-16`, `ACH-O3-6`, `ACH-O3-8`
-
-Recusa legítima nunca concilia (exige desenho); catálogo §5.2 já diverge do
-código (**não copie dele** ao tipar `dados`); `sequencia` negativa fechada mas
-tipar `dados` aberto; cursor `bigserial` global mede escrita de outros tenants.
-
-### `LAC-L3` — fechou só metade
-
-A divergência de `BandaRisco` fechou. **Seguem abertas** a ausência de geração de
-código e a divergência de `Frescor` (3 no contrato × 9 na UI, e
-`mapearFrescorParametro` nunca produz 4 deles).
-
-### `LAC-L6` — e a conexão que ninguém tinha feito
-
-`transitionWorkItem` **já suporta os 7 comandos**. Só três têm bloqueador citado:
-`suppress` (W7, vocabulário de razão), `override` (W8, racional) e `escalate`
-(W5, limiares do bundle). **`assign`, `resolve` e `reopen` não têm.**
-E `ADR-0029` **C6** (lista de ambiguidade proibida) contém **P5** = *"resolvido"
-× "reconhecido"* e **P6** = *"suprimido" × ausência não rotulada* — exatamente
-estes estados. Ratificar C6 destrava o vocabulário.
-
-### A verificação criptográfica nunca roda
-
-`verifyBundle` não tem chamador fora de teste. "Autoridade" significa "este
-processo leu este artefato do disco" — real contra escrita no banco, **nula**
-contra escrita no sistema de arquivos.
-
-### Resíduos menores
-
-`pnpm test <arquivo>` voltou a filtrar; `pnpm test -- <arquivo>` **ainda
-descarta** (interação pnpm×vitest). `ADR-0011:387` e `ADR-0012:278` têm a mesma
-alegação obsoleta sobre `ADR-0016`, mas **dentro do estado de uma condição** —
-julgar se a evidência-alvo está satisfeita é do dono da ADR, não bookkeeping.
-
----
-
-## 4. ATO HUMANO — e o que você pode decidir sozinho
-
-Você é **`AUTH-CLINSAFETY`** (parcial, `BLK-0002`) e **`AUTH-UX`** (interino),
-com uma restrição decisiva: seu conhecimento clínico vale como **hipótese de
-especialista, nunca como evidência de observação do Gate G1**.
-
-**Decide sozinho hoje** (são decisões, não observações):
-`ADR-0029` C6 (destrava `LAC-L6`) · ordem de severidade de frescor exibida ·
-vocabulário de razão W7 · consolidar os 6 prefixos documento-locais numa única
-entrada `GDEC` (**311 ocorrências, 89 IDs**; precedente D4 já exercido).
-
-**Precisa de segundo humano nomeado:** `ADR-0007` C5 — a saída escolhida é
-`GDEC` de **escopo `dev`-apenas** (o próprio ADR a oferece); exige também
-**nomear `AUTH-SECURITY`** (C2 aberta).
-
-**Nenhuma autoridade substitui:** `VAL-0027/0029/0031/0033` e `MG-G4` — exigem
-observação de campo; `VAL-0033` exige **≥3 usuários reais de TA**, jamais
-simulado.
-
-**Topologia:** `ACH-O3-8` — prefira **cursor escopado** ao opaco, que
-reintroduziria a custódia de chave bloqueada. E decida a classe do ambiente-alvo
-para `CREATE EVENT TRIGGER`.
-
-### O caminho crítico
-
-**Formalizar o aceite e a credencial do Dr. Marcelo Villaca Lima (`BLK-0002`).**
-Está no caminho de `MG-G7`, `ADR-0007` C1, `ADR-0029` C1 e de **toda**
-ratificação que exija autor ≠ aprovador.
-
----
 
 ## 5. Comandos de retomada — cada número nomeia seu comando
 
 ```bash
-uptime                                     # e VEJA o que consome CPU antes de esperar
-pnpm --filter @intensicare/contratos build # SEMPRE antes de execução alvo
+nvm use 22                                  # engines do repo: >=22 <23
+uptime                                      # e VEJA o que consome CPU
+pnpm --filter @intensicare/contratos build  # SEMPRE antes de execução alvo
 
-pnpm verify                                # exit 0 — 1.973 passed | 1 skipped
-cd apps/web && pnpm exec playwright test --workers=1          # 57/57
-cd packages/persistencia && IC_FRONTEIRA_PG=obrigatoria pnpm exec vitest run  # 99/99
-pnpm check:contratos                       # 258 verificações + autoteste 99 casos
+pnpm verify                                 # sob node 22; vermelho esperado:
+                                            #   só Cadeia de Suprimentos (CVE)
+pnpm --filter @intensicare/api exec vitest run --no-file-parallelism  # 435
+pnpm --filter @intensicare/persistencia test                          # 106
+cd packages/kernel-clinico && pnpm dlx --package=@stryker-mutator/core \
+  --package=@stryker-mutator/vitest-runner --package=typescript@5 \
+  stryker run --inPlace                     # mutação; ≥90 exigido
+node scripts/pg-efemero.mjs up              # PG real p/ fronteira
+pnpm test:fronteira                         # 64/64 com PG_TEST_URL exports
+pnpm check:contratos                        # + autoteste
 ```
 
-O **único** pulado é `apps/api/src/db.test.ts`, condicionado a `PG_TEST_URL`.
-Avisa em stderr e vira falha dura sob `IC_FRONTEIRA_PG=obrigatoria` — **não é P0
-escondido.**
-
----
+O **único** pulado em suíte é o bloco de PostgreSQL real de
+`apps/api/src/db.test.ts`, condicionado a `PG_TEST_URL` — falha dura sob
+`IC_FRONTEIRA_PG=obrigatoria`; não é P0 escondido.
 
 ## 6. Não presuma convergência
 
-A taxa de achado **nunca** convergiu: **8, 6, 9, 12, 12, 25** — e esta rodada,
-que era para ser de fechamento de lacunas conhecidas, achou `ACH-O3-17` (o gate
-não terminava), três vacuidades e dois flakes que ninguém sabia existirem.
-
-**Ao fechar um achado, enumere TODAS as superfícies antes de dizer "fechado".**
-Foi o que faltou quando `ACH-REV8-3` foi declarado fechado em duas superfícies
-de leitura e havia uma terceira.
+A taxa de achado **nunca** convergiu: **8, 6, 9, 12, 12, 25** — e a rodada do
+ORQ-3, que era "só o alerta", achou o envenenamento por design do ENC_VAZIO,
+a corrosão do PATH de nvm entre shells e o node-versão como causa-raiz de
+dois vermelhos "misteriosos" que duas sessões anteriores haviam atribuído a
+carga. **Ao fechar um achado, enumere TODAS as superfícies antes de dizer
+"fechado"** — e meça no ambiente que o repo declara (`engines`) antes de
+atribuir a defeito.
