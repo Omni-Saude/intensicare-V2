@@ -1211,13 +1211,18 @@ orq7_verdade_documental_2026_09_19:
       correspondencia inventada). Spec pinada INTOCADA. Mesclado b04935b.
   ABERTO_leia_antes_de_agir:
     PR_18_C_wave_2: >-
-      DRAFT (branch orq7/varredura-verdade 49bce1e, base b04935b — ATRASADA:
-      main andou com #22/#23). Conteúdo: MAJ-6 (README SSE), MAJ-7 (§5.8,
-      contabilidade 6/5/1; §5.2 INTACTO, ACH-O3-16 segue ABERTO), MIN-3
-      (adendo docs/07; stub permanece). SO fundir apos ORQ-2 (#21) E ORQ-3
-      (sem PR ainda). Ao desrascunhar: rebase, RECONFERIR as citacoes de
-      linha contra o codigo fundido (ORQ-3 edita territorio de db.ts/stream
-      e apps/api/README.md:83-85), rodar gates.
+      MESCLADO (beb3364e, 2026-09-19 — este registro foi escrito quando o PR
+      ainda era rascunho; a execucao o superou). Conteudo mesclado: MAJ-6
+      (README SSE — resolvido em composicao com o item 3 novo de ORQ-3),
+      MAJ-7 (§5.8, contabilidade 6/5/1; §5.2 INTACTO, ACH-O3-16 segue
+      ABERTO), MIN-3 (adendo docs/07; stub permanece). O gate de onda 2 foi
+      cumprido com a UNIDADE DE RECONFERENCIA: todas as citacoes de linha
+      re-verificadas contra 7f8c541; a contabilidade 6/5/1 foi REPROVADA
+      contra o codigo e PERMANECE (alerta-suprimido de ORQ-3 e command de
+      auditoria, nao event_type de outbox); linhas de db.ts atualizadas no
+      adendo com as originais preservadas. ORQ-7 COMPLETO: #14/#16/#17/#18
+      mesclados; onda 2 do plano encerrada (docs sweep mesclado,
+      check:docs verde, achados DOC fechados ou transferidos a autoridade).
     mecanica_do_gate_de_commit: >-
       O git-gate do Mimosa varre a ARVORE DO CHECKOUT PRINCIPAL, nao a do
       worktree que committa; bloqueou a sessao inteira ate o fecho do CWE-78
