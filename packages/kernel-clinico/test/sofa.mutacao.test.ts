@@ -1745,3 +1745,30 @@ describe("mutantes — insumo undefined coalesce para ausente (?? [])", () => {
     expect(componente(record, "renal").explanation).toContain("nenhuma lógica de regra executou");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Sétima onda — o filter de ATENÇÃO é exclusivo: anotação estranha nunca
+// vira divulgação (mata includes-literal esvaziado, que SÓ cresce o filtro)
+// ---------------------------------------------------------------------------
+
+describe("mutantes — ATENÇÃO é exclusivo e não inventa divulgação", () => {
+  it("com anotação NÃO-divulgável presente (limitação terapêutica), o válido não a propaga", () => {
+    const record = evaluateSofa(entrada({ treatmentLimitationOrderDocumented: true }));
+    expect(record.explanation).not.toContain("ATENÇÃO:");
+    expect(record.explanation).not.toContain("escalonamento suprimido —");
+  });
+
+  it("divulgação real coexiste com anotação estranha — só a divulgável entra na ATENÇÃO", () => {
+    const record = evaluateSofa(
+      entrada({
+        treatmentLimitationOrderDocumented: true,
+        urineOutput24h: null,
+        creatinine: [q(1.0, "mg/dL", 10)],
+      }),
+    );
+    expect(record.explanation).toContain(
+      "ATENÇÃO: débito urinário não avaliado — o escore renal é um limite inferior",
+    );
+    expect(record.explanation).not.toContain("escalonamento suprimido —");
+  });
+});
