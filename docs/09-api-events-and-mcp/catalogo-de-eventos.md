@@ -266,9 +266,9 @@ subseção diz, ponto a ponto, onde ele deixou de bater.
 
 | # | O que o §5.2 diz | O que o código faz | Fonte lida |
 |---|---|---|---|
-| 1 | **quatro** `tipo` (e o mesmo vale para a união do §5.1) | o enum tem **cinco**: falta `observacao-clinica-registrada` | `packages/contratos/asyncapi.yaml:386-391` (enum FECHADO) e `apps/api/src/db.ts:1120-1126` (`OUTBOX_TO_CONTRACT_EVENT`, que mapeia `clinical_observation_recorded` → `observacao-clinica-registrada`) |
-| 2 | `observacoes-ingeridas` carrega `{ encontroId, leitoId, pacienteRef }` | carrega **também** `aceitas` e `quarentena` (duas contagens) | `apps/api/src/db.ts:588-601` |
-| 3 | `avaliacao-computada` carrega `{ encontroId, leitoId, pacienteRef, avaliacao }`, "inclui `ResultadoAvaliacao` completo" | carrega `{ encontroId, status, escore, banda }` — **sem** `leitoId`, **sem** `pacienteRef`, e **sem** `ResultadoAvaliacao` | `apps/api/src/db.ts:647-659` |
+| 1 | **quatro** `tipo` (e o mesmo vale para a união do §5.1) | o enum tem **cinco**: falta `observacao-clinica-registrada` | `packages/contratos/asyncapi.yaml:386-391` (enum FECHADO) e `apps/api/src/db.ts:1199-1205` (`OUTBOX_TO_CONTRACT_EVENT`, que mapeia `clinical_observation_recorded` → `observacao-clinica-registrada`) |
+| 2 | `observacoes-ingeridas` carrega `{ encontroId, leitoId, pacienteRef }` | carrega **também** `aceitas` e `quarentena` (duas contagens) | `apps/api/src/db.ts:597-610` |
+| 3 | `avaliacao-computada` carrega `{ encontroId, leitoId, pacienteRef, avaliacao }`, "inclui `ResultadoAvaliacao` completo" | carrega `{ encontroId, status, escore, banda }` — **sem** `leitoId`, **sem** `pacienteRef`, e **sem** `ResultadoAvaliacao` | `apps/api/src/db.ts:680-692` |
 
 **O item 3 é o mais consequente, e na direção segura.** O payload NÃO carrega
 o `ResultadoAvaliacao` completo — logo não carrega `explicacao`, `anotacoes`,
