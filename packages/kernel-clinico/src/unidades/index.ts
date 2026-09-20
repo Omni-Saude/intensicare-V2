@@ -58,13 +58,13 @@ const EPS = 1e-9;
 export function paraFio2Fracao(q: QuantidadeComUnidade): ConversaoFio2 {
   if (!Number.isFinite(q.value)) return { ok: false, motivo: "fora_da_faixa" };
   if (q.unit === "1") {
-    if (q.value >= 0.21 - EPS && q.value <= 1.0 + EPS) {
+    if (q.value >= 0.21 && q.value <= 1.0) {
       return { ok: true, fracao: q.value as Fio2Fracao, convertido: false };
     }
     return { ok: false, motivo: "fora_da_faixa" };
   }
   if (q.unit === "%") {
-    if (q.value >= 21 - EPS && q.value <= 100 + EPS) {
+    if (q.value >= 21 && q.value <= 100) {
       return { ok: true, fracao: (q.value / 100) as Fio2Fracao, convertido: true };
     }
     return { ok: false, motivo: "fora_da_faixa" };

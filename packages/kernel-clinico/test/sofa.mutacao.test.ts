@@ -15,10 +15,13 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  doseUgKgMinDe,
   evaluateSofa,
   SOFA_COMPONENT_ORDER,
   type SofaEvaluationInput,
   type SofaQuantityObservation,
+  type SofaUrineOutputObservation,
+  type SofaVasoactiveAgentObservation,
 } from "../src/index.js";
 
 const T = "2026-08-15T12:00:00-03:00";
@@ -78,6 +81,25 @@ function semTempo(qty: SofaQuantityObservation): SofaQuantityObservation {
   return { ...qty, effectiveTime: null };
 }
 
+/** Instante ISO puro — para campos (intervalos, pareamentos) que exigem string não nula. */
+function instante(minutosAtras: number): string {
+  return new Date(Date.parse(T) - minutosAtras * 60_000).toISOString();
+}
+
+function agente(
+  agent: string,
+  dose: { value: number; unit: string } | null,
+  sustainedMinutes: number,
+): SofaVasoactiveAgentObservation {
+  return {
+    agent,
+    dose,
+    sustainedMinutes,
+    lastConfirmedAt: instante(10),
+    provenance: PROC,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Ramos de integridade SEM COBERTURA: tempo clínico ausente (DOM-0009)
 // ---------------------------------------------------------------------------
@@ -135,10 +157,10 @@ describe("mutantes — tempo clínico ausente por insumo (missing_clinical_time)
         urineOutput24h: {
           value: 1800,
           unit: "mL",
-          intervalStart: q(0, "mL", 0).effectiveTime,
+          intervalStart: instante(0),
           intervalEnd: null,
           provenance: PROC,
-        },
+        } as unknown as SofaUrineOutputObservation,
       }),
     },
   ];
@@ -236,8 +258,8 @@ describe("mutantes — fonte em quarentena por insumo (quarantined_input)", () =
         urineOutput24h: {
           value: 1800,
           unit: "mL",
-          intervalStart: q(0, "mL", 0).effectiveTime,
-          intervalEnd: q(0, "mL", 10).effectiveTime,
+          intervalStart: instante(0),
+          intervalEnd: instante(10),
           provenance: quarantined,
         },
       }),
@@ -407,8 +429,8 @@ describe("mutantes — valor não finito e faixa plausível (implausible_value)"
           urineOutput24h: {
             value: valor,
             unit: "mL",
-            intervalStart: q(0, "mL", 0).effectiveTime,
-            intervalEnd: q(0, "mL", 10).effectiveTime,
+            intervalStart: instante(0),
+            intervalEnd: instante(10),
             provenance: PROC,
           },
         }),
@@ -482,8 +504,8 @@ describe("mutantes — unidades e domínios (unmappable_unit / out_of_range)", (
         urineOutput24h: {
           value: 1800,
           unit: "L/24h",
-          intervalStart: q(0, "mL", 0).effectiveTime,
-          intervalEnd: q(0, "mL", 10).effectiveTime,
+          intervalStart: instante(0),
+          intervalEnd: instante(10),
           provenance: PROC,
         },
       }),
@@ -1075,5 +1097,362 @@ describe("mutantes — ordem canônica SOFA_COMPONENT_ORDER", () => {
       "cns",
       "renal",
     ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Terceira onda — bordas de janela EXATAS, pareamentos no limite, seleção
+// pior-valor com desempate, sinônimos pt-BR e fragmentos ainda vivos.
+// ---------------------------------------------------------------------------
+
+describe("mutantes — bordas exatas de janela e pareamento (limites INCLUSIVOS)", () => {
+  it("laboratório EXATAMENTE na borda da janela (1440 min) → fresco; 1441 → stale; exatamente na expiração (2880) → stale; 2881 → expired", () => {
+    const naBorda = evaluateSofa(entrada({ creatinine: [q(0.8, "mg/dL", 1440)] }));
+    expect(naBorda.status).toBe("valid");
+
+    const aposBorda = evaluateSofa(entrada({ creatinine: [q(0.8, "mg/dL", 1441)] }));
+    expect(aposBorda.status).toBe("not_evaluated");
+    expect(componente(aposBorda, "renal").reason).toBe("stale_input:renal");
+
+    const naExpiracao = evaluateSofa(
+      entrada({ creatinine: [q(0.8, "mg/dL", 2880)], urineOutput24h: null }),
+    );
+    expect(componente(naExpiracao, "renal").reason).toBe("stale_input:renal");
+
+    const alemExpiracao = evaluateSofa(
+      entrada({ creatinine: [q(0.8, "mg/dL", 2881)], urineOutput24h: null }),
+    );
+    expect(componente(alemExpiracao, "renal").reason).toBe("expired_input:renal");
+  });
+
+  it("PAM exatamente a 240 min → fresco; 241 → stale; 480 → stale; 481 → expired", () => {
+    const borda = evaluateSofa(
+      entrada({
+        map: {
+          kind: "measured",
+          value: 85,
+          unit: "mm[Hg]",
+          effectiveTime: instante(240),
+          provenance: PROC,
+        },
+      }),
+    );
+    expect(borda.status).toBe("valid");
+    const stale = evaluateSofa(
+      entrada({
+        map: {
+          kind: "measured",
+          value: 85,
+          unit: "mm[Hg]",
+          effectiveTime: instante(241),
+          provenance: PROC,
+        },
+      }),
+    );
+    expect(componente(stale, "cv").reason).toBe("stale_input:cardiovascular");
+    const naExpiracao = evaluateSofa(
+      entrada({
+        map: {
+          kind: "measured",
+          value: 85,
+          unit: "mm[Hg]",
+          effectiveTime: instante(480),
+          provenance: PROC,
+        },
+      }),
+    );
+    expect(componente(naExpiracao, "cv").reason).toBe("stale_input:cardiovascular");
+    const expired = evaluateSofa(
+      entrada({
+        map: {
+          kind: "measured",
+          value: 85,
+          unit: "mm[Hg]",
+          effectiveTime: instante(481),
+          provenance: PROC,
+        },
+      }),
+    );
+    expect(componente(expired, "cv").reason).toBe("expired_input:cardiovascular");
+  });
+
+  it("GCS exatamente a 720 min → fresco; 721 → stale; 1440 → stale; 1441 → expired", () => {
+    const borda = evaluateSofa(
+      entrada({
+        gcsTotal: q(15, "{score}", 720),
+        rass: { value: 0, effectiveTime: instante(720), provenance: PROC },
+      }),
+    );
+    expect(componente(borda, "cns").status).toBe("valid");
+    const stale = evaluateSofa(
+      entrada({
+        gcsTotal: q(15, "{score}", 721),
+        rass: { value: 0, effectiveTime: instante(721), provenance: PROC },
+      }),
+    );
+    expect(componente(stale, "cns").reason).toBe("stale_input:cns");
+    const naExpiracao = evaluateSofa(
+      entrada({
+        gcsTotal: q(15, "{score}", 1440),
+        rass: { value: 0, effectiveTime: instante(1440), provenance: PROC },
+      }),
+    );
+    expect(componente(naExpiracao, "cns").reason).toBe("stale_input:cns");
+    const expired = evaluateSofa(
+      entrada({
+        gcsTotal: q(15, "{score}", 1441),
+        rass: { value: 0, effectiveTime: instante(1441), provenance: PROC },
+      }),
+    );
+    expect(componente(expired, "cns").reason).toBe("expired_input:cns");
+  });
+
+  it("PaO2 além da expiração (48 h+) → expired_input:respiration; entre 24 e 48 h → stale_input:respiration", () => {
+    const stale = evaluateSofa(entrada({ pao2: [q(96, "mm[Hg]", 36 * 60)] }));
+    expect(componente(stale, "resp").reason).toBe("stale_input:respiration");
+    const expired = evaluateSofa(entrada({ pao2: [q(96, "mm[Hg]", 49 * 60)] }));
+    expect(componente(expired, "resp").reason).toBe("expired_input:respiration");
+  });
+
+  it("RASS pareado EXATAMENTE na borda de 60 min → pareado (janela inclusiva)", () => {
+    const gcsT = instante(180);
+    const record = evaluateSofa(
+      entrada({
+        rass: {
+          value: 0,
+          effectiveTime: new Date(Date.parse(gcsT) - 60 * 60_000).toISOString(),
+          provenance: PROC,
+        },
+      }),
+    );
+    expect(componente(record, "cns").status).toBe("valid");
+  });
+
+  it("FiO2 pareada EXATAMENTE a 30 min do espécime → pareada", () => {
+    const pao2T = instante(240);
+    const record = evaluateSofa(
+      entrada({
+        pao2: [q(96, "mm[Hg]", 240)],
+        fio2: [
+          {
+            value: 0.21,
+            unit: "1",
+            effectiveTime: new Date(Date.parse(pao2T) - 30 * 60_000).toISOString(),
+            provenance: PROC,
+          },
+        ],
+      }),
+    );
+    expect(componente(record, "resp").status).toBe("valid");
+  });
+
+  it("confirmação de dose EXATAMENTE a 120 min → fresca (janela inclusiva)", () => {
+    const record = evaluateSofa(
+      entrada({
+        vasoactiveAgents: [
+          {
+            agent: "norepinephrine",
+            dose: { value: 0.5, unit: "ug/kg/min" },
+            sustainedMinutes: 240,
+            lastConfirmedAt: instante(120),
+            provenance: PROC,
+          },
+        ],
+      }),
+    );
+    expect(record.status).toBe("valid");
+    expect(componente(record, "cv").score).toBe(4);
+  });
+
+  it("intervalo de débito terminando EXATAMENTE a 4 h → fresco; a 8 h → stale; a 8 h + 1 min → expired", () => {
+    const fresco = evaluateSofa(
+      entrada({
+        creatinine: [],
+        urineOutput24h: {
+          value: 1800,
+          unit: "mL",
+          intervalStart: instante(28 * 60),
+          intervalEnd: instante(4 * 60),
+          provenance: PROC,
+        } as unknown as SofaUrineOutputObservation,
+      }),
+    );
+    expect(componente(fresco, "renal").status).toBe("partial");
+    const stale = evaluateSofa(
+      entrada({
+        creatinine: [],
+        urineOutput24h: {
+          value: 1800,
+          unit: "mL",
+          intervalStart: instante(32 * 60),
+          intervalEnd: instante(8 * 60),
+          provenance: PROC,
+        } as unknown as SofaUrineOutputObservation,
+      }),
+    );
+    expect(componente(stale, "renal").reason).toBe("stale_input:renal");
+    const expired = evaluateSofa(
+      entrada({
+        creatinine: [],
+        urineOutput24h: {
+          value: 1800,
+          unit: "mL",
+          intervalStart: instante(33 * 60),
+          intervalEnd: instante(8 * 60 + 1),
+          provenance: PROC,
+        } as unknown as SofaUrineOutputObservation,
+      }),
+    );
+    expect(componente(expired, "renal").reason).toBe("expired_input:renal");
+  });
+});
+
+describe("mutantes — pior-valor: desempates e pior-métrica (OQ-10 (a))", () => {
+  it("duas creatininas na MESMA banda em tempos distintos → a mais RECENTE é exibida (desempate determinístico)", () => {
+    const record = evaluateSofa(
+      entrada({ creatinine: [q(1.0, "mg/dL", 60), q(1.0, "mg/dL", 120)], urineOutput24h: null }),
+    );
+    expect(componente(record, "renal").explanation).toContain("especime " + instante(60));
+  });
+
+  it("pior PaO2 (menor valor) prevalece entre dois espécimes frescos", () => {
+    const record = evaluateSofa(
+      entrada({
+        pao2: [q(300, "mm[Hg]", 60), q(96, "mm[Hg]", 120)],
+        fio2: [q(0.5, "1", 120)],
+        respiratorySupportStatus: {
+          value: "invasive_mechanical_ventilation",
+          effectiveTime: instante(120),
+          provenance: PROC,
+        },
+      }),
+    );
+    expect(componente(record, "resp").score).toBe(3);
+    expect(componente(record, "resp").explanation).toContain("192");
+  });
+});
+
+describe("mutantes — sinônimos pt-BR de vasopressor e fallback de nome", () => {
+  it("noradrenalina/adrenalina (grafia pt-BR) normalizam para os agentes tabelados", () => {
+    const r1 = evaluateSofa(
+      entrada({
+        vasoactiveAgents: [agente("noradrenalina", { value: 0.5, unit: "ug/kg/min" }, 120)],
+      }),
+    );
+    const r2 = evaluateSofa(
+      entrada({ vasoactiveAgents: [agente("adrenalina", { value: 0.5, unit: "ug/kg/min" }, 120)] }),
+    );
+    expect(componente(r1, "cv").score).toBe(4);
+    expect(componente(r2, "cv").score).toBe(4);
+  });
+
+  it("maiusculas/espacos em torno do nome do agente são normalizados", () => {
+    const record = evaluateSofa(
+      entrada({ vasoactiveAgents: [agente("  DOPAMINE ", { value: 2, unit: "ug/kg/min" }, 120)] }),
+    );
+    expect(componente(record, "cv").score).toBe(2);
+  });
+});
+
+describe("mutantes — fragmentos de explicação ainda vivos", () => {
+  it("resp com apenas UM dos insumos ausentes → missing_required_input:resp", () => {
+    const soPao2 = evaluateSofa(entrada({ fio2: [] }));
+    expect(componente(soPao2, "resp").reason).toBe("missing_required_input:resp");
+    expect(componente(soPao2, "resp").explanation).toContain(
+      "PaO2 e/ou FiO2 ausentes — a razão é incomputável; ausência NUNCA é tratada como normal (HAZ-0005)",
+    );
+
+    const soFio2 = evaluateSofa(entrada({ pao2: [] }));
+    expect(componente(soFio2, "resp").reason).toBe("missing_required_input:resp");
+  });
+
+  it("fragmentos de suporte respiratório: qualificante vs não qualificante", () => {
+    const com = evaluateSofa(
+      entrada({
+        pao2: [q(52.5, "mm[Hg]", 240)],
+        fio2: [q(0.35, "1", 240)],
+        respiratorySupportStatus: {
+          value: "niv_or_cpap",
+          effectiveTime: instante(240),
+          provenance: PROC,
+        },
+      }),
+    );
+    expect(componente(com, "resp").explanation).toContain("suporte qualificante (VMI ou VNI/CPAP)");
+
+    const sem = evaluateSofa(
+      entrada({
+        pao2: [q(52.5, "mm[Hg]", 240)],
+        fio2: [q(0.35, "1", 240)],
+        respiratorySupportStatus: { value: "none", effectiveTime: instante(240), provenance: PROC },
+      }),
+    );
+    expect(componente(sem, "resp").explanation).toContain(
+      "sem suporte qualificante — bandas 3-4 exigem suporte (OQ-1/OQ-2)",
+    );
+  });
+
+  it("FiO2 simultâneas contraditórias → conflicting_inputs:respiration", () => {
+    const record = evaluateSofa(entrada({ fio2: [q(0.21, "1", 240), { ...q(0.5, "1", 240) }] }));
+    expect(record.status).toBe("invalid");
+    expect(componente(record, "resp").reason).toBe("conflicting_inputs:respiration");
+  });
+
+  it("map: undefined explicito comporta-se como ausente → missing_required_input:cv", () => {
+    const record = evaluateSofa(entrada({ map: undefined }));
+    expect(componente(record, "cv").reason).toBe("missing_required_input:cv");
+  });
+
+  it("PAM derivada carrega a flag derived_map; flags exatos", () => {
+    const record = evaluateSofa(
+      entrada({ map: { kind: "derivedFromSbpDbp", sbp: q(90, "mm[Hg]"), dbp: q(60, "mm[Hg]") } }),
+    );
+    expect(componente(record, "cv").flags).toEqual(["derived_map"]);
+  });
+
+  it("explicação do total parcial propaga a divulgação com ATENÇÃO", () => {
+    const parcial = evaluateSofa(entrada({ urineOutput24h: null }));
+    expect(parcial.explanation).toContain("ATENÇÃO:");
+    expect(parcial.explanation).toContain(
+      "débito urinário não avaliado — o escore renal é um limite inferior",
+    );
+  });
+
+  it("renal apenas débito: fragmento do critério disponível na explicação", () => {
+    const record = evaluateSofa(
+      entrada({
+        creatinine: [],
+        urineOutput24h: {
+          value: 300,
+          unit: "mL",
+          intervalStart: instante(28 * 60),
+          intervalEnd: instante(120),
+          provenance: PROC,
+        } as unknown as SofaUrineOutputObservation,
+      }),
+    );
+    expect(componente(record, "renal").explanation).toContain(
+      "débito urinário 300 mL/24 h → banda 3",
+    );
+    expect(record.annotations).toContain(
+      "creatinina não avaliada — o escore renal é um limite inferior",
+    );
+  });
+
+  it("cv por dose: faixas de explicação por agente (noradrenalina 0,5 → banda 4 via tier)", () => {
+    const record = evaluateSofa(
+      entrada({
+        vasoactiveAgents: [agente("norepinephrine", { value: 0.5, unit: "ug/kg/min" }, 240)],
+      }),
+    );
+    expect(componente(record, "cv").flags).toEqual([]);
+    expect(componente(record, "cv").explanation).toContain(
+      "tier 4 pela combinação de agentes ativos",
+    );
+  });
+
+  it("doseUgKgMinDe com valor não finito → unidade inmapeável (unidades/index)", () => {
+    const leitura = doseUgKgMinDe({ value: Number.NaN, unit: "ug/kg/min" });
+    expect(leitura).toMatchObject({ ok: false, motivo: "unidade_inmapeavel" });
   });
 });

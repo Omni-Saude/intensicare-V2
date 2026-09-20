@@ -154,6 +154,15 @@ function razaoPF(pao2: number, fio2: number): number {
   return Math.round((pao2 / fio2) * 1e9) / 1e9;
 }
 
+/**
+ * Valor canônico normalizado a 1e-9 antes de faixa e banda (spec §4.0:
+ * comparação em precisão cheia — o arredondamento só elimina o artefato de
+ * ponto flutuante de conversões como ÷17.104; 4.999999999999 vira 5.0).
+ */
+function normalizar9(valor: number): number {
+  return Math.round(valor * 1e9) / 1e9;
+}
+
 function parseIsoTime(value: string | null | undefined): number | null {
   if (value === null || value === undefined) return null;
   const parsed = Date.parse(value);
@@ -223,26 +232,26 @@ function divulgacaoDoseAusentePt(agente: string, piso: number): string {
 
 /** Respiratório: bandas cumulativas, mais alta satisfeita (§4.1). */
 function bandaResp(ratio: number, suporteQualifica: boolean): number {
-  if (ratio < 100 - EPS && suporteQualifica) return 4;
-  if (ratio < 200 - EPS && suporteQualifica) return 3;
-  if (ratio < 300 - EPS) return 2;
-  if (ratio < 400 - EPS) return 1;
+  if (ratio < 100 && suporteQualifica) return 4;
+  if (ratio < 200 && suporteQualifica) return 3;
+  if (ratio < 300) return 2;
+  if (ratio < 400) return 1;
   return 0;
 }
 
 function bandaCoag(plaquetas: number): number {
-  if (plaquetas < 20 - EPS) return 4;
-  if (plaquetas < 50 - EPS) return 3;
-  if (plaquetas < 100 - EPS) return 2;
-  if (plaquetas < 150 - EPS) return 1;
+  if (plaquetas < 20) return 4;
+  if (plaquetas < 50) return 3;
+  if (plaquetas < 100) return 2;
+  if (plaquetas < 150) return 1;
   return 0;
 }
 
 function bandaLiver(bilirrubina: number): number {
-  if (bilirrubina < 1.2 - EPS) return 0;
-  if (bilirrubina < 2.0 - EPS) return 1;
-  if (bilirrubina < 6.0 - EPS) return 2;
-  if (bilirrubina < 12.0 - EPS) return 3;
+  if (bilirrubina < 1.2) return 0;
+  if (bilirrubina < 2.0) return 1;
+  if (bilirrubina < 6.0) return 2;
+  if (bilirrubina < 12.0) return 3;
   return 4;
 }
 
@@ -255,29 +264,29 @@ function bandaCns(gcs: number): number {
 }
 
 function bandaCreatinina(creatinina: number): number {
-  if (creatinina < 1.2 - EPS) return 0;
-  if (creatinina < 2.0 - EPS) return 1;
-  if (creatinina < 3.5 - EPS) return 2;
-  if (creatinina < 5.0 - EPS) return 3;
+  if (creatinina < 1.2) return 0;
+  if (creatinina < 2.0) return 1;
+  if (creatinina < 3.5) return 2;
+  if (creatinina < 5.0) return 3;
   return 4;
 }
 
 function bandaUrineOutput(mL24h: number): number {
-  if (mL24h < 200 - EPS) return 4;
-  if (mL24h < 500 - EPS) return 3;
+  if (mL24h < 200) return 4;
+  if (mL24h < 500) return 3;
   return 0;
 }
 
 /** Banda por dose de agente tabelado em µg/kg/min (§4.4; highest satisfied). */
 function bandaDose(agente: string, dose: number): number {
   if (agente === "dopamine") {
-    if (dose > 15 + EPS) return 4;
-    if (dose > 5 + EPS) return 3;
+    if (dose > 15) return 4;
+    if (dose > 5) return 3;
     return 2;
   }
   if (agente === "dobutamine") return 2;
   // epinephrine / norepinephrine
-  if (dose > 0.1 + EPS) return 4;
+  if (dose > 0.1) return 4;
   return 3;
 }
 
@@ -340,7 +349,8 @@ function resolverGrupo(
     if (!conversao.ok) {
       return { tipo: "invalido", motivo: `unmappable_unit:${longo}` };
     }
-    if (conversao.valor < faixa[0] - EPS || conversao.valor > faixa[1] + EPS) {
+    const valorNormalizado = normalizar9(conversao.valor);
+    if (valorNormalizado < faixa[0] || valorNormalizado > faixa[1]) {
       return { tipo: "invalido", motivo: `implausible_value:${longo}` };
     }
     const tempoMs = parseIsoTime(leitura.effectiveTime);
@@ -348,7 +358,7 @@ function resolverGrupo(
       return { tipo: "tempo_ausente", motivo: `missing_clinical_time:${longo}` };
     }
     convertidas.push({
-      valor: conversao.valor,
+      valor: valorNormalizado,
       tempoMs,
       tempoIso: leitura.effectiveTime ?? "",
       convertido: conversao.convertido,
@@ -716,7 +726,7 @@ function avaliarRespiratorio(
   const ratio = razaoPF(pao2.valor, fio2Resolvido.fracao);
 
   // Suporte respiratório: exigido somente quando ratio < 200 (§4.1).
-  if (ratio < 200 - EPS) {
+  if (ratio < 200) {
     const suporte = input.respiratorySupportStatus;
     if (suporte === undefined || suporte === null) {
       return contribuicao(
@@ -941,14 +951,15 @@ function avaliarCardiovascular(
       registrarFalha({ tipo: "invalido", motivo: `unmappable_unit:${NOME_LONGO[component]}` });
       continue;
     }
-    if (bruto.dose.value < faixaDose[0] - EPS || bruto.dose.value > faixaDose[1] + EPS) {
+    const doseNormalizada = normalizar9(bruto.dose.value);
+    if (doseNormalizada < faixaDose[0] || doseNormalizada > faixaDose[1]) {
       // Dose em janela fora da faixa plausível envenena o componente —
       // o piso repara ausência, nunca falha de integridade (§4.4).
       registrarFalha({ tipo: "invalido", motivo: `implausible_value:${NOME_LONGO[component]}` });
       continue;
     }
     // Dose usável: banda imediata (o piso jamais rebaixa escore por dose disponível).
-    tierAcumulado = Math.max(tierAcumulado, bandaDose(agente, bruto.dose.value));
+    tierAcumulado = Math.max(tierAcumulado, bandaDose(agente, doseNormalizada));
   }
 
   if (falha !== null) {
@@ -973,7 +984,7 @@ function avaliarCardiovascular(
       return falhaComponente(component, pam, null);
     }
     if (pam.derivada) anotacoes.push(SOFA_ANOTACAO_PAM_DERIVADA_PT);
-    const score = pam.valor >= 70 - EPS ? 0 : 1;
+    const score = pam.valor >= 70 ? 0 : 1;
     return contribuicao(
       component,
       "valid",
@@ -1058,12 +1069,13 @@ function lerPam(map: SofaMapObservation | null | undefined, evaluationTimeMs: nu
     if (idadeMin > JANELA.pam.janelaMin + EPS) {
       return { tipo: "stale", motivo: "stale_input:cardiovascular" };
     }
-    if (map.value < FAIXA.pam[0] - EPS || map.value > FAIXA.pam[1] + EPS) {
+    const valorNormalizado = normalizar9(map.value);
+    if (valorNormalizado < FAIXA.pam[0] || valorNormalizado > FAIXA.pam[1]) {
       return { tipo: "invalido", motivo: "implausible_value:cardiovascular" };
     }
     return {
       tipo: "ok",
-      valor: map.value,
+      valor: valorNormalizado,
       tempoMs: simples.tempoMs,
       tempoIso: simples.tempoIso,
       idadeMin,
@@ -1076,8 +1088,8 @@ function lerPam(map: SofaMapObservation | null | undefined, evaluationTimeMs: nu
   if ("tipo" in sbp) return sbp;
   const dbp = validarSimples(map.dbp);
   if ("tipo" in dbp) return dbp;
-  const derivada = (sbp.valor + 2 * dbp.valor) / 3;
-  if (derivada < FAIXA.pam[0] - EPS || derivada > FAIXA.pam[1] + EPS) {
+  const derivada = normalizar9((sbp.valor + 2 * dbp.valor) / 3);
+  if (derivada < FAIXA.pam[0] || derivada > FAIXA.pam[1]) {
     return { tipo: "invalido", motivo: "implausible_value:cardiovascular" };
   }
   const tempoMs = Math.min(sbp.tempoMs, dbp.tempoMs);
@@ -1368,11 +1380,11 @@ function lerUrina(
   if (urina.unit !== "mL") {
     return { tipo: "invalido", motivo: "unmappable_unit:renal" };
   }
-  if (
-    !Number.isFinite(urina.value) ||
-    urina.value < FAIXA.urina[0] - EPS ||
-    urina.value > FAIXA.urina[1] + EPS
-  ) {
+  if (!Number.isFinite(urina.value)) {
+    return { tipo: "invalido", motivo: "implausible_value:renal" };
+  }
+  const urinaNormalizada = normalizar9(urina.value);
+  if (urinaNormalizada < FAIXA.urina[0] || urinaNormalizada > FAIXA.urina[1]) {
     return { tipo: "invalido", motivo: "implausible_value:renal" };
   }
   const fimMs = parseIsoTime(urina.intervalEnd);
@@ -1388,7 +1400,7 @@ function lerUrina(
   if (idadeMin > URINA_FIM_JANELA_MIN + EPS) {
     return { tipo: "stale", motivo: "stale_input:renal" };
   }
-  return { tipo: "ok", valor: urina.value, intervalEnd: urina.intervalEnd, idadeMin };
+  return { tipo: "ok", valor: urinaNormalizada, intervalEnd: urina.intervalEnd, idadeMin };
 }
 
 // ---------------------------------------------------------------------------
