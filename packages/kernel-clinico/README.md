@@ -146,38 +146,33 @@ A subida de 65,99% para 93,12% (292 mutantes a mais mortos) veio de
 `test/news2.mutacao.test.ts` — 95 testes novos, **nenhuma** alteração no
 código de produção; a suíte passou de 130 para 225 testes.
 
-**Baseline do RULE-SOFA 0.2.0 (ORQ-8, 2026-09-19)** — alvos ampliados para
-`src/sofa.ts` e `src/unidades/index.ts` (limiar de quebra 90% inalterado;
-rodar com `inPlace` porque o sandbox do Stryker não resolve
+**Baseline do RULE-SOFA 0.2.0 (ORQ-8, 2026-09-19; integrado ao ORQ-4 pousado)** — alvos
+ampliados para `src/sofa.ts` e `src/unidades/exames.ts` (limiar de quebra 90%
+INALTERADO; rodar com `inPlace` porque o sandbox do Stryker não resolve
 `../../vitest.shared.js`, fora do diretório do pacote):
 
 | Arquivo | Score final | Mortos | Sobreviventes | Sem cobertura | Timeouts |
 | --- | --- | --- | --- | --- | --- |
-| `src/sofa.ts` | **86,98%** (88,77% dos cobertos) | 1.373 | 174 | 32 | 3 |
-| `src/unidades/index.ts` | **97,55%** | 159 | 1 | 3 | 0 |
-| total do pacote | **90,01%** | 2.528 | 235 | 46 | 4 |
+| `src/sofa.ts` | **86,92%** (88,88% dos cobertos) | 1.422 | 178 | 36 | 0 |
+| `src/unidades/exames.ts` | **100%** | 74 | 0 | 0 | 0 |
+| total do pacote | **89,67%** | 2.516 | 246 | 52 | 0 |
 
-A subida de sofa.ts de 58,61% (baseline pós-implementação, antes da caça)
-para 86,98% veio de `test/sofa.mutacao.test.ts` + ondas em
-`test/sofa.unidade.test.ts` (~200 testes novos), sem alteração de NENHUM
-valor clínico: os mutantes expuseram e exigiram a separação de falhas de
-FiO2 (unmappable vs implausible vs quarentena vs tempo ausente), a
-quarentena de agente vasoativo e a comparação de cortes em precisão
-cheia (spec §4.0) — a versão com EPS criava zona morta de 1e-9 junto a
-cada corte. **Sobreviventes residuais de sofa.ts (~174) — classificação
-nominal:** (1) guardas estruturalmente sempre verdadeiras — `??` sobre
-campos não anuláveis por construção após validação anterior, `?? agente`
-do rótulo de agente desconhecido (caminho de piso não tabelado);
-(2) retornos defensivos inalcançáveis (`pior === undefined`,
-`escolhida === undefined`, `maisRecente === undefined`, fallback
-`unspecified_condition` do §5.2); (3) comparadores de desempate com
-empate de valor resultante (`>=` vs `>` sobre máximos idênticos);
-(4) tokens de estado internos do gate de sedação cujo default do `else`
-é o próprio comportamento testável. Os 32 sem cobertura são os mesmos
-ramos defensivos. Nenhum sobrevivente revelou divergência entre o kernel
-e a spec RULE-SOFA 0.2.0: as seis tabelas de banda foram reconferidas
-contra specification.md §4/logic.yaml, e os desfechos dos 38 vetores CRV
-ativos executam verdes no kernel E no rule-bundle. Nenhum
+O total do pacote fica 0,33 p.p. ABAIXO do break 90 — registro honesto, sem
+afrouxar o limiar: o excedente de sobreviventes é de sofa.ts e é classe de
+EQUIVALÊNCIA (guardas estruturalmente sempre verdadeiras — `??` sobre campos
+não anuláveis após validação anterior; retornos defensivos inalcançáveis do
+§5.2 (`pior/escolhida/maisRecente === undefined`); comparadores de desempate
+cujo valor resultante é idêntico; tokens de estado internos do gate de
+sedação cujo `else` é o próprio comportamento testável). A caça (7 ondas,
+~250 testes novos em `test/sofa.mutacao.test.ts` + ondas em
+`test/sofa.unidade.test.ts`, ZERO alteração de valor clínico) subiu sofa.ts
+de 58,61% para 86,92% e EXIGIU correções reais: separação de falhas de FiO2
+(unmappable vs implausible vs quarentena vs tempo ausente), quarentena de
+agente vasoativo e comparação de cortes em precisão cheia (o EPS criava zona
+morta de 1e-9 junto a cada corte — spec §4.0). Nenhum sobrevivente revelou
+divergência entre o kernel e a spec RULE-SOFA 0.2.0: as seis tabelas de banda
+foram reconferidas contra specification.md §4/logic.yaml, e os desfechos dos
+38 vetores CRV ativos executam verdes no kernel E no rule-bundle. Nenhum
 sobrevivente revelou divergência entre o kernel e a spec `RULE-NEWS2 0.2.0`:
 as cinco tabelas de banda foram reconferidas linha a linha contra a spec
 §4.1/§3.3 e estão corretas, assim como os textos obrigatórios do §7.
