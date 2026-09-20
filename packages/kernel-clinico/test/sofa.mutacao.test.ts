@@ -17,6 +17,7 @@ import { describe, expect, it } from "vitest";
 import {
   doseUgKgMinDe,
   evaluateSofa,
+  paraFio2Fracao,
   SOFA_COMPONENT_ORDER,
   type SofaEvaluationInput,
   type SofaQuantityObservation,
@@ -1454,5 +1455,175 @@ describe("mutantes — fragmentos de explicação ainda vivos", () => {
   it("doseUgKgMinDe com valor não finito → unidade inmapeável (unidades/index)", () => {
     const leitura = doseUgKgMinDe({ value: Number.NaN, unit: "ug/kg/min" });
     expect(leitura).toMatchObject({ ok: false, motivo: "unidade_inmapeavel" });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Quarta onda — pinagem byte a byte das explicações (§7) e ramos finais
+// ---------------------------------------------------------------------------
+
+describe("mutantes — explicações pinadas byte a byte (matadores de string/regex)", () => {
+  function painel(): SofaEvaluationInput {
+    return entrada({});
+  }
+
+  it("total válido: string EXATA do painel normal", () => {
+    const record = evaluateSofa(painel());
+    expect(record.explanation).toBe(
+      "Escore SOFA 0 de 24 — regra RULE-SOFA v0.2.0. Janela de avaliação: as 24 horas até " +
+        "2026-08-15T12:00:00-03:00. Componentes: respiratório 0 (PaO2/FiO2 457.143 mm[Hg] → 0 ponto(s) " +
+        "(especime 2026-08-15T11:00:00.000Z)); coagulação 0 (plaquetas 250 ×10³/µL → 0 ponto(s) (especime " +
+        "2026-08-15T09:00:00.000Z)); hepático 0 (bilirrubina 0.6 mg/dL → 0 ponto(s) (especime " +
+        "2026-08-15T09:00:00.000Z)); cardiovascular 0 (PAM 85 mm[Hg] sem vasoativo ativo → 0 ponto(s) " +
+        "(especime 2026-08-15T13:00:00.000Z)); neurológico 0 (GCS 15 com RASS pareado 0 (≥ −2, testável) → " +
+        "0 ponto(s) (especime 2026-08-15T12:00:00.000Z)); renal 0 (pior-critério-disponível — creatinina " +
+        "0.8 mg/dL → banda 0 (especime 2026-08-15T09:00:00.000Z); débito urinário 1800 mL/24 h → banda 0 " +
+        "(intervalo até 2026-08-15T13:00:00.000Z); componente = max → 0 ponto(s) (I-7, OQ-7 (b))). Insumo " +
+        "contribuinte mais antigo: 360 min. O SOFA descreve disfunção orgânica; não é, por si só, " +
+        "diagnóstico de sepse e não distingue disfunção aguda de crônica. Informação de apoio à decisão da " +
+        "equipe assistente — não é uma diretriz e não determina conduta.",
+    );
+  });
+
+  it("total inválido: string EXATA", () => {
+    const record = evaluateSofa(entrada({ platelets: [q(0, "10*3/uL", 360)] }));
+    expect(record.explanation).toBe(
+      "Escore SOFA: inválido — falha de integridade de dado detectada (implausible_value:coagulation). " +
+        "Nenhuma pontuação existe para este paciente neste momento; a ausência de pontuação não significa " +
+        "normalidade. Os sistemas avaliáveis são exibidos individualmente com seu próprio status. " +
+        "Informação de apoio apenas. regra RULE-SOFA v0.2.0.",
+    );
+  });
+
+  it("total não avaliado: string EXATA", () => {
+    const record = evaluateSofa(entrada({ gcsTotal: null, rass: null }));
+    expect(record.explanation).toBe(
+      "Escore SOFA: não avaliado. O total não foi calculado porque: missing_required_input:cns. " +
+        "Nenhum número é exibido porque um total calculado sem esses sistemas orgânicos poderia gerar " +
+        "falsa tranquilidade. O que falta para completar a avaliação: missing_required_input:cns. " +
+        "Informação de apoio apenas. regra RULE-SOFA v0.2.0.",
+    );
+  });
+});
+
+describe("mutantes — ramos finais de PAM derivada, dose múltipla e seleção stale", () => {
+  it("PAM derivada com PAS/PAD defasadas (6 h) → stale; além de 8 h → expired", () => {
+    const stale = evaluateSofa(
+      entrada({
+        map: {
+          kind: "derivedFromSbpDbp",
+          sbp: q(90, "mm[Hg]", 6 * 60),
+          dbp: q(60, "mm[Hg]", 6 * 60),
+        },
+      }),
+    );
+    expect(componente(stale, "cv").reason).toBe("stale_input:cardiovascular");
+
+    const expired = evaluateSofa(
+      entrada({
+        map: {
+          kind: "derivedFromSbpDbp",
+          sbp: q(90, "mm[Hg]", 9 * 60),
+          dbp: q(60, "mm[Hg]", 9 * 60),
+        },
+      }),
+    );
+    expect(componente(expired, "cv").reason).toBe("expired_input:cardiovascular");
+  });
+
+  it("idade do insumo do CV = MAIOR confirmação entre agentes (Math.max)", () => {
+    const record = evaluateSofa(
+      entrada({
+        vasoactiveAgents: [
+          {
+            agent: "dopamine",
+            dose: { value: 2, unit: "ug/kg/min" },
+            sustainedMinutes: 240,
+            lastConfirmedAt: instante(60),
+            provenance: PROC,
+          },
+          {
+            agent: "norepinephrine",
+            dose: { value: 0.5, unit: "ug/kg/min" },
+            sustainedMinutes: 240,
+            lastConfirmedAt: instante(10),
+            provenance: PROC,
+          },
+        ],
+      }),
+    );
+    expect(componente(record, "cv").ageMinutes).toBe(60);
+  });
+
+  it("fora de janela com idades DIFERENTES: a leitura MAIS RECENTE decide stale vs expired", () => {
+    // 30 h (stale) e 50 h (expired): a mais recente (30 h) decide → stale.
+    const stale = evaluateSofa(
+      entrada({ platelets: [q(250, "10*3/uL", 30 * 60), q(250, "10*3/uL", 50 * 60)] }),
+    );
+    expect(stale.status).toBe("not_evaluated");
+    expect(componente(stale, "coag").reason).toBe("stale_input:coagulation");
+
+    // 49 h e 50 h: ambas além da expiração; a mais recente (49 h) → expired.
+    const expired = evaluateSofa(
+      entrada({ platelets: [q(250, "10*3/uL", 49 * 60), q(250, "10*3/uL", 50 * 60)] }),
+    );
+    expect(expired.status).toBe("not_evaluated");
+    expect(componente(expired, "coag").reason).toBe("expired_input:coagulation");
+  });
+
+  it("FiO2 não finita → implausible_value:respiration (antes da checagem de unidade)", () => {
+    const record = evaluateSofa(entrada({ fio2: [q(Number.NaN, "1", 240)] }));
+    expect(record.status).toBe("invalid");
+    expect(componente(record, "resp").reason).toBe("implausible_value:respiration");
+  });
+
+  it("PAM medida não finita → implausible_value:cardiovascular", () => {
+    const record = evaluateSofa(
+      entrada({
+        map: {
+          kind: "measured",
+          value: Number.NaN,
+          unit: "mm[Hg]",
+          effectiveTime: instante(10),
+          provenance: PROC,
+        },
+      }),
+    );
+    expect(record.status).toBe("invalid");
+    expect(componente(record, "cv").reason).toBe("implausible_value:cardiovascular");
+  });
+
+  it("suporte respiratório SEM tempo clínico (P/F < 200) → stale_input:respiration", () => {
+    const record = evaluateSofa(
+      entrada({
+        pao2: [q(52.5, "mm[Hg]", 240)],
+        fio2: [q(0.35, "1", 240)],
+        respiratorySupportStatus: {
+          value: "invasive_mechanical_ventilation",
+          effectiveTime: null,
+          provenance: PROC,
+        },
+      }),
+    );
+    expect(record.status).toBe("not_evaluated");
+    expect(componente(record, "resp").status).toBe("stale");
+    expect(componente(record, "resp").reason).toBe("stale_input:respiration");
+  });
+
+  it("unidades: limites exatos de percentual (21 → 0.21; 100 → 1.0; 20.9 e 101 rejeitados)", () => {
+    expect(paraFio2Fracao({ value: 21, unit: "%" })).toMatchObject({ ok: true, convertido: true });
+    expect(paraFio2Fracao({ value: 100, unit: "%" })).toMatchObject({ ok: true, convertido: true });
+    expect(paraFio2Fracao({ value: 20.9, unit: "%" })).toMatchObject({
+      ok: false,
+      motivo: "fora_da_faixa",
+    });
+    expect(paraFio2Fracao({ value: 101, unit: "%" })).toMatchObject({
+      ok: false,
+      motivo: "fora_da_faixa",
+    });
+    expect(paraFio2Fracao({ value: 1.01, unit: "1" })).toMatchObject({
+      ok: false,
+      motivo: "fora_da_faixa",
+    });
   });
 });
