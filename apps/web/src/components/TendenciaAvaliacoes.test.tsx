@@ -13,6 +13,7 @@ import axe from "axe-core";
 import { describe, expect, it } from "vitest";
 import type { ClienteApiIntensiCare } from "../api/tipos.js";
 import type { AvaliacaoPaciente, ItemGradeLeito } from "../domain/clinico.js";
+import { criarRelogioDeTeste } from "../teste/relogioDeTeste.js";
 import { DetalhePaciente } from "./DetalhePaciente.js";
 import { TendenciaAvaliacoes } from "./TendenciaAvaliacoes.js";
 
@@ -221,6 +222,12 @@ describe("DetalhePaciente — a série chega à tela (WF-02)", () => {
         cliente={clienteCom(ITEM_COM_SERIE)}
         aoVoltar={() => undefined}
         intervaloRecargaMs={null}
+        // Relógio PINADO no AGORA da série (bomba-relógio, HANDOFF DATA): o
+        // `recortarSerie24h` do componente usaria `Date.now()` real e a
+        // série sintética de 2026-09-19 sairia da janela 24h quando o
+        // relógio real passasse de 2026-09-20T02:00Z — o ponto mais antigo
+        // cairia e o teste morreria por passagem de tempo, não por regressão.
+        relogio={criarRelogioDeTeste(AGORA)}
       />,
     );
     const secao = await screen.findByTestId("tendencia-avaliacoes");
@@ -239,6 +246,7 @@ describe("DetalhePaciente — a série chega à tela (WF-02)", () => {
         cliente={clienteCom(itemSemSerie)}
         aoVoltar={() => undefined}
         intervaloRecargaMs={null}
+        relogio={criarRelogioDeTeste(AGORA)}
       />,
     );
     expect(screen.queryByTestId("tendencia-avaliacoes")).toBeNull();

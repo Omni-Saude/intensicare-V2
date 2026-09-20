@@ -465,6 +465,198 @@ export type GcsNoFireReason =
   | "invalid_data"
   | "out_of_population_scope";
 
+// ---------------------------------------------------------------------------
+// RULE-SOFA 0.2.0 — Sepsis-related Organ Failure Assessment (terceira via)
+//
+// Fontes normativas (lidas integralmente na autoria):
+// - docs/05-clinical-safety/rule-releases/sofa/specification.md (0.2.0)
+// - docs/05-clinical-safety/rule-releases/sofa/logic.yaml (0.2.0, SHA-256
+//   44d140f58488cbcb75ebd6b508dbfd9b374bc429181b236967f498fe38e5eb76)
+// - docs/05-clinical-safety/rule-releases/sofa/reference-vectors.md
+//   (CRV-SOFA-0301..0341: 38 ativos + 3 aposentados)
+// - ADR-0008 (cinco estados; precedência P-a; N3 razões) — o `partial` é
+//   ALCANÇÁVEL nesta regra, com EXATAMENTE UMA classe ratificada: o parcial
+//   declarado renal (pior-critério-disponível, GDEC-0007 OQ-7 (b) / A8-2)
+// - ADR-0026 (insumo ausente por componente: ausência ⇒ not_evaluated; a
+//   única exceção é o parcial declarado renal)
+// - ADR-0027 (gate etário fail-closed >=18 produto-wide)
+// - ADR-0028 (gate de confundimento por sedação, política CONJUNTA com a
+//   RULE-GCS — GDEC-0007 OQ-8 (b): uma só resposta)
+// ---------------------------------------------------------------------------
+
+/** Os seis componentes de órgão do SOFA (chaves do corpus CRV-SOFA). */
+export type SofaComponentId = "resp" | "coag" | "liver" | "cv" | "cns" | "renal";
+
+/** Ordem canônica dos componentes — determinismo de listas, razões e exibição. */
+export const SOFA_COMPONENT_ORDER: readonly SofaComponentId[] = [
+  "resp",
+  "coag",
+  "liver",
+  "cv",
+  "cns",
+  "renal",
+];
+
+/**
+ * Razão de não disparo (convenção §0.4 do documento de vetores). RULE-SOFA
+ * 0.2.0 não define NENHUMA condição de alerta; ΔSOFA ≥ 2 (Sepsis-3) está
+ * FORA do escopo 0.2.0 (OQ-14) e nunca é emitido por esta regra.
+ */
+export type SofaNoFireReason =
+  | "criteria_not_met"
+  | "insufficient_data"
+  | "stale_data"
+  | "invalid_data"
+  | "out_of_population_scope";
+
+/**
+ * Quantidade observada com unidade UCUM declarada. Unidade vazia é AUSÊNCIA
+ * declarada (nunca adivinhada — HAZ-0032); tempo clínico nulo é atualidade
+ * indemonstrável (DOM-0009).
+ */
+export interface SofaQuantityObservation {
+  readonly value: number;
+  readonly unit: string;
+  readonly effectiveTime: string | null;
+  readonly provenance: ObservationProvenance;
+}
+
+/** Estado de suporte respiratório (spec §3.1 linha 4; HFNC NÃO qualifica — OQ-1). */
+export type SofaRespiratorySupportValue =
+  | "invasive_mechanical_ventilation"
+  | "niv_or_cpap"
+  | "hfnc"
+  | "none";
+
+export interface SofaRespiratorySupportObservation {
+  readonly value: SofaRespiratorySupportValue;
+  readonly effectiveTime: string | null;
+  readonly provenance: ObservationProvenance;
+}
+
+/**
+ * PAM declarada: medida por dispositivo (LOINC 8478-0) ou DERIVADA de
+ * PAS/PAD — MAP = (SBP + 2×DBP)/3 — admitida como fallback com flag
+ * obrigatória `derived_map` ("derivada"; DECIDIDO OQ-9 (a), GDEC-0007).
+ */
+export type SofaMapObservation =
+  | {
+      readonly kind: "measured";
+      readonly value: number;
+      readonly unit: string;
+      readonly effectiveTime: string | null;
+      readonly provenance: ObservationProvenance;
+    }
+  | {
+      readonly kind: "derivedFromSbpDbp";
+      readonly sbp: SofaQuantityObservation;
+      readonly dbp: SofaQuantityObservation;
+    };
+
+/**
+ * Agente vasoativo ativo com taxa declarada. `dose: null` é agente PRESENTE
+ * com dose AUSENTE — caminho do piso por presença (DECISÃO DERIVADA
+ * GDEC-0007 princípio 2, confirmada GDEC-0008 item 4), nunca ausência do
+ * agente. Sinônimos (noradrenaline≡norepinephrine,
+ * adrenaline≡epinephrine) são normalizados pelo avaliador (spec §3.1
+ * linha 8).
+ */
+export interface SofaVasoactiveAgentObservation {
+  readonly agent: string;
+  readonly dose: { readonly value: number; readonly unit: string } | null;
+  /** Minutos de sustentação da taxa qualificante no instante T (≥1 h confirma o tier — I-3). */
+  readonly sustainedMinutes: number;
+  /** Última confirmação da taxa (ISO); null = o próprio registro de administração é a evidência. */
+  readonly lastConfirmedAt: string | null;
+  readonly provenance: ObservationProvenance;
+}
+
+/** Débito urinário sobre INTERVALO explícito de 24 h (spec §3.1 linha 14). */
+export interface SofaUrineOutputObservation {
+  /** mL no intervalo; 0 é valor VÁLIDO (anúria), nunca marcador de ausência. */
+  readonly value: number;
+  readonly unit: string;
+  readonly intervalStart: string;
+  readonly intervalEnd: string;
+  readonly provenance: ObservationProvenance;
+}
+
+/** Entrada completa de uma avaliação RULE-SOFA — todo tempo vem por parâmetro. */
+export interface SofaEvaluationInput {
+  /** Instante da avaliação (ISO 8601). Não há relógio interno no kernel. */
+  readonly evaluationTime: string;
+  readonly age: AgeInput;
+  readonly pao2?: readonly SofaQuantityObservation[];
+  readonly fio2?: readonly SofaQuantityObservation[];
+  readonly respiratorySupportStatus?: SofaRespiratorySupportObservation | null;
+  readonly platelets?: readonly SofaQuantityObservation[];
+  readonly bilirubin?: readonly SofaQuantityObservation[];
+  readonly map?: SofaMapObservation | null;
+  readonly vasoactiveAgents?: readonly SofaVasoactiveAgentObservation[];
+  /** GCS total (LOINC 9269-2); componente E/V/M não testável ⇒ não há total ⇒ insumo ausente. */
+  readonly gcsTotal?: SofaQuantityObservation | null;
+  readonly rass?: RassObservationInput | null;
+  readonly sedativeExposure: SedativeExposureState;
+  readonly creatinine?: readonly SofaQuantityObservation[];
+  readonly urineOutput24h?: SofaUrineOutputObservation | null;
+  /** Carve-out OQ-11 (b): renal avalia com flag obrigatória `on_rrt` ("em TSR"). */
+  readonly onRenalReplacementTherapy?: boolean;
+  /** Carve-out OQ-11 (b): respiratório not_evaluated(pf_not_interpretable_on_ecmo). */
+  readonly ecmo?: boolean;
+  /** Ordem de limitação terapêutica documentada (HAZ-0044): computar + anotar. */
+  readonly treatmentLimitationOrderDocumented?: boolean;
+  /** Limitação crônica documentada: anotação obrigatória; a explicação não afirma agudeza. */
+  readonly chronicOrganDysfunctionNote?: string | null;
+  readonly lastValidEvaluationTime?: string | null;
+}
+
+/** Contribuição de um componente de órgão (sempre os seis, ordem canônica). */
+export interface SofaComponentContribution {
+  readonly component: SofaComponentId;
+  /** Vocabulário de cinco estados da spec §5.1 — `partial` só no renal declarado. */
+  readonly status: EvaluationStatus;
+  /** 0–4 legível SOMENTE sob `valid` (ou o parcial declarado renal). */
+  readonly score: number | null;
+  /** Razão legível por máquina quando o componente não é legível; `null` sob `valid`. */
+  readonly reason: string | null;
+  /** Flags decididas (GDEC-0007) quando aplicáveis — tokens de máquina. */
+  readonly flags: readonly string[];
+  /** Idade (min) do insumo contribuinte mais antigo do componente, se houver. */
+  readonly ageMinutes: number | null;
+  /** Explicação em pt-BR da contribuição (ou da razão de não contribuir). */
+  readonly explanation: string;
+}
+
+/**
+ * Registro de avaliação RULE-SOFA — imutável, determinístico, replayável.
+ * O total 0–24 existe SOMENTE quando os seis componentes são legíveis
+ * (`valid`, ou o parcial declarado renal — spec §5.2); o total parcial
+ * carrega divulgação obrigatória propagada a toda exibição.
+ */
+export interface SofaEvaluationRecord {
+  readonly ruleId: "RULE-SOFA";
+  /** Versão pinada da spec (precursor 0.x; REVISADO CLINICAMENTE GDEC-0007). */
+  readonly ruleVersion: "0.2.0";
+  readonly evaluationTime: string;
+  readonly status: EvaluationStatus;
+  /** Razões legíveis por máquina; >= 1 sempre que o status não é `valid` (N3). */
+  readonly reasons: readonly string[];
+  /** Razão dominante pela precedência declarada; `null` apenas sob `valid`. */
+  readonly primaryReason: string | null;
+  /** Total 0–24 — `null` em QUALQUER status que não `valid`/`partial` (HAZ-0005). */
+  readonly total: number | null;
+  /** Detalhe por componente, na ordem canônica — sempre presente (§5.2). */
+  readonly components: readonly SofaComponentContribution[];
+  readonly populationGate: PopulationGateResult;
+  /** RULE-SOFA 0.2.0 não define condição de disparo: sempre `false`. */
+  readonly fires: false;
+  readonly noFireReason: SofaNoFireReason;
+  /** Anotações visíveis obrigatórias (GDEC-0007), em pt-BR. */
+  readonly annotations: readonly string[];
+  /** Explicação agregada em pt-BR (spec §7). */
+  readonly explanation: string;
+}
+
 /**
  * Registro de avaliação RULE-GCS — imutável, determinístico, replayável.
  * O total 3–15 existe SOMENTE quando `status === "valid"` (spec §3.5/§6.1).

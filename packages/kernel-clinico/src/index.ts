@@ -106,6 +106,36 @@ export type {
 export { GCS_COMPONENT_ORDER } from "./types.js";
 
 // ---------------------------------------------------------------------------
+// API da avaliação SOFA (RULE-SOFA 0.2.0 — terceira via)
+// ---------------------------------------------------------------------------
+
+export {
+  evaluateSofa,
+  SOFA_ANOTACAO_AGENTE_NAO_TABELADO_PT,
+  SOFA_ANOTACAO_LIMITACAO_PT,
+  SOFA_ANOTACAO_PAM_DERIVADA_PT,
+  SOFA_ANOTACAO_PROVISORIO_PT,
+  SOFA_ANOTACAO_TSR_PT,
+  SOFA_DIVULGACAO_RENAL_PT,
+  SOFA_RULE_ID,
+  SOFA_RULE_VERSION,
+} from "./sofa.js";
+export type {
+  SofaComponentContribution,
+  SofaComponentId,
+  SofaEvaluationInput,
+  SofaEvaluationRecord,
+  SofaMapObservation,
+  SofaNoFireReason,
+  SofaQuantityObservation,
+  SofaRespiratorySupportObservation,
+  SofaRespiratorySupportValue,
+  SofaUrineOutputObservation,
+  SofaVasoactiveAgentObservation,
+} from "./types.js";
+export { SOFA_COMPONENT_ORDER } from "./types.js";
+
+// ---------------------------------------------------------------------------
 // Exports legados do esqueleto SPR-G7-1 — mantidos porque @intensicare/dominio
 // os importa; NÃO usar em código novo (o vocabulário real dos cinco estados é
 // `EvaluationStatus`, da ADR-0008). Remoção planejada quando o consumidor
@@ -170,3 +200,17 @@ export {
   pesoDeTextoAscii,
 } from "./unidades/peso.js";
 export type { MotivoRejeicao, ResultadoQuantidade } from "./unidades/tipos.js";
+
+// ---------------------------------------------------------------------------
+// Conversores de EXAMES do RULE-SOFA (ORQ-8) — extensão ADITIVA ao piso do
+// ORQ-4 (hemodinâmica/FiO2/lactato/peso); fatores EXATOS da logic.yaml
+// (÷17.104, ÷88.42, ×7.50062). HAZ-0032: a conversão acontece só aqui.
+// ---------------------------------------------------------------------------
+
+export type { ConversaoEscalar, QuantidadeComUnidade } from "./unidades/exames.js";
+export {
+  paraBilirrubinaMgDl,
+  paraCreatininaMgDl,
+  paraPaO2MmHg,
+  paraPlaquetasContagem,
+} from "./unidades/exames.js";

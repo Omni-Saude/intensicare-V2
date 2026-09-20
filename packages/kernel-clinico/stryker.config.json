@@ -1,13 +1,14 @@
 {
   "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-js/master/packages/api/schema/stryker-core.json",
-  "_comment": "Análise de mutação do kernel de segurança (§14 do orquestrador; pendência PRE-08). Alvos: news2.ts e types.ts. Runner: vitest do próprio pacote.",
+  "_comment": "Análise de mutação do kernel de segurança (§14 do orquestrador; pendência PRE-08). Alvos: news2.ts, types.ts, sofa.ts e unidades/ (ORQ-8: a terceira via entra na mesma disciplina — threshold break=90 inalterado). Runner: vitest do próprio pacote. inPlace=true: o sandbox default do Stryker não copia arquivos FORA do diretório do pacote (o vitest.config.ts importa ../../vitest.shared.js, na raiz) e o runner morre de UNRESOLVED_IMPORT; rodar in-place sobre o worktree dedicado (git-restaurável) mantém os MESMOS mutantes, testes e limiares.",
   "packageManager": "pnpm",
   "testRunner": "vitest",
   "vitest": {
     "configFile": "vitest.config.ts"
   },
   "plugins": ["@stryker-mutator/vitest-runner"],
-  "mutate": ["src/news2.ts", "src/types.ts"],
+  "inPlace": true,
+  "mutate": ["src/news2.ts", "src/types.ts", "src/sofa.ts", "src/unidades/exames.ts"],
   "coverageAnalysis": "perTest",
   "reporters": ["clear-text", "progress", "json"],
   "jsonReporter": {

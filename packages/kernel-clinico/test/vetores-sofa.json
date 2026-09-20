@@ -1,0 +1,702 @@
+{
+  "provenance": {
+    "source_path": "docs/05-clinical-safety/rule-releases/sofa/reference-vectors.md",
+    "source_title": "RULE-SOFA v0.2.0 — clinical reference vectors (CRV-SOFA-0301..0341)",
+    "sections_transcribed": [
+      "§1 Common block",
+      "§2 Reference input panel PANEL-NORMAL",
+      "§3.1 Typical",
+      "§3.2 Band boundaries",
+      "§3.3 Missing inputs (HAZ-0005 family)",
+      "§3.4 Stale and expired",
+      "§3.5 Conflicting inputs",
+      "§3.6 Population gating",
+      "§3.7 Invalid values and units",
+      "§3.8 Sedation confounding",
+      "§3.9 Zero is a value, not absence",
+      "§3.10 Decision-driven vectors (GDEC-0007)"
+    ],
+    "rule": "RULE-SOFA 0.2.0 (precursor 0.x — não assinado; NOT ACTIONABLE; REVISADO CLINICAMENTE 2026-08-15, GDEC-0007)",
+    "data_provenance": "synthetic-only — todos os valores sintéticos; nenhum dado real de paciente",
+    "note": "Transcrição para execução red/green (TDD) conforme a disciplina do próprio conjunto CRV (§0 do documento-fonte): vetores permanecem DRAFT para fins de execução; autoria independente NÃO satisfeita (autor do vetor = autor da spec); a aprovação destes vetores NÃO é evidência clínica. 41 vetores transcritos: 38 ATIVOS executáveis + 3 APOSENTADOS (CRV-SOFA-0321→0340, 0322→0336, 0323→0335) mantidos como registro histórico, sem desfecho executável. Todos os horários de observação carram offset -03:00 (convenção §2 do documento-fonte); o instante de avaliação T = 2026-08-15T12:00:00-03:00.",
+    "evaluation_instant_T": "2026-08-15T12:00:00-03:00",
+    "observed_time_offset": "-03:00",
+    "panel_baseline": "PANEL-NORMAL: idade 64 a; PaO2 96 mm[Hg] (08:00); FiO2 0,21 fração (08:00, pareada); suporte respiratório none (08:00); plaquetas 250 10*3/uL (06:00); bilirrubina 0,6 mg/dL (06:00); PAM 85 mm[Hg] (10:00); nenhum vasoativo ativo; sem sedativo ativo (ausência documentada); GCS 15 (09:00); RASS 0 (09:00); creatinina 0,8 mg/dL (06:00); débito urinário 1800 mL no intervalo 2026-08-14T10:00/2026-08-15T10:00. Esperado: seis componentes válidos 0/0/0/0/0/0, total 0, status valid.",
+    "logic_yaml_sha256": "44d140f58488cbcb75ebd6b508dbfd9b374bc429181b236967f498fe38e5eb76"
+  },
+  "vectors": [
+    {
+      "id": "CRV-SOFA-0301",
+      "source_section": "§3.1 Typical",
+      "description": "todos os insumos presentes, em janela, normais — total 0, válido (um 0 genuíno, o estado que o legado falsificava a partir da ausência; contraste CRV-SOFA-0317)",
+      "delta": {},
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "resp": 0, "coag": 0, "liver": 0, "cv": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0302",
+      "source_section": "§3.1 Typical",
+      "description": "todos os componentes em severidade máxima — total 24, válido (coma estrutural não sedado escora CNS 4 — refinamento I-8)",
+      "delta": {
+        "pao2": { "value": 60, "unit": "mm[Hg]", "observed": "2026-08-15T08:00" },
+        "fio2": { "value": 1.0, "unit": "1", "observed": "2026-08-15T08:00" },
+        "respiratory_support_status": {
+          "value": "invasive_mechanical_ventilation",
+          "observed": "2026-08-15T08:00"
+        },
+        "platelets": { "value": 10, "unit": "10*3/uL" },
+        "bilirubin": { "value": 15.0, "unit": "mg/dL" },
+        "map": { "value": 55, "unit": "mm[Hg]" },
+        "vasoactive_agents": [
+          {
+            "agent": "norepinephrine",
+            "dose": { "value": 0.5, "unit": "ug/kg/min" },
+            "sustained_min": 180,
+            "last_confirmed": "2026-08-15T11:00"
+          }
+        ],
+        "gcs": { "value": 3 },
+        "rass": { "value": -5 },
+        "sedative_infusion": "none-active",
+        "creatinine": { "value": 6.0, "unit": "mg/dL" },
+        "urine_output_24h": {
+          "value": 100,
+          "unit": "mL",
+          "interval": ["2026-08-14T10:00", "2026-08-15T10:00"]
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 24,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "resp": 4, "coag": 4, "liver": 4, "cv": 4, "cns": 4, "renal": 4 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0303",
+      "source_section": "§3.2 Band boundaries",
+      "description": "P/F exatamente 400 (84/0,21) — respiratório 0",
+      "delta": {
+        "pao2": { "value": 84, "unit": "mm[Hg]" },
+        "fio2": { "value": 0.21, "unit": "1" }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "resp": 0, "coag": 0, "liver": 0, "cv": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0304",
+      "source_section": "§3.2 Band boundaries",
+      "description": "P/F logo abaixo de 400 (83,9/0,21 = 399,5) — respiratório 1",
+      "delta": {
+        "pao2": { "value": 83.9, "unit": "mm[Hg]" },
+        "fio2": { "value": 0.21, "unit": "1" }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "resp": 1, "coag": 0, "liver": 0, "cv": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0305",
+      "source_section": "§3.2 Band boundaries",
+      "description": "P/F exatamente 100 em ventilação invasiva — respiratório 3 (100 NÃO é <100: banda 4 insatisfeita; banda 3 é a mais alta satisfeita)",
+      "delta": {
+        "pao2": { "value": 100, "unit": "mm[Hg]" },
+        "fio2": { "value": 1.0, "unit": "1" },
+        "respiratory_support_status": { "value": "invasive_mechanical_ventilation" }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "resp": 3, "coag": 0, "liver": 0, "cv": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0306",
+      "source_section": "§3.2 Band boundaries",
+      "description": "P/F logo abaixo de 100 (99,9) em ventilação invasiva — respiratório 4",
+      "delta": {
+        "pao2": { "value": 99.9, "unit": "mm[Hg]" },
+        "fio2": { "value": 1.0, "unit": "1" },
+        "respiratory_support_status": { "value": "invasive_mechanical_ventilation" }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 4,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "resp": 4, "coag": 0, "liver": 0, "cv": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0307",
+      "source_section": "§3.2 Band boundaries",
+      "description": "P/F 150 SEM suporte respiratório — respiratório limitado a 2 (bandas 3-4 exigem suporte; I-2/OQ-2)",
+      "delta": {
+        "pao2": { "value": 52.5, "unit": "mm[Hg]" },
+        "fio2": { "value": 0.35, "unit": "1" },
+        "respiratory_support_status": { "value": "none" }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "resp": 2, "coag": 0, "liver": 0, "cv": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0308",
+      "source_section": "§3.2 Band boundaries",
+      "description": "plaquetas exatamente 20 — coagulação 3, não 4",
+      "delta": { "platelets": { "value": 20, "unit": "10*3/uL" } },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "coag": 3, "resp": 0, "liver": 0, "cv": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0309",
+      "source_section": "§3.2 Band boundaries",
+      "description": "bilirrubina 1,95 mg/dL — hepático 1 (regressão da região morta [1,9;2,0) das trilhas)",
+      "delta": { "bilirubin": { "value": 1.95, "unit": "mg/dL" } },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "liver": 1, "resp": 0, "coag": 0, "cv": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0310",
+      "source_section": "§3.2 Band boundaries",
+      "description": "bilirrubina 34 umol/L — converte para 1,988 mg/dL, hepático 1 (conversão exata ANTES da banda; lida como mg/dL bandaria 4)",
+      "delta": { "bilirubin": { "value": 34, "unit": "umol/L" } },
+      "expected": {
+        "status": "valid",
+        "total": 1,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "liver": 1, "resp": 0, "coag": 0, "cv": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0311",
+      "source_section": "§3.2 Band boundaries",
+      "description": "PAM exatamente 70, sem vasoativos — cardiovascular 0",
+      "delta": { "map": { "value": 70, "unit": "mm[Hg]" } },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "cv": 0, "resp": 0, "coag": 0, "liver": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0312",
+      "source_section": "§3.2 Band boundaries",
+      "description": "dopamina exatamente 5,0 ug/kg/min sustentada 90 min — cardiovascular 2 (<=5 é banda 2; 5,0 não é >5)",
+      "delta": {
+        "vasoactive_agents": [
+          {
+            "agent": "dopamine",
+            "dose": { "value": 5.0, "unit": "ug/kg/min" },
+            "sustained_min": 90,
+            "last_confirmed": "2026-08-15T11:30"
+          }
+        ]
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "cv": 2, "resp": 0, "coag": 0, "liver": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0313",
+      "source_section": "§3.2 Band boundaries",
+      "description": "noradrenalina exatamente 0,1 ug/kg/min sustentada 90 min — cardiovascular 3 (<=0,1 é banda 3; 0,1 não é >0,1; PAM presente no painel mas irrelevante para bandas 2-4)",
+      "delta": {
+        "vasoactive_agents": [
+          {
+            "agent": "norepinephrine",
+            "dose": { "value": 0.1, "unit": "ug/kg/min" },
+            "sustained_min": 90,
+            "last_confirmed": "2026-08-15T11:30"
+          }
+        ]
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "cv": 3, "resp": 0, "coag": 0, "liver": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0314",
+      "source_section": "§3.2 Band boundaries",
+      "description": "GCS exatamente 6, RASS -2 — neurológico 3, não 4",
+      "delta": { "gcs": { "value": 6 }, "rass": { "value": -2 } },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "cns": 3, "resp": 0, "coag": 0, "liver": 0, "cv": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0315",
+      "source_section": "§3.2 Band boundaries",
+      "description": "creatinina exatamente 5,0 mg/dL — renal 4 (regressão do ponto morto em 5,0 das trilhas, que pontuava 0)",
+      "delta": { "creatinine": { "value": 5.0, "unit": "mg/dL" } },
+      "expected": {
+        "status": "valid",
+        "total": 4,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "renal": 4, "resp": 0, "coag": 0, "liver": 0, "cv": 0, "cns": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0316",
+      "source_section": "§3.2 Band boundaries",
+      "description": "débito urinário exatamente 200 mL/24h — renal 3, não 4 (200 não é <200; banda <500 se aplica; creatinina 0,8 banda 0; componente = max(0,3) = 3)",
+      "delta": {
+        "urine_output_24h": {
+          "value": 200,
+          "unit": "mL",
+          "interval": ["2026-08-14T10:00", "2026-08-15T10:00"]
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "renal": 3, "resp": 0, "coag": 0, "liver": 0, "cv": 0, "cns": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0317",
+      "source_section": "§3.3 Missing inputs (HAZ-0005)",
+      "description": "TODOS os insumos clínicos ausentes — não_avaliado, NUNCA zero (regressão primária HAZ-0005; o legado retornava SOFA 0 e persistia; qualquer saída numérica aqui é bloqueante de release severidade 1, spec §9 M-2)",
+      "delta": {
+        "pao2": { "present": false },
+        "fio2": { "present": false },
+        "respiratory_support_status": { "present": false },
+        "platelets": { "present": false },
+        "bilirubin": { "present": false },
+        "map": { "present": false },
+        "vasoactive_agents": "none-active",
+        "gcs": { "present": false },
+        "rass": { "present": false },
+        "creatinine": { "present": false },
+        "urine_output_24h": { "present": false }
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "noFireReason": "insufficient_data",
+        "reasons": [
+          "missing_required_input:resp",
+          "missing_required_input:coag",
+          "missing_required_input:liver",
+          "missing_required_input:cv",
+          "missing_required_input:cns",
+          "missing_required_input:renal"
+        ]
+      }
+    },
+    {
+      "id": "CRV-SOFA-0318",
+      "source_section": "§3.3 Missing inputs (HAZ-0005)",
+      "description": "componente único ausente (GCS ausente) — total não_avaliado, cinco componentes válidos (nenhuma soma parcial 5-de-6 existe; detalhe por componente permanece disponível)",
+      "delta": { "gcs": { "present": false }, "rass": { "present": false } },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "noFireReason": "insufficient_data",
+        "reasons": ["missing_required_input:cns"],
+        "componentScores": { "resp": 0, "coag": 0, "liver": 0, "cv": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0319",
+      "source_section": "§3.3 Missing inputs (HAZ-0005)",
+      "description": "noradrenalina 0,5 ug/kg/min, PAM AUSENTE — cardiovascular 4 (regressão do pior defeito legado D-07: evidência positiva de choque grave nunca pode ser descartada; bandas 2-4 não referenciam PAM)",
+      "delta": {
+        "map": { "present": false },
+        "vasoactive_agents": [
+          {
+            "agent": "norepinephrine",
+            "dose": { "value": 0.5, "unit": "ug/kg/min" },
+            "sustained_min": 240,
+            "last_confirmed": "2026-08-15T11:00"
+          }
+        ]
+      },
+      "expected": {
+        "status": "valid",
+        "total": 4,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "cv": 4, "resp": 0, "coag": 0, "liver": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0320",
+      "source_section": "§3.3 Missing inputs (HAZ-0005)",
+      "description": "PAM ausente, SEM vasoativos — cardiovascular não_avaliado (PAM é obrigatória exatamente quando nenhum agente tabelado está ativo; contraste CRV-SOFA-0319)",
+      "delta": { "map": { "present": false } },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "noFireReason": "insufficient_data",
+        "reasons": ["missing_required_input:cv"],
+        "componentScores": { "resp": 0, "coag": 0, "liver": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0321",
+      "source_section": "§3.3 Missing inputs (HAZ-0005)",
+      "description": "APOSENTADO — noradrenalina ativa, dose ausente → não_avaliado (expectativa 0.1.0/0.2.0 inicial, substituída pela decisão derivada GDEC-0007 princípio 2, confirmada GDEC-0008 item 4)",
+      "retired": true,
+      "superseded_by": "CRV-SOFA-0340",
+      "delta": {},
+      "expected": null
+    },
+    {
+      "id": "CRV-SOFA-0322",
+      "source_section": "§3.3 Missing inputs (HAZ-0005)",
+      "description": "RETIRADO — apenas vasopressina → não_avaliado (expectativa 0.1.0, substituída pela decisão GDEC-0007 OQ-5 (b): piso CV 3 sinalizado)",
+      "retired": true,
+      "superseded_by": "CRV-SOFA-0336",
+      "delta": {},
+      "expected": null
+    },
+    {
+      "id": "CRV-SOFA-0323",
+      "source_section": "§3.3 Missing inputs (HAZ-0005)",
+      "description": "RETIRADO — meia-renal → não_avaliado (expectativa 0.1.0, substituída pela decisão GDEC-0007 OQ-7 (b): pior-critério-disponível como parcial declarado)",
+      "retired": true,
+      "superseded_by": "CRV-SOFA-0335",
+      "delta": {},
+      "expected": null
+    },
+    {
+      "id": "CRV-SOFA-0324",
+      "source_section": "§3.4 Stale and expired",
+      "description": "plaquetas com 36 h (janela 24 h, expiração 48 h) — coagulação stale, total não_avaliado (último valor e idade exibidos; pontuação não legível)",
+      "delta": { "platelets": { "value": 250, "unit": "10*3/uL", "observed": "2026-08-14T00:00" } },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "noFireReason": "stale_data",
+        "reasons": ["stale_input:coagulation"],
+        "componentScores": { "resp": 0, "liver": 0, "cv": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0325",
+      "source_section": "§3.4 Stale and expired",
+      "description": "plaquetas com 50 h (além da expiração de 48 h) — coagulação não_avaliado (expirado), total não_avaliado (conclusão arbitrariamente velha não é conclusão degradada)",
+      "delta": { "platelets": { "value": 250, "unit": "10*3/uL", "observed": "2026-08-13T10:00" } },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "noFireReason": "stale_data",
+        "reasons": ["expired_input:coagulation"],
+        "componentScores": { "resp": 0, "liver": 0, "cv": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0326",
+      "source_section": "§3.5 Conflicting inputs",
+      "description": "duas plaquetas simultâneas não reconciliadas (40 e 400, mesmo horário) — coagulação inválida, total inválido (nunca resolvido escolhendo o pior ou o melhor valor)",
+      "delta": {
+        "platelets": { "conflict": [40, 400], "unit": "10*3/uL", "observed": "2026-08-15T06:00" }
+      },
+      "expected": {
+        "status": "invalid",
+        "total": null,
+        "noFireReason": "invalid_data",
+        "reasons": ["conflicting_inputs:coagulation"],
+        "componentScores": { "resp": 0, "liver": 0, "cv": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0327",
+      "source_section": "§3.6 Population gating",
+      "description": "idade DESCONHECIDA, todos os insumos perfeitos — não_avaliado; a regra nunca presume adulto (HAZ-0036/PH-11; VAL-0006/0007 BLOCKING)",
+      "delta": { "age": { "present": false } },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "noFireReason": "out_of_population_scope",
+        "reasons": ["population_unverified"]
+      }
+    },
+    {
+      "id": "CRV-SOFA-0328",
+      "source_section": "§3.6 Population gating",
+      "description": "idade 17, todos os insumos perfeitos — não_avaliado (fora da população; instrumento adulto)",
+      "delta": { "age": { "value": 17 } },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "noFireReason": "out_of_population_scope",
+        "reasons": ["out_of_population_scope"]
+      }
+    },
+    {
+      "id": "CRV-SOFA-0329",
+      "source_section": "§3.6 Population gating",
+      "description": "idade exatamente 18 — na população, avalia normalmente",
+      "delta": { "age": { "value": 18 } },
+      "expected": {
+        "status": "valid",
+        "total": 0,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "resp": 0, "coag": 0, "liver": 0, "cv": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0330",
+      "source_section": "§3.7 Invalid values and units",
+      "description": "FiO2 valor 40 SEM unidade — respiratório inválido; nunca dividido por heurística (regressão da catástrofe percent/fração das trilhas; com '%' declarado, 40 converteria 0,40 legitimamente)",
+      "delta": { "fio2": { "value": 40, "unit": null } },
+      "expected": {
+        "status": "invalid",
+        "total": null,
+        "noFireReason": "invalid_data",
+        "reasons": ["unmappable_unit:respiration"],
+        "componentScores": { "coag": 0, "liver": 0, "cv": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0331",
+      "source_section": "§3.7 Invalid values and units",
+      "description": "GCS 20 — neurológico inválido (fora da faixa 3-15; regressão do legado D-13, que pontuava 1 pela banda >=13)",
+      "delta": { "gcs": { "value": 20 } },
+      "expected": {
+        "status": "invalid",
+        "total": null,
+        "noFireReason": "invalid_data",
+        "reasons": ["out_of_range:cns"],
+        "componentScores": { "resp": 0, "coag": 0, "liver": 0, "cv": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0332",
+      "source_section": "§3.7 Invalid values and units",
+      "description": "plaquetas 0 — coagulação inválida (implausível; sentinel de ausência conhecido do legado; nunca banda 4, nunca 'sem dados')",
+      "delta": { "platelets": { "value": 0, "unit": "10*3/uL" } },
+      "expected": {
+        "status": "invalid",
+        "total": null,
+        "noFireReason": "invalid_data",
+        "reasons": ["implausible_value:coagulation"],
+        "componentScores": { "resp": 0, "liver": 0, "cv": 0, "cns": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0333",
+      "source_section": "§3.8 Sedation confounding",
+      "description": "GCS 3 durante infusão ativa de midazolam, RASS -4 — neurológico não_avaliado (sedation_confounded; o legado pontuava CNS 4 sem covariável de sedação — REV-NS-01; política fail-closed conjunta GDEC-0007 OQ-8 (b) = RULE-GCS OQ-GCS-2 = ADR-0028 Q2)",
+      "delta": {
+        "gcs": { "value": 3, "observed": "2026-08-15T09:00" },
+        "rass": { "value": -4, "observed": "2026-08-15T09:00" },
+        "sedative_infusion": "midazolam-active"
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "noFireReason": "insufficient_data",
+        "reasons": ["sedation_confounded:cns"],
+        "componentScores": { "resp": 0, "coag": 0, "liver": 0, "cv": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0334",
+      "source_section": "§3.9 Zero is a value",
+      "description": "débito urinário 0 mL/24h (anúria verdadeira), creatinina 0,8 — renal 4, válido (0 medido é evidência de severidade máxima e nunca se confunde com 'sem medição')",
+      "delta": {
+        "urine_output_24h": {
+          "value": 0,
+          "unit": "mL",
+          "interval": ["2026-08-14T10:00", "2026-08-15T10:00"]
+        }
+      },
+      "expected": {
+        "status": "valid",
+        "total": 4,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "renal": 4, "resp": 0, "coag": 0, "liver": 0, "cv": 0, "cns": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0335",
+      "source_section": "§3.10 Decision-driven (GDEC-0007)",
+      "description": "creatinina 1,0 presente, débito urinário AUSENTE — renal PARCIAL escore 0 com flag obrigatória (substitui CRV-SOFA-0323; GDEC-0007 OQ-7 (b): pior-critério-disponível; a flag e a divulgação de limite inferior são obrigatórias em toda exibição — o que distingue da D-16 legado)",
+      "delta": {
+        "urine_output_24h": { "present": false },
+        "creatinine": { "value": 1.0, "unit": "mg/dL" }
+      },
+      "expected": {
+        "status": "partial",
+        "total": 0,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "renal": 0, "resp": 0, "coag": 0, "liver": 0, "cv": 0, "cns": 0 },
+        "componentStatuses": { "renal": "partial" },
+        "annotationsContain": ["débito urinário não avaliado — o escore renal é um limite inferior"]
+      }
+    },
+    {
+      "id": "CRV-SOFA-0336",
+      "source_section": "§3.10 Decision-driven (GDEC-0007)",
+      "description": "apenas vasopressina (agente não tabelado), PAM 55 — cardiovascular PISO 3 sinalizado (substitui CRV-SOFA-0322; GDEC-0007 OQ-5 (b): not_evaluated tranquilizava indevidamente; o legado pontuava 2 — D-10 permanece rejeitado)",
+      "delta": {
+        "map": { "value": 55, "unit": "mm[Hg]" },
+        "vasoactive_agents": [
+          {
+            "agent": "vasopressin",
+            "dose": { "value": 0.04, "unit": "U/min" },
+            "sustained_min": 240
+          }
+        ]
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "cv": 3, "resp": 0, "coag": 0, "liver": 0, "cns": 0, "renal": 0 },
+        "annotationsContain": [
+          "agente vasoativo não tabelado — piso CV 3; mapeamento com fonte VALIDATION REQUIRED"
+        ]
+      }
+    },
+    {
+      "id": "CRV-SOFA-0337",
+      "source_section": "§3.10 Decision-driven (GDEC-0007)",
+      "description": "noradrenalina 0,5 ug/kg/min iniciada há 30 min — cardiovascular 4 PROVISÓRIO sinalizado (GDEC-0007 OQ-3 (b): tier provisório escalável na 1ª hora; nunca rebaixa vs a leitura sem vasopressor — PAM 55 sozinha bandaria 1)",
+      "delta": {
+        "map": { "value": 55, "unit": "mm[Hg]" },
+        "vasoactive_agents": [
+          {
+            "agent": "norepinephrine",
+            "dose": { "value": 0.5, "unit": "ug/kg/min" },
+            "sustained_min": 30,
+            "last_confirmed": "2026-08-15T11:45"
+          }
+        ]
+      },
+      "expected": {
+        "status": "valid",
+        "total": 4,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "cv": 4, "resp": 0, "coag": 0, "liver": 0, "cns": 0, "renal": 0 },
+        "annotationsContain": ["provisório — infusão <1h"]
+      }
+    },
+    {
+      "id": "CRV-SOFA-0338",
+      "source_section": "§3.10 Decision-driven (GDEC-0007)",
+      "description": "GCS 5, RASS -4, exposição sedativa DESCONHECIDA — neurológico não_avaliado (sedation_confounded) — fail-closed (GDEC-0007 OQ-8 (b); indistinguível de sedação profunda; o default 0.1.0 'escora com divulgação' foi REMOVIDO)",
+      "delta": {
+        "gcs": { "value": 5, "observed": "2026-08-15T09:00" },
+        "rass": { "value": -4, "observed": "2026-08-15T09:00" },
+        "sedative_infusion": "unknown"
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "noFireReason": "insufficient_data",
+        "reasons": ["sedation_confounded:cns"],
+        "componentScores": { "resp": 0, "coag": 0, "liver": 0, "cv": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0339",
+      "source_section": "§3.10 Decision-driven (GDEC-0007)",
+      "description": "GCS 15 presente, RASS AUSENTE, exposição sedativa desconhecida — neurológico não_avaliado (sedation_state_unknown) — insumo de gate ausente (GDEC-0007 OQ-8 (b); um GCS 15 sem RASS pareado nunca lê como CNS 0 válido)",
+      "delta": {
+        "rass": { "present": false },
+        "sedative_infusion": "unknown"
+      },
+      "expected": {
+        "status": "not_evaluated",
+        "total": null,
+        "noFireReason": "insufficient_data",
+        "reasons": ["sedation_state_unknown:cns"],
+        "componentScores": { "resp": 0, "coag": 0, "liver": 0, "cv": 0, "renal": 0 }
+      }
+    },
+    {
+      "id": "CRV-SOFA-0340",
+      "source_section": "§3.10 Decision-driven (GDEC-0007)",
+      "description": "noradrenalina ativa, dose AUSENTE — cardiovascular PISO 3 sinalizado (substitui CRV-SOFA-0321; DECISÃO DERIVADA GDEC-0007 princípio 2, confirmada GDEC-0008 item 4; o piso declara-se limite inferior com divulgação obrigatória e nunca rebaixa escore por dose disponível)",
+      "delta": {
+        "vasoactive_agents": [{ "agent": "norepinephrine", "dose": null, "sustained_min": 240 }]
+      },
+      "expected": {
+        "status": "valid",
+        "total": 3,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "cv": 3, "resp": 0, "coag": 0, "liver": 0, "cns": 0, "renal": 0 },
+        "annotationsContain": [
+          "dose de noradrenalina ausente — piso 3 pela presença do agente; dose necessária para distinguir banda 3 de 4"
+        ]
+      }
+    },
+    {
+      "id": "CRV-SOFA-0341",
+      "source_section": "§3.10 Decision-driven (GDEC-0007)",
+      "description": "dopamina ativa, dose AUSENTE — cardiovascular PISO 2 sinalizado (DECISÃO DERIVADA GDEC-0007 princípio 2: piso por presença — dobutamina/dopamina 2; noradrenalina/adrenalina 3; componível com provisional_infusion_lt_1h)",
+      "delta": {
+        "vasoactive_agents": [{ "agent": "dopamine", "dose": null, "sustained_min": 180 }]
+      },
+      "expected": {
+        "status": "valid",
+        "total": 2,
+        "noFireReason": "criteria_not_met",
+        "reasons": [],
+        "componentScores": { "cv": 2, "resp": 0, "coag": 0, "liver": 0, "cns": 0, "renal": 0 },
+        "annotationsContain": [
+          "dose de dopamina ausente — piso 2 pela presença do agente; dose necessária para distinguir bandas 2/3/4"
+        ]
+      }
+    }
+  ]
+}
